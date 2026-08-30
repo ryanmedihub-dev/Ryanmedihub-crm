@@ -69,7 +69,7 @@ const ALL_DATES = args.includes("--all-dates");
 const TO = arg("to") || null;
 const BRANCH = arg("branch") || null;
 
-const DEFAULT_FROM = "2026-08-25";
+const DEFAULT_FROM = "2026-08-27";
 const FROM = ALL_DATES ? null : arg("from") || DEFAULT_FROM;
 
 if (ALL_DATES && arg("from")) {

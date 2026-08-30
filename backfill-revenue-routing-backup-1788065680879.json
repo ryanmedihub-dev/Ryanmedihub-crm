@@ -1,0 +1,485 @@
+{
+  "fills": [
+    {
+      "_id": "6a92cefd94ecc61f35329610",
+      "date": "2026-08-29",
+      "branch": "Delhi",
+      "category": "TRANSPLANT",
+      "method": "upi",
+      "amount": 1000,
+      "before": {
+        "furtherMode": null,
+        "receiptMode": null
+      },
+      "after": {
+        "furtherMode": "Paytm ( Delhi T44P )"
+      }
+    },
+    {
+      "_id": "6a92cd7f94ecc61f3532960c",
+      "date": "2026-08-29",
+      "branch": "Delhi",
+      "category": "TRANSPLANT",
+      "method": "bajaj_loan",
+      "amount": 61446,
+      "before": {
+        "furtherMode": null,
+        "receiptMode": null
+      },
+      "after": {
+        "furtherMode": "Bajaj Loan"
+      }
+    },
+    {
+      "_id": "6a92c837833e1db1d502b2c3",
+      "date": "2026-08-29",
+      "branch": "Delhi",
+      "category": "MEDICINE",
+      "method": "upi",
+      "amount": 494.6480700616283,
+      "before": {
+        "furtherMode": null,
+        "receiptMode": null
+      },
+      "after": {
+        "furtherMode": "ICICI Medihub"
+      }
+    },
+    {
+      "_id": "6a92c837833e1db1d502b2c2",
+      "date": "2026-08-29",
+      "branch": "Delhi",
+      "category": "MEDICINE",
+      "method": "upi",
+      "amount": 1452.319169639961,
+      "before": {
+        "furtherMode": null,
+        "receiptMode": null
+      },
+      "after": {
+        "furtherMode": "ICICI Medihub"
+      }
+    },
+    {
+      "_id": "6a92c837833e1db1d502b2c1",
+      "date": "2026-08-29",
+      "branch": "Delhi",
+      "category": "MEDICINE",
+      "method": "upi",
+      "amount": 985.2416477457023,
+      "before": {
+        "furtherMode": null,
+        "receiptMode": null
+      },
+      "after": {
+        "furtherMode": "ICICI Medihub"
+      }
+    },
+    {
+      "_id": "6a92c837833e1db1d502b2c0",
+      "date": "2026-08-29",
+      "branch": "Delhi",
+      "category": "MEDICINE",
+      "method": "upi",
+      "amount": 2067.7911125527085,
+      "before": {
+        "furtherMode": null,
+        "receiptMode": null
+      },
+      "after": {
+        "furtherMode": "ICICI Medihub"
+      }
+    },
+    {
+      "_id": "6a92c76e833e1db1d502b17f",
+      "date": "2026-08-29",
+      "branch": "Delhi",
+      "category": "MEDICINE",
+      "method": "upi",
+      "amount": 53,
+      "before": {
+        "furtherMode": null,
+        "receiptMode": null
+      },
+      "after": {
+        "furtherMode": "ICICI Medihub"
+      }
+    },
+    {
+      "_id": "6a92c70a833e1db1d502b13e",
+      "date": "2026-08-29",
+      "branch": "Delhi",
+      "category": "MEDICINE",
+      "method": "upi",
+      "amount": 707,
+      "before": {
+        "furtherMode": null,
+        "receiptMode": null
+      },
+      "after": {
+        "furtherMode": "ICICI Medihub"
+      }
+    },
+    {
+      "_id": "6a92c3bc6dfeda822e0109aa",
+      "date": "2026-08-29",
+      "branch": "Delhi",
+      "category": "MEDICINE",
+      "method": "upi",
+      "amount": 275.13986013986016,
+      "before": {
+        "furtherMode": null,
+        "receiptMode": null
+      },
+      "after": {
+        "furtherMode": "ICICI Medihub"
+      }
+    },
+    {
+      "_id": "6a92c3bc6dfeda822e0109a9",
+      "date": "2026-08-29",
+      "branch": "Delhi",
+      "category": "MEDICINE",
+      "method": "upi",
+      "amount": 1014.8601398601398,
+      "before": {
+        "furtherMode": null,
+        "receiptMode": null
+      },
+      "after": {
+        "furtherMode": "ICICI Medihub"
+      }
+    },
+    {
+      "_id": "6a92c308833e1db1d502b0e8",
+      "date": "2026-08-29",
+      "branch": "Delhi",
+      "category": "SERVICE",
+      "method": "upi",
+      "amount": 2500,
+      "before": {
+        "furtherMode": null,
+        "receiptMode": null
+      },
+      "after": {
+        "furtherMode": "Paytm ( Delhi T44P )"
+      }
+    },
+    {
+      "_id": "6a92c13e833e1db1d502b04c",
+      "date": "2026-08-29",
+      "branch": "Delhi",
+      "category": "MEDICINE",
+      "method": "upi",
+      "amount": 358.974358974359,
+      "before": {
+        "furtherMode": null,
+        "receiptMode": null
+      },
+      "after": {
+        "furtherMode": "ICICI Medihub"
+      }
+    },
+    {
+      "_id": "6a92c13e833e1db1d502b04b",
+      "date": "2026-08-29",
+      "branch": "Delhi",
+      "category": "MEDICINE",
+      "method": "upi",
+      "amount": 1041.025641025641,
+      "before": {
+        "furtherMode": null,
+        "receiptMode": null
+      },
+      "after": {
+        "furtherMode": "ICICI Medihub"
+      }
+    },
+    {
+      "_id": "6a92befd6dfeda822e0108cf",
+      "date": "2026-08-29",
+      "branch": "Delhi",
+      "category": "MEDICINE",
+      "method": "cash",
+      "amount": 483.49146110056927,
+      "before": {
+        "furtherMode": null,
+        "receiptMode": null
+      },
+      "after": {
+        "furtherMode": "Cash Book"
+      }
+    },
+    {
+      "_id": "6a92befd6dfeda822e0108ce",
+      "date": "2026-08-29",
+      "branch": "Delhi",
+      "category": "MEDICINE",
+      "method": "cash",
+      "amount": 916.5085388994307,
+      "before": {
+        "furtherMode": null,
+        "receiptMode": null
+      },
+      "after": {
+        "furtherMode": "Cash Book"
+      }
+    },
+    {
+      "_id": "6a92bee36dfeda822e010891",
+      "date": "2026-08-29",
+      "branch": "Delhi",
+      "category": "SERVICE",
+      "method": "upi",
+      "amount": 1000,
+      "before": {
+        "furtherMode": null,
+        "receiptMode": null
+      },
+      "after": {
+        "furtherMode": "Paytm ( Delhi T44P )"
+      }
+    },
+    {
+      "_id": "6a92bc4e33251c1642840799",
+      "date": "2026-08-29",
+      "branch": "Delhi",
+      "category": "TRANSPLANT",
+      "method": "bajaj_loan",
+      "amount": 16815,
+      "before": {
+        "furtherMode": null,
+        "receiptMode": null
+      },
+      "after": {
+        "furtherMode": "Bajaj Loan"
+      }
+    },
+    {
+      "_id": "6a92bc3233251c164284073e",
+      "date": "2026-08-29",
+      "branch": "Delhi",
+      "category": "MEDICINE",
+      "method": "cash",
+      "amount": 500,
+      "before": {
+        "furtherMode": null,
+        "receiptMode": null
+      },
+      "after": {
+        "furtherMode": "Cash Book"
+      }
+    },
+    {
+      "_id": "6a92bc1f33251c16428406e9",
+      "date": "2026-08-29",
+      "branch": "Delhi",
+      "category": "SERVICE",
+      "method": "upi",
+      "amount": 3000,
+      "before": {
+        "furtherMode": null,
+        "receiptMode": null
+      },
+      "after": {
+        "furtherMode": "Paytm ( Delhi T44P )"
+      }
+    },
+    {
+      "_id": "6a92bbfa33251c16428406df",
+      "date": "2026-08-29",
+      "branch": "Delhi",
+      "category": "TRANSPLANT",
+      "method": "upi",
+      "amount": 20000,
+      "before": {
+        "furtherMode": null,
+        "receiptMode": null
+      },
+      "after": {
+        "furtherMode": "Paytm ( Delhi T44P )"
+      }
+    },
+    {
+      "_id": "6a92bbc433251c16428406d1",
+      "date": "2026-08-29",
+      "branch": "Delhi",
+      "category": "TRANSPLANT",
+      "method": "upi",
+      "amount": 20000,
+      "before": {
+        "furtherMode": null,
+        "receiptMode": null
+      },
+      "after": {
+        "furtherMode": "Paytm ( Delhi T44P )"
+      }
+    },
+    {
+      "_id": "6a92bb1a33251c164284054b",
+      "date": "2026-08-29",
+      "branch": "Delhi",
+      "category": "MEDICINE",
+      "method": "upi",
+      "amount": 615.530303030303,
+      "before": {
+        "furtherMode": null,
+        "receiptMode": null
+      },
+      "after": {
+        "furtherMode": "ICICI Medihub"
+      }
+    },
+    {
+      "_id": "6a92bb1a33251c164284054a",
+      "date": "2026-08-29",
+      "branch": "Delhi",
+      "category": "MEDICINE",
+      "method": "upi",
+      "amount": 1413.3522727272727,
+      "before": {
+        "furtherMode": null,
+        "receiptMode": null
+      },
+      "after": {
+        "furtherMode": "ICICI Medihub"
+      }
+    },
+    {
+      "_id": "6a92bb1a33251c1642840549",
+      "date": "2026-08-29",
+      "branch": "Delhi",
+      "category": "MEDICINE",
+      "method": "upi",
+      "amount": 958.8068181818182,
+      "before": {
+        "furtherMode": null,
+        "receiptMode": null
+      },
+      "after": {
+        "furtherMode": "ICICI Medihub"
+      }
+    },
+    {
+      "_id": "6a92bb1a33251c1642840548",
+      "date": "2026-08-29",
+      "branch": "Delhi",
+      "category": "MEDICINE",
+      "method": "upi",
+      "amount": 2012.310606060606,
+      "before": {
+        "furtherMode": null,
+        "receiptMode": null
+      },
+      "after": {
+        "furtherMode": "ICICI Medihub"
+      }
+    },
+    {
+      "_id": "6a92b8ac7466c59ab518b1f1",
+      "date": "2026-08-29",
+      "branch": "Delhi",
+      "category": "TRANSPLANT",
+      "method": "upi",
+      "amount": 1000,
+      "before": {
+        "furtherMode": null,
+        "receiptMode": null
+      },
+      "after": {
+        "furtherMode": "Paytm ( Delhi T44P )"
+      }
+    },
+    {
+      "_id": "6a92b7c57589a1b7688a64b1",
+      "date": "2026-08-29",
+      "branch": "Delhi",
+      "category": "SERVICE",
+      "method": "upi",
+      "amount": 3000,
+      "before": {
+        "furtherMode": null,
+        "receiptMode": null
+      },
+      "after": {
+        "furtherMode": "Paytm ( Delhi T44P )"
+      }
+    },
+    {
+      "_id": "6a92b7207466c59ab518b1ed",
+      "date": "2026-08-29",
+      "branch": "Noida",
+      "category": "TRANSPLANT",
+      "method": "upi",
+      "amount": 2000,
+      "before": {
+        "furtherMode": null,
+        "receiptMode": null
+      },
+      "after": {
+        "furtherMode": "Paytm ( Noida CK5Y )"
+      }
+    },
+    {
+      "_id": "6a92b6af7589a1b7688a64a8",
+      "date": "2026-08-29",
+      "branch": "Delhi",
+      "category": "TRANSPLANT",
+      "method": "card",
+      "amount": 49000,
+      "before": {
+        "furtherMode": null,
+        "receiptMode": null
+      },
+      "after": {
+        "furtherMode": "Paytm ( Delhi T44P )"
+      }
+    },
+    {
+      "_id": "6a92b53e7466c59ab518b1c5",
+      "date": "2026-08-29",
+      "branch": "Delhi",
+      "category": "TRANSPLANT",
+      "method": "upi",
+      "amount": 617,
+      "before": {
+        "furtherMode": null,
+        "receiptMode": null
+      },
+      "after": {
+        "furtherMode": "Paytm ( Delhi T44P )"
+      }
+    },
+    {
+      "_id": "6a92b5247589a1b7688a6462",
+      "date": "2026-08-29",
+      "branch": "Delhi",
+      "category": "TRANSPLANT",
+      "method": "cash",
+      "amount": 1000,
+      "before": {
+        "furtherMode": null,
+        "receiptMode": null
+      },
+      "after": {
+        "furtherMode": "Cash Book"
+      }
+    },
+    {
+      "_id": "6a92b50c7589a1b7688a6457",
+      "date": "2026-08-29",
+      "branch": "Delhi",
+      "category": "TRANSPLANT",
+      "method": "bajaj_loan",
+      "amount": 34088,
+      "before": {
+        "furtherMode": null,
+        "receiptMode": null
+      },
+      "after": {
+        "furtherMode": "Bajaj Loan"
+      }
+    }
+  ],
+  "nonCashCleared": []
+}
