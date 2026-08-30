@@ -146,7 +146,7 @@ export async function reverseTransaction({
         createdBy: { ...actor, date: new Date() },
       },
     ],
-    { session: dbSession },
+    { session: dbSession, ordered: true },
   );
 
   const nowReversed = alreadyReversed + Math.abs(requested);

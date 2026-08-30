@@ -158,7 +158,7 @@ export async function POST(request, { params }) {
               ],
             },
           ],
-          { session: dbSession },
+          { session: dbSession, ordered: true },
         );
         reversalTransfers.push(transfer);
       }

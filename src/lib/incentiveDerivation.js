@@ -69,7 +69,7 @@ export async function findOrCreateIncentivePayable({
         ],
       },
     ],
-    { session },
+    { session, ordered: true },
   );
   return created;
 }

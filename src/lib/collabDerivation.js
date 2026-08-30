@@ -70,7 +70,7 @@ async function createCollectionTransaction({
           createdBy,
         },
       ],
-      { session },
+      { session, ordered: true },
     );
 
     const patient = await Patient.findById(patientId).session(session);
@@ -128,7 +128,7 @@ async function createCollectionTransaction({
         createdBy,
       },
     ],
-    { session },
+    { session, ordered: true },
   );
 
   return transaction;
@@ -177,7 +177,7 @@ async function growClinicReceivable({
           ],
         },
       ],
-      { session },
+      { session, ordered: true },
     );
     receivableId = receivable._id;
     collabCase.clinicShareReceivable = receivableId;
@@ -273,7 +273,7 @@ export async function crystalliseClinicShare({
           createdBy,
         },
       ],
-      { session },
+      { session, ordered: true },
     );
 
     if (collabCase.clinicShareReceivable) {
@@ -295,7 +295,7 @@ export async function crystalliseClinicShare({
             createdBy,
           },
         ],
-        { session },
+        { session, ordered: true },
       );
     }
   };
@@ -330,7 +330,7 @@ export async function crystalliseClinicShare({
             ],
           },
         ],
-        { session },
+        { session, ordered: true },
       );
       collabCase.clinicSharePayable = payable._id;
     }
@@ -483,7 +483,7 @@ export async function createCollabCaseAtomic({
             ],
           },
         ],
-        { session },
+        { session, ordered: true },
       );
       created.collabCase = collabCase;
 

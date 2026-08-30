@@ -138,7 +138,7 @@ export async function POST(req) {
               },
             },
           ],
-          { session: dbSession },
+          { session: dbSession, ordered: true },
         );
         const receivable = await createExternalReceivable({
           session: dbSession,
@@ -169,7 +169,7 @@ export async function POST(req) {
             });
           const [txn] = await Transactions.create(
             [{ ...txnData, receivableId: resolvedReceivableId, receivableAllocations }],
-            { session: dbSession },
+            { session: dbSession, ordered: true },
           );
           return txn;
         });

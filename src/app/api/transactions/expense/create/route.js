@@ -235,7 +235,7 @@ export async function POST(req) {
               },
             },
           ],
-          { session: dbSession },
+          { session: dbSession, ordered: true },
         );
         const payable = await createExternalPayable({
           session: dbSession,

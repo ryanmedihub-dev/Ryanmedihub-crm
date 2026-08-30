@@ -67,7 +67,7 @@ export async function createExternalReceivable({
         ],
       },
     ],
-    { session },
+    { session, ordered: true },
   );
   return receivable;
 }
@@ -112,7 +112,7 @@ export async function createExternalPayable({
         ],
       },
     ],
-    { session },
+    { session, ordered: true },
   );
   return payable;
 }

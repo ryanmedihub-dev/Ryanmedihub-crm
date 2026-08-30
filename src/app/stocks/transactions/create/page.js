@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebars/StockSidebar";
+import usePatientPicker from "@/lib/usePatientPicker";
 import RevenueSection from "@/components/RevenueSection";
 import DirectExpenseSection from "@/components/DirectExpenseSection";
 import { MAIN_BRANCHES } from "@/lib/branches";
@@ -28,8 +29,7 @@ export default function AllTransactionsPage() {
   const [activeTab, setActiveTab] = useState("transplant");
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(true);
-  const [patients, setPatients] = useState([]);
-  const picker = { options: patients, searching: false, onSearch: () => {}, addToCache: () => {} };
+  const picker = usePatientPicker();
   const [medicines, setMedicines] = useState([]);
   const [vendors, setVendors] = useState([]);
 
@@ -129,16 +129,6 @@ export default function AllTransactionsPage() {
   const fetchData = async () => {
     setFetchLoading(true);
     try {
-      try {
-        const patientsRes = await fetch("/api/patients/get-patient");
-        if (patientsRes.ok) {
-          const patientsData = await patientsRes.json();
-          setPatients(patientsData.patients || patientsData.data || []);
-        }
-      } catch (error) {
-        console.error("Error fetching patients:", error);
-      }
-
       try {
         const medicinesRes = await fetch("/api/stocks/get");
         if (medicinesRes.ok) {
@@ -592,7 +582,7 @@ export default function AllTransactionsPage() {
                 data={transplantData}
                 onChange={setTransplantData}
                 picker={picker}
-                patientLabel={patients.find((p) => p._id === transplantData.patient)?.personal?.name}
+                patientLabel={picker.options.find((p) => p._id === transplantData.patient)?.personal?.name}
                 onSave={handleSaveTransplant}
                 saving={loading}
                 saveLabel="Save Transaction"
@@ -611,7 +601,7 @@ export default function AllTransactionsPage() {
                 patientLabel={
                   serviceData.isWalkIn
                     ? serviceData.patientName
-                    : patients.find((p) => p._id === serviceData.patient)?.personal?.name
+                    : picker.options.find((p) => p._id === serviceData.patient)?.personal?.name
                 }
                 onSave={handleSaveService}
                 saving={loading}
@@ -632,7 +622,7 @@ export default function AllTransactionsPage() {
                 patientLabel={
                   medicineData.isWalkIn
                     ? medicineData.patientName
-                    : patients.find((p) => p._id === medicineData.patient)?.personal?.name
+                    : picker.options.find((p) => p._id === medicineData.patient)?.personal?.name
                 }
                 onSave={handleSaveMedicine}
                 saving={loading}

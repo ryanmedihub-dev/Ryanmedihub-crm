@@ -185,7 +185,7 @@ export async function POST(req) {
     let savedTransactions;
     if (method === "paid_to_external") {
       savedTransactions = await withExternalPartyLink(async (dbSession) => {
-        const txns = await Transactions.create(buildTxnDocs(), { session: dbSession });
+        const txns = await Transactions.create(buildTxnDocs(), { session: dbSession, ordered: true });
         const receivable = await createExternalReceivable({
           session: dbSession,
           amount: finalTotal,
@@ -215,7 +215,7 @@ export async function POST(req) {
             choice: receivableAllocationChoice,
             session: dbSession,
           });
-          return Transactions.create(buildTxnDocs(allocations), { session: dbSession });
+          return Transactions.create(buildTxnDocs(allocations), { session: dbSession, ordered: true });
         });
       } catch (allocationError) {
         return NextResponse.json({ error: allocationError.message }, { status: 400 });
