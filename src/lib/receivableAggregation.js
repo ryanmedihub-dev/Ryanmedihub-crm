@@ -194,6 +194,7 @@ export function buildReceivableGroupedStages(
     to,
     subTypeField = "purpose",
     advancesCollectionName = "advances",
+    borrowingsCollectionName = "borrowings",
   } = {},
 ) {
   const match = { isCancelled: { $ne: true } };
@@ -255,12 +256,39 @@ export function buildReceivableGroupedStages(
       },
     },
     {
+      // Borrowings that settle a receivable count as money received, exactly as they do in
+      // buildReceivableAggregationStages. Omitting them here made the grouped rollup
+      // overstate what is still outstanding versus the document list built from the other
+      // pipeline.
+      $lookup: {
+        from: borrowingsCollectionName,
+        let: { receivableId: "$_id" },
+        pipeline: [
+          ...(toDate ? [{ $match: { date: { $lte: toDate } } }] : []),
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$settlesReceivableId", "$$receivableId"] },
+                  { $eq: ["$direction", "IN"] },
+                  { $ne: ["$isCancelled", true] },
+                ],
+              },
+            },
+          },
+          { $project: { date: 1, amount: 1 } },
+        ],
+        as: "borrowingRecoveries",
+      },
+    },
+    {
       $addFields: {
         receipts: {
           $concatArrays: [
             { $map: { input: "$directOnly", as: "d", in: { date: "$$d.date", amount: "$$d.amount" } } },
             "$allocReceiptsFlat",
             "$advanceRecoveries",
+            "$borrowingRecoveries",
           ],
         },
       },

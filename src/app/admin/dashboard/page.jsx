@@ -2,15 +2,24 @@
 
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import Link from "next/link";
 import {
   Landmark, ScrollText, Scale, AlertTriangle, ArrowRight, ArrowUpRight, Filter, HandCoins,
-  Wallet, HelpCircle, TrendingUp, TrendingDown, RefreshCw, X,
+  Wallet, HelpCircle, TrendingUp, TrendingDown, RefreshCw, X, CreditCard,
 } from "lucide-react";
 import AccountMultiSelect from "@/components/finance/AccountMultiSelect";
+import MetricDrillPanel from "@/components/finance/MetricDrillPanel";
 import { formatCurrency } from "@/lib/financeUI";
 import { ACCOUNTS } from "@/constants/bankRouting";
 import { ALL_BRANCHES } from "@/lib/branches";
+
+const LOAN_ACCOUNTS = ["Bajaj Loan", "Fibe Loan"];
+
+// Written out in full — Tailwind can't see class names built by string interpolation.
+const CASH_TONES = {
+  emerald: { box: "border-emerald-100 bg-emerald-50/40", label: "text-emerald-700", icon: "text-emerald-300" },
+  rose: { box: "border-rose-100 bg-rose-50/40", label: "text-rose-700", icon: "text-rose-300" },
+  indigo: { box: "border-indigo-100 bg-indigo-50/40", label: "text-indigo-700", icon: "text-indigo-300" },
+};
 
 const DashboardCharts = dynamic(() => import("@/components/finance/DashboardCharts"), {
   ssr: false,
@@ -77,18 +86,18 @@ function BasisTag({ children }) {
   );
 }
 
-function DashboardCard({ href, title, basis, value, icon: Icon, color, subtitle, status = "ready", onRetry }) {
+function DashboardCard({ onDrill, title, basis, value, icon: Icon, color, subtitle, status = "ready", onRetry }) {
   const body = (
     <div
-      className={`group relative bg-white rounded-2xl shadow-sm p-4 sm:p-6 transition-all duration-200 h-full ${
-        href ? "hover:shadow-md hover:-translate-y-0.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-400" : ""
+      className={`group relative bg-white rounded-2xl shadow-sm p-4 sm:p-6 transition-all duration-200 h-full text-left ${
+        onDrill ? "hover:shadow-md hover:-translate-y-0.5" : ""
       }`}
     >
       <div className="flex items-center justify-between mb-3">
         <div className={`p-2.5 rounded-lg bg-linear-to-r ${color}`}>
           <Icon className="w-5 h-5 text-white" />
         </div>
-        {href && (
+        {onDrill && (
           <ArrowUpRight className="w-4 h-4 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" />
         )}
       </div>
@@ -120,8 +129,14 @@ function DashboardCard({ href, title, basis, value, icon: Icon, color, subtitle,
       {subtitle && <p className="text-xs text-gray-400 mt-1.5">{subtitle}</p>}
     </div>
   );
-  return href ? (
-    <Link href={href} className="block h-full">{body}</Link>
+  return onDrill ? (
+    <button
+      type="button"
+      onClick={onDrill}
+      className="block h-full w-full rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+    >
+      {body}
+    </button>
   ) : (
     body
   );
@@ -176,6 +191,7 @@ export default function AdminDashboard() {
   const [pnl, setPnl] = useState(null);
   const [priorPnl, setPriorPnl] = useState(null);
   const [expenseByHead, setExpenseByHead] = useState([]);
+  const [expenseHeadMeta, setExpenseHeadMeta] = useState(null);
   const [monthlyTrend, setMonthlyTrend] = useState([]);
   const [ageing, setAgeing] = useState({ payables: {}, receivables: {} });
   const [attention, setAttention] = useState(null);
@@ -183,14 +199,20 @@ export default function AdminDashboard() {
   const [lastRefreshed, setLastRefreshed] = useState(null);
   const [refreshNonce, setRefreshNonce] = useState(0);
 
-  const buildFilterQS = (extra = {}) => {
-    const p = new URLSearchParams();
-    if (appliedBranch) p.set("branch", appliedBranch);
-    p.set("from", iso(from));
-    p.set("to", iso(to));
-    Object.entries(extra).forEach(([k, v]) => { if (v) p.set(k, v); });
-    return p.toString();
-  };
+  // the card whose underlying rows are open in the drill panel
+  const [drill, setDrill] = useState(null);
+
+  const accountFilterActive = appliedAccounts.length < ACCOUNTS.length;
+
+  const drillFilters = useMemo(
+    () => ({
+      branch: appliedBranch,
+      from: iso(from),
+      to: iso(to),
+      accounts: accountFilterActive ? appliedAccounts.join(",") : "",
+    }),
+    [appliedBranch, from, to, accountFilterActive, appliedAccounts],
+  );
 
   useEffect(() => {
     if (!customReady) return;
@@ -203,16 +225,14 @@ export default function AdminDashboard() {
         const branchQS = appliedBranch ? `&branch=${appliedBranch}` : "";
 
         const [
-          cashJson, receivablesJson, payablesJson, suspenseJson,
+          cashJson, suspenseJson,
           pnlJson, priorPnlJson, headJson, ageingPayJson, ageingRecJson, unattributedJson, cashFlowJson,
         ] = await Promise.all([
           fetch(`/api/close-book/accounts?to=${iso(to)}${accountsQS}${branchQS}`).then((r) => r.json()),
-          fetch(`/api/receivables/grouped?level=1&to=${iso(to)}${branchQS}`).then((r) => r.json()),
-          fetch(`/api/payables/grouped?level=1&to=${iso(to)}${branchQS}`).then((r) => r.json()),
           fetch(`/api/suspense?groupBy=account&to=${iso(to)}${accountsQS}${branchQS}`).then((r) => r.json()),
           fetch(`/api/close-book/pnl?from=${iso(from)}&to=${iso(to)}${accountsQS}${branchQS}`).then((r) => r.json()),
           fetch(`/api/close-book/pnl?from=${iso(priorFrom)}&to=${iso(priorTo)}${accountsQS}${branchQS}`).then((r) => r.json()),
-          fetch(`/api/payables/grouped?level=1&from=${iso(from)}&to=${iso(to)}${branchQS}`).then((r) => r.json()),
+          fetch(`/api/admin/expense-by-head?from=${iso(from)}&to=${iso(to)}${accountsQS}${branchQS}`).then((r) => r.json()),
           fetch(`/api/payables/summary?ageing=1${appliedBranch ? `&branch=${appliedBranch}` : ""}`).then((r) => r.json()),
           fetch(`/api/receivables/summary?ageing=1${appliedBranch ? `&branch=${appliedBranch}` : ""}`).then((r) => r.json()),
           fetch(`/api/close-book/balance-sheet?from=1970-01-01&to=${iso(to)}${branchQS}`).then((r) => r.json()),
@@ -220,22 +240,38 @@ export default function AdminDashboard() {
         ]);
         if (cancelled) return;
 
-        const cashRows = cashJson.rows || [];
-        const cashTotal = cashRows.reduce((s, r) => s + (r.closing || 0), 0);
-        const cashOpening = cashRows.reduce((s, r) => s + (r.opening || 0), 0);
-        const receivablesTotal = (receivablesJson.rows || []).reduce((s, r) => s + (r.closing || 0), 0);
-        const payablesTotal = (payablesJson.rows || []).reduce((s, r) => s + (r.closing || 0), 0);
+        // Bajaj/Fibe are financing lines, not cash — they're split out of Cash & Bank so
+        // this card agrees with the cash-balance trend, which has always excluded them.
+        const allRows = cashJson.rows || [];
+        const cashTotal = allRows
+          .filter((r) => !LOAN_ACCOUNTS.includes(r.key))
+          .reduce((s, r) => s + (r.closing || 0), 0);
+        const loanTotal = allRows
+          .filter((r) => LOAN_ACCOUNTS.includes(r.key))
+          .reduce((s, r) => s + (r.closing || 0), 0);
+
+        // Receivables/payables use per-document `pending` (floored at 0) — the same basis
+        // as the ageing buckets and the overdue rows below, so the card is now exactly the
+        // sum of the bars beside it.
+        const receivablesTotal = ageingRecJson.overall?.totalPending || 0;
+        const payablesTotal = ageingPayJson.overall?.totalPending || 0;
         const suspenseTotal = (suspenseJson.rows || []).reduce((s, r) => s + (r.closing || 0), 0);
 
-        setAssets({ cashTotal, receivablesTotal, total: cashTotal + receivablesTotal });
+        setAssets({ cashTotal, loanTotal, receivablesTotal, total: cashTotal + receivablesTotal });
         setLiabilities({ payablesTotal, suspenseTotal, total: payablesTotal + suspenseTotal });
-        const receipts = cashFlowJson.receipts || 0;
-        const payments = cashFlowJson.payments || 0;
-        setCashFlow({ receipts, payments, balanceLeft: cashFlowJson.balanceLeft || 0 });
+        setCashFlow({
+          receipts: cashFlowJson.receipts || 0,
+          payments: cashFlowJson.payments || 0,
+          balanceLeft: cashFlowJson.balanceLeft || 0,
+        });
         setPnl({ income: pnlJson.income || 0, expense: pnlJson.expense || 0 });
         setPriorPnl({ income: priorPnlJson.income || 0, expense: priorPnlJson.expense || 0 });
 
-        setExpenseByHead([...(headJson.rows || [])].sort((a, b) => b.movement - a.movement).slice(0, 10));
+        setExpenseByHead(headJson.rows || []);
+        setExpenseHeadMeta({
+          shownTotal: headJson.shownTotal ?? null,
+          grandTotal: headJson.grandTotal ?? null,
+        });
 
         setAgeing({ payables: bucketMap(ageingPayJson.byBucket), receivables: bucketMap(ageingRecJson.byBucket) });
 
@@ -245,16 +281,6 @@ export default function AdminDashboard() {
           suspenseCount: (suspenseJson.rows || []).reduce((s, r) => s + (r.count || 0), 0),
           unattributed: unattributedJson.unattributed || { count: 0, amount: 0 },
         });
-
-        if (process.env.NODE_ENV === "development") {
-          const expectedClosing = Math.round((cashOpening + receipts - payments) * 100) / 100;
-          if (Math.abs(expectedClosing - cashTotal) > 1) {
-            console.warn(
-              "[Dashboard] Cash reconciliation mismatch: opening + receipts - payments != closing.",
-              { cashOpening, receipts, payments, expectedClosing, cashTotal, from: iso(from), to: iso(to), appliedBranch, appliedAccounts },
-            );
-          }
-        }
 
         setLastRefreshed(new Date());
         setBatchStatus("ready");
@@ -269,6 +295,9 @@ export default function AdminDashboard() {
     return () => { cancelled = true; };
   }, [from, to, priorFrom, priorTo, customReady, appliedAccounts, appliedBranch, refreshNonce]);
 
+  // Six-month trend, computed from the same accrual P&L endpoint as the card above, so the
+  // chart and the card describe the same quantity. (It previously read transaction stats,
+  // a cash-basis figure, while being labelled "Accrual".)
   useEffect(() => {
     let cancelled = false;
     async function run() {
@@ -280,27 +309,28 @@ export default function AdminDashboard() {
         const end = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
         months.push({ label: d.toLocaleDateString("en-IN", { month: "short" }), start, end });
       }
+      const accountsQS =
+        appliedAccounts.length < ACCOUNTS.length ? `&accounts=${appliedAccounts.join(",")}` : "";
       const branchQS = appliedBranch ? `&branch=${appliedBranch}` : "";
       const results = await Promise.all(
         months.map((m) =>
-          fetch(`/api/transactions/get-all?dateFrom=${iso(m.start)}&dateTo=${iso(m.end)}&limit=1${branchQS}`).then((r) => r.json()),
+          fetch(`/api/close-book/pnl?from=${iso(m.start)}&to=${iso(m.end)}${accountsQS}${branchQS}`)
+            .then((r) => r.json())
+            .catch(() => ({})),
         ),
       );
       if (cancelled) return;
       setMonthlyTrend(
-        months.map((m, i) => {
-          const s = results[i].stats || {};
-          return {
-            month: m.label,
-            Income: (s.TRANSPLANT?.total || 0) + (s.SERVICE?.total || 0) + (s.MEDICINE?.total || 0),
-            Expense: s.EXPENSE?.total || 0,
-          };
-        }),
+        months.map((m, i) => ({
+          month: m.label,
+          Income: results[i]?.income || 0,
+          Expense: results[i]?.expense || 0,
+        })),
       );
     }
     run();
     return () => { cancelled = true; };
-  }, [appliedBranch, refreshNonce]);
+  }, [appliedBranch, appliedAccounts, refreshNonce]);
 
   const netPosition = assets && liabilities ? assets.total - liabilities.total : null;
   const profit = pnl ? pnl.income - pnl.expense : null;
@@ -323,7 +353,10 @@ export default function AdminDashboard() {
         }`
       : "Custom Range";
 
-  const accountFilterActive = appliedAccounts.length < ACCOUNTS.length;
+  const asOf = `As of ${new Date(to).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}`;
+  const openDrill = (metric, label, cardValue, extra = {}) =>
+    setDrill({ metric, label, cardValue, ...extra });
+
   const activeFilterChips = [
     appliedBranch && { key: "branch", label: appliedBranch, clear: () => { setDraftBranch(""); setAppliedBranch(""); } },
     appliedPreset !== "month" && {
@@ -338,6 +371,10 @@ export default function AdminDashboard() {
     },
   ].filter(Boolean);
 
+  const obligationNote = accountFilterActive
+    ? "Has no account of its own — unaffected by the account filter"
+    : undefined;
+
   return (
     <div className="flex min-h-screen bg-[#f8f9fc]">
       <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6">
@@ -345,7 +382,9 @@ export default function AdminDashboard() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h1 className="text-xl font-bold text-gray-900">Financial Dashboard</h1>
-              <p className="text-sm text-gray-500 mt-1">Assets, liabilities, and P&amp;L at a glance.</p>
+              <p className="text-sm text-gray-500 mt-1">
+                Assets, liabilities, and P&amp;L at a glance — click any figure to see the records behind it.
+              </p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <select
@@ -430,28 +469,31 @@ export default function AdminDashboard() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <DashboardCard
-            href={`/admin/assets?${buildFilterQS()}`}
+            onDrill={() => openDrill("assets", "Total Assets", assets?.total)}
             title="Total Assets"
-            basis={`As of ${new Date(to).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}`}
+            basis={asOf}
             value={assets ? formatCurrency(assets.total) : null}
             icon={Landmark}
             color="from-emerald-500 to-emerald-600"
+            subtitle="Cash & bank + receivables outstanding"
             status={batchStatus}
             onRetry={() => setRefreshNonce((n) => n + 1)}
           />
           <DashboardCard
-            href={`/admin/liabilities?${buildFilterQS()}`}
+            onDrill={() => openDrill("liabilities", "Total Liabilities", liabilities?.total)}
             title="Total Liabilities"
-            basis={`As of ${new Date(to).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}`}
+            basis={asOf}
             value={liabilities ? formatCurrency(liabilities.total) : null}
             icon={ScrollText}
             color="from-rose-500 to-rose-600"
+            subtitle="Payables outstanding + open suspense"
             status={batchStatus}
             onRetry={() => setRefreshNonce((n) => n + 1)}
           />
           <DashboardCard
+            onDrill={() => openDrill("net-position", "Net Position", netPosition)}
             title="Net Position"
-            basis="As of today"
+            basis={asOf}
             value={netPosition != null ? formatCurrency(netPosition) : null}
             icon={Scale}
             color={netPosition >= 0 ? "from-indigo-500 to-indigo-600" : "from-red-500 to-red-600"}
@@ -460,40 +502,51 @@ export default function AdminDashboard() {
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <DashboardCard
-            href={`/admin/assets?section=cash-bank&${buildFilterQS()}`}
+            onDrill={() => openDrill("cash-bank", "Cash & Bank", assets?.cashTotal)}
             title="Cash & Bank"
-            basis="As of period end"
+            basis={asOf}
             value={assets ? formatCurrency(assets.cashTotal) : null}
             icon={Landmark}
             color="from-emerald-400 to-emerald-500"
+            subtitle="Excludes Bajaj / Fibe financing"
             status={batchStatus}
           />
           <DashboardCard
-            href={`/admin/assets?section=receivables&${buildFilterQS()}`}
+            onDrill={() => openDrill("loans", "Loan / financing", assets?.loanTotal)}
+            title="Loan / Financing"
+            basis={asOf}
+            value={assets ? formatCurrency(assets.loanTotal) : null}
+            icon={CreditCard}
+            color="from-violet-400 to-violet-500"
+            subtitle="Bajaj + Fibe balances"
+            status={batchStatus}
+          />
+          <DashboardCard
+            onDrill={() => openDrill("receivables", "Receivables", assets?.receivablesTotal)}
             title="Receivables"
-            basis="As of period end"
+            basis="Outstanding"
             value={assets ? formatCurrency(assets.receivablesTotal) : null}
             icon={HandCoins}
             color="from-teal-400 to-teal-500"
             status={batchStatus}
-            subtitle={accountFilterActive ? "Has no account of its own — unaffected by the account filter" : undefined}
+            subtitle={obligationNote}
           />
           <DashboardCard
-            href={`/admin/liabilities?section=payables&${buildFilterQS()}`}
+            onDrill={() => openDrill("payables", "Payables", liabilities?.payablesTotal)}
             title="Payables"
-            basis="As of period end"
+            basis="Outstanding"
             value={liabilities ? formatCurrency(liabilities.payablesTotal) : null}
             icon={Wallet}
             color="from-rose-400 to-rose-500"
             status={batchStatus}
-            subtitle={accountFilterActive ? "Has no account of its own — unaffected by the account filter" : undefined}
+            subtitle={obligationNote}
           />
           <DashboardCard
-            href={`/admin/liabilities?section=suspense&${buildFilterQS()}`}
+            onDrill={() => openDrill("suspense", "Suspense", liabilities?.suspenseTotal)}
             title="Suspense"
-            basis="As of period end"
+            basis={asOf}
             value={liabilities ? formatCurrency(liabilities.suspenseTotal) : null}
             icon={HelpCircle}
             color="from-amber-400 to-amber-500"
@@ -509,26 +562,34 @@ export default function AdminDashboard() {
             <BasisTag>Accrual</BasisTag>
           </div>
           <p className="text-xs text-gray-400 mb-4">
-            Income = direct sales + receivables raised this period, minus what's double-counted
-            against them. Expense = direct expenses + payables raised this period, minus what's
+            Income = direct sales + receivables raised this period, minus what&apos;s double-counted
+            against them. Expense = direct expenses + payables raised this period, minus what&apos;s
             double-counted against them.
+            {accountFilterActive && " The account filter narrows the transaction half only — receivables and payables have no account of their own."}
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
-              { label: "Income", value: pnl?.income, prior: priorPnl?.income, href: `/admin/close-book?tab=pnl&${buildFilterQS()}`, Trend: TrendingUp },
-              { label: "Expense", value: pnl?.expense, prior: priorPnl?.expense, href: `/admin/close-book?tab=pnl&${buildFilterQS()}`, Trend: TrendingDown },
-              { label: "Profit", value: profit, prior: priorProfit, href: `/admin/close-book?tab=pnl&${buildFilterQS()}`, Trend: TrendingUp },
+              { label: "Income", value: pnl?.income, prior: priorPnl?.income, metric: "pnl-income", Trend: TrendingUp },
+              { label: "Expense", value: pnl?.expense, prior: priorPnl?.expense, metric: "pnl-expense", Trend: TrendingDown },
+              { label: "Profit", value: profit, prior: priorProfit, metric: null, Trend: TrendingUp },
             ].map((row) => {
               const g = growth(row.value, row.prior);
+              const clickable = !!row.metric;
               return (
-                <Link
+                <button
                   key={row.label}
-                  href={row.href}
-                  className="group border border-gray-100 rounded-xl p-4 hover:shadow-sm hover:border-gray-200 transition-all block"
+                  type="button"
+                  disabled={!clickable}
+                  onClick={clickable ? () => openDrill(row.metric, `${row.label} — ${periodLabel}`, row.value) : undefined}
+                  className={`group border border-gray-100 rounded-xl p-4 text-left w-full transition-all ${
+                    clickable ? "hover:shadow-sm hover:border-gray-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400" : "cursor-default"
+                  }`}
                 >
                   <div className="flex items-center justify-between">
                     <p className="text-xs text-gray-400 uppercase tracking-wide">{row.label}</p>
-                    <ArrowUpRight className="w-3.5 h-3.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    {clickable && (
+                      <ArrowUpRight className="w-3.5 h-3.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    )}
                   </div>
                   {batchStatus === "loading" ? (
                     <div className="h-6 w-24 bg-gray-100 rounded animate-pulse mt-1" />
@@ -546,7 +607,7 @@ export default function AdminDashboard() {
                       )
                     ) : null}
                   </p>
-                </Link>
+                </button>
               );
             })}
           </div>
@@ -562,56 +623,54 @@ export default function AdminDashboard() {
           <p className="text-xs text-gray-400 mb-4">
             Every positive (Receipts) and negative (Payments) transaction posted to your bank/
             further-mode accounts, excluding internal contra transfers between your own accounts.
+            Balance Left is receipts − payments for the period, not the closing balance of Cash
+            &amp; Bank (which also carries the opening balance, transfers, suspense and borrowings).
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Link href={`/admin/receipts?${buildFilterQS()}`} className="group block border border-emerald-100 bg-emerald-50/40 rounded-xl p-4 hover:shadow-sm transition-all">
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-emerald-700 font-semibold uppercase tracking-wide">Receipts</p>
-                <ArrowUpRight className="w-3.5 h-3.5 text-emerald-300 opacity-0 group-hover:opacity-100 transition-opacity" />
-              </div>
-              {batchStatus === "loading" ? (
-                <div className="h-6 w-24 bg-emerald-100/60 rounded animate-pulse mt-1" />
-              ) : (
-                <p className="text-xl font-bold text-gray-900 mt-1">
-                  {cashFlow ? formatCurrency(cashFlow.receipts) : "No data for this period"}
-                </p>
-              )}
-            </Link>
-            <Link href={`/admin/payments?${buildFilterQS()}`} className="group block border border-rose-100 bg-rose-50/40 rounded-xl p-4 hover:shadow-sm transition-all">
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-rose-700 font-semibold uppercase tracking-wide">Payments</p>
-                <ArrowUpRight className="w-3.5 h-3.5 text-rose-300 opacity-0 group-hover:opacity-100 transition-opacity" />
-              </div>
-              {batchStatus === "loading" ? (
-                <div className="h-6 w-24 bg-rose-100/60 rounded animate-pulse mt-1" />
-              ) : (
-                <p className="text-xl font-bold text-gray-900 mt-1">
-                  {cashFlow ? formatCurrency(cashFlow.payments) : "No data for this period"}
-                </p>
-              )}
-            </Link>
-            <Link href={`/admin/assets?section=cash-bank&${buildFilterQS()}`} className="group block border border-indigo-100 bg-indigo-50/40 rounded-xl p-4 hover:shadow-sm transition-all">
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-indigo-700 font-semibold uppercase tracking-wide">Balance Left</p>
-                <ArrowUpRight className="w-3.5 h-3.5 text-indigo-300 opacity-0 group-hover:opacity-100 transition-opacity" />
-              </div>
-              {batchStatus === "loading" ? (
-                <div className="h-6 w-24 bg-indigo-100/60 rounded animate-pulse mt-1" />
-              ) : (
-                <p className="text-xl font-bold text-gray-900 mt-1">
-                  {cashFlow ? formatCurrency(cashFlow.balanceLeft) : "No data for this period"}
-                </p>
-              )}
-            </Link>
+            {[
+              { label: "Receipts", metric: "receipts", value: cashFlow?.receipts, tone: CASH_TONES.emerald },
+              { label: "Payments", metric: "payments", value: cashFlow?.payments, tone: CASH_TONES.rose },
+              { label: "Balance Left", metric: null, value: cashFlow?.balanceLeft, tone: CASH_TONES.indigo },
+            ].map((row) => (
+              <button
+                key={row.label}
+                type="button"
+                disabled={!row.metric}
+                onClick={row.metric ? () => openDrill(row.metric, `${row.label} — ${periodLabel}`, row.value) : undefined}
+                className={`group block w-full text-left border rounded-xl p-4 transition-all ${row.tone.box} ${
+                  row.metric ? "hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400" : "cursor-default"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <p className={`text-xs font-semibold uppercase tracking-wide ${row.tone.label}`}>{row.label}</p>
+                  {row.metric && (
+                    <ArrowUpRight className={`w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity ${row.tone.icon}`} />
+                  )}
+                </div>
+                {batchStatus === "loading" ? (
+                  <div className="h-6 w-24 bg-gray-100 rounded animate-pulse mt-1" />
+                ) : (
+                  <p className="text-xl font-bold text-gray-900 mt-1">
+                    {cashFlow ? formatCurrency(row.value) : "No data for this period"}
+                  </p>
+                )}
+              </button>
+            ))}
           </div>
         </div>
 
         <DashboardCharts
           expenseByHead={expenseByHead}
+          expenseHeadMeta={expenseHeadMeta}
           monthlyTrend={monthlyTrend}
           ageingChartData={ageingChartData}
           batchStatus={batchStatus}
-          buildFilterQS={buildFilterQS}
+          onDrillExpenseHead={(head, value) =>
+            openDrill("pnl-expense", `Expense — ${head}`, value, { head })
+          }
+          onDrillAgeing={(kind, bucket, value) =>
+            openDrill(kind, `${kind === "payables" ? "Payables" : "Receivables"} — ${bucket}`, value, { bucket })
+          }
           basisTag={<BasisTag>Accrual</BasisTag>}
         />
 
@@ -622,24 +681,24 @@ export default function AdminDashboard() {
               label="Overdue payables"
               count={attention?.overduePayables?.count}
               amount={attention?.overduePayables?.amount}
-              href={`/admin/liabilities?section=payables&ageing=1-30&${buildFilterQS()}`}
+              onDrill={() => openDrill("overdue-payables", "Overdue payables", attention?.overduePayables?.amount)}
             />
             <AttentionRow
               label="Overdue receivables"
               count={attention?.overdueReceivables?.count}
               amount={attention?.overdueReceivables?.amount}
-              href={`/admin/assets?section=receivables&ageing=1-30&${buildFilterQS()}`}
+              onDrill={() => openDrill("overdue-receivables", "Overdue receivables", attention?.overdueReceivables?.amount)}
             />
             <AttentionRow
               label="Unreclassified suspense entries"
               count={attention?.suspenseCount}
-              href={`/admin/liabilities?section=suspense&${buildFilterQS()}`}
+              onDrill={() => openDrill("suspense", "Unreclassified suspense entries", liabilities?.suspenseTotal)}
             />
             <AttentionRow
               label="Transactions missing account attribution (all-time)"
               count={attention?.unattributed?.count}
               amount={attention?.unattributed?.amount}
-              href="/admin/transactions?furtherMode=__UNTRACKED__"
+              onDrill={() => openDrill("unattributed", "Transactions missing account attribution", attention?.unattributed?.amount)}
             />
             {attention && !attention.overduePayables?.count && !attention.overdueReceivables?.count &&
               !attention.suspenseCount && !attention.unattributed?.count && (
@@ -648,16 +707,29 @@ export default function AdminDashboard() {
           </div>
         </div>
       </main>
+
+      {drill && (
+        <MetricDrillPanel
+          metric={drill.metric}
+          label={drill.label}
+          cardValue={drill.cardValue}
+          head={drill.head}
+          bucket={drill.bucket}
+          filters={drillFilters}
+          onClose={() => setDrill(null)}
+        />
+      )}
     </div>
   );
 }
 
-function AttentionRow({ label, count, amount, href }) {
+function AttentionRow({ label, count, amount, onDrill }) {
   if (!count) return null;
   return (
-    <Link
-      href={href}
-      className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 border border-gray-100 transition-colors"
+    <button
+      type="button"
+      onClick={onDrill}
+      className="flex items-center justify-between w-full p-3 rounded-xl hover:bg-gray-50 border border-gray-100 transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
     >
       <div className="flex items-center gap-2">
         <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
@@ -670,6 +742,6 @@ function AttentionRow({ label, count, amount, href }) {
         </span>
         <ArrowRight className="w-3.5 h-3.5 text-gray-400" />
       </div>
-    </Link>
+    </button>
   );
 }

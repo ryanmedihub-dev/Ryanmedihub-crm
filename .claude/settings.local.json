@@ -61,7 +61,12 @@
       "Bash(curl -s -o /dev/null -w \"admin/dashboard:%{http_code}\\\\n\" http://localhost:3123/admin/dashboard)",
       "Bash(curl -s -o /dev/null -w \"login:%{http_code}\\\\n\" http://localhost:3123/login)",
       "Bash(pkill -f \"next dev\")",
-      "Bash(pkill -f \"next-server\")"
+      "Bash(pkill -f \"next-server\")",
+      "Bash(curl -s -m 25 -o /dev/null -w \"logs endpoint: %{http_code}\\\\n\" \"http://localhost:3000/api/admin/logs?type=transaction-changes-log\")",
+      "Bash(node scripts/fix-negative-patient-outstanding.mjs)",
+      "Bash(node scripts/fix-negative-patient-outstanding.mjs --apply)",
+      "Bash(node --input-type=module -e ' *)",
+      "Bash(echo \"exit=$?\")"
     ]
   }
 }

@@ -33,7 +33,7 @@ function LiabilitiesPageInner() {
 
   const [scope, setScope] = useState(() => ({
     branch: searchParams.get("branch") || "",
-    dateFrom: searchParams.get("from") || "2026-04-01",
+    dateFrom: searchParams.get("from") || "",
     dateTo: searchParams.get("to") || "",
   }));
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import mongoose from "mongoose";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
 import Transactions from "@/models/Transactions";
@@ -68,6 +69,7 @@ export async function GET(request) {
     const approvalStatus = searchParams.get("approvalStatus") || "";
     const payableId      = searchParams.get("payableId")      || "";
     const receivableId   = searchParams.get("receivableId")   || "";
+    const patientId      = searchParams.get("patient")        || "";
     const sortKey       = searchParams.get("sortKey")       || "date";
     const sortDir       = searchParams.get("sortDir") === "asc" ? 1 : -1;
 
@@ -108,6 +110,12 @@ export async function GET(request) {
 
     if (receivableId) {
       query.receivableId = receivableId;
+    }
+
+    // Every transaction booked against one patient — used by the collab settlement page to
+    // show what sits behind a case when its patient row is opened.
+    if (patientId && mongoose.Types.ObjectId.isValid(patientId)) {
+      query.patient = new mongoose.Types.ObjectId(patientId);
     }
 
     if (category) {

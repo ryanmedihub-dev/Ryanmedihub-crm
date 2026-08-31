@@ -6,9 +6,56 @@ import connectDB from "@/lib/db";
 import CollabCase from "@/models/CollabCase";
 import Transactions from "@/models/Transactions";
 import Patient from "@/models/Patient";
+import Payable from "@/models/Payable";
+import Receivable from "@/models/Receivable";
+import { buildPayableAggregationStages } from "@/lib/payableAggregation";
+import { buildReceivableAggregationStages } from "@/lib/receivableAggregation";
 import { COLLAB_BRANCHES } from "@/lib/branches";
 
 const ALLOWED_ROLES = ["collab", "admin", "super-admin"];
+
+/**
+ * Fills in payableValue / receivableValue on each case from the Payable / Receivable it
+ * crystallised into, using the same aggregation the balances endpoint and the
+ * assets/liabilities pages use — so a case row and the clinic total above it can't drift.
+ * Cases that haven't crystallised yet get null, which the UI renders as "—".
+ */
+async function attachSettlementValues(rows, txCollection) {
+  const payableIds = rows.map((r) => r.clinicSharePayable).filter(Boolean);
+  const receivableIds = rows.map((r) => r.clinicShareReceivable).filter(Boolean);
+
+  const [payables, receivables] = await Promise.all([
+    payableIds.length
+      ? Payable.aggregate([
+          { $match: { _id: { $in: payableIds } } },
+          ...buildPayableAggregationStages(txCollection),
+          { $project: { pending: 1, totalAmount: 1, paid: 1, status: 1 } },
+        ])
+      : [],
+    receivableIds.length
+      ? Receivable.aggregate([
+          { $match: { _id: { $in: receivableIds } } },
+          ...buildReceivableAggregationStages(txCollection),
+          { $project: { pending: 1, totalAmount: 1, received: 1, status: 1 } },
+        ])
+      : [],
+  ]);
+
+  const payableBy = new Map(payables.map((p) => [String(p._id), p]));
+  const receivableBy = new Map(receivables.map((r) => [String(r._id), r]));
+
+  for (const row of rows) {
+    const p = row.clinicSharePayable ? payableBy.get(String(row.clinicSharePayable)) : null;
+    const r = row.clinicShareReceivable ? receivableBy.get(String(row.clinicShareReceivable)) : null;
+
+    row.payableValue = p ? p.pending : null;
+    row.payableTotal = p ? p.totalAmount : null;
+    row.payableStatus = p ? p.status : null;
+    row.receivableValue = r ? r.pending : null;
+    row.receivableTotal = r ? r.totalAmount : null;
+    row.receivableStatus = r ? r.status : null;
+  }
+}
 
 export async function GET(request) {
   try {
@@ -111,7 +158,8 @@ export async function GET(request) {
       },
       {
         $addFields: {
-          patientOutstanding: {
+          // Case-scoped figure, kept because the collection modal caps against it.
+          caseOutstanding: {
             $subtract: [
               "$packageAmount",
               { $add: ["$collectedByUs", "$collectedByClinic", "$totalDiscount"] },
@@ -121,6 +169,12 @@ export async function GET(request) {
           patientName: "$patientInfo.personal.name",
           patientPhone: "$patientInfo.personal.phone",
           paidToClinic: "$collectedByClinic",
+          // The patient's own ledger — what the Package and Outstanding columns show.
+          // Note this is patient-level, so a patient with several cases repeats it.
+          patientPackage: { $ifNull: ["$patientInfo.payments.totalAmount", 0] },
+          patientOutstanding: { $ifNull: ["$patientInfo.payments.pendingAmount", 0] },
+          patientReceived: { $ifNull: ["$patientInfo.payments.amountReceived", 0] },
+          patientDiscount: { $ifNull: ["$patientInfo.payments.discount", 0] },
         },
       },
       { $project: { revenueAgg: 0, patientDoc: 0, patientInfo: 0 } },
@@ -149,6 +203,20 @@ export async function GET(request) {
     const leaked = rows.filter((r) => !COLLAB_BRANCHES.includes(r.clinic));
     if (leaked.length > 0) {
       console.error("Collab case query returned non-collab-branch rows:", leaked.map((r) => r._id));
+    }
+
+    // Live pending on the payable/receivable each case crystallised into — what is actually
+    // still on the books, and what the clinic totals on this page are built from. Resolved
+    // for just this page's ids so the heavy settlement pipelines run over a handful of docs.
+    await attachSettlementValues(rows, txCollection);
+
+    // A patient can hold several collab cases; the Package / Outstanding columns are
+    // patient-level, so flag every repeat after the first to stop them being summed twice.
+    const seenPatients = new Set();
+    for (const r of rows) {
+      const key = String(r.patient || "");
+      r.patientFigureRepeated = key ? seenPatients.has(key) : false;
+      if (key) seenPatients.add(key);
     }
 
     return NextResponse.json({

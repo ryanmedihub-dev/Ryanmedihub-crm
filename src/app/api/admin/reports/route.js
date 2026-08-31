@@ -9,6 +9,9 @@ import Stock from "@/models/Stock";
 import Vendor from "@/models/Vendor";
 import Payable from "@/models/Payable";
 import Receivable from "@/models/Receivable";
+import Borrowing from "@/models/Borrowing";
+import Advance from "@/models/Advance";
+import { PAYABLE_PURPOSES } from "@/constants/payablePurposes";
 import { buildPayableAggregationStages } from "@/lib/payableAggregation";
 import { buildReceivableAggregationStages } from "@/lib/receivableAggregation";
 import { ALL_BRANCHES, COLLAB_BRANCHES } from "@/lib/branches";
@@ -53,6 +56,9 @@ export async function GET(request) {
     const statusFilter = searchParams.get("statusFilter");
     const procedureFilter = searchParams.get("procedureFilter");
     const paymentTypeFilter = searchParams.get("paymentTypeFilter");
+    const rawPayableType = searchParams.get("payableTypeFilter");
+    // Validated against the enum so an unknown value can't silently return everything.
+    const payableTypeFilter = PAYABLE_PURPOSES.includes(rawPayableType) ? rawPayableType : "";
 
     let data = [];
 
@@ -238,7 +244,11 @@ export async function GET(request) {
         break;
 
       case "payables-all":
-        data = await generatePayablesAllReport({ dateFilter: obligationDateFilter, branch });
+        data = await generatePayablesAllReport({
+          dateFilter: obligationDateFilter,
+          branch,
+          payableTypeFilter,
+        });
         break;
 
       case "receivables-all":
@@ -1223,36 +1233,184 @@ async function generateProcedureRevenueReport(filters) {
   return Object.values(procedureData);
 }
 
+/**
+ * Payables with the payments made against each one, as a readable statement.
+ *
+ * Every row carries the same key set so the sheet has one stable header. The `Row` column
+ * marks whether a line is the obligation or a payment against it, which is what makes the
+ * export both readable top-to-bottom AND filterable — set Row = "↳ Payment" for a payment
+ * ledger, Row = "Payable" for the obligation list.
+ *
+ * A payable can be settled three ways (mirrors buildPayableAggregationStages, so the
+ * payment lines always add up to the Paid figure on the payable line above them):
+ *   - a Transaction carrying payableId
+ *   - a Borrowing paid out against it
+ *   - an Advance already held with the payee, applied to it
+ */
 async function generatePayablesAllReport(filters) {
   const match = { isCancelled: { $ne: true }, ...filters.dateFilter };
   if (filters.branch) match.branch = filters.branch;
+  if (filters.payableTypeFilter) match.purpose = filters.payableTypeFilter;
 
   const txCollection = Transactions.collection.name;
-  const rows = await Payable.aggregate([
+  const payables = await Payable.aggregate([
     { $match: match },
     ...buildPayableAggregationStages(txCollection),
-    { $sort: { createdAt: -1 } },
+    // Grouped so every payable for one payee sits together, newest obligation first.
+    { $sort: { purpose: 1, "payee.label": 1, createdAt: -1 } },
     { $limit: 5000 },
   ]);
 
-  return rows.map((p) => ({
-    "Payee": p.payee?.label || "",
-    "Payee Type": p.payee?.kind || "",
-    Purpose: p.purpose || "",
-    "Expense Category": p.expenseCategory || "",
-    "Expense Sub-Type": p.expenseSubType || "",
-    Period: p.period?.month && p.period?.year ? `${p.period.month}/${p.period.year}` : "",
-    Branch: p.branch || "",
-    "Total Amount": p.totalAmount || 0,
-    Paid: p.paid || 0,
-    Pending: p.pending || 0,
-    Status: p.status || "",
-    "Due Date": p.dueDate ? new Date(p.dueDate).toLocaleDateString() : "",
-    "Ageing Bucket": p.pending > 0 ? p.ageingBucket || "" : "",
-    "Days Overdue": p.pending > 0 ? (p.daysOverdue ?? "") : "",
-    Remarks: p.remarks || "",
-    "Raised On": p.createdAt ? new Date(p.createdAt).toLocaleDateString() : "",
-  }));
+  if (payables.length === 0) return [];
+
+  const ids = payables.map((p) => p._id);
+
+  const [txPayments, borrowingPayments, advancePayments] = await Promise.all([
+    Transactions.find({
+      payableId: { $in: ids },
+      approvalStatus: "APPROVED",
+      method: { $nin: UNSETTLED_METHODS },
+    })
+      .select("payableId date amount method furtherMode paymentId remarks expense expenseType branch")
+      .lean(),
+    Borrowing.find({ payableId: { $in: ids }, direction: "OUT", isCancelled: { $ne: true } })
+      .select("payableId date amount account reference remarks branch")
+      .lean(),
+    Advance.find({ settlesPayableId: { $in: ids }, direction: "OUT", isCancelled: { $ne: true } })
+      .select("settlesPayableId date amount account reference remarks branch")
+      .lean(),
+  ]);
+
+  const paymentsByPayable = new Map();
+  const push = (key, row) => {
+    const k = String(key);
+    if (!paymentsByPayable.has(k)) paymentsByPayable.set(k, []);
+    paymentsByPayable.get(k).push(row);
+  };
+
+  txPayments.forEach((t) =>
+    push(t.payableId, {
+      source: "Transaction",
+      date: t.date,
+      amount: t.amount || 0,
+      method: (t.method || "").replace(/_/g, " "),
+      account: t.furtherMode || "",
+      reference: t.paymentId || "",
+      remarks: t.remarks || "",
+    }),
+  );
+  borrowingPayments.forEach((b) =>
+    push(b.payableId, {
+      source: "Borrowing",
+      date: b.date,
+      amount: b.amount || 0,
+      method: "borrowing",
+      account: b.account || "",
+      reference: b.reference || "",
+      remarks: b.remarks || "",
+    }),
+  );
+  advancePayments.forEach((a) =>
+    push(a.settlesPayableId, {
+      source: "Advance applied",
+      date: a.date,
+      amount: a.amount || 0,
+      method: "advance",
+      account: a.account || "",
+      reference: a.reference || "",
+      remarks: a.remarks || "",
+    }),
+  );
+
+  const d = (v) => (v ? new Date(v).toLocaleDateString("en-IN") : "");
+  const out = [];
+
+  for (const p of payables) {
+    const payments = (paymentsByPayable.get(String(p._id)) || []).sort(
+      (a, b) => new Date(a.date) - new Date(b.date),
+    );
+
+    // Context repeated on the payment lines too, so filtering to payments alone still
+    // tells you whose payable each one settled.
+    const context = {
+      Payee: p.payee?.label || "",
+      "Payee Type": p.payee?.kind || "",
+      Purpose: p.purpose || "",
+      "Expense Category": p.expenseCategory || "",
+      "Expense Sub-Type": p.expenseSubType || "",
+      Period: p.period?.month && p.period?.year ? `${p.period.month}/${p.period.year}` : "",
+      Branch: p.branch || "",
+    };
+
+    out.push({
+      Row: "Payable",
+      ...context,
+      "Raised On": d(p.createdAt),
+      "Due Date": d(p.dueDate),
+      "Total Amount": p.totalAmount || 0,
+      Paid: p.paid || 0,
+      Pending: p.pending || 0,
+      Status: p.status || "",
+      "Ageing Bucket": p.pending > 0 ? p.ageingBucket || "" : "",
+      "Days Overdue": p.pending > 0 ? (p.daysOverdue ?? "") : "",
+      "Payments Count": payments.length,
+      "Payment Date": "",
+      "Payment Amount": "",
+      "Payment Source": "",
+      Method: "",
+      Account: "",
+      Reference: "",
+      Remarks: p.remarks || "",
+    });
+
+    for (const pay of payments) {
+      out.push({
+        Row: "  ↳ Payment",
+        ...context,
+        "Raised On": "",
+        "Due Date": "",
+        "Total Amount": "",
+        Paid: "",
+        Pending: "",
+        Status: "",
+        "Ageing Bucket": "",
+        "Days Overdue": "",
+        "Payments Count": "",
+        "Payment Date": d(pay.date),
+        "Payment Amount": pay.amount,
+        "Payment Source": pay.source,
+        Method: pay.method,
+        Account: pay.account,
+        Reference: pay.reference,
+        Remarks: pay.remarks,
+      });
+    }
+
+    if (payments.length === 0) {
+      out.push({
+        Row: "  ↳ Payment",
+        ...context,
+        "Raised On": "",
+        "Due Date": "",
+        "Total Amount": "",
+        Paid: "",
+        Pending: "",
+        Status: "",
+        "Ageing Bucket": "",
+        "Days Overdue": "",
+        "Payments Count": "",
+        "Payment Date": "",
+        "Payment Amount": "",
+        "Payment Source": "— nothing paid yet —",
+        Method: "",
+        Account: "",
+        Reference: "",
+        Remarks: "",
+      });
+    }
+  }
+
+  return out;
 }
 
 async function generateReceivablesAllReport(filters) {

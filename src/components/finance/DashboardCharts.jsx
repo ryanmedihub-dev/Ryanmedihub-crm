@@ -13,13 +13,15 @@ const fmtK = (n) =>
       ? `₹${(n / 1000).toFixed(0)}K`
       : `₹${n || 0}`;
 
-function ChartCard({ title, children, extra }) {
+function ChartCard({ title, subtitle, children, extra }) {
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex items-center gap-2 mb-1">
         <h3 className="text-sm font-semibold text-gray-800">{title}</h3>
         {extra}
       </div>
+      {subtitle && <p className="text-xs text-gray-400 mb-3">{subtitle}</p>}
+      {!subtitle && <div className="mb-2" />}
       {children}
     </div>
   );
@@ -27,15 +29,28 @@ function ChartCard({ title, children, extra }) {
 
 export default function DashboardCharts({
   expenseByHead,
+  expenseHeadMeta,
   monthlyTrend,
   ageingChartData,
   batchStatus,
-  buildFilterQS,
+  onDrillExpenseHead,
+  onDrillAgeing,
   basisTag,
 }) {
+  const shown = expenseHeadMeta?.shownTotal;
+  const grand = expenseHeadMeta?.grandTotal;
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-      <ChartCard title="Expense by Head — Top 10">
+      <ChartCard
+        title="Expense by Head — Top 10"
+        extra={basisTag}
+        subtitle={
+          grand != null
+            ? `Direct expenses + payables raised — the same definition as the P&L Expense card. ${formatCurrency(shown ?? 0)} of ${formatCurrency(grand)} shown.`
+            : "Direct expenses + payables raised — the same definition as the P&L Expense card."
+        }
+      >
         {expenseByHead.length === 0 && batchStatus === "ready" ? (
           <p className="text-sm text-gray-400 py-16 text-center">No data for this period</p>
         ) : (
@@ -47,20 +62,22 @@ export default function DashboardCharts({
               <Tooltip formatter={(v) => formatCurrency(v)} />
               <Bar
                 dataKey="movement"
-                name="Raised"
+                name="Expense"
                 radius={[0, 6, 6, 0]}
                 fill="#f43f5e"
                 cursor="pointer"
-                onClick={(data) => {
-                  window.location.href = `/admin/payments?head=${encodeURIComponent(data.label)}&${buildFilterQS()}`;
-                }}
+                onClick={(data) => onDrillExpenseHead?.(data.label, data.movement)}
               />
             </BarChart>
           </ResponsiveContainer>
         )}
       </ChartCard>
 
-      <ChartCard title="Income vs Expense — Last 6 Months" extra={basisTag}>
+      <ChartCard
+        title="Income vs Expense — Last 6 Months"
+        extra={basisTag}
+        subtitle="Same accrual P&L as the card above, month by month."
+      >
         <ResponsiveContainer width="100%" height={260}>
           <BarChart data={monthlyTrend}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
@@ -74,7 +91,10 @@ export default function DashboardCharts({
         </ResponsiveContainer>
       </ChartCard>
 
-      <ChartCard title="Ageing — Payables vs Receivables">
+      <ChartCard
+        title="Ageing — Payables vs Receivables"
+        subtitle="Side by side, not stacked — the two are opposing balances and don't sum."
+      >
         <ResponsiveContainer width="100%" height={260}>
           <BarChart data={ageingChartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
@@ -84,22 +104,17 @@ export default function DashboardCharts({
             <Legend wrapperStyle={{ fontSize: 11 }} />
             <Bar
               dataKey="Payables"
-              stackId="a"
               fill="#f97316"
+              radius={[4, 4, 0, 0]}
               cursor="pointer"
-              onClick={(data) => {
-                window.location.href = `/admin/liabilities?section=payables&ageing=${data.bucket}&${buildFilterQS()}`;
-              }}
+              onClick={(data) => onDrillAgeing?.("payables", data.bucket, data.Payables)}
             />
             <Bar
               dataKey="Receivables"
-              stackId="a"
               fill="#0ea5e9"
               radius={[4, 4, 0, 0]}
               cursor="pointer"
-              onClick={(data) => {
-                window.location.href = `/admin/assets?section=receivables&ageing=${data.bucket}&${buildFilterQS()}`;
-              }}
+              onClick={(data) => onDrillAgeing?.("receivables", data.bucket, data.Receivables)}
             />
           </BarChart>
         </ResponsiveContainer>

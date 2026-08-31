@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { ALL_BRANCHES } from "@/lib/branches";
+import { PAYABLE_PURPOSES, payablePurposeLabel } from "@/constants/payablePurposes";
 import {
   Download,
   Filter,
@@ -32,6 +33,10 @@ import {
 } from "lucide-react";
 
 const BRANCHES = ["All", ...ALL_BRANCHES];
+
+// Indian grouping, no decimals — matches how money reads everywhere else in the app.
+const INR_FORMAT = '₹#,##,##0';
+const MONEY_COL_RE = /(amount|paid|pending|total|salary|mrp|revenue|expense|profit|value|₹)/i;
 
 const DATE_PRESETS = [
   { label: "Today", value: "today" },
@@ -212,9 +217,9 @@ const REPORTS = [
   {
     id: 26, type: "payables-all", category: "Financial Reports",
     name: "Payables Report",
-    description: "Every outstanding obligation — vendor, rent, salary, tax — with live paid/pending and ageing",
+    description: "Each payable followed by the payments made against it — live paid/pending, ageing, method and account. Filter by payable type for a single head, e.g. Rent.",
     icon: IndianRupee, color: "red",
-    filters: ["branch"],
+    filters: ["branch", "payableType"],
   },
   {
     id: 27, type: "receivables-all", category: "Financial Reports",
@@ -242,7 +247,7 @@ const REPORTS = [
   {
     id: 23, type: "transaction-changes-log", category: "Audit Logs",
     name: "Transaction Changes Log",
-    description: "Full audit trail of transaction edits — field-by-field changes, previous & new values, editor details",
+    description: "One row per changed field — previous & new value, who and when — with every transaction detail alongside",
     icon: History, color: "blue",
     filters: [],
     apiPath: "/api/admin/logs",
@@ -379,6 +384,11 @@ function ReportCard({ report, filters, loadingId, favorites, onDownload, onToggl
                 {filters.paymentType}
               </span>
             )}
+            {report.filters.includes("payableType") && filters.payableType && (
+              <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${c.badge}`}>
+                {payablePurposeLabel(filters.payableType)}
+              </span>
+            )}
           </div>
         )}
 
@@ -461,6 +471,7 @@ export default function AdminReportsPage() {
     staff: "",
     procedure: "",
     paymentType: "",
+    payableType: "",
   });
 
   const showToast = (title, message, type = "success") => {
@@ -480,7 +491,7 @@ export default function AdminReportsPage() {
     setDatePreset("last30");
     setCustomDates({ from: "", to: "" });
     setPendingCustom({ from: "", to: "" });
-    setFilters({ branch: "All", status: "", technique: "", staff: "", procedure: "", paymentType: "" });
+    setFilters({ branch: "All", status: "", technique: "", staff: "", procedure: "", paymentType: "", payableType: "" });
     setSearchTerm("");
   };
 
@@ -517,6 +528,7 @@ export default function AdminReportsPage() {
     filters.technique,
     filters.procedure,
     filters.paymentType,
+    filters.payableType,
     datePreset !== "last30" && datePreset !== "allTime" && datePreset,
   ].filter(Boolean).length;
 
@@ -539,6 +551,7 @@ export default function AdminReportsPage() {
         if (filters.staff) params.append("staffFilter", filters.staff);
         if (filters.procedure) params.append("procedureFilter", filters.procedure);
         if (filters.paymentType) params.append("paymentTypeFilter", filters.paymentType);
+        if (filters.payableType) params.append("payableTypeFilter", filters.payableType);
       }
 
       const endpoint = report.apiPath || "/api/admin/reports";
@@ -560,23 +573,74 @@ export default function AdminReportsPage() {
       const wb = utils.book_new();
       const ws = utils.json_to_sheet(result.data);
 
+      // Width off the widest of the header and the first 200 values, so wide audit sheets
+      // stay readable without hand-resizing every column.
       const cols = Object.keys(result.data[0] || {});
-      ws["!cols"] = cols.map((k) => ({
-        wch: Math.min(Math.max(k.length + 2, 12), 40),
-      }));
+      const sample = result.data.slice(0, 200);
+      ws["!cols"] = cols.map((k) => {
+        const widest = sample.reduce(
+          (max, row) => Math.max(max, String(row[k] ?? "").length),
+          k.length,
+        );
+        return { wch: Math.min(Math.max(widest + 2, 12), 45) };
+      });
+
+      // Audit sheets are meant to be sliced — turn on the filter row.
+      if (ws["!ref"]) ws["!autofilter"] = { ref: ws["!ref"] };
+
+      // Money columns render as ₹ with Indian grouping instead of bare numbers.
+      const moneyCols = cols.filter((k) => MONEY_COL_RE.test(k));
+      moneyCols.forEach((k) => {
+        const idx = cols.indexOf(k);
+        if (idx === -1) return;
+        const colLetter = utils.encode_col(idx);
+        for (let r = 0; r < result.data.length; r++) {
+          const cell = ws[`${colLetter}${r + 2}`];
+          if (cell && cell.t === "n") cell.z = INR_FORMAT;
+        }
+      });
 
       utils.book_append_sheet(wb, ws, "Report");
+
+      // For the payables statement, summarise the obligation lines only — the payment
+      // lines are detail beneath them and would double-count.
+      const payableLines =
+        report.type === "payables-all"
+          ? result.data.filter((r) => r.Row === "Payable")
+          : [];
+      const sum = (key) => payableLines.reduce((s, r) => s + (Number(r[key]) || 0), 0);
 
       const meta = [
         { Field: "Report Name", Value: report.name },
         { Field: "Category", Value: report.category },
         { Field: "Date Range", Value: datePreset === "custom" ? `${customDates.from} — ${customDates.to}` : datePreset },
         { Field: "Branch Filter", Value: filters.branch || "All" },
+        ...(report.filters.includes("payableType")
+          ? [{ Field: "Payable Type", Value: filters.payableType ? payablePurposeLabel(filters.payableType) : "All types" }]
+          : []),
+        ...(payableLines.length
+          ? [
+              { Field: "Payables", Value: payableLines.length },
+              { Field: "Total Amount", Value: sum("Total Amount") },
+              { Field: "Paid", Value: sum("Paid") },
+              { Field: "Pending", Value: sum("Pending") },
+            ]
+          : []),
         { Field: "Total Records", Value: result.data.length },
         { Field: "Generated At", Value: new Date().toLocaleString("en-IN") },
+        ...(result.truncated
+          ? [{
+              Field: "⚠ Truncated",
+              Value: `Capped at the ${result.docLimit} most recent records — narrow the date range for a complete export.`,
+            }]
+          : []),
       ];
       const metaWs = utils.json_to_sheet(meta);
-      metaWs["!cols"] = [{ wch: 20 }, { wch: 40 }];
+      metaWs["!cols"] = [{ wch: 22 }, { wch: 46 }];
+      meta.forEach((m, i) => {
+        const cell = metaWs[`B${i + 2}`];
+        if (cell && cell.t === "n" && MONEY_COL_RE.test(m.Field)) cell.z = INR_FORMAT;
+      });
       utils.book_append_sheet(wb, metaWs, "Info");
 
       const fileName = `${report.name.replace(/\s+/g, "_")}_${new Date()
@@ -585,7 +649,15 @@ export default function AdminReportsPage() {
 
       writeFile(wb, fileName);
 
-      showToast("Report Downloaded!", `${result.data.length} records saved as ${fileName}`);
+      if (result.truncated) {
+        showToast(
+          "Downloaded — but truncated",
+          `${result.data.length} rows saved. Capped at the ${result.docLimit} most recent records; narrow the date range for a complete export.`,
+          "error",
+        );
+      } else {
+        showToast("Report Downloaded!", `${result.data.length} records saved as ${fileName}`);
+      }
     } catch (err) {
       console.error(err);
       showToast("Download Failed", err.message, "error");
@@ -839,6 +911,25 @@ export default function AdminReportsPage() {
                           <option key={p} value={p}>{p}</option>
                         ))}
                       </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
+                        Payable Type
+                      </label>
+                      <select
+                        value={filters.payableType}
+                        onChange={(e) => setFilters((f) => ({ ...f, payableType: e.target.value }))}
+                        className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white"
+                      >
+                        <option value="">All Payable Types</option>
+                        {PAYABLE_PURPOSES.map((p) => (
+                          <option key={p} value={p}>{payablePurposeLabel(p)}</option>
+                        ))}
+                      </select>
+                      <p className="mt-1 text-[11px] text-gray-400">
+                        Applies to the Payables Report — pick Rent for just the rent ledger.
+                      </p>
                     </div>
                   </div>
                 )}

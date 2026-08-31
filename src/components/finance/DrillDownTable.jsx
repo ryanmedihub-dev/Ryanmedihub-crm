@@ -525,9 +525,26 @@ export default function DrillDownTable({
       key: "party",
       label: isPayableSection ? "Payee" : "Payer",
       render: (r) => (
-        <div className="flex items-center gap-1.5">
-          <span className="font-medium text-gray-800">{(isPayableSection ? r.payee?.label : r.payer?.label) || "—"}</span>
-          {(r.paid > 0 || r.received > 0) && <ChevronRight className="w-3.5 h-3.5 text-gray-300" />}
+        <div>
+          <div className="flex items-center gap-1.5">
+            <span className="font-medium text-gray-800">{(isPayableSection ? r.payee?.label : r.payer?.label) || "—"}</span>
+            {(r.paid > 0 || r.received > 0) && <ChevronRight className="w-3.5 h-3.5 text-gray-300" />}
+          </div>
+          {/* On a collab document the party is the partner clinic; the patient the case is
+              actually about lives on the CollabCase, so surface them here too. */}
+          {r.collabPatient?.name && (
+            <p className="mt-0.5 text-[11px] text-indigo-700">
+              <span className="font-semibold">{r.collabPatient.name}</span>
+              {r.collabPatient.phone ? ` · ${r.collabPatient.phone}` : ""}
+              {r.collabPatient.procedure ? ` · ${r.collabPatient.procedure}` : ""}
+            </p>
+          )}
+          {r.collabPatient?.packageAmount != null && (
+            <p className="text-[11px] text-gray-400">
+              Package {formatCurrency(r.collabPatient.packageAmount)} · clinic share{" "}
+              {formatCurrency(r.collabPatient.clinicShare)}
+            </p>
+          )}
         </div>
       ),
     },

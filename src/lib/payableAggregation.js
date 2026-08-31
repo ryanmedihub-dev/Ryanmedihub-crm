@@ -119,7 +119,7 @@ export function buildPayableAggregationStages(
   ];
 }
 
-export function buildPayableGroupedStages(txCollectionName, { level, category, subType, branch, from, to, groupBy = "category", borrowingsCollectionName = "borrowings" } = {}) {
+export function buildPayableGroupedStages(txCollectionName, { level, category, subType, branch, from, to, groupBy = "category", borrowingsCollectionName = "borrowings", advancesCollectionName = "advances" } = {}) {
   const isVendor = groupBy === "vendor";
   const match = { isCancelled: { $ne: true } };
   if (isVendor) match["payee.kind"] = "VENDOR";
@@ -192,8 +192,33 @@ export function buildPayableGroupedStages(txCollectionName, { level, category, s
       },
     },
     {
+      // Advances applied against a payable count as money paid, exactly as they do in
+      // buildPayableAggregationStages. Omitting them here made the grouped rollup overstate
+      // what is still owed versus the document list built from the other pipeline.
+      $lookup: {
+        from: advancesCollectionName,
+        let: { payableId: "$_id" },
+        pipeline: [
+          ...(toDate ? [{ $match: { date: { $lte: toDate } } }] : []),
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$settlesPayableId", "$$payableId"] },
+                  { $eq: ["$direction", "OUT"] },
+                  { $ne: ["$isCancelled", true] },
+                ],
+              },
+            },
+          },
+          { $project: { amount: 1, date: 1 } },
+        ],
+        as: "advancePayments",
+      },
+    },
+    {
       $addFields: {
-        payments: { $concatArrays: ["$payments", "$borrowingPayments"] },
+        payments: { $concatArrays: ["$payments", "$borrowingPayments", "$advancePayments"] },
       },
     },
     {

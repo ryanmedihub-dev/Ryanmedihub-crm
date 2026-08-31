@@ -6,7 +6,7 @@ import CollabCaseForm from "@/components/CollabCaseForm";
 import BankRoutingFields from "@/components/BankRoutingFields";
 import { REVENUE_METHODS } from "@/constants/paymentMethods";
 import { useToast } from "@/components/Toast";
-import { formatCurrency, formatDate, StatusBadge } from "@/lib/financeUI";
+import { formatCurrency, formatDate } from "@/lib/financeUI";
 import {
   Building2,
   Plus,
@@ -436,7 +436,6 @@ export default function AdminCollabSettlementPage() {
                                     )}
                                     {c.patientName || "Unknown"}
                                   </span>
-                                  <StatusBadge status={c.status} />
                                 </button>
                                 {c.paidToClinic > 0 && (
                                   <span
@@ -448,7 +447,10 @@ export default function AdminCollabSettlementPage() {
                                   </span>
                                 )}
                                 <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-gray-500 mb-2">
-                                  <span>Package {formatCurrency(c.packageAmount)}</span>
+                                  <span>
+                                    Package {formatCurrency(c.patientPackage)}
+                                    {c.patientFigureRepeated && " ↺"}
+                                  </span>
                                   <span className="text-right">
                                     Clinic Share {formatCurrency(c.clinicShare)}
                                   </span>
@@ -459,12 +461,21 @@ export default function AdminCollabSettlementPage() {
                                     Collected (clinic){" "}
                                     {formatCurrency(c.collectedByClinic)}
                                   </span>
+                                  <span className="text-emerald-700 font-semibold">
+                                    Receivable{" "}
+                                    {c.receivableValue == null ? "—" : formatCurrency(c.receivableValue)}
+                                  </span>
+                                  <span className="text-right text-rose-700 font-semibold">
+                                    Payable{" "}
+                                    {c.payableValue == null ? "—" : formatCurrency(c.payableValue)}
+                                  </span>
                                 </div>
                                 <div className="flex items-center justify-between text-sm">
                                   <div>
                                     <span className="text-gray-500">Outstanding </span>
                                     <span className="font-semibold text-amber-700">
                                       {formatCurrency(c.patientOutstanding)}
+                                      {c.patientFigureRepeated && " ↺"}
                                     </span>
                                   </div>
                                   <div>
@@ -539,8 +550,11 @@ export default function AdminCollabSettlementPage() {
                                   <th className="text-right px-3 py-2 font-semibold text-gray-600">
                                     Case Net
                                   </th>
-                                  <th className="text-left px-3 py-2 font-semibold text-gray-600">
-                                    Status
+                                  <th className="text-right px-3 py-2 font-semibold text-emerald-700">
+                                    Receivable
+                                  </th>
+                                  <th className="text-right px-3 py-2 font-semibold text-rose-700">
+                                    Payable
                                   </th>
                                   <th className="text-right px-3 py-2 font-semibold text-gray-600">
                                     Actions
@@ -582,10 +596,18 @@ export default function AdminCollabSettlementPage() {
                                           </span>
                                         )}
                                       </td>
-                                      <td className="px-3 py-2 text-right">
-                                        {formatCurrency(c.packageAmount)}
+                                      <td className="px-3 py-2 text-right tabular-nums">
+                                        {formatCurrency(c.patientPackage)}
+                                        {c.patientFigureRepeated && (
+                                          <span
+                                            className="ml-1 text-[10px] font-semibold text-gray-400"
+                                            title="Patient-level figure — already counted on an earlier case for this patient"
+                                          >
+                                            ↺
+                                          </span>
+                                        )}
                                       </td>
-                                      <td className="px-3 py-2 text-right">
+                                      <td className="px-3 py-2 text-right tabular-nums">
                                         {formatCurrency(c.clinicShare)}
                                       </td>
                                       <td className="px-3 py-2 text-right text-emerald-700">
@@ -594,8 +616,16 @@ export default function AdminCollabSettlementPage() {
                                       <td className="px-3 py-2 text-right text-indigo-700">
                                         {formatCurrency(c.collectedByClinic)}
                                       </td>
-                                      <td className="px-3 py-2 text-right font-semibold text-amber-700">
+                                      <td className="px-3 py-2 text-right font-semibold text-amber-700 tabular-nums">
                                         {formatCurrency(c.patientOutstanding)}
+                                        {c.patientFigureRepeated && (
+                                          <span
+                                            className="ml-1 text-[10px] font-semibold text-gray-400"
+                                            title="Patient-level figure — already counted on an earlier case for this patient"
+                                          >
+                                            ↺
+                                          </span>
+                                        )}
                                       </td>
                                       <td
                                         className={
@@ -614,9 +644,7 @@ export default function AdminCollabSettlementPage() {
                                           ? formatCurrency(c.caseNet)
                                           : "Pending completion"}
                                       </td>
-                                      <td className="px-3 py-2">
-                                        <StatusBadge status={c.status} />
-                                      </td>
+                                      <SettlementValueCells c={c} />
                                       <td className="px-3 py-2">
                                         <div className="flex items-center justify-end gap-1.5">
                                           {c.status === "OPEN" && (
@@ -642,7 +670,7 @@ export default function AdminCollabSettlementPage() {
                                     {expandedCaseId === c._id && (
                                       <tr>
                                         <td
-                                          colSpan={9}
+                                          colSpan={10}
                                           className="px-3 pb-4 bg-gray-50/60"
                                         >
                                           <CaseHistory collabCase={c} />
@@ -830,22 +858,65 @@ function BalanceMeter({ value, maxAbs }) {
   );
 }
 
+// ========== PAYABLE / RECEIVABLE VALUE CELLS ==========
+// Live pending on the documents this case crystallised into — the same figures the clinic
+// totals at the top of the page are built from. A case that hasn't crystallised yet has no
+// document, so it shows "—" rather than a projection that wouldn't tie to those totals.
+function SettlementValueCells({ c }) {
+  const cell = (value, total, status, tone) => {
+    if (value == null) {
+      return (
+        <td className="px-3 py-2 text-right text-gray-300" title="Not crystallised yet">
+          —
+        </td>
+      );
+    }
+    const cleared = !(value > 0);
+    return (
+      <td className={`px-3 py-2 text-right tabular-nums ${cleared ? "text-gray-400" : tone}`}>
+        <span className={cleared ? "" : "font-semibold"}>{formatCurrency(value)}</span>
+        {cleared && total > 0 && (
+          <span className="block text-[10px] text-gray-400">
+            {status === "Paid" || status === "Received" ? "settled" : "nil"}
+          </span>
+        )}
+      </td>
+    );
+  };
+
+  return (
+    <>
+      {cell(c.receivableValue, c.receivableTotal, c.receivableStatus, "text-emerald-700")}
+      {cell(c.payableValue, c.payableTotal, c.payableStatus, "text-rose-700")}
+    </>
+  );
+}
+
 // ========== CLINIC ROW ==========
 function ClinicRow({ balance, maxAbs, expanded, onToggle }) {
-  const { clinic, netPosition, openCaseCount, caseCount } = balance;
+  const {
+    clinic,
+    netPosition,
+    openCaseCount,
+    caseCount,
+    outstandingReceivable = 0,
+    outstandingPayable = 0,
+    receivableCount = 0,
+    payableCount = 0,
+  } = balance;
   const isReceivable = netPosition > 0;
   const isPayable = netPosition < 0;
 
   return (
     <button
       onClick={onToggle}
-      className={`w-full text-left bg-white rounded-xl shadow-sm border p-4 sm:p-5 transition-all hover:shadow-md flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ${
+      className={`w-full text-left bg-white rounded-xl shadow-sm border p-4 sm:p-5 transition-all hover:shadow-md flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between ${
         expanded
           ? "border-indigo-400 ring-2 ring-indigo-100"
           : "border-gray-200"
       }`}
     >
-      <div className="flex items-center gap-3 min-w-0">
+      <div className="flex items-center gap-3 min-w-0 lg:w-56 lg:shrink-0">
         <Building2 className="w-4 h-4 text-gray-400 shrink-0" />
         <div className="min-w-0">
           <p className="font-semibold text-gray-900 truncate">{clinic}</p>
@@ -856,12 +927,39 @@ function ClinicRow({ balance, maxAbs, expanded, onToggle }) {
         </div>
       </div>
 
+      {/* Both sides of the running account against this location, not just the net —
+          a clinic can owe us and be owed by us at the same time, and netting hides that. */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:flex lg:items-center">
+        <div className="lg:text-right lg:w-36">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+            Receivable
+          </p>
+          <p className="text-sm font-bold text-emerald-600 tabular-nums">
+            {formatCurrency(outstandingReceivable)}
+          </p>
+          <p className="text-[11px] text-gray-400">
+            {receivableCount} doc{receivableCount === 1 ? "" : "s"}
+          </p>
+        </div>
+        <div className="lg:text-right lg:w-36">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+            Payable
+          </p>
+          <p className="text-sm font-bold text-rose-600 tabular-nums">
+            {formatCurrency(outstandingPayable)}
+          </p>
+          <p className="text-[11px] text-gray-400">
+            {payableCount} doc{payableCount === 1 ? "" : "s"}
+          </p>
+        </div>
+      </div>
+
       <div className="flex items-center gap-4 sm:gap-6">
-        <div className="hidden sm:block">
+        <div className="hidden xl:block">
           <BalanceMeter value={netPosition} maxAbs={maxAbs} />
         </div>
         <p
-          className={`text-sm sm:text-base font-bold shrink-0 ${
+          className={`text-sm font-bold shrink-0 ${
             isReceivable
               ? "text-emerald-600"
               : isPayable
@@ -869,9 +967,9 @@ function ClinicRow({ balance, maxAbs, expanded, onToggle }) {
                 : "text-gray-500"
           }`}
         >
-          {isReceivable && `Clinic owes us ${formatCurrency(netPosition)}`}
+          {isReceivable && `Net: clinic owes us ${formatCurrency(netPosition)}`}
           {isPayable &&
-            `We owe clinic ${formatCurrency(Math.abs(netPosition))}`}
+            `Net: we owe clinic ${formatCurrency(Math.abs(netPosition))}`}
           {!isReceivable && !isPayable && "Square"}
         </p>
         {expanded ? (
@@ -884,13 +982,128 @@ function ClinicRow({ balance, maxAbs, expanded, onToggle }) {
   );
 }
 
-// ========== CASE HISTORY (clinicCollections + log) ==========
+// ========== PATIENT TRANSACTIONS (every entry booked against this patient) ==========
+function PatientTransactions({ patientId, patientName }) {
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!patientId) {
+      setLoading(false);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch(
+          `/api/transactions/get-all?patient=${encodeURIComponent(patientId)}&limit=200&sortKey=date&sortDir=desc`,
+        );
+        const data = await res.json();
+        if (cancelled) return;
+        if (res.ok && data.success !== false) setRows(data.transactions || []);
+        else setError(data.error || data.message || "Failed to load transactions");
+      } catch {
+        if (!cancelled) setError("Failed to load transactions");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [patientId]);
+
+  const total = rows.reduce(
+    (s, t) => s + (t.costType === "Revenue" ? t.amount || 0 : -(t.amount || 0)),
+    0,
+  );
+
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          Patient Transactions ({rows.length})
+        </h4>
+        {rows.length > 0 && (
+          <span className="text-xs font-semibold text-gray-700 tabular-nums">
+            Net {formatCurrency(total)}
+          </span>
+        )}
+      </div>
+
+      {!patientId ? (
+        <p className="text-sm text-gray-400">This case has no linked patient record.</p>
+      ) : loading ? (
+        <div className="flex items-center gap-2 py-4 text-sm text-gray-400">
+          <Loader2 className="w-4 h-4 animate-spin" /> Loading transactions…
+        </div>
+      ) : error ? (
+        <p className="text-sm text-rose-600">{error}</p>
+      ) : rows.length === 0 ? (
+        <p className="text-sm text-gray-400">
+          No transactions booked against {patientName || "this patient"} yet.
+        </p>
+      ) : (
+        <div className="overflow-x-auto -mx-1">
+          <table className="w-full text-xs">
+            <thead className="text-gray-500 border-b border-gray-100">
+              <tr>
+                <th className="text-left px-1 py-1.5 font-semibold">Date</th>
+                <th className="text-left px-1 py-1.5 font-semibold">Category</th>
+                <th className="text-left px-1 py-1.5 font-semibold">Procedure / Head</th>
+                <th className="text-left px-1 py-1.5 font-semibold">Method</th>
+                <th className="text-left px-1 py-1.5 font-semibold">Account</th>
+                <th className="text-left px-1 py-1.5 font-semibold">Branch</th>
+                <th className="text-right px-1 py-1.5 font-semibold">Amount</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {rows.map((t) => {
+                const isRevenue = t.costType === "Revenue";
+                return (
+                  <tr key={t._id} className="hover:bg-gray-50/60">
+                    <td className="px-1 py-1.5 whitespace-nowrap">{formatDate(t.date)}</td>
+                    <td className="px-1 py-1.5">{t.transactionCategory || "—"}</td>
+                    <td className="px-1 py-1.5">
+                      {t.procedure || t.expenseType || t.expense || "—"}
+                    </td>
+                    <td className="px-1 py-1.5">{(t.method || "—").replace(/_/g, " ")}</td>
+                    <td className="px-1 py-1.5">{t.furtherMode || "—"}</td>
+                    <td className="px-1 py-1.5">{t.branch || "—"}</td>
+                    <td
+                      className={`px-1 py-1.5 text-right font-semibold tabular-nums ${
+                        isRevenue ? "text-emerald-700" : "text-rose-600"
+                      }`}
+                    >
+                      {isRevenue ? "" : "−"}
+                      {formatCurrency(t.amount)}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ========== CASE HISTORY (patient transactions + clinicCollections + log) ==========
 function CaseHistory({ collabCase }) {
   const collections = collabCase.clinicCollections || [];
   const log = collabCase.log || [];
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-1">
+    <div className="space-y-4 pt-1">
+    <PatientTransactions
+      patientId={collabCase.patient}
+      patientName={collabCase.patientName}
+    />
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div className="bg-white rounded-lg border border-gray-200 p-4">
         <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
           Clinic Collections ({collections.length})
@@ -973,6 +1186,7 @@ function CaseHistory({ collabCase }) {
           </ul>
         )}
       </div>
+    </div>
     </div>
   );
 }
@@ -1091,13 +1305,16 @@ function RecordCollectionModal({ collabCase, onClose, onSuccess, toast }) {
 
   // Deliberate override, not a continuous lock: checking pre-fills once; unchecking just leaves
   // the current value editable rather than resetting it.
+  // Caps against the CASE's own remaining balance (package − collected − discount), not the
+  // patient's whole-ledger outstanding — a patient with several cases must not be able to
+  // over-collect one of them just because another is unpaid.
   useEffect(() => {
-    if (fullPackage) setAmount(String(collabCase.patientOutstanding || 0));
-  }, [fullPackage, collabCase.patientOutstanding]);
+    if (fullPackage) setAmount(String(collabCase.caseOutstanding || 0));
+  }, [fullPackage, collabCase.caseOutstanding]);
 
   const overBalance =
     parseFloat(amount || 0) + parseFloat(discount || 0) >
-    collabCase.patientOutstanding;
+    collabCase.caseOutstanding;
 
   const handleSubmit = async () => {
     if (!amount || parseFloat(amount) <= 0) {
@@ -1177,9 +1394,11 @@ function RecordCollectionModal({ collabCase, onClose, onSuccess, toast }) {
               </p>
             </div>
             <div className="sm:text-right">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Outstanding</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                Outstanding on this case
+              </p>
               <p className="mt-0.5 text-base font-bold text-amber-600 sm:text-lg">
-                {formatCurrency(collabCase.patientOutstanding)}
+                {formatCurrency(collabCase.caseOutstanding)}
               </p>
             </div>
           </div>

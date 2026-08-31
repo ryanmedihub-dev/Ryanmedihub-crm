@@ -35,6 +35,26 @@ const EMPTY_FILTERS = {
   minAmount: "", maxAmount: "",
   minGrafts: "", maxGrafts: "",
   dateFrom: "", dateTo: "", technique: "",
+  minPending: "", onlyPending: false,
+};
+
+// The six money columns, shown when config.financeColumns is on. All six come from
+// Payables raised against the employee, so Total = Salary + Incentive + other, and
+// Pending = Payable − Paid on every line.
+const FINANCE_COLUMNS = [
+  { key: "totalPayable",     label: "Total Payable",   tone: "text-gray-900 font-medium" },
+  { key: "totalPaid",        label: "Total Paid",      tone: "text-emerald-700 font-medium" },
+  { key: "salaryPayable",    label: "Salary Payable",  tone: "text-gray-700" },
+  { key: "salaryPaid",       label: "Salary Paid",     tone: "text-emerald-600" },
+  { key: "incentivePayable", label: "Total Incentive", tone: "text-gray-700" },
+  { key: "incentivePaid",    label: "Incentive Paid",  tone: "text-emerald-600" },
+];
+
+const EMPTY_FINANCE = {
+  totalPayable: 0, totalPaid: 0, totalPending: 0,
+  salaryPayable: 0, salaryPaid: 0, salaryPending: 0,
+  incentivePayable: 0, incentivePaid: 0, incentivePending: 0,
+  payableCount: 0, overdueCount: 0,
 };
 
 export default function StaffTable({ config = {} }) {
@@ -44,6 +64,7 @@ export default function StaffTable({ config = {} }) {
     editBasePath    = "/admin/employees/update",
     canDelete       = false,
     viewBasePath    = null,
+    financeColumns  = false,
   } = config;
 
   const [data,     setData]     = useState({});
@@ -51,7 +72,7 @@ export default function StaffTable({ config = {} }) {
   const [drawerOpen, setDrawer] = useState(false);
   const [loading,  setLoading]  = useState(true);
   const [deleting, setDeleting] = useState(null);
-  const [sort,     setSort]     = useState({ key: "totalPatient", dir: "desc" });
+  const [sort,     setSort]     = useState({ key: financeColumns ? "totalPayable" : "totalPatient", dir: "desc" });
   const [page,     setPage]     = useState(1);
   const [perPage,  setPerPage]  = useState(10);
   const [selectedCategory, setSelectedCategory] = useState("Doctor");
@@ -64,12 +85,29 @@ export default function StaffTable({ config = {} }) {
         if (filters.dateFrom)  p.set("dateFrom",  filters.dateFrom);
         if (filters.dateTo)    p.set("dateTo",    filters.dateTo);
         if (filters.technique) p.set("technique", filters.technique);
-        const res = await fetch(`/api/employees/get-patients?${p.toString()}`);
-        if (!res.ok) throw new Error("Failed to fetch");
-        const raw = await res.json();
+
+        // The payable rollup is a separate query keyed by employee id — fetched alongside
+        // so the roster and the money columns arrive together rather than popping in late.
+        const [raw, finance] = await Promise.all([
+          fetch(`/api/employees/get-patients?${p.toString()}`).then((r) => {
+            if (!r.ok) throw new Error("Failed to fetch");
+            return r.json();
+          }),
+          financeColumns
+            ? fetch(`/api/employees/finance-summary?${p.toString()}`)
+                .then((r) => (r.ok ? r.json() : { byEmployee: {} }))
+                .catch(() => ({ byEmployee: {} }))
+            : Promise.resolve({ byEmployee: {} }),
+        ]);
+
+        const byEmployee = finance?.byEmployee || {};
         const transformed = {};
         Object.keys(raw).forEach((cat) => {
-          transformed[cat] = raw[cat].map((e) => ({ ...e, status: e.isactive ? "active" : "inactive" }));
+          transformed[cat] = raw[cat].map((e) => ({
+            ...e,
+            status: e.isactive ? "active" : "inactive",
+            ...(financeColumns ? (byEmployee[String(e._id)] || EMPTY_FINANCE) : {}),
+          }));
         });
         setData(transformed);
       } catch {
@@ -78,7 +116,7 @@ export default function StaffTable({ config = {} }) {
         setLoading(false);
       }
     })();
-  }, [filters.dateFrom, filters.dateTo, filters.technique]);
+  }, [filters.dateFrom, filters.dateTo, filters.technique, financeColumns]);
 
   const currentCategory = filters.category || selectedCategory;
   const hasGrafts          = ["Doctor", "Technician", "Implanter", "Others"].includes(currentCategory);
@@ -91,18 +129,39 @@ export default function StaffTable({ config = {} }) {
     let list = [...categoryData];
     if (filters.search)      list = list.filter((i) => i.name.toLowerCase().includes(filters.search.toLowerCase()));
     if (filters.status)      list = list.filter((i) => i.status === filters.status);
-    if (filters.minPatients) list = list.filter((i) => i.totalPatient >= +filters.minPatients);
-    if (filters.maxPatients) list = list.filter((i) => i.totalPatient <= +filters.maxPatients);
-    if (filters.minAmount)   list = list.filter((i) => i.amountReceived >= +filters.minAmount);
-    if (filters.maxAmount)   list = list.filter((i) => i.amountReceived <= +filters.maxAmount);
-    if (filters.minGrafts)   list = list.filter((i) => (i.graftsImplanted || 0) >= +filters.minGrafts);
-    if (filters.maxGrafts)   list = list.filter((i) => (i.graftsImplanted || 0) <= +filters.maxGrafts);
+    if (financeColumns) {
+      if (filters.minAmount)  list = list.filter((i) => (i.totalPayable || 0) >= +filters.minAmount);
+      if (filters.maxAmount)  list = list.filter((i) => (i.totalPayable || 0) <= +filters.maxAmount);
+      if (filters.minPending) list = list.filter((i) => (i.totalPending || 0) >= +filters.minPending);
+      if (filters.onlyPending) list = list.filter((i) => (i.totalPending || 0) > 0);
+    } else {
+      if (filters.minPatients) list = list.filter((i) => i.totalPatient >= +filters.minPatients);
+      if (filters.maxPatients) list = list.filter((i) => i.totalPatient <= +filters.maxPatients);
+      if (filters.minAmount)   list = list.filter((i) => i.amountReceived >= +filters.minAmount);
+      if (filters.maxAmount)   list = list.filter((i) => i.amountReceived <= +filters.maxAmount);
+      if (filters.minGrafts)   list = list.filter((i) => (i.graftsImplanted || 0) >= +filters.minGrafts);
+      if (filters.maxGrafts)   list = list.filter((i) => (i.graftsImplanted || 0) <= +filters.maxGrafts);
+    }
     list.sort((a, b) => {
       const av = a[sort.key] || 0, bv = b[sort.key] || 0;
       return sort.dir === "asc" ? av - bv : bv - av;
     });
     return list;
-  }, [categoryData, filters, sort]);
+  }, [categoryData, filters, sort, financeColumns]);
+
+  const financeTotals = useMemo(
+    () =>
+      filtered.reduce(
+        (acc, i) => {
+          Object.keys(EMPTY_FINANCE).forEach((k) => {
+            acc[k] += i[k] || 0;
+          });
+          return acc;
+        },
+        { ...EMPTY_FINANCE },
+      ),
+    [filtered],
+  );
 
   const totals = useMemo(() =>
     filtered.reduce((acc, i) => ({
@@ -240,9 +299,16 @@ export default function StaffTable({ config = {} }) {
           </div>
         </div>
 
-        <div className="px-6 pt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className={`px-6 pt-6 grid grid-cols-1 md:grid-cols-2 gap-4 ${financeColumns ? "lg:grid-cols-5" : "lg:grid-cols-4"}`}>
           <SummaryCard title="Total Staff"   value={filtered.length}                    icon={<Users className="w-5 h-5" />}       color="blue" />
-          {isHr ? (
+          {financeColumns ? (
+            <>
+              <SummaryCard title="Total Payable"    value={fmtCurrency(financeTotals.totalPayable)}     icon={<IndianRupee className="w-5 h-5" />} color="indigo" />
+              <SummaryCard title="Total Paid"       value={fmtCurrency(financeTotals.totalPaid)}        icon={<TrendingUp className="w-5 h-5" />}  color="green" />
+              <SummaryCard title="Salary Pending"   value={fmtCurrency(financeTotals.salaryPending)}    icon={<IndianRupee className="w-5 h-5" />} color="orange" />
+              <SummaryCard title="Incentive Pending" value={fmtCurrency(financeTotals.incentivePending)} icon={<Activity className="w-5 h-5" />}    color="purple" />
+            </>
+          ) : isHr ? (
             <>
               <SummaryCard title="Total Assigned" value={totals.totalCandidates}         icon={<Activity className="w-5 h-5" />}    color="green" />
               <SummaryCard title="Selected"        value={totals.selected}                icon={<TrendingUp className="w-5 h-5" />}  color="purple" />
@@ -279,7 +345,11 @@ export default function StaffTable({ config = {} }) {
                   <tr>
                     <Th label="Name" />
                     <Th label="Status" />
-                    {isHr ? (
+                    {financeColumns ? (
+                      FINANCE_COLUMNS.map((c) => (
+                        <Th key={c.key} label={c.label} sortKey={c.key} sort={sort} onSort={toggleSort} />
+                      ))
+                    ) : isHr ? (
                       <>
                         <Th label="Total Assigned" sortKey="totalCandidates" sort={sort} onSort={toggleSort} />
                         <Th label="Selected"        sortKey="selected"        sort={sort} onSort={toggleSort} />
@@ -314,9 +384,25 @@ export default function StaffTable({ config = {} }) {
                       const avg = item.totalPatient ? item.amountReceived / item.totalPatient : 0;
                       return (
                         <tr key={item._id || idx} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-6 py-4 font-medium text-gray-900">{item.name}</td>
+                          <td className="px-6 py-4 font-medium text-gray-900">
+                            {item.name}
+                            {financeColumns && item.overdueCount > 0 && (
+                              <span
+                                className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-600 border border-red-200"
+                                title={`${item.overdueCount} payable(s) past their due date`}
+                              >
+                                {item.overdueCount} overdue
+                              </span>
+                            )}
+                          </td>
                           <td className="px-6 py-4"><StatusBadge status={item.status} /></td>
-                          {isHr ? (
+                          {financeColumns ? (
+                            FINANCE_COLUMNS.map((c) => (
+                              <td key={c.key} className={`px-6 py-4 tabular-nums ${c.tone}`}>
+                                {fmtCurrency(item[c.key])}
+                              </td>
+                            ))
+                          ) : isHr ? (
                             <>
                               <td className="px-6 py-4 text-gray-700">{item.totalCandidates || 0}</td>
                               <td className="px-6 py-4 text-emerald-600 font-semibold">{item.selected || 0}</td>
@@ -380,7 +466,13 @@ export default function StaffTable({ config = {} }) {
                     <tr>
                       <td className="px-6 py-4 text-gray-900">Total</td>
                       <td className="px-6 py-4" />
-                      {isHr ? (
+                      {financeColumns ? (
+                        FINANCE_COLUMNS.map((c) => (
+                          <td key={c.key} className="px-6 py-4 text-gray-900 tabular-nums">
+                            {fmtCurrency(financeTotals[c.key])}
+                          </td>
+                        ))
+                      ) : isHr ? (
                         <>
                           <td className="px-6 py-4 text-gray-900">{totals.totalCandidates}</td>
                           <td className="px-6 py-4 text-emerald-600">{totals.selected}</td>
@@ -468,21 +560,47 @@ export default function StaffTable({ config = {} }) {
                 />
               </FilterSection>
 
-              <FilterSection title="Patient Count" icon={<Users className="w-4 h-4" />}>
-                <div className="grid grid-cols-2 gap-4">
-                  <FilterInput label="Min Patients" value={filters.minPatients} onChange={(v) => setFilter("minPatients", v)} placeholder="0" />
-                  <FilterInput label="Max Patients" value={filters.maxPatients} onChange={(v) => setFilter("maxPatients", v)} placeholder="100" />
-                </div>
-              </FilterSection>
+              {financeColumns ? (
+                <>
+                  <FilterSection title="Total Payable" icon={<IndianRupee className="w-4 h-4" />}>
+                    <div className="grid grid-cols-2 gap-4">
+                      <FilterInput label="Min (₹)" value={filters.minAmount} onChange={(v) => setFilter("minAmount", v)} placeholder="0" />
+                      <FilterInput label="Max (₹)" value={filters.maxAmount} onChange={(v) => setFilter("maxAmount", v)} placeholder="500000" />
+                    </div>
+                  </FilterSection>
 
-              <FilterSection title="Amount Received" icon={<IndianRupee className="w-4 h-4" />}>
-                <div className="grid grid-cols-2 gap-4">
-                  <FilterInput label="Min Amount (₹)" value={filters.minAmount} onChange={(v) => setFilter("minAmount", v)} placeholder="0" />
-                  <FilterInput label="Max Amount (₹)" value={filters.maxAmount} onChange={(v) => setFilter("maxAmount", v)} placeholder="500000" />
-                </div>
-              </FilterSection>
+                  <FilterSection title="Outstanding" icon={<Activity className="w-4 h-4" />}>
+                    <FilterInput label="Min Pending (₹)" value={filters.minPending} onChange={(v) => setFilter("minPending", v)} placeholder="0" />
+                    <label className="mt-4 flex cursor-pointer items-center gap-2.5">
+                      <input
+                        type="checkbox"
+                        checked={filters.onlyPending}
+                        onChange={(e) => setFilter("onlyPending", e.target.checked)}
+                        className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                      />
+                      <span className="text-sm text-gray-700">Only staff with something still owed</span>
+                    </label>
+                  </FilterSection>
+                </>
+              ) : (
+                <>
+                  <FilterSection title="Patient Count" icon={<Users className="w-4 h-4" />}>
+                    <div className="grid grid-cols-2 gap-4">
+                      <FilterInput label="Min Patients" value={filters.minPatients} onChange={(v) => setFilter("minPatients", v)} placeholder="0" />
+                      <FilterInput label="Max Patients" value={filters.maxPatients} onChange={(v) => setFilter("maxPatients", v)} placeholder="100" />
+                    </div>
+                  </FilterSection>
 
-              {hasGrafts && (
+                  <FilterSection title="Amount Received" icon={<IndianRupee className="w-4 h-4" />}>
+                    <div className="grid grid-cols-2 gap-4">
+                      <FilterInput label="Min Amount (₹)" value={filters.minAmount} onChange={(v) => setFilter("minAmount", v)} placeholder="0" />
+                      <FilterInput label="Max Amount (₹)" value={filters.maxAmount} onChange={(v) => setFilter("maxAmount", v)} placeholder="500000" />
+                    </div>
+                  </FilterSection>
+                </>
+              )}
+
+              {!financeColumns && hasGrafts && (
                 <FilterSection title="Grafts Implanted" icon={<TrendingUp className="w-4 h-4" />}>
                   <div className="grid grid-cols-2 gap-4">
                     <FilterInput label="Min Grafts" value={filters.minGrafts} onChange={(v) => setFilter("minGrafts", v)} placeholder="0" />

@@ -1094,12 +1094,12 @@ function RecordCollectionModal({ collabCase, onClose, onSuccess, toast }) {
   // Deliberate override, not a continuous lock: checking pre-fills once; unchecking just leaves
   // the current value editable rather than resetting it.
   useEffect(() => {
-    if (fullPackage) setAmount(String(collabCase.patientOutstanding || 0));
-  }, [fullPackage, collabCase.patientOutstanding]);
+    if (fullPackage) setAmount(String(collabCase.caseOutstanding || 0));
+  }, [fullPackage, collabCase.caseOutstanding]);
 
   const overBalance =
     parseFloat(amount || 0) + parseFloat(discount || 0) >
-    collabCase.patientOutstanding;
+    collabCase.caseOutstanding;
 
   const handleSubmit = async () => {
     if (!amount || parseFloat(amount) <= 0) {
@@ -1179,9 +1179,11 @@ function RecordCollectionModal({ collabCase, onClose, onSuccess, toast }) {
               </p>
             </div>
             <div className="sm:text-right">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Outstanding</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                Outstanding on this case
+              </p>
               <p className="mt-0.5 text-base font-bold text-amber-600 sm:text-lg">
-                {formatCurrency(collabCase.patientOutstanding)}
+                {formatCurrency(collabCase.caseOutstanding)}
               </p>
             </div>
           </div>

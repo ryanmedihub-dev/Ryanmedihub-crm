@@ -32,14 +32,40 @@ export async function GET(request) {
 
     const txCollection = Transactions.collection.name;
 
+    const TOTALS_GROUP = {
+      count: { $sum: 1 },
+      totalOwed: { $sum: "$totalAmount" },
+      totalPaid: { $sum: "$paid" },
+      totalPending: { $sum: "$pending" },
+    };
+    const emptyTotals = { count: 0, totalOwed: 0, totalPaid: 0, totalPending: 0 };
+    const pickTotals = (agg) =>
+      agg
+        ? { count: agg.count, totalOwed: agg.totalOwed, totalPaid: agg.totalPaid, totalPending: agg.totalPending }
+        : emptyTotals;
+
+    // `ageing=1` returns the bucket split *and* the same `overall` totals the plain call
+    // returns, so a caller needing both (the admin dashboard) makes one request, and the
+    // headline figure is guaranteed to be the sum of the buckets it sits next to.
     if (ageing) {
-      const byBucket = await Payable.aggregate([
+      const [facet] = await Payable.aggregate([
         { $match: { isCancelled: false, ...(branch ? { branch } : {}) } },
         ...buildPayableAggregationStages(txCollection),
-        { $match: { pending: { $gt: 0 } } },
-        { $group: { _id: "$ageingBucket", count: { $sum: 1 }, totalPending: { $sum: "$pending" } } },
+        {
+          $facet: {
+            overall: [{ $group: { _id: null, ...TOTALS_GROUP } }],
+            byBucket: [
+              { $match: { pending: { $gt: 0 } } },
+              { $group: { _id: "$ageingBucket", count: { $sum: 1 }, totalPending: { $sum: "$pending" } } },
+            ],
+          },
+        },
       ]);
-      return NextResponse.json({ success: true, byBucket });
+      return NextResponse.json({
+        success: true,
+        byBucket: facet?.byBucket || [],
+        overall: pickTotals(facet?.overall?.[0]),
+      });
     }
 
     const sumMatch = async (match) => {
@@ -69,19 +95,6 @@ export async function GET(request) {
     const baseMatch = { isCancelled: false };
     if (purpose) baseMatch.purpose = purpose;
     if (branch) baseMatch.branch = branch;
-
-    const TOTALS_GROUP = {
-      count: { $sum: 1 },
-      totalOwed: { $sum: "$totalAmount" },
-      totalPaid: { $sum: "$paid" },
-      totalPending: { $sum: "$pending" },
-    };
-    const emptyTotals = { count: 0, totalOwed: 0, totalPaid: 0, totalPending: 0 };
-    const pickTotals = (agg) =>
-      agg
-        ? { count: agg.count, totalOwed: agg.totalOwed, totalPaid: agg.totalPaid, totalPending: agg.totalPending }
-        : emptyTotals;
-
 
     let overall;
     let byPurpose = null;

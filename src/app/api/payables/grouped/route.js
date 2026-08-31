@@ -9,6 +9,7 @@ import { buildPayableGroupedStages, buildPayableAggregationStages } from "@/lib/
 import { UNSETTLED_METHODS } from "@/constants/bankRouting";
 import { loadClosedPeriodSnapshot, blockReasonFromSnapshot } from "@/lib/periodLock";
 import { resolveBranchFilter } from "@/lib/branches";
+import { attachCollabPatients } from "@/lib/collabPatientLookup";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 
@@ -146,6 +147,8 @@ export async function GET(request) {
     ]);
     const pageRows = facet?.rows || [];
     const total = facet?.total?.[0]?.count || 0;
+    // Collab payables name the clinic as payee — pull through the patient the case is about.
+    await attachCollabPatients(pageRows, "clinicSharePayable");
     const closedPeriods = await loadClosedPeriodSnapshot();
     const rows = pageRows.map((r) => ({
       ...r,
