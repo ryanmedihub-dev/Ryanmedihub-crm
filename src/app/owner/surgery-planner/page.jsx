@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
-import { OwnerTopbar, Card, DataTable, Badge } from "@/components/owner";
+import { OwnerTopbar, Card, DataTable, Badge, KpiRow, ErrorState, EmptyState, Skeleton } from "@/components/owner";
 import { ALL_BRANCHES } from "@/lib/branches";
 
 const BRANCHES = ["All", ...ALL_BRANCHES];
@@ -67,6 +67,17 @@ export default function SurgeryPlannerPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  const todayOTLoad = capacity.reduce((s, c) => s + (c.count || 0), 0);
+  const graftsPlanned = surgeries.reduce((s, r) => s + (Number(r.graftsneed) || 0), 0);
+  const techniqueMix = new Set(surgeries.map((r) => r.technique).filter(Boolean)).size;
+
+  const kpiItems = [
+    { label: "Scheduled surgeries", value: loading ? "—" : surgeries.length, sub: dateRange, kind: "info" },
+    { label: "Today's OT load", value: loading ? "—" : todayOTLoad, sub: `${capacity.length} OT${capacity.length === 1 ? "" : "s"} in use`, kind: todayOTLoad > 0 ? "warn" : "good" },
+    { label: "Grafts planned", value: loading ? "—" : new Intl.NumberFormat("en-IN").format(graftsPlanned), sub: "Across the window", kind: "info" },
+    { label: "Technique mix", value: loading ? "—" : techniqueMix, sub: "Distinct techniques", kind: "info" },
+  ];
+
   return (
     <div className="app">
       <OwnerSidebar />
@@ -98,17 +109,16 @@ export default function SurgeryPlannerPage() {
 
         <div className="content">
           {error ? (
-            <div className="card">
-              <p><strong>{error}</strong></p>
-              <button className="link-btn" onClick={fetchData}>Try again</button>
-            </div>
+            <ErrorState message={error} onRetry={fetchData} />
           ) : (
             <>
-              <Card title="Today's OT Capacity" subtitle="Real count of surgeries scheduled today, by OT — not a fabricated utilization %">
+              <KpiRow items={kpiItems} primaryIndex={0} loading={loading} />
+
+              <Card title="Today's OT capacity" subtitle="Real count of surgeries scheduled today, by OT — not a fabricated utilization %">
                 {loading ? (
-                  <p className="muted">Loading…</p>
+                  <Skeleton variant="row" count={3} style={{ height: 56, margin: "8px 0" }} />
                 ) : capacity.length === 0 ? (
-                  <p className="muted">No surgeries scheduled today</p>
+                  <EmptyState icon="✂" title="No surgeries scheduled today" hint="Today's OT board is clear." />
                 ) : (
                   <div className="status-grid">
                     {capacity.map((c) => (
@@ -122,26 +132,27 @@ export default function SurgeryPlannerPage() {
               </Card>
 
               <Card
-                title="Scheduled Surgeries"
+                title="Scheduled surgeries"
                 subtitle={loading ? "Loading…" : `${surgeries.length} surgeries · ${dateRange}${branch !== "All" ? ` · ${branch}` : ""}`}
               >
                 <DataTable
                   tall
-                  emptyMessage={loading ? "Loading…" : "No surgeries scheduled in this window"}
+                  loading={loading}
+                  emptyMessage={<EmptyState icon="✂" title="No surgeries in this window" hint="Pick a wider date range or another branch." />}
                   columns={[
                     { key: "name", label: "Patient" },
                     { key: "branch", label: "Branch" },
                     { key: "surgeryDate", label: "Date", render: (r) => fmtDate(r.surgeryDate) },
                     { key: "OT", label: "OT", render: (r) => (r.OT != null ? <Badge kind="info">OT {r.OT}</Badge> : "—") },
                     { key: "technique", label: "Technique" },
-                    { key: "graftsneed", label: "Grafts Needed" },
-                    { key: "graftsImplanted", label: "Grafts Implanted" },
+                    { key: "graftsneed", label: "Grafts needed", align: "right" },
+                    { key: "graftsImplanted", label: "Grafts implanted", align: "right" },
                     { key: "doctor", label: "Doctor" },
-                    { key: "seniorTech", label: "Senior Tech" },
+                    { key: "seniorTech", label: "Senior tech" },
                     { key: "implanterRight", label: "Implanter R" },
                     { key: "implanterLeft", label: "Implanter L" },
                   ]}
-                  rows={loading ? [] : surgeries}
+                  rows={loading ? [] : surgeries.map((r, i) => ({ ...r, id: r.id || r._id || i }))}
                 />
               </Card>
             </>

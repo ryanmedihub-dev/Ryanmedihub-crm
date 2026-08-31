@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
-import { OwnerTopbar, Card, DataTable, Heatmap, KpiRow } from "@/components/owner";
+import { OwnerTopbar, Card, DataTable, Heatmap, KpiRow, ErrorState, EmptyState } from "@/components/owner";
 
 const METRICS = [
   { key: "leadsAssigned", label: "Leads" },
@@ -64,13 +64,12 @@ export default function LeadershipPage() {
 
         <div className="content">
           {error ? (
-            <div className="card">
-              <p><strong>{error}</strong></p>
-              <button className="link-btn" onClick={fetchData}>Try again</button>
-            </div>
+            <ErrorState message={error} onRetry={fetchData} />
           ) : (
             <>
               <KpiRow
+                primaryIndex={4}
+                loading={loading}
                 items={[
                   { label: "Team Leads", value: loading ? "—" : tlRows.length, sub: "Active teams", kind: "info" },
                   { label: "Total Agents", value: loading ? "—" : tlRows.reduce((s, r) => s + (r.agentCount || 0), 0), sub: "Across all TLs", kind: "info" },
@@ -82,14 +81,15 @@ export default function LeadershipPage() {
               />
               <Card title="TL Ranking" subtitle={loading ? "Loading…" : `${tlRows.length} team leads`}>
                 <DataTable
-                  emptyMessage={loading ? "Loading…" : "No team data available"}
+                  loading={loading}
+                  emptyMessage={<EmptyState icon="⌘" title="No team data" hint="Team-lead totals come from callby's teamTotals once teams are configured." />}
                   columns={[
                     { key: "tlName", label: "Team Lead" },
-                    { key: "agentCount", label: "Agents", render: (r) => r.agentCount ?? "—" },
-                    { key: "leadsAssigned", label: "Leads", render: (r) => r.leadsAssigned ?? "—" },
-                    { key: "totalCalls", label: "Calls", render: (r) => r.totalCalls ?? "—" },
-                    { key: "connectRate", label: "Connect Rate", render: (r) => (r.connectRate != null ? `${r.connectRate}%` : "—") },
-                    { key: "converted", label: "Converted", render: (r) => r.converted ?? "—" },
+                    { key: "agentCount", label: "Agents", align: "right", render: (r) => r.agentCount ?? "—" },
+                    { key: "leadsAssigned", label: "Leads", align: "right", render: (r) => r.leadsAssigned ?? "—" },
+                    { key: "totalCalls", label: "Calls", align: "right", render: (r) => r.totalCalls ?? "—" },
+                    { key: "connectRate", label: "Connect Rate", align: "right", render: (r) => (r.connectRate != null ? `${r.connectRate}%` : "—") },
+                    { key: "converted", label: "Converted", align: "right", render: (r) => r.converted ?? "—" },
                   ]}
                   rows={loading ? [] : tlRows.map((r, i) => ({ ...r, id: r.tlName || i }))}
                 />

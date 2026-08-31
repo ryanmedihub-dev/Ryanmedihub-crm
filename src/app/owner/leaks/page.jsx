@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
-import { OwnerTopbar, Card, DataTable, KpiRow } from "@/components/owner";
+import { OwnerTopbar, Card, DataTable, KpiRow, ErrorState, EmptyState, InlineNotice, AttentionRamp } from "@/components/owner";
 import { ALL_BRANCHES } from "@/lib/branches";
 
 const BRANCHES = ["All", ...ALL_BRANCHES];
@@ -69,13 +69,12 @@ export default function LeakControlRoomPage() {
 
         <div className="content">
           {error ? (
-            <div className="card">
-              <p><strong>{error}</strong></p>
-              <button className="link-btn" onClick={fetchData}>Try again</button>
-            </div>
+            <ErrorState message={error} onRetry={fetchData} />
           ) : (
             <>
               <KpiRow
+                primaryIndex={4}
+                loading={loading}
                 items={[
                   {
                     label: "Total Flagged",
@@ -96,57 +95,58 @@ export default function LeakControlRoomPage() {
                 ]}
               />
               <Card
-                title="Stale New Leads"
+                title="Stale new leads"
                 subtitle={loading ? "Loading…" : `${staleLeads.length} leads · status "new" for 24h+`}
+                actions={<AttentionRamp level={2} label="Attention" />}
               >
                 {staleLeadsError && (
-                  <div className="notice">
-                    <div>
-                      <strong>Couldn't load live lead data</strong>
-                      <p style={{ margin: "3px 0 0" }}>{staleLeadsError}</p>
-                    </div>
-                  </div>
+                  <InlineNotice kind="error" title="Couldn't load live lead data">{staleLeadsError}</InlineNotice>
                 )}
                 <DataTable
-                  emptyMessage={loading ? "Loading…" : staleLeadsError ? "Unavailable" : "None flagged"}
+                  loading={loading}
+                  emptyMessage={<EmptyState icon="✓" title={staleLeadsError ? "Unavailable" : "None flagged"} hint={staleLeadsError ? "Live lead data is temporarily unreachable." : "No new lead has sat untouched past 24h."} />}
                   columns={[
                     { key: "name", label: "Lead" },
                     { key: "phone", label: "Phone" },
-                    ageCol,
+                    { ...ageCol, align: "right" },
                   ]}
                   rows={loading ? [] : staleLeads}
                 />
               </Card>
 
               <Card
-                title="Ready for Surgery, No Date Set"
+                title="Ready for surgery, no date set"
                 subtitle={loading ? "Loading…" : `${readyNoSurgery.length} patients`}
+                actions={<AttentionRamp level={3} label="High" />}
               >
                 <DataTable
-                  emptyMessage={loading ? "Loading…" : "None flagged"}
+                  loading={loading}
+                  emptyMessage={<EmptyState icon="✓" title="None flagged" hint="Every surgery-ready patient has a date." />}
                   columns={[
                     { key: "name", label: "Patient" },
                     { key: "phone", label: "Phone" },
                     { key: "branch", label: "Branch" },
-                    ageCol,
+                    { ...ageCol, align: "right" },
                   ]}
                   rows={loading ? [] : readyNoSurgery}
                 />
               </Card>
 
               <Card
-                title="Pending Payment, No Recent Activity"
+                title="Pending payment, no recent activity"
                 subtitle={loading ? "Loading…" : `${pendingNoActivity.length} patients · no transaction in 30 days`}
+                actions={<AttentionRamp level={4} label="Critical" />}
               >
                 <DataTable
                   tall
-                  emptyMessage={loading ? "Loading…" : "None flagged"}
+                  loading={loading}
+                  emptyMessage={<EmptyState icon="✓" title="None flagged" hint="No stale collections older than 30 days." />}
                   columns={[
                     { key: "name", label: "Patient" },
                     { key: "phone", label: "Phone" },
                     { key: "branch", label: "Branch" },
-                    { key: "pendingAmount", label: "Pending", render: (r) => rupee(r.pendingAmount) },
-                    ageCol,
+                    { key: "pendingAmount", label: "Pending", align: "right", render: (r) => rupee(r.pendingAmount) },
+                    { ...ageCol, align: "right" },
                   ]}
                   rows={loading ? [] : pendingNoActivity}
                 />

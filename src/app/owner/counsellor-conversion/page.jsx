@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
-import { OwnerTopbar, Card, DataTable, KpiRow } from "@/components/owner";
+import { OwnerTopbar, Card, DataTable, KpiRow, ErrorState, EmptyState } from "@/components/owner";
 import { ALL_BRANCHES } from "@/lib/branches";
 
 const BRANCHES = ["All", ...ALL_BRANCHES];
@@ -107,13 +107,12 @@ export default function CounsellorConversionPage() {
 
         <div className="content">
           {error ? (
-            <div className="card">
-              <p><strong>{error}</strong></p>
-              <button className="link-btn" onClick={fetchData}>Try again</button>
-            </div>
+            <ErrorState message={error} onRetry={fetchData} />
           ) : (
             <>
               <KpiRow
+                primaryIndex={4}
+                loading={loading}
                 items={[
                   { label: "Total Visits", value: fmt(totals.visits), sub: dateRange, kind: "info" },
                   { label: "Plans Given", value: fmt(totals.plans), sub: "Final package set", kind: "info" },
@@ -124,18 +123,19 @@ export default function CounsellorConversionPage() {
                 ]}
               />
 
-              <Card title="Counsellor Breakdown" subtitle={loading ? "Loading…" : `${rows.length} counsellors`}>
+              <Card title="Counsellor breakdown" subtitle={loading ? "Loading…" : `${rows.length} counsellors`}>
                 <DataTable
                   tall
-                  emptyMessage={loading ? "Loading…" : "No counselling activity in this period"}
+                  loading={loading}
+                  emptyMessage={<EmptyState icon="❝" title="No counselling activity" hint="No visits, plans or tokens recorded in this period." />}
                   columns={[
                     { key: "counsellorName", label: "Counsellor" },
-                    { key: "visits", label: "Visits" },
-                    { key: "plans", label: "Plans" },
-                    { key: "tokens", label: "Tokens" },
-                    { key: "surgeries", label: "Surgeries" },
-                    { key: "revenue", label: "Revenue", render: (r) => rupee(r.revenue) },
-                    { key: "avgDiscount", label: "Avg Discount", render: (r) => rupee(r.avgDiscount) },
+                    { key: "visits", label: "Visits", align: "right" },
+                    { key: "plans", label: "Plans", align: "right" },
+                    { key: "tokens", label: "Tokens", align: "right" },
+                    { key: "surgeries", label: "Surgeries", align: "right" },
+                    { key: "revenue", label: "Revenue", align: "right", render: (r) => rupee(r.revenue) },
+                    { key: "avgDiscount", label: "Avg discount", align: "right", render: (r) => rupee(r.avgDiscount) },
                   ]}
                   rows={loading ? [] : rows.map((r) => ({ ...r, id: r.counsellorId }))}
                 />

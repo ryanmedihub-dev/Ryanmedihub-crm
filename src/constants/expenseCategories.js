@@ -1,6 +1,6 @@
 export const EXPENSE_CATEGORY_TREE = {
-  "Salary": ["Salary"],
-  "Rent": [
+  Salary: ["Salary"],
+  Rent: [
     "Rent-Backend Basement",
     "Rent-Backend upper ground floor",
     "Rent-Backend ground floor",
@@ -17,7 +17,7 @@ export const EXPENSE_CATEGORY_TREE = {
     "Rent-Deepak staff flat",
     "Rent-P House Rent",
   ],
-  "Marketing": [
+  Marketing: [
     "Meta ads",
     "Google ads",
     "Ai Sensy",
@@ -25,7 +25,10 @@ export const EXPENSE_CATEGORY_TREE = {
     "Marketing Tools",
     "Marketing-Others",
   ],
-  "Medical Consumables": ["Medical Consumables-OT", "Medical Consumables-Others"],
+  "Medical Consumables": [
+    "Medical Consumables-OT",
+    "Medical Consumables-Others",
+  ],
   "Medicine Procurement": ["Medicine Procurement"],
   "Professional Expenses": [
     "Turkey Technician",
@@ -50,7 +53,7 @@ export const EXPENSE_CATEGORY_TREE = {
     "Electricity Exp-Deepak staff flat",
     "Electricity Exp-P house",
   ],
-  "Incentive": [
+  Incentive: [
     "Sales Incentive-Agents",
     "Sales Incentive--Counsellor",
     "Sales Incentive- Technician",
@@ -60,7 +63,7 @@ export const EXPENSE_CATEGORY_TREE = {
     "Incentive- Marketing Team",
     "Incentive - Others",
   ],
-  "Commision": [
+  Commision: [
     "Patient Commission Paid to Patients",
     "Patient Commission Paid to Muskan",
     "HR Commission",
@@ -87,7 +90,7 @@ export const EXPENSE_CATEGORY_TREE = {
     "PATIENT TREATMENT CHARGES",
   ],
   "Interest Expenses": ["Interest Expenses"],
-  "Taxes": [
+  Taxes: [
     "GST",
     "ROC",
     "TDS",
@@ -109,7 +112,7 @@ export const EXPENSE_CATEGORY_TREE = {
     "Income Tax Ryan Medihub",
     "Income Tax Ryan Skin",
   ],
-  "Loans": ["LA DOLCE" , "Loan Repayment", "Loan Others"],
+  Loans: ["LA DOLCE", "Loan Repayment", "Loan Others"],
   "Software Rental Expenses": ["Software Rental Expenses"],
   "Hardware Rental Expenses": [
     "AC Rent",
@@ -119,27 +122,35 @@ export const EXPENSE_CATEGORY_TREE = {
   ],
   "Travelling Expenses": ["Travelling Expenses"],
   "Hotel Charges": ["Hotel Charges"],
-  "Telephone Expenses": ["Staff Recharge", "Mobile Repairing", "Interenet Recharge/Wifi"],
+  "Telephone Expenses": [
+    "Staff Recharge",
+    "Mobile Repairing",
+    "Interenet Recharge/Wifi",
+  ],
   "Bank Charges": ["Bank Charges", "External Charges"],
-  "Forex Conversion and Fluctuation Charges": ["Forex Conversion and Fluctuation Charges"],
+  "Forex Conversion and Fluctuation Charges": [
+    "Forex Conversion and Fluctuation Charges",
+  ],
   "Asset Based Payment": [
     "Hardware-Laptop/Computer/Mobile etc",
     "Security & Deposits",
   ],
-  "Drawings": [
+  Drawings: [
     "Personal Payments",
     "Handover to Family",
     "Handover to Backend",
     "Loan Repayment",
   ],
   "Collab Clinic Payment": ["Collab Clinic Payment"],
-  "Miscellaneous": ["Miscellaneous"],
-  "Borrowings": ["Deposit Received", "Loan from Party", "Advance Received"],
+  "Medical testing kit": ["Medical testing kit"],
+  Miscellaneous: ["Miscellaneous"],
+  Borrowings: ["Deposit Received", "Loan from Party", "Advance Received"],
 };
 
 export const EXPENSE_CATEGORIES = Object.keys(EXPENSE_CATEGORY_TREE);
 
-export const getExpenseTypes = (category) => EXPENSE_CATEGORY_TREE[category] || [];
+export const getExpenseTypes = (category) =>
+  EXPENSE_CATEGORY_TREE[category] || [];
 
 export const PAYABLE_EXPENSE_CATEGORIES = [
   "Salary",
@@ -160,9 +171,10 @@ export const PAYABLE_EXPENSE_CATEGORIES = [
 
 const PAYABLE_CATEGORIES_OWNED_ELSEWHERE = ["Salary", "Incentive", "Commision"];
 
-export const PAYABLE_EXPENSE_DROPDOWN_CATEGORIES = PAYABLE_EXPENSE_CATEGORIES.filter(
-  (cat) => !PAYABLE_CATEGORIES_OWNED_ELSEWHERE.includes(cat),
-);
+export const PAYABLE_EXPENSE_DROPDOWN_CATEGORIES =
+  PAYABLE_EXPENSE_CATEGORIES.filter(
+    (cat) => !PAYABLE_CATEGORIES_OWNED_ELSEWHERE.includes(cat),
+  );
 
 export const DIRECT_PAYMENT_CATEGORIES = [
   "Marketing",
@@ -176,6 +188,7 @@ export const DIRECT_PAYMENT_CATEGORIES = [
   "Asset Based Payment",
   "Drawings",
   "Miscellaneous",
+  "Medical testing kit",
   "Patient Related Expenses",
 ];
 

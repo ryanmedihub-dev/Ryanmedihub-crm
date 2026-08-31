@@ -54,7 +54,14 @@
       "Bash(tee \"C:\\\\Users\\\\sachi\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--dashzer-New-folder-ryan-crm\\\\e991aaae-04a7-454b-b490-1854239267f1\\\\scratchpad\\\\profile-final.txt\")",
       "Bash(node scripts/.verify-receivable-refactor-tmp.mjs)",
       "Bash(node scripts/.verify-receivable-grouped-tmp.mjs)",
-      "Bash(node -e \"require\\('fs'\\);['src/lib/incentiveDerivation.js','src/app/api/incentives/route.js','src/app/api/patients/[id]/incentives/route.js','src/app/api/employees/[id]/incentives/route.js','src/components/IncentiveEntryForm.jsx','src/app/admin/transactions/create/page.jsx','src/app/reception/transactions/create/page.js','src/app/sales/transactions/create/page.js','src/app/collab/transactions/create/page.js','src/app/admin/employees/[id]/page.jsx'].forEach\\(f=>{try{require\\('@babel/core'\\).transformFileSync\\(f,{presets:['@babel/preset-react']}\\);console.log\\('OK',f\\)}catch\\(e\\){console.log\\('FAIL',f,e.message\\)}}\\)\")"
+      "Bash(node -e \"require\\('fs'\\);['src/lib/incentiveDerivation.js','src/app/api/incentives/route.js','src/app/api/patients/[id]/incentives/route.js','src/app/api/employees/[id]/incentives/route.js','src/components/IncentiveEntryForm.jsx','src/app/admin/transactions/create/page.jsx','src/app/reception/transactions/create/page.js','src/app/sales/transactions/create/page.js','src/app/collab/transactions/create/page.js','src/app/admin/employees/[id]/page.jsx'].forEach\\(f=>{try{require\\('@babel/core'\\).transformFileSync\\(f,{presets:['@babel/preset-react']}\\);console.log\\('OK',f\\)}catch\\(e\\){console.log\\('FAIL',f,e.message\\)}}\\)\")",
+      "Bash(curl -s http://localhost:3123/owner/sim-health)",
+      "Bash(curl -s \"http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__b106154b._.css\" -o /tmp/ownercss.css)",
+      "Bash(curl -s -o /dev/null -w \"super-admin/dashboard:%{http_code}\\\\n\" http://localhost:3123/super-admin/dashboard)",
+      "Bash(curl -s -o /dev/null -w \"admin/dashboard:%{http_code}\\\\n\" http://localhost:3123/admin/dashboard)",
+      "Bash(curl -s -o /dev/null -w \"login:%{http_code}\\\\n\" http://localhost:3123/login)",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(pkill -f \"next-server\")"
     ]
   }
 }

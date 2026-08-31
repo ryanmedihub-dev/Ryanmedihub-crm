@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
-import { OwnerTopbar, Card, DataTable, Badge } from "@/components/owner";
+import { OwnerTopbar, Card, DataTable, Badge, KpiRow, ErrorState, EmptyState } from "@/components/owner";
 import { ALL_BRANCHES } from "@/lib/branches";
 
 const BRANCHES = ["All", ...ALL_BRANCHES];
@@ -51,6 +51,16 @@ export default function StaffPage() {
   }, [employees, activeOnly, sortKey, sortDir]);
 
   const activeCount = employees.filter((e) => e.isactive).length;
+  const totalPayroll = employees.reduce((s, e) => s + (e.baseSalary || 0), 0);
+  const totalPatients = employees.reduce((s, e) => s + (e.patientsHandled || 0), 0);
+  const roleCount = new Set(employees.map((e) => e.role).filter(Boolean)).size;
+
+  const kpiItems = [
+    { label: "Headcount", value: loading ? "—" : employees.length, sub: `${activeCount} active`, kind: "info" },
+    { label: "Base payroll", value: loading ? "—" : rupee(totalPayroll), sub: "Sum of base salary", kind: "info" },
+    { label: "Roles", value: loading ? "—" : roleCount, sub: "Distinct roles", kind: "info" },
+    { label: "Patients handled", value: loading ? "—" : new Intl.NumberFormat("en-IN").format(totalPatients), sub: "All staff", kind: "info" },
+  ];
 
   return (
     <div className="app">
@@ -78,33 +88,35 @@ export default function StaffPage() {
 
         <div className="content">
           {error ? (
-            <div className="card">
-              <p><strong>{error}</strong></p>
-              <button className="link-btn" onClick={fetchData}>Try again</button>
-            </div>
+            <ErrorState message={error} onRetry={fetchData} />
           ) : (
-            <Card
-              title="Staff Directory"
-              subtitle={loading ? "Loading…" : `${rows.length} of ${employees.length} employees · ${activeCount} active`}
-            >
-              <DataTable
-                tall
-                emptyMessage={loading ? "Loading…" : "No employees found"}
-                sortKey={sortKey}
-                sortDir={sortDir}
-                onSort={handleSort}
-                columns={[
-                  { key: "name", label: "Name", sortable: true },
-                  { key: "role", label: "Role", sortable: true },
-                  { key: "branch", label: "Branch", sortable: true },
-                  { key: "isactive", label: "Status", render: (r) => <Badge kind={r.isactive ? "good" : "neutral"}>{r.isactive ? "Active" : "Inactive"}</Badge> },
-                  { key: "baseSalary", label: "Base Salary", sortable: true, render: (r) => rupee(r.baseSalary) },
-                  { key: "incentiveRate", label: "Incentive Rate", sortable: true, render: (r) => rupee(r.incentiveRate) },
-                  { key: "patientsHandled", label: "Patients Handled", sortable: true },
-                ]}
-                rows={loading ? [] : rows}
-              />
-            </Card>
+            <>
+              <KpiRow items={kpiItems} primaryIndex={0} loading={loading} />
+
+              <Card
+                title="Staff directory"
+                subtitle={loading ? "Loading…" : `${rows.length} of ${employees.length} employees · ${activeCount} active`}
+              >
+                <DataTable
+                  tall
+                  loading={loading}
+                  emptyMessage={<EmptyState icon="☰" title="No employees found" hint="Adjust the branch filter or the active-only toggle." />}
+                  sortKey={sortKey}
+                  sortDir={sortDir}
+                  onSort={handleSort}
+                  columns={[
+                    { key: "name", label: "Name", sortable: true },
+                    { key: "role", label: "Role", sortable: true },
+                    { key: "branch", label: "Branch", sortable: true },
+                    { key: "isactive", label: "Status", render: (r) => <Badge kind={r.isactive ? "good" : "neutral"} glyph>{r.isactive ? "Active" : "Inactive"}</Badge> },
+                    { key: "baseSalary", label: "Base salary", sortable: true, align: "right", render: (r) => rupee(r.baseSalary) },
+                    { key: "incentiveRate", label: "Incentive rate", sortable: true, align: "right", render: (r) => rupee(r.incentiveRate) },
+                    { key: "patientsHandled", label: "Patients handled", sortable: true, align: "right" },
+                  ]}
+                  rows={loading ? [] : rows}
+                />
+              </Card>
+            </>
           )}
         </div>
       </div>

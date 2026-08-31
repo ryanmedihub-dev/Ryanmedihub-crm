@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
-import { OwnerTopbar, Card, Funnel, DataTable, KpiRow } from "@/components/owner";
+import { OwnerTopbar, Card, Funnel, DataTable, KpiRow, ErrorState, EmptyState, InlineNotice, Skeleton } from "@/components/owner";
 import { ALL_BRANCHES } from "@/lib/branches";
 
 const BRANCHES = ["All", ...ALL_BRANCHES];
@@ -111,22 +111,16 @@ export default function ConversionIntelligencePage() {
 
         <div className="content">
           {error ? (
-            <div className="card">
-              <p><strong>{error}</strong></p>
-              <button className="link-btn" onClick={fetchData}>Try again</button>
-            </div>
+            <ErrorState message={error} onRetry={fetchData} />
           ) : (
             <>
               {note && (
-                <div className="notice">
-                  <div>
-                    <strong>Scope note</strong>
-                    <p style={{ margin: "3px 0 0" }}>{note}</p>
-                  </div>
-                </div>
+                <InlineNotice kind="info" title="Scope note">{note}</InlineNotice>
               )}
 
               <KpiRow
+                primaryIndex={3}
+                loading={loading}
                 items={[
                   { label: "Total Patients", value: loading ? "—" : funnel.reduce((s, f) => s + f.count, 0), sub: dateRange, kind: "info" },
                   { label: "Total Leads", value: loading ? "—" : totalSources, sub: "Meta + Google + Form + Collab", kind: "info" },
@@ -157,23 +151,27 @@ export default function ConversionIntelligencePage() {
               />
 
               <div className="grid cols-2">
-                <Card title="Patient Status Funnel" subtitle={`${dateRange} · ${branch === "All" ? "All branches" : branch}`}>
+                <Card title="Patient status funnel" subtitle={`${dateRange} · ${branch === "All" ? "All branches" : branch}`}>
                   {loading ? (
-                    <p className="muted">Loading…</p>
+                    <Skeleton variant="chart" />
+                  ) : funnel.length === 0 ? (
+                    <EmptyState icon="⟐" title="No patients in this window" hint="Widen the date range or clear the branch filter." />
                   ) : (
                     <Funnel items={funnel.map((f) => ({ label: STATUS_LABEL[f.status] || f.status, value: f.count }))} />
                   )}
                 </Card>
 
-                <Card title="Lead Source Mix" subtitle={`${dateRange} (not branch-scoped)`}>
+                <Card title="Lead source mix" subtitle={`${dateRange} (not branch-scoped)`}>
                   <DataTable
-                    emptyMessage={loading ? "Loading…" : "No leads in this period"}
+                    loading={loading}
+                    emptyMessage={<EmptyState icon="⟐" title="No leads in this period" hint="Lead tags feed this table once leads come in." />}
                     columns={[
                       { key: "tag", label: "Source" },
-                      { key: "count", label: "Leads" },
+                      { key: "count", label: "Leads", align: "right" },
                       {
                         key: "pct",
                         label: "Share",
+                        align: "right",
                         render: (r) => (totalSources > 0 ? `${Math.round((r.count / totalSources) * 100)}%` : "—"),
                       },
                     ]}

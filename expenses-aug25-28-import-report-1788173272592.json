@@ -1,0 +1,647 @@
+{
+  "source": "EXPENSE.xlsx (25-28 Aug 2026)",
+  "includedPayableCategories": true,
+  "branchDerivedFromPlace": 98,
+  "totalCreatedAmount": 421689.25,
+  "created": [
+    {
+      "rowNum": 3,
+      "id": "6a955bd5a9d4ae1ad6dce089",
+      "amount": 1000,
+      "expense": "Incentive"
+    },
+    {
+      "rowNum": 4,
+      "id": "6a955bd5a9d4ae1ad6dce08a",
+      "amount": 20000,
+      "expense": "Office Exp."
+    },
+    {
+      "rowNum": 5,
+      "id": "6a955bd5a9d4ae1ad6dce08b",
+      "amount": 9320,
+      "expense": "Welfare Expenses"
+    },
+    {
+      "rowNum": 6,
+      "id": "6a955bd5a9d4ae1ad6dce08c",
+      "amount": 70,
+      "expense": "Welfare Expenses"
+    },
+    {
+      "rowNum": 7,
+      "id": "6a955bd5a9d4ae1ad6dce08d",
+      "amount": 460,
+      "expense": "Welfare Expenses"
+    },
+    {
+      "rowNum": 8,
+      "id": "6a955bd6a9d4ae1ad6dce08e",
+      "amount": 250,
+      "expense": "Office Exp."
+    },
+    {
+      "rowNum": 9,
+      "id": "6a955bd6a9d4ae1ad6dce08f",
+      "amount": 50,
+      "expense": "Patient Related Expenses"
+    },
+    {
+      "rowNum": 10,
+      "id": "6a955bd6a9d4ae1ad6dce090",
+      "amount": 230,
+      "expense": "Office Exp."
+    },
+    {
+      "rowNum": 11,
+      "id": "6a955bd6a9d4ae1ad6dce091",
+      "amount": 1000,
+      "expense": "Office Exp."
+    },
+    {
+      "rowNum": 12,
+      "id": "6a955bd6a9d4ae1ad6dce092",
+      "amount": 295,
+      "expense": "Welfare Expenses"
+    },
+    {
+      "rowNum": 13,
+      "id": "6a955bd6a9d4ae1ad6dce093",
+      "amount": 420,
+      "expense": "Office Exp."
+    },
+    {
+      "rowNum": 14,
+      "id": "6a955bd6a9d4ae1ad6dce094",
+      "amount": 1000,
+      "expense": "Incentive"
+    },
+    {
+      "rowNum": 15,
+      "id": "6a955bd6a9d4ae1ad6dce095",
+      "amount": 4000,
+      "expense": "Office Exp."
+    },
+    {
+      "rowNum": 16,
+      "id": "6a955bd6a9d4ae1ad6dce096",
+      "amount": 250,
+      "expense": "Office Exp."
+    },
+    {
+      "rowNum": 17,
+      "id": "6a955bd6a9d4ae1ad6dce097",
+      "amount": 460,
+      "expense": "Office Exp."
+    },
+    {
+      "rowNum": 18,
+      "id": "6a955bd6a9d4ae1ad6dce098",
+      "amount": 250,
+      "expense": "Office Exp."
+    },
+    {
+      "rowNum": 19,
+      "id": "6a955bd6a9d4ae1ad6dce099",
+      "amount": 6000,
+      "expense": "Patient Related Expenses"
+    },
+    {
+      "rowNum": 20,
+      "id": "6a955bd6a9d4ae1ad6dce09a",
+      "amount": 10000,
+      "expense": "Office Exp."
+    },
+    {
+      "rowNum": 21,
+      "id": "6a955bd6a9d4ae1ad6dce09b",
+      "amount": 1000,
+      "expense": "Office Exp."
+    },
+    {
+      "rowNum": 22,
+      "id": "6a955bd6a9d4ae1ad6dce09c",
+      "amount": 500,
+      "expense": "Office Exp."
+    },
+    {
+      "rowNum": 23,
+      "id": "6a955bd6a9d4ae1ad6dce09d",
+      "amount": 1000,
+      "expense": "Incentive"
+    },
+    {
+      "rowNum": 24,
+      "id": "6a955bd6a9d4ae1ad6dce09e",
+      "amount": 500,
+      "expense": "Incentive"
+    },
+    {
+      "rowNum": 25,
+      "id": "6a955bd6a9d4ae1ad6dce09f",
+      "amount": 6830,
+      "expense": "Drawings"
+    },
+    {
+      "rowNum": 26,
+      "id": "6a955bd6a9d4ae1ad6dce0a0",
+      "amount": 1790,
+      "expense": "Drawings"
+    },
+    {
+      "rowNum": 27,
+      "id": "6a955bd6a9d4ae1ad6dce0a1",
+      "amount": 680,
+      "expense": "Drawings"
+    },
+    {
+      "rowNum": 28,
+      "id": "6a955bd6a9d4ae1ad6dce0a2",
+      "amount": 4340,
+      "expense": "Drawings"
+    },
+    {
+      "rowNum": 29,
+      "id": "6a955bd6a9d4ae1ad6dce0a3",
+      "amount": 2260,
+      "expense": "Drawings"
+    },
+    {
+      "rowNum": 30,
+      "id": "6a955bd6a9d4ae1ad6dce0a4",
+      "amount": 1000,
+      "expense": "Drawings"
+    },
+    {
+      "rowNum": 31,
+      "id": "6a955bd6a9d4ae1ad6dce0a5",
+      "amount": 3290,
+      "expense": "Drawings"
+    },
+    {
+      "rowNum": 32,
+      "id": "6a955bd6a9d4ae1ad6dce0a6",
+      "amount": 302,
+      "expense": "Telephone Expenses"
+    },
+    {
+      "rowNum": 33,
+      "id": "6a955bd6a9d4ae1ad6dce0a7",
+      "amount": 342,
+      "expense": "Office Exp."
+    },
+    {
+      "rowNum": 34,
+      "id": "6a955bd6a9d4ae1ad6dce0a8",
+      "amount": 70,
+      "expense": "Patient Related Expenses"
+    },
+    {
+      "rowNum": 35,
+      "id": "6a955bd6a9d4ae1ad6dce0a9",
+      "amount": 785,
+      "expense": "Office Exp."
+    },
+    {
+      "rowNum": 36,
+      "id": "6a955bd6a9d4ae1ad6dce0aa",
+      "amount": 100,
+      "expense": "Patient Related Expenses"
+    },
+    {
+      "rowNum": 37,
+      "id": "6a955bd6a9d4ae1ad6dce0ab",
+      "amount": 700,
+      "expense": "Office Exp."
+    },
+    {
+      "rowNum": 39,
+      "id": "6a955bd6a9d4ae1ad6dce0ac",
+      "amount": 180,
+      "expense": "Office Exp."
+    },
+    {
+      "rowNum": 44,
+      "id": "6a955bd6a9d4ae1ad6dce0ad",
+      "amount": 235,
+      "expense": "Medical Consumables"
+    },
+    {
+      "rowNum": 45,
+      "id": "6a955bd7a9d4ae1ad6dce0ae",
+      "amount": 100,
+      "expense": "Office Exp."
+    },
+    {
+      "rowNum": 46,
+      "id": "6a955bd7a9d4ae1ad6dce0af",
+      "amount": 90,
+      "expense": "Office Exp."
+    },
+    {
+      "rowNum": 48,
+      "id": "6a955bd7a9d4ae1ad6dce0b0",
+      "amount": 382,
+      "expense": "Welfare Expenses"
+    },
+    {
+      "rowNum": 49,
+      "id": "6a955bd7a9d4ae1ad6dce0b1",
+      "amount": 240,
+      "expense": "Patient Related Expenses"
+    },
+    {
+      "rowNum": 50,
+      "id": "6a955bd7a9d4ae1ad6dce0b2",
+      "amount": 580,
+      "expense": "Welfare Expenses"
+    },
+    {
+      "rowNum": 52,
+      "id": "6a955bd7a9d4ae1ad6dce0b3",
+      "amount": 5664,
+      "expense": "Telephone Expenses"
+    },
+    {
+      "rowNum": 53,
+      "id": "6a955bd7a9d4ae1ad6dce0b4",
+      "amount": 9000,
+      "expense": "Drawings"
+    },
+    {
+      "rowNum": 55,
+      "id": "6a955bd7a9d4ae1ad6dce0b5",
+      "amount": 2797.78,
+      "expense": "Marketing"
+    },
+    {
+      "rowNum": 56,
+      "id": "6a955bd7a9d4ae1ad6dce0b6",
+      "amount": 1200,
+      "expense": "Drawings"
+    },
+    {
+      "rowNum": 57,
+      "id": "6a955bd7a9d4ae1ad6dce0b7",
+      "amount": 437.85,
+      "expense": "Drawings"
+    },
+    {
+      "rowNum": 58,
+      "id": "6a955bd7a9d4ae1ad6dce0b8",
+      "amount": 6375,
+      "expense": "Patient Related Expenses"
+    },
+    {
+      "rowNum": 59,
+      "id": "6a955bd7a9d4ae1ad6dce0b9",
+      "amount": 5900,
+      "expense": "Software Rental Expenses"
+    },
+    {
+      "rowNum": 60,
+      "id": "6a955bd7a9d4ae1ad6dce0ba",
+      "amount": 1000,
+      "expense": "Drawings"
+    },
+    {
+      "rowNum": 61,
+      "id": "6a955bd7a9d4ae1ad6dce0bb",
+      "amount": 180,
+      "expense": "Drawings"
+    },
+    {
+      "rowNum": 62,
+      "id": "6a955bd7a9d4ae1ad6dce0bc",
+      "amount": 40,
+      "expense": "Drawings"
+    },
+    {
+      "rowNum": 63,
+      "id": "6a955bd7a9d4ae1ad6dce0bd",
+      "amount": 5000,
+      "expense": "Incentive"
+    },
+    {
+      "rowNum": 64,
+      "id": "6a955bd7a9d4ae1ad6dce0be",
+      "amount": 522,
+      "expense": "Drawings"
+    },
+    {
+      "rowNum": 65,
+      "id": "6a955bd7a9d4ae1ad6dce0bf",
+      "amount": 319,
+      "expense": "Software Rental Expenses"
+    },
+    {
+      "rowNum": 66,
+      "id": "6a955bd7a9d4ae1ad6dce0c0",
+      "amount": 42.6,
+      "expense": "Bank Charges"
+    },
+    {
+      "rowNum": 67,
+      "id": "6a955bd7a9d4ae1ad6dce0c1",
+      "amount": 2018,
+      "expense": "Drawings"
+    },
+    {
+      "rowNum": 68,
+      "id": "6a955bd7a9d4ae1ad6dce0c2",
+      "amount": 40000,
+      "expense": "Software Rental Expenses"
+    },
+    {
+      "rowNum": 69,
+      "id": "6a955bd7a9d4ae1ad6dce0c3",
+      "amount": 1165.5,
+      "expense": "Welfare Expenses"
+    },
+    {
+      "rowNum": 70,
+      "id": "6a955bd7a9d4ae1ad6dce0c4",
+      "amount": 525,
+      "expense": "Drawings"
+    },
+    {
+      "rowNum": 71,
+      "id": "6a955bd7a9d4ae1ad6dce0c5",
+      "amount": 690,
+      "expense": "Software Rental Expenses"
+    },
+    {
+      "rowNum": 72,
+      "id": "6a955bd7a9d4ae1ad6dce0c6",
+      "amount": 690,
+      "expense": "Software Rental Expenses"
+    },
+    {
+      "rowNum": 73,
+      "id": "6a955bd7a9d4ae1ad6dce0c7",
+      "amount": 690,
+      "expense": "Software Rental Expenses"
+    },
+    {
+      "rowNum": 74,
+      "id": "6a955bd7a9d4ae1ad6dce0c8",
+      "amount": 2524.26,
+      "expense": "Drawings"
+    },
+    {
+      "rowNum": 75,
+      "id": "6a955bd7a9d4ae1ad6dce0c9",
+      "amount": 17700,
+      "expense": "Software Rental Expenses"
+    },
+    {
+      "rowNum": 76,
+      "id": "6a955bd7a9d4ae1ad6dce0ca",
+      "amount": 40000,
+      "expense": "Software Rental Expenses"
+    },
+    {
+      "rowNum": 77,
+      "id": "6a955bd7a9d4ae1ad6dce0cb",
+      "amount": 299,
+      "expense": "Drawings"
+    },
+    {
+      "rowNum": 78,
+      "id": "6a955bd7a9d4ae1ad6dce0cc",
+      "amount": 156.94,
+      "expense": "Bank Charges"
+    },
+    {
+      "rowNum": 79,
+      "id": "6a955bd7a9d4ae1ad6dce0cd",
+      "amount": 410.45,
+      "expense": "Software Rental Expenses"
+    },
+    {
+      "rowNum": 80,
+      "id": "6a955bd7a9d4ae1ad6dce0ce",
+      "amount": 2797.78,
+      "expense": "Software Rental Expenses"
+    },
+    {
+      "rowNum": 81,
+      "id": "6a955bd8a9d4ae1ad6dce0cf",
+      "amount": 2018,
+      "expense": "Drawings"
+    },
+    {
+      "rowNum": 82,
+      "id": "6a955bd8a9d4ae1ad6dce0d0",
+      "amount": 40000,
+      "expense": "Software Rental Expenses"
+    },
+    {
+      "rowNum": 83,
+      "id": "6a955bd8a9d4ae1ad6dce0d1",
+      "amount": 50000,
+      "expense": "Software Rental Expenses"
+    },
+    {
+      "rowNum": 84,
+      "id": "6a955bd8a9d4ae1ad6dce0d2",
+      "amount": 2500,
+      "expense": "Office Exp."
+    },
+    {
+      "rowNum": 85,
+      "id": "6a955bd8a9d4ae1ad6dce0d3",
+      "amount": 1500,
+      "expense": "Office Exp."
+    },
+    {
+      "rowNum": 86,
+      "id": "6a955bd8a9d4ae1ad6dce0d4",
+      "amount": 7670,
+      "expense": "Software Rental Expenses"
+    },
+    {
+      "rowNum": 87,
+      "id": "6a955bd8a9d4ae1ad6dce0d5",
+      "amount": 3881.58,
+      "expense": "Welfare Expenses"
+    },
+    {
+      "rowNum": 88,
+      "id": "6a955bd8a9d4ae1ad6dce0d6",
+      "amount": 8000,
+      "expense": "Drawings"
+    },
+    {
+      "rowNum": 89,
+      "id": "6a955bd8a9d4ae1ad6dce0d7",
+      "amount": 1991.58,
+      "expense": "Drawings"
+    },
+    {
+      "rowNum": 90,
+      "id": "6a955bd8a9d4ae1ad6dce0d8",
+      "amount": 2100,
+      "expense": "Drawings"
+    },
+    {
+      "rowNum": 91,
+      "id": "6a955bd8a9d4ae1ad6dce0d9",
+      "amount": 999,
+      "expense": "Software Rental Expenses"
+    },
+    {
+      "rowNum": 92,
+      "id": "6a955bd8a9d4ae1ad6dce0da",
+      "amount": 999,
+      "expense": "Software Rental Expenses"
+    },
+    {
+      "rowNum": 93,
+      "id": "6a955bd8a9d4ae1ad6dce0db",
+      "amount": 2018,
+      "expense": "Drawings"
+    },
+    {
+      "rowNum": 94,
+      "id": "6a955bd8a9d4ae1ad6dce0dc",
+      "amount": 9356.22,
+      "expense": "Software Rental Expenses"
+    },
+    {
+      "rowNum": 95,
+      "id": "6a955bd8a9d4ae1ad6dce0dd",
+      "amount": 350.8,
+      "expense": "Telephone Expenses"
+    },
+    {
+      "rowNum": 96,
+      "id": "6a955bd8a9d4ae1ad6dce0de",
+      "amount": 2797.7,
+      "expense": "Software Rental Expenses"
+    },
+    {
+      "rowNum": 97,
+      "id": "6a955bd8a9d4ae1ad6dce0df",
+      "amount": 40000,
+      "expense": "Software Rental Expenses"
+    },
+    {
+      "rowNum": 98,
+      "id": "6a955bd8a9d4ae1ad6dce0e0",
+      "amount": 11.21,
+      "expense": "Bank Charges"
+    },
+    {
+      "rowNum": 99,
+      "id": "6a955bd8a9d4ae1ad6dce0e1",
+      "amount": 15000,
+      "expense": "Hotel Charges"
+    }
+  ],
+  "failed": [],
+  "alreadyImported": [],
+  "periodLocked": [],
+  "possibleDuplicatesSkipped": [
+    {
+      "rowNum": 2,
+      "date": "2026-08-25",
+      "expense": "Office Exp.",
+      "expenseType": "Vehicle Maintainance",
+      "amount": 100,
+      "remarks": "aditya  bike petrol prsnl  pay way to narela",
+      "matchedExistingIds": [
+        "6a8ecf9ad3703cca00ff8920"
+      ]
+    },
+    {
+      "rowNum": 38,
+      "date": "2026-08-26",
+      "expense": "Patient Related Expenses",
+      "expenseType": "Patient Meals",
+      "amount": 70,
+      "remarks": "PT LUNCH",
+      "matchedExistingIds": [
+        "6a8ec6ecf6d054422281dd52"
+      ]
+    },
+    {
+      "rowNum": 40,
+      "date": "2026-08-26",
+      "expense": "Welfare Expenses",
+      "expenseType": "Pantry Expenses",
+      "amount": 100,
+      "remarks": "SURF",
+      "matchedExistingIds": [
+        "6a8ea6d2918bae7818fa8615"
+      ]
+    },
+    {
+      "rowNum": 41,
+      "date": "2026-08-26",
+      "expense": "Office Exp.",
+      "expenseType": "Printing & stationery",
+      "amount": 150,
+      "remarks": "XEROX",
+      "matchedExistingIds": [
+        "6a8ea6f0918bae7818fa8616"
+      ]
+    },
+    {
+      "rowNum": 42,
+      "date": "2026-08-27",
+      "expense": "Welfare Expenses",
+      "expenseType": "Pantry Expenses",
+      "amount": 100,
+      "remarks": "DISPOSAl glass",
+      "matchedExistingIds": [
+        "6a901987eaae4c03dad16722"
+      ]
+    },
+    {
+      "rowNum": 43,
+      "date": "2026-08-27",
+      "expense": "Office Exp.",
+      "expenseType": "Printing & stationery",
+      "amount": 88,
+      "remarks": "XEROX",
+      "matchedExistingIds": [
+        "6a9019b4eaae4c03dad1673d"
+      ]
+    },
+    {
+      "rowNum": 47,
+      "date": "2026-08-27",
+      "expense": "Patient Related Expenses",
+      "expenseType": "Patient Meals",
+      "amount": 70,
+      "remarks": "PT LUNCH",
+      "matchedExistingIds": [
+        "6a901a25eaae4c03dad16741"
+      ]
+    },
+    {
+      "rowNum": 51,
+      "date": "2026-08-25",
+      "expense": "Drawings",
+      "expenseType": "Personal Payments",
+      "amount": 2018,
+      "remarks": "personal payments",
+      "matchedExistingIds": [
+        "6a8ee2d074f245f839dcb284"
+      ]
+    },
+    {
+      "rowNum": 54,
+      "date": "2026-08-25",
+      "expense": "Telephone Expenses",
+      "expenseType": "Staff Recharge",
+      "amount": 5000,
+      "remarks": "TELECALLER RECHARGE",
+      "matchedExistingIds": [
+        "6a8ee3e574f245f839dcb285"
+      ]
+    }
+  ],
+  "notImportedPayableCategories": []
+}

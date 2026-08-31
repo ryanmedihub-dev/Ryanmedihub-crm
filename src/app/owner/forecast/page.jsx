@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
-import { OwnerTopbar, Card } from "@/components/owner";
+import { OwnerTopbar, Card, InlineNotice } from "@/components/owner";
 
 const rupee = (n) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n || 0);
 const fmt = (n) => new Intl.NumberFormat("en-IN").format(Math.round(n || 0));
@@ -74,12 +74,7 @@ export default function ForecastStaffingPage() {
 
         <div className="content">
           {note && (
-            <div className="notice">
-              <div>
-                <strong>Partial live data</strong>
-                <p style={{ margin: "3px 0 0" }}>{note}</p>
-              </div>
-            </div>
+            <InlineNotice kind="info" title="Partial live data">{note}</InlineNotice>
           )}
 
           <div className="grid cols-2">
@@ -122,7 +117,7 @@ export default function ForecastStaffingPage() {
                   <span>{forecast.agentGap > 0 ? "Agent Shortfall" : "Agent Surplus"}</span>
                 </div>
               </div>
-              <p className="muted" style={{ marginTop: 12, fontSize: 8 }}>
+              <p className="muted" style={{ marginTop: 12 }}>
                 Agents Needed = Leads/day ÷ Leads/Agent/Day. Not a callby figure — a simple staffing
                 math check against whatever capacity assumption you set above.
               </p>

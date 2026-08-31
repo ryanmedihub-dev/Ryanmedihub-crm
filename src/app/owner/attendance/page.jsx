@@ -1,25 +1,18 @@
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
-import { OwnerTopbar, Card } from "@/components/owner";
+import { OwnerTopbar, ComingSoon } from "@/components/owner";
 
 export default function AttendancePage() {
   return (
     <div className="app">
       <OwnerSidebar />
-
       <div className="main">
-        <OwnerTopbar
-          title="Productivity Attendance"
-          subtitle="Not yet available"
-        />
-
+        <OwnerTopbar title="Productivity Attendance" subtitle="Not yet available" />
         <div className="content">
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "calc(100vh - 150px)" }}>
-            <Card className=" " style={{ maxWidth: "380px", textAlign: "center" }}>
-              <div style={{ fontSize: "64px", marginBottom: "16px" }}>🕒</div>
-              <h2 style={{ margin: "0 0 8px 0", fontSize: "18px" }}>This is coming soon.</h2>
-              <p style={{ margin: "0", color: "var(--muted)", fontSize: "13px" }}>Needs an attendance/session model — not yet implemented.</p>
-            </Card>
-          </div>
+          <ComingSoon
+            icon="◷"
+            title="No attendance data to report on"
+            message="Shift-level attendance and active-session tracking need an attendance / session model in the backend. That model doesn't exist yet, so there are no clock-ins, breaks or idle-time figures to surface here."
+          />
         </div>
       </div>
     </div>

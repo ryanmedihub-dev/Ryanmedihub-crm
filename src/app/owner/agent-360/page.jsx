@@ -2,7 +2,10 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
-import { OwnerTopbar, Card, DataTable, Badge, Modal, KpiRow } from "@/components/owner";
+import {
+  OwnerTopbar, Card, DataTable, Badge, Modal, KpiRow,
+  ErrorState, EmptyState, InlineNotice,
+} from "@/components/owner";
 
 function fmtSeconds(s) {
   if (!s) return "0m";
@@ -105,13 +108,12 @@ export default function Agent360Page() {
 
         <div className="content">
           {error ? (
-            <div className="card">
-              <p><strong>{error}</strong></p>
-              <button className="link-btn" onClick={fetchAgents}>Try again</button>
-            </div>
+            <ErrorState message={error} onRetry={fetchAgents} />
           ) : (
             <>
               <KpiRow
+                primaryIndex={3}
+                loading={loading}
                 items={[
                   { label: "Total Agents", value: loading ? "—" : agents.length, sub: "In roster", kind: "info" },
                   { label: "Active", value: loading ? "—" : agents.filter((a) => a.isActive).length, sub: "Currently active", kind: "good" },
@@ -130,10 +132,11 @@ export default function Agent360Page() {
                   { label: "Converted", value: loading ? "—" : agents.reduce((s, a) => s + (a.leads?.byStatus?.converted || 0), 0), sub: "Total", kind: "good" },
                 ]}
               />
-              <Card title="Agents" subtitle={loading ? "Loading…" : `${agents.length} agents`}>
+              <Card title="Agents" subtitle={loading ? "Loading…" : `${agents.length} agents · click a row for full detail`}>
               <DataTable
                 tall
-                emptyMessage={loading ? "Loading…" : "No agent data available"}
+                loading={loading}
+                emptyMessage={<EmptyState icon="☏" title="No agent data" hint="The workforce summary is empty for this range." />}
                 sortKey={sortKey}
                 sortDir={sortDir}
                 onSort={handleSort}
@@ -141,12 +144,12 @@ export default function Agent360Page() {
                 columns={[
                   { key: "name", label: "Agent", sortable: true },
                   { key: "tlName", label: "Team", sortable: true, render: (a) => a.tlName || "Unassigned" },
-                  { key: "isActive", label: "Status", render: (a) => <Badge kind={a.isActive ? "good" : "neutral"}>{a.isActive ? "Active" : "Inactive"}</Badge> },
-                  { key: "calls", label: "Calls", sortable: true, render: (a) => a.calls?.total ?? "—" },
-                  { key: "connected", label: "Connected", sortable: true, render: (a) => a.calls?.connected ?? "—" },
-                  { key: "connectRate", label: "Connect Rate", sortable: true, render: (a) => a.calls ? `${Math.round((a.calls.connectRate || 0) * 100)}%` : "—" },
-                  { key: "leadsAssigned", label: "Leads Assigned", sortable: true, render: (a) => a.leads?.assigned ?? "—" },
-                  { key: "converted", label: "Converted", sortable: true, render: (a) => a.leads?.byStatus?.converted ?? "—" },
+                  { key: "isActive", label: "Status", render: (a) => <Badge kind={a.isActive ? "good" : "neutral"} glyph>{a.isActive ? "Active" : "Inactive"}</Badge> },
+                  { key: "calls", label: "Calls", sortable: true, align: "right", render: (a) => a.calls?.total ?? "—" },
+                  { key: "connected", label: "Connected", sortable: true, align: "right", render: (a) => a.calls?.connected ?? "—" },
+                  { key: "connectRate", label: "Connect Rate", sortable: true, align: "right", render: (a) => a.calls ? `${Math.round((a.calls.connectRate || 0) * 100)}%` : "—" },
+                  { key: "leadsAssigned", label: "Leads Assigned", sortable: true, align: "right", render: (a) => a.leads?.assigned ?? "—" },
+                  { key: "converted", label: "Converted", sortable: true, align: "right", render: (a) => a.leads?.byStatus?.converted ?? "—" },
                 ]}
                 rows={loading ? [] : sortedRows}
               />
@@ -165,12 +168,7 @@ export default function Agent360Page() {
         {detailLoading ? (
           <p className="muted">Loading…</p>
         ) : detailError ? (
-          <div className="notice">
-            <div>
-              <strong>Couldn't load this agent's detail</strong>
-              <p style={{ margin: "3px 0 0" }}>{detailError}</p>
-            </div>
-          </div>
+          <InlineNotice kind="error" title="Couldn't load this agent's detail">{detailError}</InlineNotice>
         ) : detail ? (
           <>
             <div className="metric-row">

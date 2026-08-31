@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
-import { OwnerTopbar, Card, KpiRow, DataTable } from "@/components/owner";
+import { OwnerTopbar, Card, KpiRow, DataTable, ErrorState, EmptyState } from "@/components/owner";
 import { ALL_BRANCHES } from "@/lib/branches";
 
 const BRANCHES = ["All", ...ALL_BRANCHES];
@@ -124,13 +124,12 @@ export default function OwnerFinancePage() {
 
         <div className="content">
           {error ? (
-            <div className="card">
-              <p><strong>{error}</strong></p>
-              <button className="link-btn" onClick={fetchData}>Try again</button>
-            </div>
+            <ErrorState message={error} onRetry={fetchData} />
           ) : (
             <>
               <KpiRow
+                primaryIndex={2}
+                loading={loading}
                 items={[
                   { label: "Income", value: loading ? "—" : rupee(pnl?.income), sub: "Accrual", kind: "good" },
                   { label: "Expense", value: loading ? "—" : rupee(pnl?.expense), sub: "Accrual", kind: "bad" },
@@ -143,17 +142,18 @@ export default function OwnerFinancePage() {
                 ]}
               />
 
-              <Card title="Balance Sheet by Account" subtitle={loading ? "Loading…" : `${dateRange}${branch !== "All" ? ` · ${branch}` : ""}`}>
+              <Card title="Balance sheet by account" subtitle={loading ? "Loading…" : `${dateRange}${branch !== "All" ? ` · ${branch}` : ""}`}>
                 <DataTable
                   tall
-                  emptyMessage={loading ? "Loading…" : "No account data"}
+                  loading={loading}
+                  emptyMessage={<EmptyState icon="▦" title="No account data" hint="No ledger movement in this period." />}
                   columns={[
                     { key: "account", label: "Account" },
-                    { key: "openingBalance", label: "Opening", render: (r) => rupee(r.openingBalance) },
-                    { key: "totalIn", label: "In", render: (r) => rupee(r.totalIn) },
-                    { key: "totalOut", label: "Out", render: (r) => rupee(r.totalOut) },
-                    { key: "closingBalance", label: "Closing", render: (r) => rupee(r.closingBalance) },
-                    { key: "transactionCount", label: "Txns" },
+                    { key: "openingBalance", label: "Opening", align: "right", render: (r) => rupee(r.openingBalance) },
+                    { key: "totalIn", label: "In", align: "right", render: (r) => rupee(r.totalIn) },
+                    { key: "totalOut", label: "Out", align: "right", render: (r) => rupee(r.totalOut) },
+                    { key: "closingBalance", label: "Closing", align: "right", render: (r) => rupee(r.closingBalance) },
+                    { key: "transactionCount", label: "Txns", align: "right" },
                   ]}
                   rows={
                     loading
@@ -161,21 +161,24 @@ export default function OwnerFinancePage() {
                       : [
                           ...accountRows.map((r) => ({ ...r, id: r.account })),
                           balanceSheet?.grandTotal
-                            ? { ...balanceSheet.grandTotal, account: "Grand Total", id: "grand-total" }
+                            ? { ...balanceSheet.grandTotal, account: "Grand total", id: "grand-total", _isTotal: true }
                             : null,
                         ].filter(Boolean)
                   }
                 />
               </Card>
 
-              <Card title="Branch Profitability" subtitle="All branches, regardless of the branch filter above">
+              <Card title="Branch profitability" subtitle="All branches, regardless of the branch filter above">
                 <DataTable
-                  emptyMessage={loading ? "Loading…" : "No transaction data for this period"}
+                  loading={loading}
+                  emptyMessage={<EmptyState icon="▦" title="No transaction data" hint="No revenue or expense recorded for this period." />}
                   columns={[
                     { key: "branch", label: "Branch" },
-                    { key: "revenue", label: "Revenue", render: (r) => rupee(r.revenue) },
-                    { key: "expense", label: "Expense", render: (r) => rupee(r.expense) },
-                    { key: "profit", label: "Profit", render: (r) => rupee(r.profit) },
+                    { key: "revenue", label: "Revenue", align: "right", render: (r) => rupee(r.revenue) },
+                    { key: "expense", label: "Expense", align: "right", render: (r) => rupee(r.expense) },
+                    { key: "profit", label: "Profit", align: "right", render: (r) => (
+                      <span style={{ color: r.profit >= 0 ? "var(--pos)" : "var(--crit)", fontWeight: 600 }}>{rupee(r.profit)}</span>
+                    ) },
                   ]}
                   rows={loading ? [] : branchRows.map((r) => ({ ...r, id: r.branch }))}
                 />

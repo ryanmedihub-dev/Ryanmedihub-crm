@@ -1,6 +1,13 @@
-export default function Card({ title, subtitle, actions, className = "", children }) {
+export default function Card({
+  title,
+  subtitle,
+  actions,
+  className = "",
+  style,
+  children,
+}) {
   return (
-    <div className={`card${className ? ` ${className}` : ""}`}>
+    <div className={`card${className ? ` ${className}` : ""}`} style={style}>
       {(title || subtitle || actions) && (
         <div className="card-title">
           <div>

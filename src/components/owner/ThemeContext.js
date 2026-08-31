@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 
 const ThemeContext = createContext({ theme: "light", toggleTheme: () => {} });
 
-export function ThemeProvider({ children }) {
+export function ThemeProvider({ children, className = "" }) {
   const [theme, setTheme] = useState("light");
 
   useEffect(() => {
@@ -28,7 +28,7 @@ export function ThemeProvider({ children }) {
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
-      <div className="owner-app" data-theme={theme}>
+      <div className={`owner-app${className ? ` ${className}` : ""}`} data-theme={theme}>
         {children}
       </div>
     </ThemeContext.Provider>

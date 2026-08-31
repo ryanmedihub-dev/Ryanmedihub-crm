@@ -1,25 +1,18 @@
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
-import { OwnerTopbar, Card } from "@/components/owner";
+import { OwnerTopbar, ComingSoon } from "@/components/owner";
 
 export default function PayrollPage() {
   return (
     <div className="app">
       <OwnerSidebar />
-
       <div className="main">
-        <OwnerTopbar
-          title="Incentives & Payroll"
-          subtitle="Not yet available"
-        />
-
+        <OwnerTopbar title="Incentives & Payroll" subtitle="Not yet available" />
         <div className="content">
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "calc(100vh - 150px)" }}>
-            <Card className=" " style={{ maxWidth: "380px", textAlign: "center" }}>
-              <div style={{ fontSize: "64px", marginBottom: "16px" }}>💰</div>
-              <h2 style={{ margin: "0 0 8px 0", fontSize: "18px" }}>This is coming soon.</h2>
-              <p style={{ margin: "0", color: "var(--muted)", fontSize: "13px" }}>Needs a payroll engine — not yet implemented.</p>
-            </Card>
-          </div>
+          <ComingSoon
+            icon="₹"
+            title="No payroll engine yet"
+            message="Base salary and incentive rate are stored per employee (see All Staff 360°), but there's no engine that runs a pay cycle, applies incentive rules and produces payslips. That's what this screen needs before it can show anything."
+          />
         </div>
       </div>
     </div>

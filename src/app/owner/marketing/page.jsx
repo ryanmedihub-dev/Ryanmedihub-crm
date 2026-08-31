@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
-import { OwnerTopbar, Card, KpiRow, DataTable, Badge } from "@/components/owner";
+import { OwnerTopbar, Card, KpiRow, DataTable, Badge, ErrorState, EmptyState, InlineNotice } from "@/components/owner";
 import { ALL_BRANCHES } from "@/lib/branches";
 
 const BRANCHES = ["All", ...ALL_BRANCHES];
@@ -118,8 +118,8 @@ export default function MarketingProfitabilityPage() {
 
       <div className="main">
         <OwnerTopbar
-          title="Marketing Profitability"
-          subtitle="Meta & Google spend vs. leads, conversions, and revenue"
+          title="Meta & Google"
+          subtitle="What the ad spend bought — CPL, CAC, ROAS by platform and campaign"
           controls={
             <>
               <select className="control" value={branch} onChange={(e) => setBranch(e.target.value)}>
@@ -153,30 +153,23 @@ export default function MarketingProfitabilityPage() {
 
         <div className="content">
           {error ? (
-            <div className="card">
-              <p><strong>{error}</strong></p>
-              <button className="link-btn" onClick={fetchSummary}>Try again</button>
-            </div>
+            <ErrorState message={error} onRetry={fetchSummary} />
           ) : (
             <>
               {note && (
-                <div className="notice">
-                  <div>
-                    <strong>Branch scope note</strong>
-                    <p style={{ margin: "3px 0 0" }}>{note}</p>
-                  </div>
-                </div>
+                <InlineNotice kind="info" title="Branch scope note">{note}</InlineNotice>
               )}
 
-              <KpiRow items={kpiItems} />
+              <KpiRow items={kpiItems} primaryIndex={5} loading={loading} />
 
               <Card
-                title="Platform / Campaign Breakdown"
+                title="Platform / campaign breakdown"
                 subtitle={`${dateRange} · ${branch === "All" ? "All branches (spend only)" : `Spend scoped to ${branch}`}`}
               >
                 <DataTable
                   tall
-                  emptyMessage={loading ? "Loading…" : "No ad spend recorded for this filter"}
+                  loading={loading}
+                  emptyMessage={<EmptyState icon="◈" title="No ad spend for this filter" hint="Log spend on the Ad Spend Entry screen, or widen the date range." />}
                   columns={[
                     {
                       key: "platform",
@@ -188,29 +181,30 @@ export default function MarketingProfitabilityPage() {
                       label: "Campaign",
                       render: (row) =>
                         row.isPlatformTotal ? (
-                          <strong>Platform Total</strong>
+                          <strong>Platform total</strong>
                         ) : (
                           row.campaignName || <span className="muted">(unnamed)</span>
                         ),
                     },
                     { key: "branch", label: "Branch", render: () => branch },
-                    { key: "spend", label: "Spend", render: (row) => rupee(row.spend) },
-                    { key: "leads", label: "Leads", render: (row) => fmt(row.leads) },
-                    { key: "cpl", label: "CPL", render: (row) => rupee(row.cpl) },
-                    { key: "converted", label: "Converted", render: (row) => fmt(row.converted) },
-                    { key: "cac", label: "CAC", render: (row) => rupee(row.cac) },
-                    { key: "revenue", label: "Revenue", render: (row) => rupee(row.revenue) },
+                    { key: "spend", label: "Spend", align: "right", render: (row) => rupee(row.spend) },
+                    { key: "leads", label: "Leads", align: "right", render: (row) => fmt(row.leads) },
+                    { key: "cpl", label: "CPL", align: "right", render: (row) => rupee(row.cpl) },
+                    { key: "converted", label: "Converted", align: "right", render: (row) => fmt(row.converted) },
+                    { key: "cac", label: "CAC", align: "right", render: (row) => rupee(row.cac) },
+                    { key: "revenue", label: "Revenue", align: "right", render: (row) => rupee(row.revenue) },
                     {
                       key: "roas",
                       label: "ROAS",
+                      align: "right",
                       render: (row) => (
-                        <span style={row.roas != null ? { color: row.roas >= 1 ? "var(--green)" : "var(--red)", fontWeight: 850 } : undefined}>
+                        <span style={row.roas != null ? { color: row.roas >= 1 ? "var(--pos)" : "var(--crit)", fontWeight: 700 } : undefined}>
                           {roasFmt(row.roas)}
                         </span>
                       ),
                     },
                   ]}
-                  rows={loading ? [] : rows.map((r, i) => ({ ...r, id: `${r.platform}-${r.campaignName || "total"}-${i}` }))}
+                  rows={loading ? [] : rows.map((r, i) => ({ ...r, id: `${r.platform}-${r.campaignName || "total"}-${i}`, _isTotal: r.isPlatformTotal }))}
                 />
               </Card>
             </>

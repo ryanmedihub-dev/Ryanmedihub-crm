@@ -5,7 +5,10 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
-import { OwnerTopbar, KpiRow, Card, Funnel, ProgressBar, Modal, DataTable } from "@/components/owner";
+import {
+  OwnerTopbar, KpiRow, Card, Funnel, ProgressBar, Modal, DataTable,
+  DrillSeam, ErrorState, EmptyState, AttentionRamp, Skeleton,
+} from "@/components/owner";
 import { ALL_BRANCHES } from "@/lib/branches";
 
 const BRANCHES    = ["All", ...ALL_BRANCHES];
@@ -70,6 +73,8 @@ function buildRecommendations({ d, stalledBookingsCount, onOpenStalled }) {
   return recs;
 }
 
+const SEVERITY_LEVEL = { bad: 4, warn: 3, good: 1 };
+
 export default function OwnerCommandCenter() {
   const [branch, setBranch]       = useState("All");
   const [dateRange, setDateRange] = useState("Today");
@@ -85,6 +90,8 @@ export default function OwnerCommandCenter() {
   const [stalledBookingsCount, setStalledBookingsCount] = useState(0);
   const [recLoading, setRecLoading]                     = useState(true);
   const [stalledModalOpen, setStalledModalOpen]         = useState(false);
+
+  const [revenueSeamOpen, setRevenueSeamOpen] = useState(false);
 
   const fetchFinance = useCallback(async () => {
     setFinanceLoading(true);
@@ -158,8 +165,17 @@ export default function OwnerCommandCenter() {
 
   const conversionPct = d.appointments > 0 ? Math.round((d.converted / d.appointments) * 100) : 0;
 
+  const kpiLoading = loading || financeLoading;
+
   const kpiItems = [
-    { label: "Total Revenue",       value: loading ? "—" : rupee(d.totalAmount), sub: dateRange, kind: "good" },
+    {
+      label: "Total Revenue",
+      value: loading ? "—" : rupee(d.totalAmount),
+      sub: `${dateRange} · ${branch === "All" ? "All branches" : branch}`,
+      kind: "good",
+      onDrill: () => setRevenueSeamOpen((o) => !o),
+      drillOpen: revenueSeamOpen,
+    },
     { label: "Total Leads",         value: loading ? "—" : fmt(d.totalLeads),    sub: branch === "All" ? "All branches" : branch, kind: "info" },
     { label: "Conversion Rate",     value: loading ? "—" : `${conversionPct}%`,  sub: loading ? "" : `${fmt(d.converted)} of ${fmt(d.appointments)} appts`, kind: conversionPct >= 30 ? "good" : "warn" },
     { label: "Surgeries",           value: loading ? "—" : fmt(d.surgeries),     sub: "Completed", kind: "good" },
@@ -225,26 +241,16 @@ export default function OwnerCommandCenter() {
           subtitle={`Real-time clinic pulse · ${branch === "All" ? "All branches" : branch}`}
           controls={
             <>
-              <select className="control" value={branch} onChange={(e) => setBranch(e.target.value)}>
+              <select className="control" value={branch} onChange={(e) => setBranch(e.target.value)} aria-label="Branch">
                 {BRANCHES.map((b) => <option key={b}>{b}</option>)}
               </select>
-              <select className="control" value={dateRange} onChange={(e) => setDateRange(e.target.value)}>
+              <select className="control" value={dateRange} onChange={(e) => setDateRange(e.target.value)} aria-label="Date range">
                 {DATE_RANGES.map((r) => <option key={r}>{r}</option>)}
               </select>
               {dateRange === "Custom" && (
                 <>
-                  <input
-                    type="date"
-                    className="control"
-                    value={custom.from}
-                    onChange={(e) => setCustom((p) => ({ ...p, from: e.target.value }))}
-                  />
-                  <input
-                    type="date"
-                    className="control"
-                    value={custom.to}
-                    onChange={(e) => setCustom((p) => ({ ...p, to: e.target.value }))}
-                  />
+                  <input type="date" className="control" value={custom.from} onChange={(e) => setCustom((p) => ({ ...p, from: e.target.value }))} aria-label="From date" />
+                  <input type="date" className="control" value={custom.to} onChange={(e) => setCustom((p) => ({ ...p, to: e.target.value }))} aria-label="To date" />
                 </>
               )}
               <button className="icon-btn" onClick={fetchData} disabled={loading} title="Refresh">
@@ -256,38 +262,51 @@ export default function OwnerCommandCenter() {
 
         <div className="content">
           {error ? (
-            <div className="card">
-              <p><strong>{error}</strong></p>
-              <button className="link-btn" onClick={fetchData}>Try again</button>
-            </div>
+            <ErrorState message={error} onRetry={fetchData} />
           ) : (
             <>
-              <KpiRow items={kpiItems} />
+              <KpiRow items={kpiItems} primaryIndex={0} loading={kpiLoading} />
+
+              <DrillSeam
+                open={revenueSeamOpen && !loading}
+                onClose={() => setRevenueSeamOpen(false)}
+                title="Revenue behind the number"
+                subtitle={`Per-day total · ${dateRange}${branch !== "All" ? ` · ${branch}` : ""}`}
+              >
+                <DataTable
+                  columns={[
+                    { key: "date", label: "Date", render: (r) => new Date(r.date).toLocaleDateString("en-IN", { weekday: "short", day: "2-digit", month: "short" }) },
+                    { key: "total", label: "Revenue", align: "right", render: (r) => rupee(r.total) },
+                  ]}
+                  rows={(d.perDay || []).map((r, i) => ({ ...r, id: i }))}
+                  emptyMessage={<EmptyState icon="₹" title="No revenue in this period" hint="Pick a wider date range or a different branch." />}
+                />
+              </DrillSeam>
 
               <div className="grid cols-2">
                 <Card title="Daily Revenue" subtitle={`${dateRange}${branch !== "All" ? ` · ${branch}` : ""}`}>
                   {loading ? (
-                    <p className="muted">Loading…</p>
+                    <Skeleton variant="chart" />
                   ) : d.perDay && d.perDay.length > 0 ? (
                     <ResponsiveContainer width="100%" height={240}>
                       <AreaChart data={d.perDay} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                         <defs>
                           <linearGradient id="ownerRevGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%"  stopColor="#2368f5" stopOpacity={0.22} />
-                            <stop offset="95%" stopColor="#2368f5" stopOpacity={0} />
+                            <stop offset="5%"  stopColor="var(--info)" stopOpacity={0.22} />
+                            <stop offset="95%" stopColor="var(--info)" stopOpacity={0} />
                           </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" vertical={false} />
                         <XAxis
                           dataKey="date"
                           tickFormatter={fmtDate}
-                          tick={{ fontSize: 10, fill: "var(--muted)" }}
+                          tick={{ fontSize: 12, fill: "var(--ink-muted)" }}
                           axisLine={false}
                           tickLine={false}
                         />
                         <YAxis
                           tickFormatter={(v) => v >= 100000 ? `₹${(v / 100000).toFixed(1)}L` : `₹${(v / 1000).toFixed(0)}k`}
-                          tick={{ fontSize: 10, fill: "var(--muted)" }}
+                          tick={{ fontSize: 12, fill: "var(--ink-muted)" }}
                           axisLine={false}
                           tickLine={false}
                           width={54}
@@ -295,29 +314,29 @@ export default function OwnerCommandCenter() {
                         <Tooltip
                           formatter={(v) => [rupee(v), "Revenue"]}
                           labelFormatter={(l) => new Date(l).toLocaleDateString("en-IN", { weekday: "long", day: "2-digit", month: "long" })}
-                          contentStyle={{ borderRadius: "14px", border: "1px solid var(--line)", fontSize: "12px" }}
+                          contentStyle={{ borderRadius: "12px", border: "1px solid var(--line)", fontSize: "13px", background: "var(--surface)", color: "var(--ink)" }}
                         />
                         <Area
                           type="monotone"
                           dataKey="total"
-                          stroke="#2368f5"
+                          stroke="var(--info)"
                           strokeWidth={2.5}
                           fill="url(#ownerRevGrad)"
-                          dot={{ r: 3.5, fill: "#2368f5", strokeWidth: 0 }}
-                          activeDot={{ r: 5, fill: "#2368f5" }}
+                          dot={{ r: 3, fill: "var(--info)", strokeWidth: 0 }}
+                          activeDot={{ r: 5, fill: "var(--info)" }}
                         />
                       </AreaChart>
                     </ResponsiveContainer>
                   ) : (
-                    <p className="muted">No revenue data for this period</p>
+                    <EmptyState icon="₹" title="No revenue data for this period" hint="Try a wider date range." />
                   )}
                 </Card>
 
                 <Card title="Alerts" subtitle="Live operational flags">
                   {financeLoading || loading ? (
-                    <p className="muted">Loading…</p>
+                    <Skeleton variant="row" count={4} style={{ height: 40, margin: "10px 0" }} />
                   ) : alerts.length === 0 ? (
-                    <p className="muted">No alerts — all clear.</p>
+                    <EmptyState icon="✓" title="All clear" hint="No operational flags right now." />
                   ) : (
                     <div className="alerts">
                       {alerts.map((a) => (
@@ -336,14 +355,14 @@ export default function OwnerCommandCenter() {
 
               <div className="grid cols-3">
                 <Card title="Conversion Funnel" subtitle="Leads → Surgeries">
-                  {loading ? <p className="muted">Loading…</p> : <Funnel items={funnelItems} />}
+                  {loading ? <Skeleton variant="chart" /> : <Funnel items={funnelItems} />}
                 </Card>
 
                 <Card title="Workforce Status" subtitle={loading ? "" : `${fmt(d.totalStaff)} active staff`}>
                   {loading ? (
-                    <p className="muted">Loading…</p>
+                    <Skeleton variant="row" count={5} style={{ height: 18, margin: "12px 0" }} />
                   ) : staffRows.length === 0 ? (
-                    <p className="muted">No staff data available</p>
+                    <EmptyState icon="☰" title="No staff data" hint="Staff breakdown will show once roles are assigned." />
                   ) : (
                     staffRows.map(([role, count]) => (
                       <div className="metric-row" key={role}>
@@ -355,19 +374,23 @@ export default function OwnerCommandCenter() {
                   )}
                 </Card>
 
-                <Card title="AI Recommendations" subtitle="Rule-based, computed from live data">
+                <Card title="Action Feed" subtitle="Rule-based, computed from live data">
                   {recLoading ? (
-                    <p className="muted">Loading…</p>
+                    <Skeleton variant="row" count={2} style={{ height: 56, margin: "10px 0" }} />
                   ) : recommendations.length === 0 ? (
-                    <p className="muted">No flagged issues right now.</p>
+                    <EmptyState icon="✓" title="Nothing flagged" hint="No rule tripped for this branch right now." />
                   ) : (
                     recommendations.map((r) => (
                       <div
                         className={`decision-card ${r.severity}`}
                         key={r.id}
+                        role={r.onClick ? "button" : undefined}
+                        tabIndex={r.onClick ? 0 : undefined}
                         onClick={r.onClick}
+                        onKeyDown={r.onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); r.onClick(); } } : undefined}
                         style={r.onClick ? { cursor: "pointer" } : undefined}
                       >
+                        <AttentionRamp level={SEVERITY_LEVEL[r.severity] ?? 2} label={r.severity === "bad" ? "Critical" : r.severity === "warn" ? "Attention" : "Info"} />
                         <h4>{r.title}</h4>
                         <p>{r.detail}</p>
                       </div>
@@ -392,9 +415,9 @@ export default function OwnerCommandCenter() {
             { key: "phone", label: "Phone" },
             { key: "branch", label: "Branch" },
             { key: "visitDate", label: "Visit Date", render: (row) => row.visitDate ? new Date(row.visitDate).toLocaleDateString("en-IN") : "—" },
-            { key: "daysWaiting", label: "Days Waiting" },
-            { key: "amountReceived", label: "Received", render: (row) => rupee(row.amountReceived) },
-            { key: "pendingAmount", label: "Pending", render: (row) => rupee(row.pendingAmount) },
+            { key: "daysWaiting", label: "Days Waiting", align: "right" },
+            { key: "amountReceived", label: "Received", align: "right", render: (row) => rupee(row.amountReceived) },
+            { key: "pendingAmount", label: "Pending", align: "right", render: (row) => rupee(row.pendingAmount) },
             { key: "status", label: "Status" },
           ]}
           rows={stalledBookings}

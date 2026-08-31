@@ -1,25 +1,18 @@
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
-import { OwnerTopbar, Card } from "@/components/owner";
+import { OwnerTopbar, ComingSoon } from "@/components/owner";
 
 export default function AiHealthPage() {
   return (
     <div className="app">
       <OwnerSidebar />
-
       <div className="main">
-        <OwnerTopbar
-          title="AI Health & Audit"
-          subtitle="Not yet available"
-        />
-
+        <OwnerTopbar title="AI Health & Audit" subtitle="Not yet available" />
         <div className="content">
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "calc(100vh - 150px)" }}>
-            <Card className=" " style={{ maxWidth: "380px", textAlign: "center" }}>
-              <div style={{ fontSize: "64px", marginBottom: "16px" }}>🛡️</div>
-              <h2 style={{ margin: "0 0 8px 0", fontSize: "18px" }}>This is coming soon.</h2>
-              <p style={{ margin: "0", color: "var(--muted)", fontSize: "13px" }}>No production AI system is running yet to audit.</p>
-            </Card>
-          </div>
+          <ComingSoon
+            icon="◆"
+            title="Nothing to audit yet"
+            message="There's no production AI system running against live leads or calls right now. Once one is in place, this screen will track its uptime, decisions and error rate — until then there's no signal to audit."
+          />
         </div>
       </div>
     </div>

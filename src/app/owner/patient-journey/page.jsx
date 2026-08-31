@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
-import { OwnerTopbar, Card, DataTable, Badge } from "@/components/owner";
+import { OwnerTopbar, Card, DataTable, Badge, EmptyState, InlineNotice, Skeleton } from "@/components/owner";
 
 const rupee = (n) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n || 0);
 const fmtDate = (v) => (v ? new Date(v).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—");
@@ -95,7 +95,7 @@ export default function PatientJourneyPage() {
         />
 
         <div className="content">
-          <Card title="Find a Patient" subtitle="Search by name or phone">
+          <Card title="Find a patient" subtitle="Search by name or phone">
             <input
               type="text"
               className="control"
@@ -103,12 +103,14 @@ export default function PatientJourneyPage() {
               placeholder="Search name or phone…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              aria-label="Search patients"
             />
             {query.trim() && (
-              <div style={{ marginTop: 10 }}>
+              <div style={{ marginTop: 12 }}>
                 <DataTable
-                  emptyMessage={searching ? "Searching…" : "No matches"}
+                  loading={searching}
                   onRowClick={openPatient}
+                  emptyMessage={<EmptyState icon="✚" title="No matches" hint="Try a different name or phone number." />}
                   columns={[
                     { key: "name", label: "Name" },
                     { key: "phone", label: "Phone" },
@@ -121,13 +123,17 @@ export default function PatientJourneyPage() {
             )}
           </Card>
 
-          {error && (
-            <div className="notice">
-              <div><strong>{error}</strong></div>
-            </div>
+          {!query.trim() && !patient && !detailLoading && (
+            <Card>
+              <EmptyState icon="✚" title="Search for a patient" hint="Type a name or phone number above to pull their full record and pipeline position." />
+            </Card>
           )}
 
-          {detailLoading && <p className="muted">Loading patient…</p>}
+          {error && <InlineNotice kind="error">{error}</InlineNotice>}
+
+          {detailLoading && (
+            <Card><Skeleton variant="row" count={5} style={{ height: 18, margin: "12px 0" }} /></Card>
+          )}
 
           {patient && !detailLoading && (
             <>

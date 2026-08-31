@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
-import { OwnerTopbar, Card, DataTable } from "@/components/owner";
+import { OwnerTopbar, Card, DataTable, Modal, Badge, EmptyState, InlineNotice } from "@/components/owner";
 import { ALL_BRANCHES } from "@/lib/branches";
 import { formatCurrency, formatDate } from "@/lib/financeUI";
 import { useToast } from "@/components/Toast";
@@ -29,6 +29,8 @@ export default function AdSpendPage() {
   const [editingId, setEditingId] = useState(null);
   const [formError, setFormError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   const fetchEntries = useCallback(async () => {
     setLoading(true);
@@ -68,10 +70,13 @@ export default function AdSpendPage() {
       amount: String(entry.amount),
     });
     setFormError("");
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleDelete = async (entry) => {
-    if (!window.confirm(`Delete this ${entry.platform} entry (${formatCurrency(entry.amount)})?`)) return;
+  const confirmDelete = async () => {
+    const entry = deleteTarget;
+    if (!entry) return;
+    setDeleteTarget(null);
     try {
       const res = await fetch(`/api/owner/ad-spend?id=${entry._id}`, { method: "DELETE" });
       const json = await res.json();
@@ -131,6 +136,8 @@ export default function AdSpendPage() {
   };
 
   const totalSpend = entries.reduce((sum, e) => sum + (e.amount || 0), 0);
+  const isEditing = !!editingId;
+  const hasFilters = filters.branch !== "All" || filters.platform !== "All" || filters.from || filters.to;
 
   return (
     <div className="app">
@@ -138,8 +145,8 @@ export default function AdSpendPage() {
 
       <div className="main">
         <OwnerTopbar
-          title="Manual Ad Spend"
-          subtitle="Meta & Google campaign spend — entered manually, no linked source"
+          title="Ad Spend Entry"
+          subtitle="Where the marketing number goes in — Meta & Google spend, entered by hand"
           controls={
             <button className="icon-btn" onClick={fetchEntries} disabled={loading} title="Refresh">
               {loading ? "…" : "⟳"}
@@ -150,80 +157,97 @@ export default function AdSpendPage() {
         <div className="content">
           <div className="grid cols-2">
             <Card
-              title={editingId ? "Edit Entry" : "Add Entry"}
-              subtitle={editingId ? "Update this ad spend record" : "Log a new Meta or Google spend entry"}
+              title={isEditing ? "Edit entry" : "Add entry"}
+              subtitle={isEditing ? "Updating an existing spend record" : "Log a new Meta or Google spend row"}
+              actions={isEditing ? <Badge kind="purple">Editing</Badge> : null}
             >
-              <form onSubmit={handleSubmit} style={{ display: "grid", gap: 10 }}>
-                <input
-                  type="date"
-                  className="control"
-                  style={{ width: "100%" }}
-                  value={form.date}
-                  onChange={(e) => setForm((p) => ({ ...p, date: e.target.value }))}
-                  required
-                />
-                <select
-                  className="control"
-                  style={{ width: "100%" }}
-                  value={form.branch}
-                  onChange={(e) => setForm((p) => ({ ...p, branch: e.target.value }))}
-                  required
-                >
-                  <option value="" disabled>Select branch</option>
-                  {ALL_BRANCHES.map((b) => <option key={b} value={b}>{b}</option>)}
-                </select>
-                <select
-                  className="control"
-                  style={{ width: "100%" }}
-                  value={form.platform}
-                  onChange={(e) => setForm((p) => ({ ...p, platform: e.target.value }))}
-                  required
-                >
-                  <option value="" disabled>Select platform</option>
-                  {PLATFORMS.map((p) => <option key={p} value={p}>{p}</option>)}
-                </select>
-                <input
-                  type="text"
-                  className="control"
-                  style={{ width: "100%" }}
-                  placeholder="Campaign name (optional)"
-                  value={form.campaignName}
-                  onChange={(e) => setForm((p) => ({ ...p, campaignName: e.target.value }))}
-                />
-                <input
-                  type="number"
-                  className="control"
-                  style={{ width: "100%" }}
-                  placeholder="Amount"
-                  min="0"
-                  step="0.01"
-                  value={form.amount}
-                  onChange={(e) => setForm((p) => ({ ...p, amount: e.target.value }))}
-                  required
-                />
+              <form onSubmit={handleSubmit} style={{ display: "grid", gap: 12 }}>
+                <label style={{ display: "grid", gap: 4, fontSize: 12, color: "var(--ink-muted)" }}>
+                  Date
+                  <input
+                    type="date"
+                    className="control"
+                    style={{ width: "100%" }}
+                    value={form.date}
+                    onChange={(e) => setForm((p) => ({ ...p, date: e.target.value }))}
+                    required
+                  />
+                </label>
+                <label style={{ display: "grid", gap: 4, fontSize: 12, color: "var(--ink-muted)" }}>
+                  Branch
+                  <select
+                    className="control"
+                    style={{ width: "100%" }}
+                    value={form.branch}
+                    onChange={(e) => setForm((p) => ({ ...p, branch: e.target.value }))}
+                    required
+                  >
+                    <option value="" disabled>Select branch</option>
+                    {ALL_BRANCHES.map((b) => <option key={b} value={b}>{b}</option>)}
+                  </select>
+                </label>
+                <label style={{ display: "grid", gap: 4, fontSize: 12, color: "var(--ink-muted)" }}>
+                  Platform
+                  <select
+                    className="control"
+                    style={{ width: "100%" }}
+                    value={form.platform}
+                    onChange={(e) => setForm((p) => ({ ...p, platform: e.target.value }))}
+                    required
+                  >
+                    <option value="" disabled>Select platform</option>
+                    {PLATFORMS.map((p) => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </label>
+                <label style={{ display: "grid", gap: 4, fontSize: 12, color: "var(--ink-muted)" }}>
+                  Campaign name (optional)
+                  <input
+                    type="text"
+                    className="control"
+                    style={{ width: "100%" }}
+                    placeholder="e.g. Delhi_FUE_August"
+                    value={form.campaignName}
+                    onChange={(e) => setForm((p) => ({ ...p, campaignName: e.target.value }))}
+                  />
+                </label>
+                <label style={{ display: "grid", gap: 4, fontSize: 12, color: "var(--ink-muted)" }}>
+                  Amount (₹)
+                  <input
+                    type="number"
+                    className="control"
+                    style={{ width: "100%" }}
+                    placeholder="0"
+                    min="0"
+                    step="0.01"
+                    value={form.amount}
+                    onChange={(e) => setForm((p) => ({ ...p, amount: e.target.value }))}
+                    required
+                  />
+                </label>
 
-                {formError && <p style={{ color: "var(--red)", fontSize: 11 }}>{formError}</p>}
+                {formError && <InlineNotice kind="error">{formError}</InlineNotice>}
 
                 <div style={{ display: "flex", gap: 8 }}>
                   <button type="submit" className="primary" disabled={submitting}>
-                    {submitting ? "Saving…" : editingId ? "Save Changes" : "Add Entry"}
+                    {submitting ? "Saving…" : isEditing ? "Save changes" : "Add entry"}
                   </button>
-                  {editingId && (
-                    <button type="button" className="link-btn" onClick={resetForm}>
-                      Cancel
+                  {isEditing && (
+                    <button type="button" className="btn" onClick={resetForm}>
+                      Cancel edit
                     </button>
                   )}
                 </div>
               </form>
             </Card>
 
-            <Card title="Filters" subtitle="Narrow down the entries list below">
-              <div style={{ display: "grid", gap: 10 }}>
+            <Card title="Filters" subtitle="Narrow the list below">
+              <div style={{ display: "grid", gap: 12 }}>
                 <select
                   className="control"
                   style={{ width: "100%" }}
                   value={filters.branch}
                   onChange={(e) => setFilters((p) => ({ ...p, branch: e.target.value }))}
+                  aria-label="Filter by branch"
                 >
                   {BRANCH_OPTIONS.map((b) => <option key={b} value={b}>{b}</option>)}
                 </select>
@@ -232,30 +256,20 @@ export default function AdSpendPage() {
                   style={{ width: "100%" }}
                   value={filters.platform}
                   onChange={(e) => setFilters((p) => ({ ...p, platform: e.target.value }))}
+                  aria-label="Filter by platform"
                 >
-                  <option value="All">All Platforms</option>
+                  <option value="All">All platforms</option>
                   {PLATFORMS.map((p) => <option key={p} value={p}>{p}</option>)}
                 </select>
                 <div style={{ display: "flex", gap: 8 }}>
-                  <input
-                    type="date"
-                    className="control"
-                    style={{ flex: 1 }}
-                    value={filters.from}
-                    onChange={(e) => setFilters((p) => ({ ...p, from: e.target.value }))}
-                  />
-                  <input
-                    type="date"
-                    className="control"
-                    style={{ flex: 1 }}
-                    value={filters.to}
-                    onChange={(e) => setFilters((p) => ({ ...p, to: e.target.value }))}
-                  />
+                  <input type="date" className="control" style={{ flex: 1 }} value={filters.from} onChange={(e) => setFilters((p) => ({ ...p, from: e.target.value }))} aria-label="From date" />
+                  <input type="date" className="control" style={{ flex: 1 }} value={filters.to} onChange={(e) => setFilters((p) => ({ ...p, to: e.target.value }))} aria-label="To date" />
                 </div>
                 <button
                   type="button"
-                  className="link-btn"
+                  className="btn"
                   onClick={() => setFilters({ branch: "All", platform: "All", from: "", to: "" })}
+                  disabled={!hasFilters}
                 >
                   Clear filters
                 </button>
@@ -264,30 +278,34 @@ export default function AdSpendPage() {
           </div>
 
           <Card
-            title="Recent Entries"
-            subtitle={loading ? "Loading…" : `${entries.length} entries · ${formatCurrency(totalSpend)} total`}
+            title="Recent entries"
+            subtitle={loading ? "Loading…" : `${entries.length} entr${entries.length === 1 ? "y" : "ies"} · ${formatCurrency(totalSpend)} total`}
           >
             <DataTable
               tall
-              emptyMessage={loading ? "Loading…" : "No ad spend entries for this filter"}
+              loading={loading}
+              emptyMessage={
+                <EmptyState
+                  icon="✎"
+                  title={hasFilters ? "No entries match these filters" : "No ad spend logged yet"}
+                  hint={hasFilters ? "Widen or clear the filters." : "Add your first Meta or Google spend row with the form above."}
+                />
+              }
               columns={[
                 { key: "date", label: "Date", render: (row) => formatDate(row.date) },
                 { key: "branch", label: "Branch" },
-                { key: "platform", label: "Platform" },
-                { key: "campaignName", label: "Campaign", render: (row) => row.campaignName || "—" },
-                { key: "amount", label: "Amount", render: (row) => formatCurrency(row.amount) },
-                { key: "enteredBy", label: "Entered By", render: (row) => row.enteredBy?.name || "—" },
+                { key: "platform", label: "Platform", render: (row) => <Badge kind={row.platform === "Meta" ? "purple" : "info"}>{row.platform}</Badge> },
+                { key: "campaignName", label: "Campaign", render: (row) => row.campaignName || <span className="muted">—</span> },
+                { key: "amount", label: "Amount", align: "right", render: (row) => formatCurrency(row.amount) },
+                { key: "enteredBy", label: "Entered by", render: (row) => row.enteredBy?.name || "—" },
                 {
                   key: "actions",
-                  label: "Actions",
+                  label: "",
+                  align: "right",
                   render: (row) => (
-                    <div style={{ display: "flex", gap: 6 }}>
-                      <button type="button" className="ok-btn" onClick={() => handleEdit(row)}>
-                        Edit
-                      </button>
-                      <button type="button" className="danger-btn" onClick={() => handleDelete(row)}>
-                        Delete
-                      </button>
+                    <div style={{ display: "inline-flex", gap: 6 }}>
+                      <button type="button" className="ok-btn" onClick={() => handleEdit(row)}>Edit</button>
+                      <button type="button" className="danger-btn" onClick={() => setDeleteTarget(row)}>Delete</button>
                     </div>
                   ),
                 },
@@ -297,6 +315,27 @@ export default function AdSpendPage() {
           </Card>
         </div>
       </div>
+
+      <Modal
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        title="Delete this entry?"
+        subtitle="This cannot be undone."
+      >
+        {deleteTarget && (
+          <>
+            <div className="metric-pair"><span className="muted">Date</span><span>{formatDate(deleteTarget.date)}</span></div>
+            <div className="metric-pair"><span className="muted">Branch</span><span>{deleteTarget.branch}</span></div>
+            <div className="metric-pair"><span className="muted">Platform</span><span>{deleteTarget.platform}</span></div>
+            <div className="metric-pair"><span className="muted">Campaign</span><span>{deleteTarget.campaignName || "—"}</span></div>
+            <div className="metric-pair"><span className="muted">Amount</span><span>{formatCurrency(deleteTarget.amount)}</span></div>
+            <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+              <button type="button" className="danger-btn" onClick={confirmDelete}>Delete entry</button>
+              <button type="button" className="btn" onClick={() => setDeleteTarget(null)}>Keep it</button>
+            </div>
+          </>
+        )}
+      </Modal>
     </div>
   );
 }
