@@ -1,5 +1,5 @@
 import AccountPeriod, { isOpeningSeed } from "@/models/AccountPeriod";
-import { ACCOUNTS } from "@/constants/bankRouting";
+import { accountsSync } from "@/lib/masterData";
 
 
 const fmt = (d) =>
@@ -19,7 +19,7 @@ async function closedPeriodsCovering(account, date) {
 async function blockReasonFor(account, date) {
   if (!date) return null;
 
-  if (account && ACCOUNTS.includes(account)) {
+  if (account && accountsSync().includes(account)) {
     const [closed] = await closedPeriodsCovering(account, date);
     if (closed) {
       return `${account} is closed for ${fmt(closed.periodStart)} – ${fmt(closed.periodEnd)}. Reopen that period to change this transaction.`;
@@ -28,11 +28,11 @@ async function blockReasonFor(account, date) {
   }
 
   const perAccount = await Promise.all(
-    ACCOUNTS.map(async (a) => ({ account: a, closed: (await closedPeriodsCovering(a, date))[0] })),
+    accountsSync().map(async (a) => ({ account: a, closed: (await closedPeriodsCovering(a, date))[0] })),
   );
   if (perAccount.every((r) => r.closed)) {
     const p = perAccount[0].closed;
-    return `The books are closed for ${fmt(p.periodStart)} – ${fmt(p.periodEnd)} across all ${ACCOUNTS.length} accounts. Reopen the period to change this transaction.`;
+    return `The books are closed for ${fmt(p.periodStart)} – ${fmt(p.periodEnd)} across all ${accountsSync().length} accounts. Reopen the period to change this transaction.`;
   }
   return null;
 }
@@ -55,17 +55,17 @@ function coveringFromSnapshot(snapshot, account, date) {
 export function blockReasonFromSnapshot(snapshot, account, date) {
   if (!date) return null;
 
-  if (account && ACCOUNTS.includes(account)) {
+  if (account && accountsSync().includes(account)) {
     const closed = coveringFromSnapshot(snapshot, account, date);
     return closed
       ? `${account} is closed for ${fmt(closed.periodStart)} – ${fmt(closed.periodEnd)}. Reopen that period to change this transaction.`
       : null;
   }
 
-  const perAccount = ACCOUNTS.map((a) => coveringFromSnapshot(snapshot, a, date));
+  const perAccount = accountsSync().map((a) => coveringFromSnapshot(snapshot, a, date));
   if (perAccount.every(Boolean)) {
     const p = perAccount[0];
-    return `The books are closed for ${fmt(p.periodStart)} – ${fmt(p.periodEnd)} across all ${ACCOUNTS.length} accounts. Reopen the period to change this transaction.`;
+    return `The books are closed for ${fmt(p.periodStart)} – ${fmt(p.periodEnd)} across all ${accountsSync().length} accounts. Reopen the period to change this transaction.`;
   }
   return null;
 }

@@ -6,18 +6,8 @@ import ReceiptUpload from "@/components/ReceiptUpload";
 import SearchableSelect from "@/components/SearchableSelect";
 import TransactionSummaryPanel from "@/components/TransactionSummaryPanel";
 import { BranchDateRemarks } from "@/components/RevenueSection";
-import {
-  EXPENSE_CATEGORIES,
-  getExpenseTypes,
-  PAYABLE_EXPENSE_CATEGORIES,
-} from "@/constants/expenseCategories";
+import useMasterData from "@/lib/useMasterData";
 import { Wallet, Save, Loader2 } from "lucide-react";
-
-// This section is only rendered in non-admin panels (sales / reception / stocks),
-// where payable-type expense categories are managed elsewhere, so hide them here.
-const DIRECT_EXPENSE_CATEGORY_OPTIONS = EXPENSE_CATEGORIES.filter(
-  (cat) => !PAYABLE_EXPENSE_CATEGORIES.includes(cat),
-);
 
 export default function DirectExpenseSection({
   data, onChange, vendors, branches, onSave, saving = false, saveLabel = "Save Expense",
@@ -25,6 +15,12 @@ export default function DirectExpenseSection({
   forEdit = false,
   collapsibleRouting = !forEdit,
 }) {
+  const { expenseCategories, payableExpenseCategories, getExpenseTypes } = useMasterData();
+  // This section is only rendered in non-admin panels (sales / reception / stocks), where
+  // payable-type expense categories are managed elsewhere, so hide them here.
+  const DIRECT_EXPENSE_CATEGORY_OPTIONS = expenseCategories.filter(
+    (cat) => !payableExpenseCategories.includes(cat),
+  );
   const set = (patch) => onChange({ ...data, ...patch });
   const vendor = vendors.find((v) => v._id === data.vendorId);
   const payeeLabel = data.isVendor ? vendor?.name : data.expenseGiverName;

@@ -6,7 +6,7 @@ import connectDB from "@/lib/db";
 import Payable from "@/models/Payable";
 import Transactions from "@/models/Transactions";
 import { buildPayableGroupedStages, buildPayableAggregationStages } from "@/lib/payableAggregation";
-import { UNSETTLED_METHODS } from "@/constants/bankRouting";
+import { unsettledMethodsSync } from "@/lib/masterData";
 import { loadClosedPeriodSnapshot, blockReasonFromSnapshot } from "@/lib/periodLock";
 import { resolveBranchFilter } from "@/lib/branches";
 import { attachCollabPatients } from "@/lib/collabPatientLookup";
@@ -62,7 +62,7 @@ export async function GET(request) {
       const txMatch = {
         payableId: new mongoose.Types.ObjectId(documentId),
         approvalStatus: "APPROVED",
-        method: { $nin: UNSETTLED_METHODS },
+        method: { $nin: unsettledMethodsSync() },
       };
       if (from || to) {
         txMatch.date = {};

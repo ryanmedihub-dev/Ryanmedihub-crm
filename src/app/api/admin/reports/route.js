@@ -17,7 +17,8 @@ import { PAYABLE_PURPOSES } from "@/constants/payablePurposes";
 import { buildPayableAggregationStages } from "@/lib/payableAggregation";
 import { buildReceivableAggregationStages } from "@/lib/receivableAggregation";
 import { ALL_BRANCHES, COLLAB_BRANCHES } from "@/lib/branches";
-import { UNSETTLED_METHODS, SETTLEMENT_EXCLUSION } from "@/constants/bankRouting";
+import { SETTLEMENT_EXCLUSION } from "@/constants/bankRouting";
+import { unsettledMethodsSync } from "@/lib/masterData";
 import { getISTStartOfDay, getISTEndOfDay } from "@/lib/dateHelpers";
 
 function branchAllowed(branchFilter, branchName) {
@@ -1154,7 +1155,7 @@ async function generatePaymentCollectionReport(filters) {
   const query = {
     ...filters.dateFilter,
     costType: "Revenue",
-    method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION,
+    method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION,
   };
   if (filters.branch) query.branch = filters.branch;
 
@@ -1216,7 +1217,7 @@ async function generateProcedureRevenueReport(filters) {
   const query = {
     ...filters.dateFilter,
     costType: "Revenue",
-    method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION,
+    method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION,
   };
   if (filters.branch) query.branch = filters.branch;
   if (filters.procedureFilter) query.procedure = filters.procedureFilter;
@@ -1288,7 +1289,7 @@ async function generatePayablesAllReport(filters) {
     Transactions.find({
       payableId: { $in: ids },
       approvalStatus: "APPROVED",
-      method: { $nin: UNSETTLED_METHODS },
+      method: { $nin: unsettledMethodsSync() },
     })
       .select("payableId date amount method furtherMode paymentId remarks expense expenseType branch")
       .lean(),
@@ -1464,7 +1465,7 @@ async function generateReceivablesAllReport(filters) {
       receivableId: { $in: ids },
       costType: "Revenue",
       approvalStatus: "APPROVED",
-      method: { $nin: UNSETTLED_METHODS },
+      method: { $nin: unsettledMethodsSync() },
     })
       .select("receivableId date amount method furtherMode paymentId remarks branch")
       .lean(),
@@ -1472,7 +1473,7 @@ async function generateReceivablesAllReport(filters) {
       "receivableAllocations.receivableId": { $in: ids },
       costType: "Revenue",
       approvalStatus: "APPROVED",
-      method: { $nin: UNSETTLED_METHODS },
+      method: { $nin: unsettledMethodsSync() },
     })
       .select("receivableAllocations date method furtherMode paymentId remarks branch")
       .lean(),
@@ -1834,7 +1835,7 @@ async function generateBranchComparisonReport(filters) {
             $match: {
               ...txQuery,
               branch,
-              method: { $nin: UNSETTLED_METHODS },
+              method: { $nin: unsettledMethodsSync() },
               ...SETTLEMENT_EXCLUSION,
             },
           },
@@ -1874,7 +1875,7 @@ async function generateBranchRevenueReport(filters) {
   const query = {
     ...filters.dateFilter,
     costType: "Revenue",
-    method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION,
+    method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION,
   };
   if (filters.branch) query.branch = filters.branch;
 

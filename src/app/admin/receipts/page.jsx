@@ -8,6 +8,7 @@ import { formatCurrency } from "@/lib/financeUI";
 import DebouncedDateInput from "@/components/finance/DebouncedDateInput";
 import { exportWorkbook, filterProvenanceRows } from "@/lib/exportToExcel";
 import { receiptPaymentHeadSheets } from "@/lib/finance/headedExport";
+import FinancingTransactions from "@/components/finance/FinancingTransactions";
 
 const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
 
@@ -222,6 +223,13 @@ function ReceiptsPageInner() {
               }}
               extraParams={{ groupBy }}
             />
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide">
+              Borrowing Transactions
+            </h2>
+            <FinancingTransactions kind="borrowing" from={from} to={to} />
           </section>
         </div>
       </main>

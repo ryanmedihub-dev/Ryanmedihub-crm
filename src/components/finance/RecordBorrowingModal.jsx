@@ -5,11 +5,8 @@ import { X, Loader2 } from "lucide-react";
 import SearchableSelect from "@/components/SearchableSelect";
 import DebouncedDateInput from "@/components/finance/DebouncedDateInput";
 import { formatCurrency } from "@/lib/financeUI";
-import { ACCOUNTS } from "@/constants/bankRouting";
+import useMasterData from "@/lib/useMasterData";
 import { ALL_BRANCHES } from "@/lib/branches";
-import { getExpenseTypes } from "@/constants/expenseCategories";
-
-const SUBTYPES = getExpenseTypes("Borrowings");
 
 const PARTY_KINDS = [
   { value: "VENDOR", label: "Vendor" },
@@ -19,6 +16,8 @@ const PARTY_KINDS = [
 ];
 
 export default function RecordBorrowingModal({ open, onClose, onSuccess, mode, payable = null, toast }) {
+  const { accounts, getExpenseTypes } = useMasterData();
+  const SUBTYPES = getExpenseTypes("Borrowings");
   const isRepayment = mode === "OUT";
   const isTranche = mode === "IN" && !!payable;
   const isNewLoan = mode === "IN" && !payable;
@@ -389,7 +388,7 @@ export default function RecordBorrowingModal({ open, onClose, onSuccess, mode, p
                     className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
                   >
                     <option value="">Select account...</option>
-                    {ACCOUNTS.map((acc) => (
+                    {accounts.map((acc) => (
                       <option key={acc} value={acc}>
                         {acc}
                       </option>

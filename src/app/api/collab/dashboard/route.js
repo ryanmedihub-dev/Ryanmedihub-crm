@@ -5,8 +5,8 @@ import Transactions from "@/models/Transactions";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { COLLAB_BRANCHES } from "@/lib/branches";
-import { UNSETTLED_METHODS, SETTLEMENT_EXCLUSION } from "@/constants/bankRouting";
-
+import { SETTLEMENT_EXCLUSION } from "@/constants/bankRouting";
+import { unsettledMethodsSync } from "@/lib/masterData";
 const VALID_BRANCHES = ["All", ...COLLAB_BRANCHES];
 
 const getISTStartOfDay = (date = null) => {
@@ -167,7 +167,7 @@ const handler = async (req) => {
             $match: {
               costType: "Revenue",
               ...txBranchFilter,
-              method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION,
+              method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION,
               $or: [
                 { date: { $gte: fromDate, $lte: toDate } },
                 { date: { $gte: comparisonStart, $lte: comparisonEnd } },

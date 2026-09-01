@@ -5,8 +5,7 @@ import connectDB from "@/lib/db";
 import Transactions from "@/models/Transactions";
 import Payable from "@/models/Payable";
 import Receivable from "@/models/Receivable";
-import { UNSETTLED_METHODS, ACCOUNTS } from "@/constants/bankRouting";
-
+import { unsettledMethodsSync, accountsSync } from "@/lib/masterData";
 const ALLOWED_ROLES = ["admin", "super-admin", "owner"];
 
 export async function GET(request) {
@@ -25,7 +24,7 @@ export async function GET(request) {
     const branch = searchParams.get("branch") || "";
     const accountsParam = searchParams.get("accounts") || "";
     const selectedAccounts = accountsParam
-      ? accountsParam.split(",").filter((a) => ACCOUNTS.includes(a))
+      ? accountsParam.split(",").filter((a) => accountsSync().includes(a))
       : [];
 
     const dateRange = {};
@@ -34,7 +33,7 @@ export async function GET(request) {
 
     const txBase = {
       approvalStatus: { $nin: ["PENDING", "REJECTED"] },
-      method: { $nin: UNSETTLED_METHODS },
+      method: { $nin: unsettledMethodsSync() },
     };
     if (Object.keys(dateRange).length) txBase.date = dateRange;
     if (branch) txBase.branch = branch;

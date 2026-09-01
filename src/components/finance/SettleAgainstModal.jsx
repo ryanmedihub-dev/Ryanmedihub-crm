@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { X, Link2, Unlink, Loader2 } from "lucide-react";
 import { formatCurrency } from "@/lib/financeUI";
 
@@ -8,27 +8,40 @@ export default function SettleAgainstModal({ kind, row, onClose, onSuccess, toas
   const isAdvance = kind === "advance";
   const endpoint = isAdvance ? `/api/advances/${row._id}` : `/api/borrowings/${row._id}`;
   const listEndpoint = isAdvance ? "/api/payables/list" : "/api/receivables/list";
-  const refIdParam = isAdvance ? "payeeRefId" : "payerRefId";
   const settledField = isAdvance ? "settlesPayableId" : "settlesReceivableId";
   const targetLabel = isAdvance ? "payable" : "receivable";
 
   const [options, setOptions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState(row[settledField] ? String(row[settledField]) : "");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!row.party?.refId) {
-      setLoading(false);
-      return;
-    }
-    const p = new URLSearchParams({ [refIdParam]: String(row.party.refId), limit: "50" });
-    fetch(`${listEndpoint}?${p}`)
+    fetch(`${listEndpoint}?limit=200`)
       .then((r) => r.json())
-      .then((data) => setOptions(data[isAdvance ? "payables" : "receivables"] || []))
+      .then((data) =>
+        setOptions(
+          (data[isAdvance ? "payables" : "receivables"] || []).filter(
+            (o) => o.pending > 0 && !o.isCancelled,
+          ),
+        ),
+      )
       .catch(() => setOptions([]))
       .finally(() => setLoading(false));
-  }, [row, refIdParam, listEndpoint, isAdvance]);
+  }, [listEndpoint, isAdvance]);
+
+  const partyLabel = (opt) => (isAdvance ? opt.payee?.label : opt.payer?.label) || "—";
+
+  const filteredOptions = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return options;
+    return options.filter((opt) =>
+      [partyLabel(opt), opt.purpose, opt.expenseSubType, opt.revenueSubType]
+        .filter(Boolean)
+        .some((v) => String(v).toLowerCase().includes(q)),
+    );
+  }, [options, search]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const alreadySettling = !!row[settledField];
 
@@ -95,9 +108,9 @@ export default function SettleAgainstModal({ kind, row, onClose, onSuccess, toas
         <div className="p-5 space-y-4">
           <p className="text-sm text-gray-600">
             Links this {formatCurrency(row.amount)} {isAdvance ? "advance" : "borrowing"} —{" "}
-            <strong>{row.party?.label}</strong> — against one of their own open{" "}
-            {isAdvance ? "payables" : "receivables"}. Nets against what{" "}
-            {isAdvance ? "they're" : "you're"} owed live — never changes the target document's own
+            <strong>{row.party?.label}</strong> — against any open{" "}
+            {isAdvance ? "payable" : "receivable"}. Nets against what{" "}
+            {isAdvance ? "is owed" : "you're owed"} live — never changes the target document's own
             amount.
           </p>
 
@@ -114,44 +127,60 @@ export default function SettleAgainstModal({ kind, row, onClose, onSuccess, toas
             </div>
           )}
 
-          {!row.party?.refId ? (
-            <p className="text-sm text-gray-400">
-              This party has no linked record ({row.party?.kind || "OTHER"}) — settlement needs a
-              real Vendor/Employee/Patient to match against.
-            </p>
-          ) : loading ? (
-            <p className="text-sm text-gray-400">Loading open {targetLabel}s…</p>
-          ) : options.length === 0 ? (
-            <p className="text-sm text-gray-400">No open {targetLabel}s for this party.</p>
-          ) : (
-            !alreadySettling && (
-              <div className="space-y-2 max-h-72 overflow-y-auto">
-                {options.map((opt) => (
-                  <label
-                    key={opt._id}
-                    className={`flex items-center justify-between gap-3 p-3 rounded-lg border cursor-pointer ${
-                      selectedId === opt._id ? "border-indigo-400 bg-indigo-50" : "border-gray-200 hover:bg-gray-50"
-                    }`}
-                  >
-                    <span className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        name="settleTarget"
-                        checked={selectedId === opt._id}
-                        onChange={() => setSelectedId(opt._id)}
-                      />
-                      <span className="text-sm text-gray-800">
-                        {(opt.purpose || "").replace(/_/g, " ")}
-                        {(opt.expenseSubType || opt.revenueSubType) ? ` — ${opt.expenseSubType || opt.revenueSubType}` : ""}
+          {!alreadySettling && (
+            <>
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={`Search ${targetLabel}s by party, purpose…`}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+              />
+
+              {loading ? (
+                <p className="text-sm text-gray-400">Loading open {targetLabel}s…</p>
+              ) : filteredOptions.length === 0 ? (
+                <p className="text-sm text-gray-400">
+                  {options.length === 0
+                    ? `No open ${targetLabel}s.`
+                    : `No open ${targetLabel}s match "${search}".`}
+                </p>
+              ) : (
+                <div className="space-y-2 max-h-72 overflow-y-auto">
+                  {filteredOptions.map((opt) => (
+                    <label
+                      key={opt._id}
+                      className={`flex items-center justify-between gap-3 p-3 rounded-lg border cursor-pointer ${
+                        selectedId === opt._id ? "border-indigo-400 bg-indigo-50" : "border-gray-200 hover:bg-gray-50"
+                      }`}
+                    >
+                      <span className="flex items-center gap-2 min-w-0">
+                        <input
+                          type="radio"
+                          name="settleTarget"
+                          checked={selectedId === opt._id}
+                          onChange={() => setSelectedId(opt._id)}
+                        />
+                        <span className="min-w-0">
+                          <span className="block text-sm font-medium text-gray-800 truncate">
+                            {partyLabel(opt)}
+                          </span>
+                          <span className="block text-xs text-gray-500 truncate">
+                            {(opt.purpose || "").replace(/_/g, " ")}
+                            {(opt.expenseSubType || opt.revenueSubType)
+                              ? ` — ${opt.expenseSubType || opt.revenueSubType}`
+                              : ""}
+                          </span>
+                        </span>
                       </span>
-                    </span>
-                    <span className="text-sm font-semibold text-amber-700 shrink-0">
-                      {formatCurrency(opt.pending)} outstanding
-                    </span>
-                  </label>
-                ))}
-              </div>
-            )
+                      <span className="text-sm font-semibold text-amber-700 shrink-0">
+                        {formatCurrency(opt.pending)} outstanding
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
 

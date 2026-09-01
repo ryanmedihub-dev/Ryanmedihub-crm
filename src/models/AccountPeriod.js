@@ -1,14 +1,14 @@
 import mongoose from "mongoose";
-import { ACCOUNTS } from "@/constants/bankRouting";
+import { masterDataEnum } from "@/lib/masterData/validator";
 import { ALL_BRANCHES } from "@/lib/branches";
 
 const accountPeriodSchema = new mongoose.Schema(
   {
     account: {
       type: String,
-      enum: ACCOUNTS,
       required: true,
       index: true,
+      ...masterDataEnum("ACCOUNT", "account"),
     },
 
     branch: {

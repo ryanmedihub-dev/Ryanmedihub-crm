@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { ACCOUNTS } from "@/constants/bankRouting";
+import { masterDataEnum } from "@/lib/masterData/validator";
 import { ALL_BRANCHES } from "@/lib/branches";
 
 const receiptSchema = new mongoose.Schema(
@@ -13,7 +13,12 @@ const advanceSchema = new mongoose.Schema(
   {
     direction: { type: String, enum: ["IN", "OUT"], required: true, index: true },
 
-    account: { type: String, enum: ACCOUNTS, required: true, index: true },
+    account: {
+      type: String,
+      required: true,
+      index: true,
+      ...masterDataEnum("ACCOUNT", "account"),
+    },
 
     amount: { type: Number, required: true, min: 0 },
     date: { type: Date, default: Date.now, index: true },

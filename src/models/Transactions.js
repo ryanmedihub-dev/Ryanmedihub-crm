@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { ALL_BRANCHES, COLLAB_BRANCHES } from "@/lib/branches";
+import { masterDataEnum } from "@/lib/masterData/validator";
 import "@/models/Patient";
 
 const transactionSchema = new mongoose.Schema(
@@ -170,9 +171,11 @@ const transactionSchema = new mongoose.Schema(
       enum: ["Revenue", "Expenses"],
     },
 
+    // Was a static enum; the list is now admin-managed master data, so validation moved to a
+    // runtime validator that also grandfathers a value already on the document (see §0.1).
     method: {
       type: String,
-      enum: ["upi", "cash", "card", "banking", "bajaj_loan", "fibe_loan", "hdfc_skin_bank_transfer", "hdfc_ryan_medihub_bank_transfer", "icici_medihub_bank_transfer", "offset_settlement", "other", "including-package", "paid_to_external", "paid_by_other"],
+      ...masterDataEnum("PAYMENT_METHOD", "method"),
     },
 
     receiptMode: { type: String, default: "" },

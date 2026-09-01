@@ -2,13 +2,13 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
-import { ACCOUNTS } from "@/constants/bankRouting";
+import { accountsSync } from "@/lib/masterData";
 import { ALL_BRANCHES } from "@/lib/branches";
 import { getOpeningBalances, computeContraMovements, computeSuspenseMovements, round2 } from "@/lib/accountBalances";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 const LOAN_ACCOUNTS = ["Bajaj Loan", "Fibe Loan"];
-const CASH_ACCOUNTS = ACCOUNTS.filter((a) => !LOAN_ACCOUNTS.includes(a));
+const CASH_ACCOUNTS = accountsSync().filter((a) => !LOAN_ACCOUNTS.includes(a));
 
 export async function GET(request) {
   try {

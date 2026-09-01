@@ -23,6 +23,7 @@ export async function GET(request) {
     const level = Math.min(3, Math.max(1, parseInt(searchParams.get("level") || "1")));
     const head = searchParams.get("category") || "";
     const sub = searchParams.get("subType") || "";
+    const allHeads = searchParams.get("all") === "1";
     const branch = searchParams.get("branch") || "";
     const from = searchParams.get("from") || "";
     const to = searchParams.get("to") || "";
@@ -38,11 +39,18 @@ export async function GET(request) {
       return NextResponse.json({ success: true, rows });
     }
 
-    if (!head) {
+    if (!head && !allHeads) {
       return NextResponse.json({ error: "head is required at level 3" }, { status: 400 });
     }
 
-    const match = buildCashFlowLeafMatch({ costType: "Expenses", head, sub, branchFilter, from, to });
+    const match = buildCashFlowLeafMatch({
+      costType: "Expenses",
+      head: allHeads ? "" : head,
+      sub: allHeads ? "" : sub,
+      branchFilter,
+      from,
+      to,
+    });
 
     const [rows, total] = await Promise.all([
       Transactions.aggregate([
@@ -66,6 +74,8 @@ export async function GET(request) {
             amount: 1,
             method: 1,
             account: "$furtherMode",
+            expense: 1,
+            expenseType: 1,
             runningBalance: 1,
             branch: 1,
             transactionCategory: 1,

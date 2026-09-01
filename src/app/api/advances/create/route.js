@@ -5,7 +5,7 @@ import mongoose from "mongoose";
 import connectDB from "@/lib/db";
 import Advance, { ADVANCE_PARTY_KINDS } from "@/models/Advance";
 import Receivable from "@/models/Receivable";
-import { ACCOUNTS } from "@/constants/bankRouting";
+import { accountsSync } from "@/lib/masterData";
 import { ALL_BRANCHES } from "@/lib/branches";
 import { ADVANCE_TYPES, ADVANCE_REVENUE_CATEGORY } from "@/constants/advanceTypes";
 import { checkPeriodLock } from "@/lib/periodLock";
@@ -44,8 +44,8 @@ export async function POST(req) {
     if (!["IN", "OUT"].includes(direction)) {
       return NextResponse.json({ error: "direction must be IN or OUT" }, { status: 400 });
     }
-    if (!ACCOUNTS.includes(account)) {
-      return NextResponse.json({ error: `account must be one of: ${ACCOUNTS.join(", ")}` }, { status: 400 });
+    if (!accountsSync().includes(account)) {
+      return NextResponse.json({ error: `account must be one of: ${accountsSync().join(", ")}` }, { status: 400 });
     }
     const parsedAmount = parseFloat(amount);
     if (!(parsedAmount > 0)) {

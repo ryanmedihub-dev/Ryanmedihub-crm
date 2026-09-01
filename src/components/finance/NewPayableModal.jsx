@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { X, Loader2, Receipt } from "lucide-react";
 import SearchableSelect from "@/components/SearchableSelect";
-import { getExpenseTypes } from "@/constants/expenseCategories";
+import useMasterData from "@/lib/useMasterData";
 import { ALL_BRANCHES, COLLAB_BRANCHES } from "@/lib/branches";
 
 const PURPOSES = [
@@ -71,6 +71,7 @@ const inputClass =
 const labelClass = "mb-1.5 block text-sm font-semibold text-slate-700";
 
 export default function NewPayableModal({ onClose, onSuccess, toast }) {
+  const { getExpenseTypes } = useMasterData();
   const [purpose, setPurpose] = useState("");
   const [subType, setSubType] = useState("");
   const [totalAmount, setTotalAmount] = useState("");

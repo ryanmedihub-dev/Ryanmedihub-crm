@@ -4,7 +4,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
 import mongoose from "mongoose";
 import SuspenseEntry from "@/models/SuspenseEntry";
-import { ACCOUNTS } from "@/constants/bankRouting";
+import { accountsSync } from "@/lib/masterData";
 import { ALL_BRANCHES, resolveBranchFilter } from "@/lib/branches";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
@@ -130,9 +130,9 @@ export async function POST(req) {
     const { account, direction, amount, date, branch, reference, remarks, receipts } =
       await req.json();
 
-    if (!ACCOUNTS.includes(account)) {
+    if (!accountsSync().includes(account)) {
       return NextResponse.json(
-        { error: `account must be one of: ${ACCOUNTS.join(", ")}` },
+        { error: `account must be one of: ${accountsSync().join(", ")}` },
         { status: 400 },
       );
     }

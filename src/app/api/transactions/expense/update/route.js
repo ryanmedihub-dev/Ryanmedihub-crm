@@ -8,7 +8,7 @@ import { periodLockResponse } from "@/lib/periodLock";
 import { checkCascadeOnUpdate, applyCascadeOnUpdate } from "@/lib/cascadeIntegrity";
 import { withDbTransaction, syncExternalPartyOnUpdate } from "@/lib/externalPartyDerivation";
 import { backDateGuard } from "@/lib/backDateGuard";
-import { getExpenseTypes } from "@/constants/expenseCategories";
+import { expenseTypesSync } from "@/lib/masterData";
 
 export async function PUT(req) {
   try {
@@ -42,7 +42,7 @@ export async function PUT(req) {
       );
     }
 
-    if (getExpenseTypes(expenseCategory).length > 0 && !expenseType) {
+    if (expenseTypesSync(expenseCategory).length > 0 && !expenseType) {
       return NextResponse.json(
         { error: "Expense type is required for this category" },
         { status: 400 }

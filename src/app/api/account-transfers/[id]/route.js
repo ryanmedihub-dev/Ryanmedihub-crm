@@ -4,18 +4,18 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
 import mongoose from "mongoose";
 import AccountTransfer from "@/models/AccountTransfer";
-import { ACCOUNTS } from "@/constants/bankRouting";
+import { accountsSync } from "@/lib/masterData";
 import { ALL_BRANCHES } from "@/lib/branches";
 import { getAccountBalance } from "@/lib/accountBalances";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 
 function validate({ fromAccount, toAccount, amount, branch }) {
-  if (fromAccount !== undefined && !ACCOUNTS.includes(fromAccount)) {
-    return `fromAccount must be one of: ${ACCOUNTS.join(", ")}`;
+  if (fromAccount !== undefined && !accountsSync().includes(fromAccount)) {
+    return `fromAccount must be one of: ${accountsSync().join(", ")}`;
   }
-  if (toAccount !== undefined && !ACCOUNTS.includes(toAccount)) {
-    return `toAccount must be one of: ${ACCOUNTS.join(", ")}`;
+  if (toAccount !== undefined && !accountsSync().includes(toAccount)) {
+    return `toAccount must be one of: ${accountsSync().join(", ")}`;
   }
   if (fromAccount && toAccount && fromAccount === toAccount) {
     return "A contra entry must move money between two different accounts.";

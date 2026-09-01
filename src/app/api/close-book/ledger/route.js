@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
 import Transactions from "@/models/Transactions";
-import { ACCOUNTS } from "@/constants/bankRouting";
+import { accountsSync } from "@/lib/masterData";
 import {
   buildBalanceMatch,
   buildContraLedgerUnionStage,
@@ -40,9 +40,9 @@ export async function GET(request) {
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
     const limit = Math.min(200, Math.max(1, parseInt(searchParams.get("limit") || "50")));
 
-    if (!ACCOUNTS.includes(account)) {
+    if (!accountsSync().includes(account)) {
       return NextResponse.json(
-        { error: `account is required and must be one of: ${ACCOUNTS.join(", ")}` },
+        { error: `account is required and must be one of: ${accountsSync().join(", ")}` },
         { status: 400 },
       );
     }

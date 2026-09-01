@@ -5,8 +5,8 @@ import Transactions from "@/models/Transactions";
 import Leads from "@/models/Leads";
 import Stock from "@/models/Stock";
 import Employee from "@/models/Employee";
-import { UNSETTLED_METHODS, SETTLEMENT_EXCLUSION } from "@/constants/bankRouting";
-
+import { SETTLEMENT_EXCLUSION } from "@/constants/bankRouting";
+import { unsettledMethodsSync } from "@/lib/masterData";
 export async function POST(req) {
   try {
     const { question, history = [] } = await req.json();
@@ -52,7 +52,7 @@ export async function POST(req) {
         $facet: {
 
           todayTotal: [
-            { $match: { date: { $gte: todayStart, $lt: todayEnd }, method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION } },
+            { $match: { date: { $gte: todayStart, $lt: todayEnd }, method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION } },
             {
               $group: {
                 _id: null,
@@ -62,7 +62,7 @@ export async function POST(req) {
             },
           ],
           todayByBranch: [
-            { $match: { date: { $gte: todayStart, $lt: todayEnd }, method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION } },
+            { $match: { date: { $gte: todayStart, $lt: todayEnd }, method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION } },
             {
               $group: {
                 _id: "$branch",
@@ -73,7 +73,7 @@ export async function POST(req) {
             { $sort: { total: -1 } },
           ],
           todayByCategory: [
-            { $match: { date: { $gte: todayStart, $lt: todayEnd }, method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION } },
+            { $match: { date: { $gte: todayStart, $lt: todayEnd }, method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION } },
             {
               $group: {
                 _id: "$transactionCategory",
@@ -84,7 +84,7 @@ export async function POST(req) {
             { $sort: { total: -1 } },
           ],
           todayByProcedure: [
-            { $match: { date: { $gte: todayStart, $lt: todayEnd }, method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION } },
+            { $match: { date: { $gte: todayStart, $lt: todayEnd }, method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION } },
             {
               $group: {
                 _id: "$procedure",
@@ -102,7 +102,7 @@ export async function POST(req) {
 
 
           yesterdayTotal: [
-            { $match: { date: { $gte: yesterdayStart, $lte: yesterdayEnd }, method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION } },
+            { $match: { date: { $gte: yesterdayStart, $lte: yesterdayEnd }, method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION } },
             {
               $group: {
                 _id: null,
@@ -112,7 +112,7 @@ export async function POST(req) {
             },
           ],
           yesterdayByBranch: [
-            { $match: { date: { $gte: yesterdayStart, $lte: yesterdayEnd }, method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION } },
+            { $match: { date: { $gte: yesterdayStart, $lte: yesterdayEnd }, method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION } },
             {
               $group: {
                 _id: "$branch",
@@ -123,7 +123,7 @@ export async function POST(req) {
             { $sort: { total: -1 } },
           ],
           yesterdayByCategory: [
-            { $match: { date: { $gte: yesterdayStart, $lte: yesterdayEnd }, method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION } },
+            { $match: { date: { $gte: yesterdayStart, $lte: yesterdayEnd }, method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION } },
             {
               $group: {
                 _id: "$transactionCategory",
@@ -136,7 +136,7 @@ export async function POST(req) {
 
 
           monthTotal: [
-            { $match: { date: { $gte: monthStart }, method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION } },
+            { $match: { date: { $gte: monthStart }, method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION } },
             {
               $group: {
                 _id: null,
@@ -146,7 +146,7 @@ export async function POST(req) {
             },
           ],
           monthByBranch: [
-            { $match: { date: { $gte: monthStart }, method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION } },
+            { $match: { date: { $gte: monthStart }, method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION } },
             {
               $group: {
                 _id: "$branch",
@@ -157,7 +157,7 @@ export async function POST(req) {
             { $sort: { total: -1 } },
           ],
           monthByCategory: [
-            { $match: { date: { $gte: monthStart }, method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION } },
+            { $match: { date: { $gte: monthStart }, method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION } },
             {
               $group: {
                 _id: "$transactionCategory",
@@ -168,7 +168,7 @@ export async function POST(req) {
             { $sort: { total: -1 } },
           ],
           monthByProcedure: [
-            { $match: { date: { $gte: monthStart }, method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION } },
+            { $match: { date: { $gte: monthStart }, method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION } },
             {
               $group: {
                 _id: "$procedure",
@@ -186,11 +186,11 @@ export async function POST(req) {
 
 
           lastMonthTotal: [
-            { $match: { date: { $gte: lastMonthStart, $lte: lastMonthEnd }, method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION } },
+            { $match: { date: { $gte: lastMonthStart, $lte: lastMonthEnd }, method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION } },
             { $group: { _id: null, total: { $sum: "$amount" } } },
           ],
           lastMonthByBranch: [
-            { $match: { date: { $gte: lastMonthStart, $lte: lastMonthEnd }, method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION } },
+            { $match: { date: { $gte: lastMonthStart, $lte: lastMonthEnd }, method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION } },
             { $group: { _id: "$branch", total: { $sum: "$amount" } } },
             { $sort: { total: -1 } },
           ],
@@ -200,12 +200,12 @@ export async function POST(req) {
 
 
     const revenueAllTimePromise = Transactions.aggregate([
-      { $match: { costType: "Revenue", method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION } },
+      { $match: { costType: "Revenue", method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION } },
       { $group: { _id: null, total: { $sum: "$amount" }, count: { $sum: 1 } } },
     ]);
 
     const expensesFacetPromise = Transactions.aggregate([
-      { $match: { costType: "Expenses", date: { $gte: monthStart }, method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION } },
+      { $match: { costType: "Expenses", date: { $gte: monthStart }, method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION } },
       {
         $facet: {
           todayTotal: [
@@ -227,7 +227,7 @@ export async function POST(req) {
 
     const agentRevQuery = (dateFilter) =>
       Transactions.aggregate([
-        { $match: { costType: "Revenue", method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION, ...dateFilter } },
+        { $match: { costType: "Revenue", method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION, ...dateFilter } },
         {
           $lookup: {
             from: "patients",

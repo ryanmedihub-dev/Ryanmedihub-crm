@@ -3,8 +3,8 @@ import { withDB } from "@/lib/withDB";
 import Patient from "@/models/Patient";
 import Transactions from "@/models/Transactions";
 import { ALL_BRANCHES } from "@/lib/branches";
-import { UNSETTLED_METHODS, SETTLEMENT_EXCLUSION } from "@/constants/bankRouting";
-
+import { SETTLEMENT_EXCLUSION } from "@/constants/bankRouting";
+import { unsettledMethodsSync } from "@/lib/masterData";
 const VALID_BRANCHES = ["All", ...ALL_BRANCHES];
 
 const handler = async (req) => {
@@ -215,11 +215,11 @@ const handler = async (req) => {
         {
           $facet: {
             currentTotal: [
-              { $match: { date: { $gte: fromDate, $lte: toDate }, method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION } },
+              { $match: { date: { $gte: fromDate, $lte: toDate }, method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION } },
               { $group: { _id: null, total: { $sum: "$amount" } } },
             ],
             currentByTechnique: [
-              { $match: { date: { $gte: fromDate, $lte: toDate }, method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION } },
+              { $match: { date: { $gte: fromDate, $lte: toDate }, method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION } },
               {
                 $group: {
                   _id: "$procedure",
@@ -230,12 +230,12 @@ const handler = async (req) => {
             ],
             comparisonTotal: [
               {
-                $match: { date: { $gte: yesterdayStart, $lte: yesterdayEnd }, method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION },
+                $match: { date: { $gte: yesterdayStart, $lte: yesterdayEnd }, method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION },
               },
               { $group: { _id: null, total: { $sum: "$amount" } } },
             ],
             last7DaysTotal: [
-              { $match: { date: { $gte: last7DaysStart, $lte: actualToday }, method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION } },
+              { $match: { date: { $gte: last7DaysStart, $lte: actualToday }, method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION } },
               { $group: { _id: null, total: { $sum: "$amount" } } },
             ],
             last7DaysByMethod: [
@@ -249,7 +249,7 @@ const handler = async (req) => {
               },
             ],
             last7DaysPerDay: [
-              { $match: { date: { $gte: last7DaysStart, $lte: actualToday }, method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION } },
+              { $match: { date: { $gte: last7DaysStart, $lte: actualToday }, method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION } },
               {
                 $group: {
                   _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
@@ -260,7 +260,7 @@ const handler = async (req) => {
             ],
             last30DaysTotal: [
               {
-                $match: { date: { $gte: last30DaysStart, $lte: actualToday }, method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION },
+                $match: { date: { $gte: last30DaysStart, $lte: actualToday }, method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION },
               },
               { $group: { _id: null, total: { $sum: "$amount" } } },
             ],
@@ -278,7 +278,7 @@ const handler = async (req) => {
             ],
             last30DaysPerDay: [
               {
-                $match: { date: { $gte: last30DaysStart, $lte: actualToday }, method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION },
+                $match: { date: { $gte: last30DaysStart, $lte: actualToday }, method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION },
               },
               {
                 $group: {
@@ -289,7 +289,7 @@ const handler = async (req) => {
               { $sort: { _id: 1 } },
             ],
             thisMonthTotal: [
-              { $match: { date: { $gte: thisMonthStart, $lte: actualToday }, method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION } },
+              { $match: { date: { $gte: thisMonthStart, $lte: actualToday }, method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION } },
               { $group: { _id: null, total: { $sum: "$amount" } } },
             ],
             thisMonthByMethod: [
@@ -303,7 +303,7 @@ const handler = async (req) => {
               },
             ],
             thisMonthPerDay: [
-              { $match: { date: { $gte: thisMonthStart, $lte: actualToday }, method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION } },
+              { $match: { date: { $gte: thisMonthStart, $lte: actualToday }, method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION } },
               {
                 $group: {
                   _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
@@ -317,7 +317,7 @@ const handler = async (req) => {
                 $match: {
                   date: { $gte: fromDate, $lte: toDate },
                   procedure: { $in: ["PRP", "GFC"] },
-                  method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION,
+                  method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION,
                 },
               },
               {

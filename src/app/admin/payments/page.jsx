@@ -6,8 +6,8 @@ import { Wallet, AlertTriangle, CheckCircle2, Download, Loader2 } from "lucide-r
 import DrillDownTable from "@/components/finance/DrillDownTable";
 import { formatCurrency } from "@/lib/financeUI";
 import DebouncedDateInput from "@/components/finance/DebouncedDateInput";
-import { exportWorkbook, filterProvenanceRows } from "@/lib/exportToExcel";
-import { receiptPaymentHeadSheets } from "@/lib/finance/headedExport";
+import { exportWorkbook, fetchAllPages, filterProvenanceRows } from "@/lib/exportToExcel";
+import FinancingTransactions from "@/components/finance/FinancingTransactions";
 
 const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
 
@@ -71,12 +71,25 @@ function PaymentsPageInner() {
         Count: r.count,
       }));
 
-      const headSheets = await receiptPaymentHeadSheets({
-        apiBase: "/api/payments",
-        heads: heads.map((r) => r.label),
-        groupBy: "account",
-        scope: { dateFrom: from, dateTo: to },
-      });
+      // Every payment for the period on one sheet, regardless of expense head.
+      const { rows: leafRows } = await fetchAllPages(
+        (page, limit) =>
+          `/api/payments/grouped?level=3&all=1&from=${from}&to=${to}&page=${page}&limit=${limit}`,
+        "rows",
+        { limit: 200, maxPages: 60 },
+      );
+
+      const allPaymentsRows = leafRows.map((r) => ({
+        Date: r.date ? new Date(r.date) : null,
+        Narration: r.narration || "—",
+        "Expense Category": r.expense || "—",
+        "Expense Sub-Category": r.expenseType || "—",
+        Method: (r.method || "").replace(/_/g, " ") || "—",
+        Account: r.account || "—",
+        Branch: r.branch || "—",
+        Amount: r.amount || 0,
+        "Running Total": r.runningBalance ?? "",
+      }));
 
       await exportWorkbook({
         filename: `payments_${from}_to_${to}.xlsx`,
@@ -88,7 +101,12 @@ function PaymentsPageInner() {
             colWidths: [24, 16, 16, 16, 10],
             currencyCols: ["Before Period", "This Period", "Total To Date"],
           },
-          ...headSheets,
+          {
+            name: "All Payments",
+            rows: allPaymentsRows,
+            colWidths: [12, 30, 22, 24, 14, 18, 12, 14, 16],
+            currencyCols: ["Amount", "Running Total"],
+          },
         ],
       });
     } finally {
@@ -196,6 +214,13 @@ function PaymentsPageInner() {
                 },
               }}
             />
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide">
+              Advance Transactions
+            </h2>
+            <FinancingTransactions kind="advance" from={from} to={to} />
           </section>
         </div>
       </main>

@@ -8,8 +8,8 @@ import Employee from "@/models/Employee";
 import Stock from "@/models/Stock";
 import Leads from "@/models/Leads";
 import Interviewer from "@/models/Interviewer";
-import { UNSETTLED_METHODS, SETTLEMENT_EXCLUSION } from "@/constants/bankRouting";
-
+import { SETTLEMENT_EXCLUSION } from "@/constants/bankRouting";
+import { unsettledMethodsSync } from "@/lib/masterData";
 export async function POST(req) {
   try {
     const session = await getServerSession(authOptions);
@@ -86,15 +86,15 @@ export async function POST(req) {
       {
         $facet: {
           totalAmount: [
-            { $match: { method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION } },
+            { $match: { method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION } },
             { $group: { _id: null, total: { $sum: "$amount" } } },
           ],
           medicineAmount: [
-            { $match: { transactionCategory: "MEDICINE", method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION } },
+            { $match: { transactionCategory: "MEDICINE", method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION } },
             { $group: { _id: null, total: { $sum: "$amount" } } },
           ],
           techniqueWise: [
-            { $match: { procedure: { $exists: true, $ne: null }, method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION } },
+            { $match: { procedure: { $exists: true, $ne: null }, method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION } },
             {
               $group: {
                 _id: "$procedure",
@@ -105,7 +105,7 @@ export async function POST(req) {
             { $sort: { total: -1 } },
           ],
           perDay: [
-            { $match: { method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION } },
+            { $match: { method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION } },
             {
               $group: {
                 _id: { $dateToString: { format: "%Y-%m-%d", date: "$date", timezone: "Asia/Kolkata" } },
@@ -126,7 +126,7 @@ export async function POST(req) {
           ],
           prpStats: [
             {
-              $match: { procedure: { $in: ["PRP", "GFC"] }, method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION },
+              $match: { procedure: { $in: ["PRP", "GFC"] }, method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION },
             },
             {
               $group: {

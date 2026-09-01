@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
 import AccountPeriod from "@/models/AccountPeriod";
-import { ACCOUNTS } from "@/constants/bankRouting";
+import { accountsSync } from "@/lib/masterData";
 import { ALL_BRANCHES } from "@/lib/branches";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
@@ -29,7 +29,7 @@ export async function GET(request) {
     const branch = branchParam || null;
 
     const seeds = await AccountPeriod.find({
-      account: { $in: ACCOUNTS },
+      account: { $in: accountsSync() },
       isClosed: true,
       totalIn: 0,
       totalOut: 0,
@@ -49,7 +49,7 @@ export async function GET(request) {
         .filter((s) => s.account === account && s.branch)
         .map((s) => ({ branch: s.branch, openingBalance: s.openingBalance, asOf: s.periodEnd }));
 
-    const openingBalances = ACCOUNTS.map((account) => {
+    const openingBalances = accountsSync().map((account) => {
       const branchRows = branchesOf(account);
 
       if (!branch) {
@@ -111,9 +111,9 @@ export async function POST(req) {
 
     const { account, openingBalance, asOf, notes, branch: branchInput } = await req.json();
 
-    if (!ACCOUNTS.includes(account)) {
+    if (!accountsSync().includes(account)) {
       return NextResponse.json(
-        { error: `account must be one of: ${ACCOUNTS.join(", ")}` },
+        { error: `account must be one of: ${accountsSync().join(", ")}` },
         { status: 400 },
       );
     }

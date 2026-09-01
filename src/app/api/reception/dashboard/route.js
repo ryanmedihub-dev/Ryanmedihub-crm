@@ -4,9 +4,8 @@ import Patient from "@/models/Patient";
 import Transactions from "@/models/Transactions";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { UNSETTLED_METHODS, SETTLEMENT_EXCLUSION } from "@/constants/bankRouting";
-
-
+import { SETTLEMENT_EXCLUSION } from "@/constants/bankRouting";
+import { unsettledMethodsSync } from "@/lib/masterData";
 const VALID_BRANCHES = ["All", "Delhi", "Mumbai", "Hyderabad", "Noida"];
 
 const getISTStartOfDay = (date = null) => {
@@ -183,7 +182,7 @@ const handler = async (req) => {
             $match: {
               costType: "Revenue",
               ...(branch === "All" ? {} : { branch }),
-              method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION,
+              method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION,
               $or: [
                 { date: { $gte: fromDate, $lte: toDate } },
                 { date: { $gte: comparisonStart, $lte: comparisonEnd } },

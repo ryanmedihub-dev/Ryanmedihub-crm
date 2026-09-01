@@ -4,8 +4,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
 import Transactions from "@/models/Transactions";
-import { UNSETTLED_METHODS } from "@/constants/bankRouting";
-
+import { unsettledMethodsSync } from "@/lib/masterData";
 export async function POST(req) {
   try {
     const session = await getServerSession(authOptions);
@@ -24,7 +23,7 @@ export async function POST(req) {
 
     const txBase = {
       approvalStatus: { $nin: ["PENDING", "REJECTED"] },
-      method: { $nin: UNSETTLED_METHODS },
+      method: { $nin: unsettledMethodsSync() },
       date: { $gte: fromDate, $lte: toDate },
     };
 

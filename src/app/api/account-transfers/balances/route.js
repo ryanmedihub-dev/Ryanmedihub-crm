@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
-import { ACCOUNTS } from "@/constants/bankRouting";
+import { accountsSync } from "@/lib/masterData";
 import { getAccountBalance } from "@/lib/accountBalances";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
@@ -23,7 +23,7 @@ export async function GET(request) {
     const asOf = searchParams.get("asOf") || new Date().toISOString();
 
     const entries = await Promise.all(
-      ACCOUNTS.map(async (account) => [account, await getAccountBalance(account, asOf)]),
+      accountsSync().map(async (account) => [account, await getAccountBalance(account, asOf)]),
     );
 
     return NextResponse.json({

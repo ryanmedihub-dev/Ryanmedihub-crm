@@ -7,7 +7,7 @@ import { Suspense } from "react";
 import { ShieldAlert } from "lucide-react";
 import SearchableSelect from "@/components/SearchableSelect";
 import TransactionFieldSet, { validateTransactionFields } from "@/components/finance/TransactionFieldSet";
-import { PAYABLE_EXPENSE_DROPDOWN_CATEGORIES, getExpenseTypes } from "@/constants/expenseCategories";
+import useMasterData from "@/lib/useMasterData";
 import { useToast } from "@/components/Toast";
 
 const RECEIVABLE_PURPOSE_VALUES = ["PATIENT_DUE", "COLLAB_SETTLEMENT", "REFUND_DUE", "ADVANCE_RECOVERY", "OTHER"];
@@ -30,6 +30,8 @@ function VouchersPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const toast = useToast();
+  const { payableExpenseDropdownCategories: PAYABLE_EXPENSE_DROPDOWN_CATEGORIES, getExpenseTypes } =
+    useMasterData();
 
   const [type, setType] = useState(searchParams.get("type") === "Receivable" ? "Receivable" : "Payable");
   const [category, setCategory] = useState(searchParams.get("category") || "");

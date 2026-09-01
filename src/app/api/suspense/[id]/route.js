@@ -5,7 +5,7 @@ import connectDB from "@/lib/db";
 import mongoose from "mongoose";
 import SuspenseEntry from "@/models/SuspenseEntry";
 import Transactions from "@/models/Transactions";
-import { ACCOUNTS } from "@/constants/bankRouting";
+import { accountsSync } from "@/lib/masterData";
 import { ALL_BRANCHES } from "@/lib/branches";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
@@ -31,9 +31,9 @@ export async function PUT(req, { params }) {
     const { account, direction, amount, date, branch, reference, remarks, receipts } =
       await req.json();
 
-    if (account !== undefined && !ACCOUNTS.includes(account)) {
+    if (account !== undefined && !accountsSync().includes(account)) {
       return NextResponse.json(
-        { error: `account must be one of: ${ACCOUNTS.join(", ")}` },
+        { error: `account must be one of: ${accountsSync().join(", ")}` },
         { status: 400 },
       );
     }

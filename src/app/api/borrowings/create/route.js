@@ -5,13 +5,12 @@ import mongoose from "mongoose";
 import connectDB from "@/lib/db";
 import Borrowing, { BORROWING_PARTY_KINDS } from "@/models/Borrowing";
 import Payable from "@/models/Payable";
-import { ACCOUNTS } from "@/constants/bankRouting";
 import { ALL_BRANCHES } from "@/lib/branches";
-import { getExpenseTypes } from "@/constants/expenseCategories";
+import { accountsSync, expenseTypesSync } from "@/lib/masterData";
 import { checkPeriodLock } from "@/lib/periodLock";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
-const BORROWING_SUBTYPES = getExpenseTypes("Borrowings");
+const borrowingSubtypes = () => expenseTypesSync("Borrowings");
 const REFID_REQUIRED_KINDS = ["VENDOR", "EMPLOYEE", "PATIENT"];
 
 export async function POST(req) {
@@ -44,8 +43,8 @@ export async function POST(req) {
     if (!["IN", "OUT"].includes(direction)) {
       return NextResponse.json({ error: "direction must be IN or OUT" }, { status: 400 });
     }
-    if (!ACCOUNTS.includes(account)) {
-      return NextResponse.json({ error: `account must be one of: ${ACCOUNTS.join(", ")}` }, { status: 400 });
+    if (!accountsSync().includes(account)) {
+      return NextResponse.json({ error: `account must be one of: ${accountsSync().join(", ")}` }, { status: 400 });
     }
     const parsedAmount = parseFloat(amount);
     if (!(parsedAmount > 0)) {
@@ -212,9 +211,9 @@ export async function POST(req) {
       return NextResponse.json({ message: "Tranche recorded", borrowing, payable }, { status: 201 });
     }
 
-    if (!subType || !BORROWING_SUBTYPES.includes(subType)) {
+    if (!subType || !borrowingSubtypes().includes(subType)) {
       return NextResponse.json(
-        { error: `subType must be one of: ${BORROWING_SUBTYPES.join(", ")}` },
+        { error: `subType must be one of: ${borrowingSubtypes().join(", ")}` },
         { status: 400 },
       );
     }

@@ -1,10 +1,10 @@
-import { NON_CASH_METHODS } from "@/constants/bankRouting";
+import { nonCashMethodsSync } from "@/lib/masterData";
 import { APPROVAL_EXCLUDED } from "@/lib/accountBalances";
 
 export function buildCashBasisMatch({ costType, branchFilter, to, account, receiptMode } = {}) {
   const match = {
     approvalStatus: { $nin: APPROVAL_EXCLUDED },
-    method: { $nin: NON_CASH_METHODS },
+    method: { $nin: nonCashMethodsSync() },
     furtherMode: { $nin: ["", null] },
     ...(branchFilter || {}),
   };
@@ -38,17 +38,27 @@ const RECEIPT_HEAD_EXPR = {
 export function buildCashFlowGroupedStages({ level, costType, head, groupBy = "account", branchFilter, from, to }) {
   const match = buildCashBasisMatch({ costType, branchFilter, to });
 
+  const isRevenue = costType === "Revenue";
+  const accountField = groupBy === "mode" ? "$receiptMode" : "$furtherMode";
+
+  // Level 2+ narrows to the level-1 bucket that was drilled into. For receipts that
+  // bucket is now a bank account / receipt mode (see headExpr below), not a revenue head.
   if (level !== 1 && head) {
-    Object.assign(match, costType === "Revenue" ? receiptHeadMatch(head) : { expense: head });
+    if (isRevenue) {
+      Object.assign(match, groupBy === "mode" ? { receiptMode: head } : { furtherMode: head });
+    } else {
+      match.expense = head;
+    }
   }
 
-  const headExpr = costType === "Revenue" ? RECEIPT_HEAD_EXPR : { $ifNull: ["$expense", "Uncategorised"] };
-  const subExpr =
-    costType === "Revenue"
-      ? groupBy === "mode"
-        ? { $ifNull: ["$receiptMode", "Unspecified"] }
-        : { $ifNull: ["$furtherMode", "Unspecified"] }
-      : { $ifNull: ["$expenseType", "Uncategorised"] };
+  // Receipts: level 1 = bank account / receipt mode, level 2 = revenue head within it.
+  // Payments: unchanged — level 1 = expense head, level 2 = expense sub-type.
+  const headExpr = isRevenue
+    ? { $ifNull: [accountField, "Unspecified"] }
+    : { $ifNull: ["$expense", "Uncategorised"] };
+  const subExpr = isRevenue
+    ? RECEIPT_HEAD_EXPR
+    : { $ifNull: ["$expenseType", "Uncategorised"] };
 
   const fromDate = from ? new Date(from) : null;
   const toDate = to ? new Date(to) : null;
@@ -99,11 +109,12 @@ export function buildCashFlowLeafMatch({ costType, head, sub, groupBy = "account
   if (from) match.date = { ...(match.date || {}), $gte: new Date(from) };
 
   if (costType === "Revenue") {
-    if (head) Object.assign(match, receiptHeadMatch(head));
-    if (sub) {
-      if (groupBy === "mode") match.receiptMode = sub;
-      else match.furtherMode = sub;
+    // Level 1 = bank account / receipt mode (head); level 2 = revenue head (sub).
+    if (head) {
+      if (groupBy === "mode") match.receiptMode = head;
+      else match.furtherMode = head;
     }
+    if (sub) Object.assign(match, receiptHeadMatch(sub));
   } else {
     if (head) match.expense = head;
     if (sub) match.expenseType = sub;

@@ -6,17 +6,18 @@ import connectDB from "@/lib/db";
 import Transactions from "@/models/Transactions";
 import Patient from "@/models/Patient";
 import { resolveBranchFilter } from "@/lib/branches";
-import { UNSETTLED_METHODS, SETTLEMENT_EXCLUSION, NON_CASH_METHODS } from "@/constants/bankRouting";
+import { SETTLEMENT_EXCLUSION } from "@/constants/bankRouting";
+import { unsettledMethodsSync, nonCashMethodsSync } from "@/lib/masterData";
 
 function deriveEntryType(tx) {
   if (tx.reversalOf) return "REVERSAL";
   if (tx.isSettlement) {
     return tx.costType === "Revenue" ? "RECEIPT_SETTLEMENT" : "PAYMENT_SETTLEMENT";
   }
-  if (UNSETTLED_METHODS.includes(tx.method)) {
+  if (unsettledMethodsSync().includes(tx.method)) {
     return tx.costType === "Revenue" ? "EXTERNAL_RECEIPT" : "EXTERNAL_PAYMENT";
   }
-  if (NON_CASH_METHODS.includes(tx.method)) return "NON_CASH";
+  if (nonCashMethodsSync().includes(tx.method)) return "NON_CASH";
   return "REGULAR";
 }
 import "@/models/Stock";
@@ -43,11 +44,11 @@ const ciInClause = (values) => ({
 });
 
 /** Mongo clause for a single derived "entry type" pseudo-filter. */
-const entryTypeClause = (t, UNSETTLED_METHODS) => {
+const entryTypeClause = (t) => {
   if (t === "REGULAR")
-    return { isSettlement: { $ne: true }, reversalOf: null, method: { $nin: UNSETTLED_METHODS } };
+    return { isSettlement: { $ne: true }, reversalOf: null, method: { $nin: unsettledMethodsSync() } };
   if (t === "SETTLEMENT") return { isSettlement: true };
-  if (t === "EXTERNAL") return { method: { $in: UNSETTLED_METHODS } };
+  if (t === "EXTERNAL") return { method: { $in: unsettledMethodsSync() } };
   if (t === "REVERSAL") return { reversalOf: { $ne: null } };
   return null;
 };
@@ -205,7 +206,7 @@ export async function GET(request) {
     }
 
     const entryClauses = entryTypes
-      .map((t) => entryTypeClause(t, UNSETTLED_METHODS))
+      .map((t) => entryTypeClause(t))
       .filter(Boolean);
     if (entryClauses.length === 1) {
       query.$and = [...(query.$and || []), entryClauses[0]];
@@ -225,7 +226,7 @@ export async function GET(request) {
     if (query.expense)     statsQuery.expense = query.expense;
     if (query.expenseType) statsQuery.expenseType = query.expenseType;
     statsQuery.$and = [
-      { method: { $nin: UNSETTLED_METHODS } },
+      { method: { $nin: unsettledMethodsSync() } },
       ...(query.method ? [{ method: query.method }] : []),
     ];
 

@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { ACCOUNTS } from "@/constants/bankRouting";
+import { masterDataEnum } from "@/lib/masterData/validator";
 import { ALL_BRANCHES } from "@/lib/branches";
 
 const receiptSchema = new mongoose.Schema(
@@ -9,7 +9,12 @@ const receiptSchema = new mongoose.Schema(
 
 const suspenseEntrySchema = new mongoose.Schema(
   {
-    account: { type: String, enum: ACCOUNTS, required: true, index: true },
+    account: {
+      type: String,
+      required: true,
+      index: true,
+      ...masterDataEnum("ACCOUNT", "account"),
+    },
 
     direction: { type: String, enum: ["IN", "OUT"], default: "IN", required: true },
 

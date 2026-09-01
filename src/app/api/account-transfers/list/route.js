@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
 import AccountTransfer from "@/models/AccountTransfer";
-import { ACCOUNTS } from "@/constants/bankRouting";
+import { accountsSync } from "@/lib/masterData";
 import { ALL_BRANCHES } from "@/lib/branches";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
@@ -40,7 +40,7 @@ export async function GET(request) {
       match.branch = branch;
     }
     if (account) {
-      if (!ACCOUNTS.includes(account)) {
+      if (!accountsSync().includes(account)) {
         return NextResponse.json({ error: "Invalid account" }, { status: 400 });
       }
       match.$or = [{ fromAccount: account }, { toAccount: account }];

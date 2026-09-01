@@ -67,7 +67,8 @@
       "Bash(node scripts/fix-negative-patient-outstanding.mjs --apply)",
       "Bash(node --input-type=module -e ' *)",
       "Bash(echo \"exit=$?\")",
-      "PowerShell(Get-CimInstance Win32_Process -Filter \"Name = 'node.exe'\" | Where-Object { $_.CommandLine -match 'PORT=3133|3133' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }; \"checked - user's own dev server on its own port is untouched\")"
+      "PowerShell(Get-CimInstance Win32_Process -Filter \"Name = 'node.exe'\" | Where-Object { $_.CommandLine -match 'PORT=3133|3133' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }; \"checked - user's own dev server on its own port is untouched\")",
+      "Bash(node -e \"require\\('@babel/core'\\)\")"
     ]
   }
 }

@@ -6,7 +6,7 @@ import connectDB from "@/lib/db";
 import Receivable from "@/models/Receivable";
 import Transactions from "@/models/Transactions";
 import { buildReceivableGroupedStages, buildReceivableAggregationStages } from "@/lib/receivableAggregation";
-import { UNSETTLED_METHODS } from "@/constants/bankRouting";
+import { unsettledMethodsSync } from "@/lib/masterData";
 import { loadClosedPeriodSnapshot, blockReasonFromSnapshot } from "@/lib/periodLock";
 import { resolveBranchFilter } from "@/lib/branches";
 import { attachCollabPatients } from "@/lib/collabPatientLookup";
@@ -64,7 +64,7 @@ export async function GET(request) {
       const txMatch = {
         costType: "Revenue",
         approvalStatus: "APPROVED",
-        method: { $nin: UNSETTLED_METHODS },
+        method: { $nin: unsettledMethodsSync() },
         $or: [
           { receivableId: receivableObjectId },
           { "receivableAllocations.receivableId": receivableObjectId },

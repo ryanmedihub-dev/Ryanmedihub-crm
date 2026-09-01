@@ -1,5 +1,5 @@
 import AccountPeriod from "@/models/AccountPeriod";
-import { ACCOUNTS, NON_CASH_METHODS } from "@/constants/bankRouting";
+import { accountsSync, nonCashMethodsSync } from "@/lib/masterData";
 export const APPROVAL_EXCLUDED = ["PENDING", "REJECTED"];
 
 export function buildBalanceMatch({
@@ -13,11 +13,11 @@ export function buildBalanceMatch({
 } = {}) {
   const match = {
     approvalStatus: { $nin: APPROVAL_EXCLUDED },
-    method: { $nin: NON_CASH_METHODS },
+    method: { $nin: nonCashMethodsSync() },
   };
 
   if (account) match.furtherMode = account;
-  else match.furtherMode = { $in: accounts || ACCOUNTS };
+  else match.furtherMode = { $in: accounts || accountsSync() };
 
   if (from || to) {
     match.date = {};
@@ -27,8 +27,8 @@ export function buildBalanceMatch({
 
   if (transactionCategory) match.transactionCategory = transactionCategory;
   if (method) {
-    if (NON_CASH_METHODS.includes(method)) {
-      match.method = { $in: [], $nin: NON_CASH_METHODS };
+    if (nonCashMethodsSync().includes(method)) {
+      match.method = { $in: [], $nin: nonCashMethodsSync() };
     } else {
       match.method = method;
     }

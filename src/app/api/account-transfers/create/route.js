@@ -5,7 +5,7 @@ import connectDB from "@/lib/db";
 import mongoose from "mongoose";
 import AccountTransfer from "@/models/AccountTransfer";
 import Transactions from "@/models/Transactions";
-import { ACCOUNTS } from "@/constants/bankRouting";
+import { accountsSync } from "@/lib/masterData";
 import { ALL_BRANCHES } from "@/lib/branches";
 import { getAccountBalance } from "@/lib/accountBalances";
 import { checkPeriodLock } from "@/lib/periodLock";
@@ -44,7 +44,7 @@ export async function POST(req) {
     if (!fromAccount || !toAccount) {
       return NextResponse.json({ error: "Both accounts are required" }, { status: 400 });
     }
-    if (!ACCOUNTS.includes(fromAccount) || !ACCOUNTS.includes(toAccount)) {
+    if (!accountsSync().includes(fromAccount) || !accountsSync().includes(toAccount)) {
       return NextResponse.json({ error: "Invalid account" }, { status: 400 });
     }
     if (fromAccount === toAccount) {

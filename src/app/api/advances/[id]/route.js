@@ -6,7 +6,7 @@ import connectDB from "@/lib/db";
 import Advance from "@/models/Advance";
 import Receivable from "@/models/Receivable";
 import Payable from "@/models/Payable";
-import { ACCOUNTS } from "@/constants/bankRouting";
+import { accountsSync } from "@/lib/masterData";
 import { ALL_BRANCHES } from "@/lib/branches";
 import { checkPeriodLock } from "@/lib/periodLock";
 
@@ -166,12 +166,6 @@ export async function PATCH(req, { params }) {
       if (target.isCancelled) {
         return NextResponse.json({ error: "This payable has been cancelled" }, { status: 400 });
       }
-      if (!advance.party.refId || !target.payee?.refId || String(advance.party.refId) !== String(target.payee.refId)) {
-        return NextResponse.json(
-          { error: "This payable belongs to a different party than this advance — settlement is restricted to the same party" },
-          { status: 400 },
-        );
-      }
 
       const dbSession = await mongoose.startSession();
       try {
@@ -284,8 +278,8 @@ export async function PUT(req, { params }) {
     const body = await req.json();
     const { amount, date, account, branch, reference, remarks, receipts, allowOverRecovery } = body;
 
-    if (account !== undefined && !ACCOUNTS.includes(account)) {
-      return NextResponse.json({ error: `account must be one of: ${ACCOUNTS.join(", ")}` }, { status: 400 });
+    if (account !== undefined && !accountsSync().includes(account)) {
+      return NextResponse.json({ error: `account must be one of: ${accountsSync().join(", ")}` }, { status: 400 });
     }
     if (branch && !ALL_BRANCHES.includes(branch)) {
       return NextResponse.json({ error: `branch must be one of: ${ALL_BRANCHES.join(", ")}` }, { status: 400 });

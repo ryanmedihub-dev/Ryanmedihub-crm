@@ -1,5 +1,5 @@
 import { buildAgeingStages } from "@/lib/ageing";
-import { UNSETTLED_METHODS } from "@/constants/bankRouting";
+import { unsettledMethodsSync } from "@/lib/masterData";
 
 // A receivable's receipts can arrive two ways: a transaction whose own `receivableId` field
 // points straight at it, or a transaction split across several receivables via
@@ -16,7 +16,7 @@ import { UNSETTLED_METHODS } from "@/constants/bankRouting";
 // each with a `pipeline` for the non-join filter only. Merge the results afterwards in the
 // outer pipeline, where plain field paths (no $$let needed) can see the receivable's own _id.
 function buildReceiptLookupStages(txCollectionName, { projectDate = false, dateCeiling = null } = {}) {
-  const postJoinFilter = { costType: "Revenue", approvalStatus: "APPROVED", method: { $nin: UNSETTLED_METHODS } };
+  const postJoinFilter = { costType: "Revenue", approvalStatus: "APPROVED", method: { $nin: unsettledMethodsSync() } };
   const dateCap = dateCeiling ? [{ $match: { date: { $lte: dateCeiling } } }] : [];
   const directProject = projectDate
     ? { date: 1, amount: 1, receivableAllocations: 1 }

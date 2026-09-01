@@ -4,7 +4,8 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import mongoose from "mongoose";
 import connectDB from "@/lib/db";
 import Payable, { PAYABLE_KIND_VALUES, PAYABLE_PURPOSE_VALUES } from "@/models/Payable";
-import { getExpenseTypes, TDS_TAX_TYPES } from "@/constants/expenseCategories";
+import { TDS_TAX_TYPES } from "@/constants/expenseCategories";
+import { expenseTypesSync } from "@/lib/masterData";
 import { ALL_BRANCHES } from "@/lib/branches";
 import { computeTaxBreakdown } from "@/lib/taxMath";
 import { checkPeriodLock } from "@/lib/periodLock";
@@ -76,7 +77,7 @@ export async function POST(req) {
       return NextResponse.json({ error: lockReason, periodLocked: true }, { status: 423 });
     }
     if (expenseCategory) {
-      const validTypes = getExpenseTypes(expenseCategory);
+      const validTypes = expenseTypesSync(expenseCategory);
       if (validTypes.length > 0 && expenseSubType && !validTypes.includes(expenseSubType)) {
         return NextResponse.json(
           { error: "Invalid expense sub-type for this category" },

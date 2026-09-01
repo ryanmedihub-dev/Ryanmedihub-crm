@@ -4,8 +4,8 @@ import dbConnect from "@/lib/db.js";
 import Employee from "@/models/Employee";
 import Patient from "@/models/Patient";
 import Transactions from "@/models/Transactions.js";
-import { UNSETTLED_METHODS, SETTLEMENT_EXCLUSION } from "@/constants/bankRouting";
-
+import { SETTLEMENT_EXCLUSION } from "@/constants/bankRouting";
+import { unsettledMethodsSync } from "@/lib/masterData";
 export async function GET(request) {
   try {
     await dbConnect();
@@ -30,14 +30,14 @@ export async function GET(request) {
 
     const branch = searchParams.get("branch");
 
-    const branchFilter = { costType: "Revenue", method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION, ...dateFilter };
+    const branchFilter = { costType: "Revenue", method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION, ...dateFilter };
     const branches = ["Delhi", "Mumbai", "Hyderabad", "Noida"];
     const targetBranches = branch ? branches.filter((b) => b === branch) : branches;
 
     const procedures = ["hair transplant", "prp", "beard transplant", "medicine", "gfc"];
     const procedureFilter = {
       costType: "Revenue",
-      method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION,
+      method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION,
       procedure: { $in: procedures },
       ...dateFilter,
       ...(branch ? { branch } : {}),
@@ -50,7 +50,7 @@ export async function GET(request) {
     const monthKey = { $dateToString: { format: "%Y-%m", date: "$date" } };
     const revenueMatch = {
       costType: "Revenue",
-      method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION,
+      method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION,
       date: { $gte: windowStart, $lte: windowEnd },
     };
     if (branch) revenueMatch.branch = branch;
@@ -67,7 +67,7 @@ export async function GET(request) {
 
     const summaryFilter = {
       costType: "Revenue",
-      method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION,
+      method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION,
       ...dateFilter,
       ...(branch ? { branch } : {}),
     };
@@ -141,7 +141,7 @@ export async function GET(request) {
             $match: {
               patient: { $in: allPatientIds.map((id) => new mongoose.Types.ObjectId(id)) },
               costType: "Revenue",
-              method: { $nin: UNSETTLED_METHODS }, ...SETTLEMENT_EXCLUSION,
+              method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION,
               ...dateFilter,
             },
           },

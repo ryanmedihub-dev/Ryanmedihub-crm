@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
 import Transactions from "@/models/Transactions";
-import { ACCOUNTS } from "@/constants/bankRouting";
+import { accountsSync } from "@/lib/masterData";
 import {
   buildBalanceMatch,
   buildContraUnionStage,
@@ -40,9 +40,9 @@ export async function GET(request) {
     const contraStage = buildContraUnionStage({ from, to, branch });
     const suspenseStage = buildSuspenseUnionStage({ from, to, branch });
     const [openings, movementRows] = await Promise.all([
-      getOpeningBalances(ACCOUNTS, from, branch || null),
+      getOpeningBalances(accountsSync(), from, branch || null),
       Transactions.aggregate([
-        { $match: buildBalanceMatch({ accounts: ACCOUNTS, from, to, branch }) },
+        { $match: buildBalanceMatch({ accounts: accountsSync(), from, to, branch }) },
         TRANSACTION_TO_MOVEMENT,
         ...(contraStage ? [contraStage] : []),
         ...(suspenseStage ? [suspenseStage] : []),
@@ -62,7 +62,7 @@ export async function GET(request) {
     const elapsedMs = Date.now() - started;
     const byAccount = new Map(movementRows.map((r) => [r._id, r]));
 
-    const accounts = ACCOUNTS.map((account) => {
+    const accounts = accountsSync().map((account) => {
       const m = byAccount.get(account);
       const openingBalance = round2(openings[account].openingBalance);
       const totalIn = round2(m?.totalIn || 0);
@@ -94,7 +94,7 @@ export async function GET(request) {
     const [unattributed] = await Transactions.aggregate([
       {
         $match: {
-          ...buildBalanceMatch({ accounts: ACCOUNTS, from, to, branch }),
+          ...buildBalanceMatch({ accounts: accountsSync(), from, to, branch }),
           furtherMode: { $in: [null, ""] },
         },
       },

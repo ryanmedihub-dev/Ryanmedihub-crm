@@ -5,8 +5,7 @@ import dbConnect from "@/lib/db";
 import Stock from "@/models/Stock";
 import Transactions from "@/models/Transactions";
 import Vendor from "@/models/Vendor";
-import { UNSETTLED_METHODS } from "@/constants/bankRouting";
-
+import { unsettledMethodsSync } from "@/lib/masterData";
 export async function GET(req) {
   try {
     const session = await getServerSession(authOptions);
@@ -176,7 +175,7 @@ export async function GET(req) {
         s.totalCost      += ev.totalAmount;
       } else {
         s.unitsSold += ev.quantity;
-        if (!UNSETTLED_METHODS.includes(ev.method)) {
+        if (!unsettledMethodsSync().includes(ev.method)) {
           s.totalRevenue += ev.totalAmount;
           s.totalProfit  += (ev.profit || 0);
         }

@@ -5,7 +5,7 @@ import SearchableSelect from "@/components/SearchableSelect";
 import BankRoutingFields from "@/components/BankRoutingFields";
 import ExternalPartyFields from "@/components/ExternalPartyFields";
 import TaxBreakdownFields from "@/components/TaxBreakdownFields";
-import { getMethodOptions, withLegacyMethod } from "@/constants/paymentMethods";
+import useMasterData from "@/lib/useMasterData";
 import ReceiptUpload from "@/components/ReceiptUpload";
 import RevenueSection from "@/components/RevenueSection";
 import ContraEntryForm from "@/components/ContraEntryForm";
@@ -13,12 +13,7 @@ import SuspenseEntryForm from "@/components/SuspenseEntryForm";
 import IncentiveEntryForm from "@/components/IncentiveEntryForm";
 import { useSession } from "next-auth/react";
 import { maskPhone } from "@/utils/phoneUtils";
-import {
-  EXPENSE_CATEGORIES,
-  getExpenseTypes,
-  PAYABLE_EXPENSE_DROPDOWN_CATEGORIES,
-  DIRECT_PAYMENT_CATEGORIES,
-} from "@/constants/expenseCategories";
+import { PAYABLE_EXPENSE_DROPDOWN_CATEGORIES } from "@/constants/expenseCategories";
 import { getPayableContext } from "@/lib/entryForm/getPayableContext";
 import { buildExpensePayload } from "@/lib/entryForm/buildTransactionPayload";
 import { validateExpenseEntry } from "@/lib/entryForm/validateExpenseEntry";
@@ -39,10 +34,6 @@ import {
   HelpCircle,
   Gift,
 } from "lucide-react";
-
-const OTHER_EXPENSE_CATEGORIES = DIRECT_PAYMENT_CATEGORIES.filter(
-  (cat) => cat !== "Patient Related Expenses",
-);
 
 const PATIENT_EXPENSE_SUBTYPES = ["Patient Meals", "PATIENT EMI"];
 
@@ -85,6 +76,16 @@ function AdminCreateTransactionPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
+  const {
+    getExpenseTypes,
+    getMethodOptions,
+    withLegacyMethod,
+    payableExpenseDropdownCategories: mdPayableDropdown,
+    directPaymentCategories: mdDirect,
+  } = useMasterData();
+  const OTHER_EXPENSE_CATEGORIES_DYN = mdDirect.filter(
+    (cat) => cat !== "Patient Related Expenses",
+  );
 
   const [activeTab, setActiveTab] = useState("transplant");
   const [loading, setLoading] = useState(false);
@@ -1713,7 +1714,7 @@ function AdminCreateTransactionPageInner() {
                           }
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-4"
                         >
-                          {PAYABLE_EXPENSE_DROPDOWN_CATEGORIES.map((cat) => (
+                          {mdPayableDropdown.map((cat) => (
                             <option key={cat} value={cat}>
                               {cat}
                             </option>
@@ -1891,7 +1892,7 @@ function AdminCreateTransactionPageInner() {
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                               >
                                 <option value="">Select Category</option>
-                                {OTHER_EXPENSE_CATEGORIES.map((cat) => (
+                                {OTHER_EXPENSE_CATEGORIES_DYN.map((cat) => (
                                   <option key={cat} value={cat}>
                                     {cat}
                                   </option>

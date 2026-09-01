@@ -1,12 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {
-  ACCOUNTS,
-  RECEIPT_MODES,
-  getBankRoutingDefaults,
-  getExpenseFurtherModeDefault,
-} from "@/constants/bankRouting";
+import useMasterData from "@/lib/useMasterData";
 
 export default function BankRoutingFields({
   costType,
@@ -19,6 +14,8 @@ export default function BankRoutingFields({
   forEdit = false,
   collapsible = false,
 }) {
+  const { accounts, receiptModes, getBankRoutingDefaults, getExpenseFurtherModeDefault } =
+    useMasterData();
   const isExpense = costType === "Expenses";
   const mounted = useRef(false);
   const [showRouting, setShowRouting] = useState(false);
@@ -56,12 +53,12 @@ export default function BankRoutingFields({
         className="w-full px-3 py-2 border border-gray-300 rounded-lg"
       >
         <option value="">Select account</option>
-        {ACCOUNTS.map((account) => (
+        {accounts.map((account) => (
           <option key={account} value={account}>
             {account}
           </option>
         ))}
-        {furtherMode && !ACCOUNTS.includes(furtherMode) && (
+        {furtherMode && !accounts.includes(furtherMode) && (
           <option value={furtherMode}>{furtherMode}</option>
         )}
       </select>
@@ -80,12 +77,12 @@ export default function BankRoutingFields({
           className="w-full px-3 py-2 border border-gray-300 rounded-lg"
         >
           <option value="">Select receipt mode</option>
-          {RECEIPT_MODES.map((mode) => (
+          {receiptModes.map((mode) => (
             <option key={mode} value={mode}>
               {mode}
             </option>
           ))}
-          {receiptMode && !RECEIPT_MODES.includes(receiptMode) && (
+          {receiptMode && !receiptModes.includes(receiptMode) && (
             <option value={receiptMode}>{receiptMode}</option>
           )}
         </select>

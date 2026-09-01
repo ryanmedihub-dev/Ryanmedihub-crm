@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
 import Transactions from "@/models/Transactions";
-import { ACCOUNTS } from "@/constants/bankRouting";
+import { accountsSync } from "@/lib/masterData";
 import { buildBalanceMatch } from "@/lib/accountBalances";
 
 const ALLOWED_ROLES = ["admin", "super-admin", "owner"];
@@ -24,8 +24,8 @@ export async function GET(request) {
     const branch = searchParams.get("branch") || "";
     const accountsParam = searchParams.get("accounts") || "";
     const selectedAccounts = accountsParam
-      ? accountsParam.split(",").filter((a) => ACCOUNTS.includes(a))
-      : ACCOUNTS;
+      ? accountsParam.split(",").filter((a) => accountsSync().includes(a))
+      : accountsSync();
 
     const match = buildBalanceMatch({ accounts: selectedAccounts, from, to, branch });
 

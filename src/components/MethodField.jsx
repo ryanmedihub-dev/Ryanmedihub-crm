@@ -2,7 +2,7 @@
 
 import BankRoutingFields from "@/components/BankRoutingFields";
 import ExternalPartyFields from "@/components/ExternalPartyFields";
-import { getMethodOptions, withLegacyMethod } from "@/constants/paymentMethods";
+import useMasterData from "@/lib/useMasterData";
 
 function paymentIdConfig(method) {
   if (method === "card") return { placeholder: "Please enter card last no.", required: true };
@@ -23,6 +23,7 @@ export default function MethodField({
   forEdit = false,
   collapsibleRouting = false,
 }) {
+  const { getMethodOptions, withLegacyMethod } = useMasterData();
   const isExpense = category === "EXPENSE";
   const externalMethod = isExpense ? "paid_by_other" : "paid_to_external";
   const idConfig = paymentIdConfig(value.method);

@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
 import Transactions from "@/models/Transactions";
-import { ACCOUNTS } from "@/constants/bankRouting";
+import { accountsSync } from "@/lib/masterData";
 import { resolveBranchFilter } from "@/lib/branches";
 import {
   buildBalanceMatch,
@@ -48,7 +48,7 @@ export async function GET(request) {
       start.setDate(start.getDate() - (days - 1));
       start.setHours(0, 0, 0, 0);
 
-      const cashAccounts = ACCOUNTS.filter((a) => !LOAN_ACCOUNTS.includes(a));
+      const cashAccounts = accountsSync().filter((a) => !LOAN_ACCOUNTS.includes(a));
       const openings = await getOpeningBalances(cashAccounts, start, branch || null);
       const startingBalance = cashAccounts.reduce(
         (s, a) => s + (openings[a]?.openingBalance || 0),
@@ -84,8 +84,8 @@ export async function GET(request) {
       filter === "loans"
         ? LOAN_ACCOUNTS
         : filter === "cash"
-          ? ACCOUNTS.filter((a) => !LOAN_ACCOUNTS.includes(a))
-          : ACCOUNTS;
+          ? accountsSync().filter((a) => !LOAN_ACCOUNTS.includes(a))
+          : accountsSync();
     const accounts = accountsParam
       ? filterAccounts.filter((a) => accountsParam.split(",").includes(a))
       : filterAccounts;

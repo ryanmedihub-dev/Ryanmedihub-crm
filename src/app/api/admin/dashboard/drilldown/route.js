@@ -6,7 +6,7 @@ import Transactions from "@/models/Transactions";
 import Payable from "@/models/Payable";
 import Receivable from "@/models/Receivable";
 import SuspenseEntry from "@/models/SuspenseEntry";
-import { ACCOUNTS, UNSETTLED_METHODS } from "@/constants/bankRouting";
+import { accountsSync, unsettledMethodsSync } from "@/lib/masterData";
 import { resolveBranchFilter } from "@/lib/branches";
 import {
   buildBalanceMatch,
@@ -117,7 +117,7 @@ export async function GET(request) {
     const branch = typeof branchFilterObj.branch === "string" ? branchFilterObj.branch : "";
 
     const selectedAccounts = accountsParam
-      ? accountsParam.split(",").filter((a) => ACCOUNTS.includes(a))
+      ? accountsParam.split(",").filter((a) => accountsSync().includes(a))
       : [];
 
     const skipFor = (key) => (pagedSection === key || !pagedSection ? (page - 1) * limit : 0);
@@ -129,7 +129,7 @@ export async function GET(request) {
 
     const txBase = {
       approvalStatus: { $nin: ["PENDING", "REJECTED"] },
-      method: { $nin: UNSETTLED_METHODS },
+      method: { $nin: unsettledMethodsSync() },
     };
     if (Object.keys(dateRange).length) txBase.date = dateRange;
     if (branch) txBase.branch = branch;
@@ -350,13 +350,13 @@ export async function GET(request) {
     }
 
     // ---- metric dispatch -------------------------------------------------
-    const cashAccounts = ACCOUNTS.filter((a) => !LOAN_ACCOUNTS.includes(a)).filter(
+    const cashAccounts = accountsSync().filter((a) => !LOAN_ACCOUNTS.includes(a)).filter(
       (a) => selectedAccounts.length === 0 || selectedAccounts.includes(a),
     );
     const loanAccounts = LOAN_ACCOUNTS.filter(
       (a) => selectedAccounts.length === 0 || selectedAccounts.includes(a),
     );
-    const cashFlowAccounts = selectedAccounts.length > 0 ? selectedAccounts : ACCOUNTS;
+    const cashFlowAccounts = selectedAccounts.length > 0 ? selectedAccounts : accountsSync();
 
     let label = metric;
     let sections = [];
@@ -493,7 +493,7 @@ export async function GET(request) {
             key: "unattributed",
             label: "No further-mode account set (all time)",
             match: {
-              ...buildBalanceMatch({ accounts: ACCOUNTS, from: "1970-01-01", to, branch }),
+              ...buildBalanceMatch({ accounts: accountsSync(), from: "1970-01-01", to, branch }),
               furtherMode: { $in: [null, ""] },
             },
           }),

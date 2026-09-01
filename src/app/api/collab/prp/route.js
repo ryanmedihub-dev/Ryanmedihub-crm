@@ -5,8 +5,7 @@ import connectDB from "@/lib/db";
 import Transactions from "@/models/Transactions";
 import Patient from "@/models/Patient";
 import { resolveBranchFilter } from "@/lib/branches";
-import { UNSETTLED_METHODS } from "@/constants/bankRouting";
-
+import { unsettledMethodsSync } from "@/lib/masterData";
 const PROCEDURES = ["PRP", "GFC", "Canacot", "Biotin"];
 
 export async function GET(req) {
@@ -109,7 +108,7 @@ export async function GET(req) {
     }));
 
     const settledPaidList = paidList.filter(
-      (t) => !UNSETTLED_METHODS.includes(t.method) && t.isSettlement !== true,
+      (t) => !unsettledMethodsSync().includes(t.method) && t.isSettlement !== true,
     );
     const totalRevenue = settledPaidList.reduce((s, t) => s + (t.amount || 0), 0);
     const byType = {};

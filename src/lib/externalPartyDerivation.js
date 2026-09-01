@@ -119,7 +119,8 @@ export async function createExternalPayable({
 
 async function settledAgainst(kind, id, session) {
   const { default: Transactions } = await import("@/models/Transactions");
-  const { UNSETTLED_METHODS } = await import("@/constants/bankRouting");
+  const { unsettledMethodsSync } = await import("@/lib/masterData");
+  const UNSETTLED_METHODS = unsettledMethodsSync();
 
   const match =
     kind === "receivable"

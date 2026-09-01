@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Patient from "./Patient";
 import { ALL_BRANCHES } from "@/lib/branches";
+import { masterDataEnum } from "@/lib/masterData/validator";
 
 const auditSchema = new mongoose.Schema({
   costType: {
@@ -10,7 +11,7 @@ const auditSchema = new mongoose.Schema({
   },
   method: {
     type: String,
-    enum: ["upi", "cash", "card", "banking", "bajaj_loan", "fibe_loan", "hdfc_skin_bank_transfer", "hdfc_ryan_medihub_bank_transfer", "icici_medihub_bank_transfer", "offset_settlement", "other", "including-package", "paid_to_external", "paid_by_other"],
+    ...masterDataEnum("PAYMENT_METHOD", "method"),
   },
   patient: {
     type: mongoose.Schema.Types.ObjectId,

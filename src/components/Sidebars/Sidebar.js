@@ -23,6 +23,7 @@ import {
   ScrollText,
   FileText,
   Banknote,
+  SlidersHorizontal,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -260,6 +261,18 @@ export default function AdminSidebar() {
               onClick={close}
             />
           </NavSection>
+
+          {(session?.user?.role === "super-admin" || session?.user?.role === "owner") && (
+            <NavSection title="Settings">
+              <NavItem
+                label="Master Data"
+                href="/admin/settings/master-data"
+                icon={SlidersHorizontal}
+                active={isActive("/admin/settings/master-data")}
+                onClick={close}
+              />
+            </NavSection>
+          )}
         </nav>
 
         <div className="shrink-0 border-t border-gray-100 p-4 space-y-3">

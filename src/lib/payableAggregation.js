@@ -1,5 +1,5 @@
 import { buildAgeingStages } from "@/lib/ageing";
-import { UNSETTLED_METHODS } from "@/constants/bankRouting";
+import { unsettledMethodsSync } from "@/lib/masterData";
 
 export function buildPayableAggregationStages(
   txCollectionName,
@@ -18,7 +18,7 @@ export function buildPayableAggregationStages(
                 $and: [
                   { $eq: ["$payableId", "$$payableId"] },
                   { $eq: ["$approvalStatus", "APPROVED"] },
-                  { $not: [{ $in: ["$method", UNSETTLED_METHODS] }] },
+                  { $not: [{ $in: ["$method", unsettledMethodsSync()] }] },
                 ],
               },
             },
@@ -159,7 +159,7 @@ export function buildPayableGroupedStages(txCollectionName, { level, category, s
                 $and: [
                   { $eq: ["$payableId", "$$payableId"] },
                   { $eq: ["$approvalStatus", "APPROVED"] },
-                  { $not: [{ $in: ["$method", UNSETTLED_METHODS] }] },
+                  { $not: [{ $in: ["$method", unsettledMethodsSync()] }] },
                 ],
               },
             },

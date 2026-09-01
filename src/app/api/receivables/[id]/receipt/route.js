@@ -5,7 +5,8 @@ import connectDB from "@/lib/db";
 import Receivable from "@/models/Receivable";
 import Transactions from "@/models/Transactions";
 import { REVENUE_METHODS } from "@/constants/paymentMethods";
-import { getBankRoutingDefaults, UNSETTLED_METHODS, NON_CASH_METHODS } from "@/constants/bankRouting";
+import { getBankRoutingDefaults } from "@/lib/masterData/lists";
+import { unsettledMethodsSync, nonCashMethodsSync } from "@/lib/masterData";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 
@@ -52,7 +53,7 @@ export async function POST(req, { params }) {
     if (
       furtherModeInput !== undefined &&
       !furtherModeInput &&
-      !NON_CASH_METHODS.includes(method)
+      !nonCashMethodsSync().includes(method)
     ) {
       return NextResponse.json(
         { error: "furtherMode is required — name the account this money landed in" },
@@ -80,7 +81,7 @@ export async function POST(req, { params }) {
           receivableId: receivable._id,
           costType: "Revenue",
           approvalStatus: "APPROVED",
-          method: { $nin: UNSETTLED_METHODS },
+          method: { $nin: unsettledMethodsSync() },
         },
       },
       { $group: { _id: null, received: { $sum: "$amount" } } },
@@ -103,7 +104,7 @@ export async function POST(req, { params }) {
       undefined;
 
     const routing = transactionCategory
-      ? getBankRoutingDefaults(branch, transactionCategory, method)
+      ? await getBankRoutingDefaults(branch, transactionCategory, method)
       : { receiptMode: "", furtherMode: "" };
 
     const patient =

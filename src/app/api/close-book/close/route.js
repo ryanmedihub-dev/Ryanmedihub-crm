@@ -4,15 +4,15 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import mongoose from "mongoose";
 import connectDB from "@/lib/db";
 import AccountPeriod from "@/models/AccountPeriod";
-import { ACCOUNTS } from "@/constants/bankRouting";
+import { accountsSync } from "@/lib/masterData";
 import { computePeriodFigures } from "@/lib/accountPeriods";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 
 function parseAccounts(param) {
-  if (!param) return ACCOUNTS;
+  if (!param) return accountsSync();
   const wanted = param.split(",").map((a) => a.trim()).filter(Boolean);
-  return wanted.filter((a) => ACCOUNTS.includes(a));
+  return wanted.filter((a) => accountsSync().includes(a));
 }
 
 export async function GET(request) {

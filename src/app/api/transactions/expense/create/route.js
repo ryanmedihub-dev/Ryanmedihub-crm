@@ -5,13 +5,12 @@ import connectDB from "@/lib/db";
 import Transactions from "@/models/Transactions";
 import Vendor from "@/models/Vendor";
 import Payable from "@/models/Payable";
-import { getExpenseTypes } from "@/constants/expenseCategories";
 import {
   withExternalPartyLink,
   createExternalPayable,
   validateExternalParty,
 } from "@/lib/externalPartyDerivation";
-import { UNSETTLED_METHODS, NON_CASH_METHODS } from "@/constants/bankRouting";
+import { expenseTypesSync, unsettledMethodsSync, nonCashMethodsSync } from "@/lib/masterData";
 import { backDateGuard } from "@/lib/backDateGuard";
 
 const NO_GIVER_CATEGORIES = [
@@ -66,7 +65,7 @@ export async function POST(req) {
       );
     }
 
-    if (payableId && furtherMode !== undefined && !furtherMode && !NON_CASH_METHODS.includes(method)) {
+    if (payableId && furtherMode !== undefined && !furtherMode && !nonCashMethodsSync().includes(method)) {
       return NextResponse.json(
         { error: "furtherMode is required — name the account this payment left from" },
         { status: 400 },
@@ -81,7 +80,7 @@ export async function POST(req) {
       );
     }
 
-    if (getExpenseTypes(expenseCategory).length > 0 && !expenseType) {
+    if (expenseTypesSync(expenseCategory).length > 0 && !expenseType) {
       return NextResponse.json(
         { error: "Expense type is required for this category" },
         { status: 400 }
@@ -143,7 +142,7 @@ export async function POST(req) {
           $match: {
             payableId: payableDoc._id,
             approvalStatus: "APPROVED",
-            method: { $nin: UNSETTLED_METHODS },
+            method: { $nin: unsettledMethodsSync() },
           },
         },
         { $group: { _id: null, paid: { $sum: "$amount" } } },
