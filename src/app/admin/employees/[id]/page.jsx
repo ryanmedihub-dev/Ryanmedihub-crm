@@ -37,6 +37,18 @@ export default function EmployeeDetailPage() {
   const [page, setPage] = useState(1);
   const limit = 50;
 
+  // The same payable rollup the staff list's money columns are built from, so clicking
+  // through from a row shows that row's figures broken out rather than a different number.
+  const [finance, setFinance] = useState(null);
+
+  useEffect(() => {
+    if (!id) return;
+    fetch(`/api/employees/finance-summary?employeeId=${id}`)
+      .then((r) => r.json())
+      .then((json) => setFinance(json?.byEmployee?.[id] || null))
+      .catch(() => setFinance(null));
+  }, [id]);
+
   useEffect(() => {
     if (!id) return;
     fetch(`/api/employees/get/${id}`)
@@ -123,6 +135,52 @@ export default function EmployeeDetailPage() {
             <p className="text-2xl font-bold text-gray-900 mt-1">{data.total}</p>
           </div>
         </div>
+
+        {finance && (
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+            <h2 className="text-lg font-bold text-gray-900 mb-1">Payables</h2>
+            <p className="text-xs text-gray-400 mb-4">
+              Everything raised against this employee — {finance.payableCount}{" "}
+              document{finance.payableCount === 1 ? "" : "s"}
+              {finance.overdueCount > 0 && (
+                <span className="ml-1 font-semibold text-red-600">
+                  · {finance.overdueCount} overdue
+                </span>
+              )}
+            </p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-gray-500 border-b border-gray-100">
+                  <tr>
+                    <th className="text-left py-2 font-semibold" />
+                    <th className="text-right py-2 font-semibold">Payable</th>
+                    <th className="text-right py-2 font-semibold">Paid</th>
+                    <th className="text-right py-2 font-semibold">Pending</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {[
+                    ["Salary", "salaryPayable", "salaryPaid", "salaryPending"],
+                    ["Incentive", "incentivePayable", "incentivePaid", "incentivePending"],
+                  ].map(([label, a, b, c]) => (
+                    <tr key={label}>
+                      <td className="py-2 text-gray-700">{label}</td>
+                      <td className="py-2 text-right tabular-nums">{formatCurrency(finance[a])}</td>
+                      <td className="py-2 text-right tabular-nums text-emerald-700">{formatCurrency(finance[b])}</td>
+                      <td className="py-2 text-right tabular-nums text-amber-700">{formatCurrency(finance[c])}</td>
+                    </tr>
+                  ))}
+                  <tr className="border-t-2 border-gray-200 font-bold">
+                    <td className="py-2 text-gray-900">Total</td>
+                    <td className="py-2 text-right tabular-nums">{formatCurrency(finance.totalPayable)}</td>
+                    <td className="py-2 text-right tabular-nums text-emerald-700">{formatCurrency(finance.totalPaid)}</td>
+                    <td className="py-2 text-right tabular-nums text-amber-700">{formatCurrency(finance.totalPending)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
           <div className="flex items-center justify-between mb-4">

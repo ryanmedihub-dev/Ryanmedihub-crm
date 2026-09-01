@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import mongoose from "mongoose";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
 import Payable from "@/models/Payable";
@@ -33,6 +34,7 @@ export async function GET(request) {
     const dateFrom = searchParams.get("dateFrom") || "";
     const dateTo = searchParams.get("dateTo") || "";
     const branch = searchParams.get("branch") || "";
+    const employeeId = searchParams.get("employeeId") || "";
 
     const match = {
       "payee.kind": "EMPLOYEE",
@@ -40,6 +42,11 @@ export async function GET(request) {
       isCancelled: { $ne: true },
     };
     if (branch) match.branch = branch;
+    // Single-employee mode for the detail page — avoids shipping every employee's salary
+    // figures to a page that only needs one.
+    if (employeeId && mongoose.Types.ObjectId.isValid(employeeId)) {
+      match["payee.refId"] = new mongoose.Types.ObjectId(employeeId);
+    }
     if (dateFrom || dateTo) {
       match.createdAt = {};
       if (dateFrom) {

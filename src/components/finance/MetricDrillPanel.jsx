@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { X, AlertTriangle, Check } from "lucide-react";
+import { X, AlertTriangle, Check, Download, Search, Loader2 } from "lucide-react";
 import AccountingTable from "./AccountingTable";
 import TransactionDetailModal from "./TransactionDetailModal";
 import DocumentDetailModal from "./DocumentDetailModal";
@@ -56,6 +56,55 @@ const COLUMNS = {
   ],
 };
 
+// Plain-value shapes for the Excel export — the display columns hold React renderers,
+// which can't be written to a sheet.
+const EXPORT_FIELDS = {
+  transactions: [
+    ["Date", (r) => fmtDay(r.date)],
+    ["Narration", (r) => r.narration],
+    ["Party", (r) => r.party],
+    ["Category", (r) => r.category],
+    ["Account", (r) => r.account],
+    ["Method", (r) => r.method],
+    ["Branch", (r) => r.branch],
+    ["Amount", (r) => r.amount],
+  ],
+  documents: [
+    ["Party", (r) => r.party],
+    ["Purpose", (r) => r.narration],
+    ["Category", (r) => r.category],
+    ["Branch", (r) => r.branch],
+    ["Due Date", (r) => fmtDay(r.dueDate)],
+    ["Days Overdue", (r) => (r.daysOverdue > 0 ? r.daysOverdue : "")],
+    ["Status", (r) => r.status],
+    ["Total", (r) => r.totalAmount],
+    ["Settled", (r) => r.settled],
+    ["Pending", (r) => r.amount],
+  ],
+  obligations: [
+    ["Raised", (r) => fmtDay(r.date)],
+    ["Party", (r) => r.party],
+    ["Purpose", (r) => r.narration],
+    ["Category", (r) => r.category],
+    ["Branch", (r) => r.branch],
+    ["Amount", (r) => r.amount],
+  ],
+  accounts: [
+    ["Account", (r) => r.account],
+    ["Opening", (r) => r.opening],
+    ["In", (r) => r.totalIn],
+    ["Out", (r) => r.totalOut],
+    ["Closing", (r) => r.amount],
+    ["Entries", (r) => r.count],
+  ],
+};
+
+const fmtDay = (v) => (v ? new Date(v).toLocaleDateString("en-IN") : "");
+const INR_FORMAT = "₹#,##,##0";
+const MONEY_HEADER = /(amount|opening|in|out|closing|total|settled|pending)/i;
+const EXPORT_PAGE = 200;
+const EXPORT_MAX_PAGES = 25;
+
 export default function MetricDrillPanel({ metric, label, cardValue, head, bucket, filters, onClose }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -63,6 +112,11 @@ export default function MetricDrillPanel({ metric, label, cardValue, head, bucke
   const [sectionPage, setSectionPage] = useState({});
   const [viewTxId, setViewTxId] = useState(null);
   const [viewDoc, setViewDoc] = useState(null);
+
+  const [q, setQ] = useState("");
+  const [minAmt, setMinAmt] = useState("");
+  const [maxAmt, setMaxAmt] = useState("");
+  const [exporting, setExporting] = useState(false);
 
   const panelRef = useRef(null);
   const lastFocused = useRef(null);
@@ -120,6 +174,145 @@ export default function MetricDrillPanel({ metric, label, cardValue, head, bucke
     };
   }, [metric, onClose]);
 
+  // Applied to the rows already loaded — the header says how many that is, so a filter
+  // that appears to match nothing isn't mistaken for "no such records exist".
+  const matchRow = useCallback(
+    (row) => {
+      const needle = q.trim().toLowerCase();
+      if (needle) {
+        const hay = [row.narration, row.party, row.category, row.account, row.method, row.branch, row.status]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        if (!hay.includes(needle)) return false;
+      }
+      const amt = Math.abs(Number(row.amount) || 0);
+      if (minAmt !== "" && amt < Number(minAmt)) return false;
+      if (maxAmt !== "" && amt > Number(maxAmt)) return false;
+      return true;
+    },
+    [q, minAmt, maxAmt],
+  );
+
+  const filterActive = q.trim() !== "" || minAmt !== "" || maxAmt !== "";
+
+  const visibleSections = useMemo(() => {
+    const sections = data?.sections || [];
+    if (!filterActive) return sections;
+    return sections.map((s) => {
+      const rows = s.rows.filter(matchRow);
+      return {
+        ...s,
+        rows,
+        filteredTotal: rows.reduce((t, r) => t + (Number(r.amount) || 0), 0),
+        filteredCount: rows.length,
+      };
+    });
+  }, [data, filterActive, matchRow]);
+
+  // Pages the API per section so the workbook holds the whole result, not just the page on
+  // screen, then applies the same filters so the file matches what the panel shows.
+  const exportExcel = useCallback(async () => {
+    if (!data) return;
+    setExporting(true);
+    try {
+      const base = new URLSearchParams({ metric, limit: String(EXPORT_PAGE) });
+      if (branch) base.set("branch", branch);
+      if (from) base.set("from", from);
+      if (to) base.set("to", to);
+      if (accounts) base.set("accounts", accounts);
+      if (head) base.set("head", head);
+      if (bucket) base.set("bucket", bucket);
+
+      const sheets = [];
+      for (const section of data.sections) {
+        let rows = [];
+        for (let page = 1; page <= EXPORT_MAX_PAGES; page++) {
+          const p = new URLSearchParams(base);
+          p.set("section", section.key);
+          p.set("page", String(page));
+          const json = await fetch(`/api/admin/dashboard/drilldown?${p}`).then((r) => r.json());
+          const found = (json.sections || []).find((s) => s.key === section.key);
+          const batch = found?.rows || [];
+          rows.push(...batch);
+          if (batch.length < EXPORT_PAGE || rows.length >= (found?.count ?? 0)) break;
+        }
+        if (filterActive) rows = rows.filter(matchRow);
+
+        const fields = EXPORT_FIELDS[section.shape] || EXPORT_FIELDS.transactions;
+        sheets.push({
+          name: section.label,
+          rows: rows.map((r) => Object.fromEntries(fields.map(([h, get]) => [h, get(r) ?? ""]))),
+          total: rows.reduce((t, r) => t + (Number(r.amount) || 0), 0),
+          sign: section.sign ?? 1,
+        });
+      }
+
+      const { utils, writeFile } = await import("xlsx");
+      const wb = utils.book_new();
+
+      for (const sheet of sheets) {
+        const ws = utils.json_to_sheet(sheet.rows);
+        const cols = Object.keys(sheet.rows[0] || {});
+        ws["!cols"] = cols.map((k) => {
+          const widest = sheet.rows
+            .slice(0, 200)
+            .reduce((max, row) => Math.max(max, String(row[k] ?? "").length), k.length);
+          return { wch: Math.min(Math.max(widest + 2, 12), 45) };
+        });
+        if (ws["!ref"]) ws["!autofilter"] = { ref: ws["!ref"] };
+        cols.forEach((k, idx) => {
+          if (!MONEY_HEADER.test(k)) return;
+          const letter = utils.encode_col(idx);
+          for (let r = 0; r < sheet.rows.length; r++) {
+            const cell = ws[`${letter}${r + 2}`];
+            if (cell && cell.t === "n") cell.z = INR_FORMAT;
+          }
+        });
+        utils.book_append_sheet(
+          wb,
+          ws,
+          String(sheet.name).slice(0, 31).replace(/[[\]:*?/\\]/g, " "),
+        );
+      }
+
+      const meta = [
+        { Field: "Metric", Value: label || data.label || metric },
+        { Field: "Branch", Value: branch || "All branches" },
+        { Field: "From", Value: from || "—" },
+        { Field: "To", Value: to || "—" },
+        { Field: "Accounts", Value: accounts ? accounts.split(",").join(", ") : "All accounts" },
+        ...(head ? [{ Field: "Expense Head", Value: head }] : []),
+        ...(bucket ? [{ Field: "Ageing Bucket", Value: bucket }] : []),
+        ...(filterActive
+          ? [{ Field: "Panel filter", Value: [q && `text "${q}"`, minAmt !== "" && `min ₹${minAmt}`, maxAmt !== "" && `max ₹${maxAmt}`].filter(Boolean).join(", ") }]
+          : []),
+        ...sheets.map((s) => ({
+          Field: `${s.name}${s.sign === -1 ? " (subtracted)" : ""}`,
+          Value: s.total,
+        })),
+        { Field: "Rows total", Value: sheets.reduce((t, s) => t + s.sign * s.total, 0) },
+        ...(typeof cardValue === "number" ? [{ Field: "Card shows", Value: cardValue }] : []),
+        { Field: "Exported At", Value: new Date().toLocaleString("en-IN") },
+      ];
+      const metaWs = utils.json_to_sheet(meta);
+      metaWs["!cols"] = [{ wch: 26 }, { wch: 44 }];
+      meta.forEach((m, i) => {
+        const cell = metaWs[`B${i + 2}`];
+        if (cell && cell.t === "n") cell.z = INR_FORMAT;
+      });
+      utils.book_append_sheet(wb, metaWs, "Info");
+
+      const safe = String(label || metric).replace(/[^a-z0-9]+/gi, "_");
+      writeFile(wb, `${safe}_${new Date().toISOString().split("T")[0]}.xlsx`);
+    } catch (e) {
+      console.error("Drill-down export failed:", e);
+      setError("Couldn't build the Excel file — try again");
+    } finally {
+      setExporting(false);
+    }
+  }, [data, metric, branch, from, to, accounts, head, bucket, label, cardValue, filterActive, matchRow, q, minAmt, maxAmt]);
+
   const chips = useMemo(
     () =>
       [
@@ -170,14 +363,60 @@ export default function MetricDrillPanel({ metric, label, cardValue, head, bucke
               ))}
             </div>
           </div>
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            className="p-1.5 rounded-lg hover:bg-gray-100 shrink-0"
-          >
-            <X className="w-5 h-5 text-gray-500" />
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={exportExcel}
+              disabled={exporting || loading || !data}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed"
+              title="Download every row behind this figure, not just this page"
+            >
+              {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+              {exporting ? "Building…" : "Excel"}
+            </button>
+            <button
+              onClick={onClose}
+              aria-label="Close"
+              className="p-1.5 rounded-lg hover:bg-gray-100"
+            >
+              <X className="w-5 h-5 text-gray-500" />
+            </button>
+          </div>
         </header>
+
+        <div className="flex flex-wrap items-center gap-2 px-5 py-2.5 border-b border-gray-100 bg-gray-50/60">
+          <div className="relative flex-1 min-w-45">
+            <Search className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Filter by party, narration, account, method…"
+              className="w-full pl-8 pr-2.5 py-1.5 border border-gray-300 rounded-lg text-xs bg-white"
+            />
+          </div>
+          <input
+            type="number"
+            value={minAmt}
+            onChange={(e) => setMinAmt(e.target.value)}
+            placeholder="Min ₹"
+            className="w-24 px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs bg-white"
+          />
+          <input
+            type="number"
+            value={maxAmt}
+            onChange={(e) => setMaxAmt(e.target.value)}
+            placeholder="Max ₹"
+            className="w-24 px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs bg-white"
+          />
+          {filterActive && (
+            <button
+              onClick={() => { setQ(""); setMinAmt(""); setMaxAmt(""); }}
+              className="text-xs font-medium text-gray-500 hover:text-gray-700"
+            >
+              Clear
+            </button>
+          )}
+        </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
           {error ? (
@@ -194,7 +433,7 @@ export default function MetricDrillPanel({ metric, label, cardValue, head, bucke
               ))}
             </div>
           ) : (
-            (data?.sections || []).map((section) => (
+            visibleSections.map((section) => (
               <section key={section.key}>
                 <div className="flex items-baseline justify-between gap-3 mb-2">
                   <h3 className="text-sm font-semibold text-gray-800">
@@ -204,12 +443,20 @@ export default function MetricDrillPanel({ metric, label, cardValue, head, bucke
                     )}
                   </h3>
                   <p className="text-sm font-bold text-gray-900 tabular-nums">
-                    {formatCurrency(section.total)}
+                    {formatCurrency(filterActive ? section.filteredTotal : section.total)}
                     <span className="ml-2 text-xs font-normal text-gray-400">
-                      {section.count} {section.count === 1 ? "record" : "records"}
+                      {filterActive
+                        ? `${section.filteredCount} matched`
+                        : `${section.count} ${section.count === 1 ? "record" : "records"}`}
                     </span>
                   </p>
                 </div>
+                {filterActive && section.count > PAGE_SIZE && (
+                  <p className="mb-1.5 text-[11px] text-amber-700">
+                    Filtering the {PAGE_SIZE} rows loaded here — the Excel export applies the same
+                    filter across all {section.count}.
+                  </p>
+                )}
                 <AccountingTable
                   columns={COLUMNS[section.shape] || COLUMNS.transactions}
                   rows={section.rows}
@@ -247,19 +494,26 @@ export default function MetricDrillPanel({ metric, label, cardValue, head, bucke
                 </div>
               )}
             </div>
-            {hasCardValue && grandTotal != null && (
-              <span
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                  reconciles
-                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                    : "bg-rose-50 text-rose-700 border border-rose-200"
-                }`}
-              >
-                {reconciles ? <Check className="w-3.5 h-3.5" /> : <AlertTriangle className="w-3.5 h-3.5" />}
-                {reconciles
-                  ? "Reconciles with the card"
-                  : `Off by ${formatCurrency(Math.abs(grandTotal - cardValue))}`}
+            {filterActive ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                <AlertTriangle className="w-3.5 h-3.5" />
+                Filtered view — totals won&apos;t match the card
               </span>
+            ) : (
+              hasCardValue && grandTotal != null && (
+                <span
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
+                    reconciles
+                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                      : "bg-rose-50 text-rose-700 border border-rose-200"
+                  }`}
+                >
+                  {reconciles ? <Check className="w-3.5 h-3.5" /> : <AlertTriangle className="w-3.5 h-3.5" />}
+                  {reconciles
+                    ? "Reconciles with the card"
+                    : `Off by ${formatCurrency(Math.abs(grandTotal - cardValue))}`}
+                </span>
+              )
             )}
           </div>
         </footer>

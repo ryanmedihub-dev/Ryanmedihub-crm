@@ -209,17 +209,24 @@ export default function StaffTable({ config = {} }) {
     const chips = [];
     if (filters.category)    chips.push({ k: "category",    label: `Category: ${filters.category}` });
     if (filters.status)      chips.push({ k: "status",      label: `Status: ${filters.status === "active" ? "Active" : "Inactive"}` });
-    if (filters.minPatients) chips.push({ k: "minPatients", label: `Min Patients: ${filters.minPatients}` });
-    if (filters.maxPatients) chips.push({ k: "maxPatients", label: `Max Patients: ${filters.maxPatients}` });
-    if (filters.minAmount)   chips.push({ k: "minAmount",   label: `Min Amount: ${fmtCurrency(filters.minAmount)}` });
-    if (filters.maxAmount)   chips.push({ k: "maxAmount",   label: `Max Amount: ${fmtCurrency(filters.maxAmount)}` });
-    if (filters.minGrafts)   chips.push({ k: "minGrafts",   label: `Min Grafts: ${filters.minGrafts}` });
-    if (filters.maxGrafts)   chips.push({ k: "maxGrafts",   label: `Max Grafts: ${filters.maxGrafts}` });
+    if (financeColumns) {
+      if (filters.minAmount)   chips.push({ k: "minAmount",   label: `Min Payable: ${fmtCurrency(filters.minAmount)}` });
+      if (filters.maxAmount)   chips.push({ k: "maxAmount",   label: `Max Payable: ${fmtCurrency(filters.maxAmount)}` });
+      if (filters.minPending)  chips.push({ k: "minPending",  label: `Min Pending: ${fmtCurrency(filters.minPending)}` });
+      if (filters.onlyPending) chips.push({ k: "onlyPending", label: "Only with pending" });
+    } else {
+      if (filters.minPatients) chips.push({ k: "minPatients", label: `Min Patients: ${filters.minPatients}` });
+      if (filters.maxPatients) chips.push({ k: "maxPatients", label: `Max Patients: ${filters.maxPatients}` });
+      if (filters.minAmount)   chips.push({ k: "minAmount",   label: `Min Amount: ${fmtCurrency(filters.minAmount)}` });
+      if (filters.maxAmount)   chips.push({ k: "maxAmount",   label: `Max Amount: ${fmtCurrency(filters.maxAmount)}` });
+      if (filters.minGrafts)   chips.push({ k: "minGrafts",   label: `Min Grafts: ${filters.minGrafts}` });
+      if (filters.maxGrafts)   chips.push({ k: "maxGrafts",   label: `Max Grafts: ${filters.maxGrafts}` });
+      if (filters.technique)   chips.push({ k: "technique",   label: `Service: ${filters.technique}` });
+    }
     if (filters.dateFrom)    chips.push({ k: "dateFrom",    label: `From: ${filters.dateFrom}` });
     if (filters.dateTo)      chips.push({ k: "dateTo",      label: `To: ${filters.dateTo}` });
-    if (filters.technique)   chips.push({ k: "technique",   label: `Service: ${filters.technique}` });
     return chips;
-  }, [filters]);
+  }, [filters, financeColumns]);
 
   if (loading)
     return (
@@ -429,7 +436,11 @@ export default function StaffTable({ config = {} }) {
                                 <Link
                                   href={`${viewBasePath}/${item._id}`}
                                   className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
-                                  title="View employee"
+                                  title={
+                                    financeColumns
+                                      ? "View incentives — which patients they were earned on"
+                                      : "View employee"
+                                  }
                                 >
                                   <Eye className="w-4 h-4" />
                                 </Link>
@@ -609,20 +620,25 @@ export default function StaffTable({ config = {} }) {
                 </FilterSection>
               )}
 
-              <FilterSection title="Visit Date Range" icon={<Calendar className="w-4 h-4" />}>
+              <FilterSection
+                title={financeColumns ? "Payable Raised Between" : "Visit Date Range"}
+                icon={<Calendar className="w-4 h-4" />}
+              >
                 <div className="grid grid-cols-2 gap-4">
                   <FilterDateInput label="From" value={filters.dateFrom} onChange={(v) => setFilter("dateFrom", v)} />
                   <FilterDateInput label="To"   value={filters.dateTo}   onChange={(v) => setFilter("dateTo",   v)} />
                 </div>
               </FilterSection>
 
-              <FilterSection title="Service / Technique" icon={<Stethoscope className="w-4 h-4" />}>
-                <FilterSelect
-                  value={filters.technique}
-                  onChange={(v) => setFilter("technique", v)}
-                  options={[{ label: "All Services", value: "" }, ...TECHNIQUES.map((t) => ({ label: t, value: t }))]}
-                />
-              </FilterSection>
+              {!financeColumns && (
+                <FilterSection title="Service / Technique" icon={<Stethoscope className="w-4 h-4" />}>
+                  <FilterSelect
+                    value={filters.technique}
+                    onChange={(v) => setFilter("technique", v)}
+                    options={[{ label: "All Services", value: "" }, ...TECHNIQUES.map((t) => ({ label: t, value: t }))]}
+                  />
+                </FilterSection>
+              )}
             </div>
 
             <div className="px-6 py-4 border-t bg-gray-50 flex gap-3">
