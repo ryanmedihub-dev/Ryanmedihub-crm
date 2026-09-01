@@ -13,6 +13,7 @@ export const EXPENSE_CATEGORY_TREE = {
     "Rent-Mansi Vaishali clinic",
     "Rent-Hyderebad Clinic",
     "Rent-Noida Clinic",
+    "Rent-Staff Flat Hyderabad",
     "Rent-Staff Flat",
     "Rent-Deepak staff flat",
     "Rent-P House Rent",
