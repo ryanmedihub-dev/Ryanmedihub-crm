@@ -166,7 +166,6 @@ export const PAYABLE_EXPENSE_CATEGORIES = [
   "Interest Expenses",
   "Taxes",
   "Loans",
-  "Software Rental Expenses",
   "Hardware Rental Expenses",
 ];
 
@@ -188,6 +187,7 @@ export const DIRECT_PAYMENT_CATEGORIES = [
   "Forex Conversion and Fluctuation Charges",
   "Asset Based Payment",
   "Drawings",
+  "Software Rental Expenses",
   "Miscellaneous",
   "Medical testing kit",
   "Patient Related Expenses",

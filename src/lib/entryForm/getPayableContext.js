@@ -8,7 +8,6 @@ export const PAYABLE_CATEGORY_PURPOSE = {
   "Lab Expenses": "LAB_EXPENSES",
   "Interest Expenses": "INTEREST_EXPENSES",
   "Taxes": "TAX",
-  "Software Rental Expenses": "SOFTWARE_RENTAL",
   "Hardware Rental Expenses": "HARDWARE_RENTAL",
 };
 export const PAYABLE_CATEGORY_KIND = {

@@ -21,7 +21,6 @@ const CATEGORY_TO_PURPOSE = {
   "Lab Expenses": "LAB_EXPENSES",
   "Interest Expenses": "INTEREST_EXPENSES",
   Taxes: "TAX",
-  "Software Rental Expenses": "SOFTWARE_RENTAL",
   "Hardware Rental Expenses": "HARDWARE_RENTAL",
   "Collab Clinic Payment": "COLLAB_CLINIC",
 };
