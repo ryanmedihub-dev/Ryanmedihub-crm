@@ -10,6 +10,7 @@ import Leads from "@/models/Leads";
 import Interviewer from "@/models/Interviewer";
 import Vendor from "@/models/Vendor";
 import { ALL_BRANCHES } from "@/lib/branches";
+import { getISTStartOfDay, getISTEndOfDay } from "@/lib/dateHelpers";
 import { UNSETTLED_METHODS, SETTLEMENT_EXCLUSION } from "@/constants/bankRouting";
 
 export async function GET(request) {
@@ -38,37 +39,16 @@ export async function GET(request) {
 
     let data = [];
 
-    const dateFilter = {};
-    if (from && to) {
-      dateFilter.createdAt = {
-        $gte: new Date(from),
-        $lte: new Date(to),
-      };
-    }
+    // The client now sends bare YYYY-MM-DD calendar days; bracket each to the IST day so
+    // "31 Aug" means exactly 31 Aug 00:00–23:59 IST and doesn't bleed into the 30th.
+    const rangeStart = from ? getISTStartOfDay(from) : null;
+    const rangeEnd = to ? getISTEndOfDay(to) : null;
+    const dateWindow = rangeStart && rangeEnd ? { $gte: rangeStart, $lte: rangeEnd } : null;
 
-    const visitDateFilter = {};
-    if (from && to) {
-      visitDateFilter["personal.visitDate"] = {
-        $gte: new Date(from),
-        $lte: new Date(to),
-      };
-    }
-
-    const txDateFilter = {};
-    if (from && to) {
-      txDateFilter.date = {
-        $gte: new Date(from),
-        $lte: new Date(to),
-      };
-    }
-
-    const surgeryDateFilter = {};
-    if (from && to) {
-      surgeryDateFilter["surgery.surgeryDate"] = {
-        $gte: new Date(from),
-        $lte: new Date(to),
-      };
-    }
+    const dateFilter = dateWindow ? { createdAt: dateWindow } : {};
+    const visitDateFilter = dateWindow ? { "personal.visitDate": dateWindow } : {};
+    const txDateFilter = dateWindow ? { date: dateWindow } : {};
+    const surgeryDateFilter = dateWindow ? { "surgery.surgeryDate": dateWindow } : {};
 
     switch (type) {
       case "patients-comprehensive":

@@ -11,6 +11,8 @@ import Payable from "@/models/Payable";
 import Receivable from "@/models/Receivable";
 import Borrowing from "@/models/Borrowing";
 import Advance from "@/models/Advance";
+import SuspenseEntry from "@/models/SuspenseEntry";
+import AccountTransfer from "@/models/AccountTransfer";
 import { PAYABLE_PURPOSES } from "@/constants/payablePurposes";
 import { buildPayableAggregationStages } from "@/lib/payableAggregation";
 import { buildReceivableAggregationStages } from "@/lib/receivableAggregation";
@@ -59,6 +61,7 @@ export async function GET(request) {
     const rawPayableType = searchParams.get("payableTypeFilter");
     // Validated against the enum so an unknown value can't silently return everything.
     const payableTypeFilter = PAYABLE_PURPOSES.includes(rawPayableType) ? rawPayableType : "";
+    const revenueCategoryFilter = searchParams.get("revenueCategoryFilter") || "";
 
     let data = [];
 
@@ -252,7 +255,23 @@ export async function GET(request) {
         break;
 
       case "receivables-all":
-        data = await generateReceivablesAllReport({ dateFilter: obligationDateFilter, branch });
+        data = await generateReceivablesAllReport({
+          dateFilter: obligationDateFilter,
+          branch,
+          revenueCategoryFilter,
+        });
+        break;
+
+      case "suspense-all":
+        data = await generateSuspenseReport({ from: fromDate, to: toDate, branch });
+        break;
+
+      case "contra-all":
+        data = await generateContraReport({ from: fromDate, to: toDate, branch });
+        break;
+
+      case "incentives-all":
+        data = await generateIncentivesReport({ from: fromDate, to: toDate, branch });
         break;
 
       case "branch-comparison":
@@ -1413,35 +1432,381 @@ async function generatePayablesAllReport(filters) {
   return out;
 }
 
+/**
+ * Receivables with the receipts posted against each one — the mirror of
+ * generatePayablesAllReport. Each receivable line (Row = "Receivable") is followed by its
+ * receipt lines (Row = "  ↳ Receipt"), so the receipt amounts sum to the Received figure on
+ * the line above. Receipts arrive three ways, matching buildReceivableAggregationStages:
+ *   - a Transaction pointing straight at the receivable (receivableId)
+ *   - a Transaction split across several receivables (receivableAllocations)
+ *   - an Advance / Borrowing recorded IN against the receivable
+ */
 async function generateReceivablesAllReport(filters) {
   const match = { isCancelled: { $ne: true }, ...filters.dateFilter };
   if (filters.branch) match.branch = filters.branch;
+  if (filters.revenueCategoryFilter) match.revenueCategory = filters.revenueCategoryFilter;
 
   const txCollection = Transactions.collection.name;
-  const rows = await Receivable.aggregate([
+  const receivables = await Receivable.aggregate([
     { $match: match },
     ...buildReceivableAggregationStages(txCollection),
-    { $sort: { createdAt: -1 } },
+    { $sort: { revenueCategory: 1, "payer.label": 1, createdAt: -1 } },
     { $limit: 5000 },
   ]);
 
-  return rows.map((r) => ({
-    Payer: r.payer?.label || "",
-    "Payer Type": r.payer?.kind || "",
-    Purpose: r.purpose || "",
-    "Revenue Category": r.revenueCategory || "",
-    Period: r.period?.month && r.period?.year ? `${r.period.month}/${r.period.year}` : "",
-    Branch: r.branch || "",
-    "Total Amount": r.totalAmount || 0,
-    Received: r.received || 0,
-    Pending: r.pending || 0,
-    Status: r.status || "",
-    "Due Date": r.dueDate ? new Date(r.dueDate).toLocaleDateString() : "",
-    "Ageing Bucket": r.pending > 0 ? r.ageingBucket || "" : "",
-    "Days Overdue": r.pending > 0 ? (r.daysOverdue ?? "") : "",
-    Remarks: r.remarks || "",
-    "Raised On": r.createdAt ? new Date(r.createdAt).toLocaleDateString() : "",
+  if (receivables.length === 0) return [];
+
+  const ids = receivables.map((r) => r._id);
+  const idStrSet = new Set(ids.map(String));
+
+  const [directTx, splitTx, advanceIn, borrowingIn] = await Promise.all([
+    Transactions.find({
+      receivableId: { $in: ids },
+      costType: "Revenue",
+      approvalStatus: "APPROVED",
+      method: { $nin: UNSETTLED_METHODS },
+    })
+      .select("receivableId date amount method furtherMode paymentId remarks branch")
+      .lean(),
+    Transactions.find({
+      "receivableAllocations.receivableId": { $in: ids },
+      costType: "Revenue",
+      approvalStatus: "APPROVED",
+      method: { $nin: UNSETTLED_METHODS },
+    })
+      .select("receivableAllocations date method furtherMode paymentId remarks branch")
+      .lean(),
+    Advance.find({ receivableId: { $in: ids }, direction: "IN", isCancelled: { $ne: true } })
+      .select("receivableId date amount account reference remarks branch")
+      .lean(),
+    Borrowing.find({ settlesReceivableId: { $in: ids }, direction: "IN", isCancelled: { $ne: true } })
+      .select("settlesReceivableId date amount account reference remarks branch")
+      .lean(),
+  ]);
+
+  const receiptsByReceivable = new Map();
+  const push = (key, row) => {
+    const k = String(key);
+    if (!receiptsByReceivable.has(k)) receiptsByReceivable.set(k, []);
+    receiptsByReceivable.get(k).push(row);
+  };
+
+  directTx.forEach((t) =>
+    push(t.receivableId, {
+      source: "Transaction",
+      date: t.date,
+      amount: t.amount || 0,
+      method: (t.method || "").replace(/_/g, " "),
+      account: t.furtherMode || "",
+      reference: t.paymentId || "",
+      remarks: t.remarks || "",
+    }),
+  );
+  splitTx.forEach((t) => {
+    (t.receivableAllocations || []).forEach((a) => {
+      if (!idStrSet.has(String(a.receivableId))) return;
+      push(a.receivableId, {
+        source: "Transaction (split)",
+        date: t.date,
+        amount: a.amount || 0,
+        method: (t.method || "").replace(/_/g, " "),
+        account: t.furtherMode || "",
+        reference: t.paymentId || "",
+        remarks: t.remarks || "",
+      });
+    });
+  });
+  advanceIn.forEach((a) =>
+    push(a.receivableId, {
+      source: "Advance applied",
+      date: a.date,
+      amount: a.amount || 0,
+      method: "advance",
+      account: a.account || "",
+      reference: a.reference || "",
+      remarks: a.remarks || "",
+    }),
+  );
+  borrowingIn.forEach((b) =>
+    push(b.settlesReceivableId, {
+      source: "Borrowing",
+      date: b.date,
+      amount: b.amount || 0,
+      method: "borrowing",
+      account: b.account || "",
+      reference: b.reference || "",
+      remarks: b.remarks || "",
+    }),
+  );
+
+  const d = (v) => (v ? new Date(v).toLocaleDateString("en-IN") : "");
+  const out = [];
+
+  for (const r of receivables) {
+    const receipts = (receiptsByReceivable.get(String(r._id)) || []).sort(
+      (a, b) => new Date(a.date) - new Date(b.date),
+    );
+
+    const context = {
+      Payer: r.payer?.label || "",
+      "Payer Type": r.payer?.kind || "",
+      "Revenue Category": r.revenueCategory || "",
+      Purpose: r.purpose || "",
+      Period: r.period?.month && r.period?.year ? `${r.period.month}/${r.period.year}` : "",
+      Branch: r.branch || "",
+    };
+
+    out.push({
+      Row: "Receivable",
+      ...context,
+      "Raised On": d(r.createdAt),
+      "Due Date": d(r.dueDate),
+      "Total Amount": r.totalAmount || 0,
+      Received: r.received || 0,
+      Pending: r.pending || 0,
+      Status: r.status || "",
+      "Ageing Bucket": r.pending > 0 ? r.ageingBucket || "" : "",
+      "Days Overdue": r.pending > 0 ? (r.daysOverdue ?? "") : "",
+      "Receipts Count": receipts.length,
+      "Receipt Date": "",
+      "Receipt Amount": "",
+      "Receipt Source": "",
+      Method: "",
+      Account: "",
+      Reference: "",
+      Remarks: r.remarks || "",
+    });
+
+    for (const rc of receipts) {
+      out.push({
+        Row: "  ↳ Receipt",
+        ...context,
+        "Raised On": "",
+        "Due Date": "",
+        "Total Amount": "",
+        Received: "",
+        Pending: "",
+        Status: "",
+        "Ageing Bucket": "",
+        "Days Overdue": "",
+        "Receipts Count": "",
+        "Receipt Date": d(rc.date),
+        "Receipt Amount": rc.amount,
+        "Receipt Source": rc.source,
+        Method: rc.method,
+        Account: rc.account,
+        Reference: rc.reference,
+        Remarks: rc.remarks,
+      });
+    }
+
+    if (receipts.length === 0) {
+      out.push({
+        Row: "  ↳ Receipt",
+        ...context,
+        "Raised On": "",
+        "Due Date": "",
+        "Total Amount": "",
+        Received: "",
+        Pending: "",
+        Status: "",
+        "Ageing Bucket": "",
+        "Days Overdue": "",
+        "Receipts Count": "",
+        "Receipt Date": "",
+        "Receipt Amount": "",
+        "Receipt Source": "— nothing received yet —",
+        Method: "",
+        Account: "",
+        Reference: "",
+        Remarks: "",
+      });
+    }
+  }
+
+  return out;
+}
+
+const fmtDay = (v) => (v ? new Date(v).toLocaleDateString("en-IN") : "");
+const fmtDateTime = (v) =>
+  v ? new Date(v).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }) : "";
+
+// Every unexplained credit/debit parked in a suspense account. `from`/`to` are already
+// IST-bracketed Date objects (getISTStartOfDay / getISTEndOfDay), or null.
+async function generateSuspenseReport({ from, to, branch }) {
+  const match = {};
+  if (branch) match.branch = branch;
+  if (from || to) {
+    match.date = {};
+    if (from) match.date.$gte = from;
+    if (to) match.date.$lte = to;
+  }
+
+  const rows = await SuspenseEntry.find(match)
+    .sort({ date: -1, createdAt: -1 })
+    .limit(10000)
+    .lean();
+
+  return rows.map((s) => ({
+    Date: fmtDay(s.date),
+    Account: s.account || "",
+    Direction: s.direction === "OUT" ? "Debit (OUT)" : "Credit (IN)",
+    "Money In": s.direction === "OUT" ? "" : s.amount || 0,
+    "Money Out": s.direction === "OUT" ? s.amount || 0 : "",
+    Branch: s.branch || "",
+    Status: s.isCancelled ? "Cancelled" : s.isResolved ? "Resolved" : "Open",
+    "Resolved On": fmtDay(s.resolvedAt),
+    "Resolved By": s.resolvedBy?.name || "",
+    "Resolved Txn": s.resolvedTransactionId ? String(s.resolvedTransactionId) : "",
+    Reference: s.reference || "",
+    Remarks: s.remarks || "",
+    "Created By": s.createdBy?.name || "",
+    "Created On": fmtDateTime(s.createdAt),
+    "Entry ID": String(s._id),
   }));
+}
+
+// Every internal transfer between our own accounts (contra). Two rows per transfer — one
+// from the paying account, one for the receiving account — so it reads as a ledger and
+// each side nets against its account.
+async function generateContraReport({ from, to, branch }) {
+  const match = {};
+  if (branch) match.branch = branch;
+  if (from || to) {
+    match.date = {};
+    if (from) match.date.$gte = from;
+    if (to) match.date.$lte = to;
+  }
+
+  const transfers = await AccountTransfer.find(match)
+    .sort({ date: -1, createdAt: -1 })
+    .limit(10000)
+    .lean();
+
+  const KIND_LABEL = {
+    MANUAL: "Manual",
+    LOAN_SETTLEMENT: "Loan settlement",
+    LOAN_CANCELLATION: "Loan cancellation",
+  };
+
+  const out = [];
+  for (const t of transfers) {
+    const base = {
+      Date: fmtDay(t.date),
+      Amount: t.amount || 0,
+      Branch: t.branch || "",
+      Kind: KIND_LABEL[t.transferKind] || t.transferKind || "Manual",
+      Status: t.isCancelled ? "Cancelled" : "Active",
+      Reference: t.reference || "",
+      Remarks: t.remarks || "",
+      "Created By": t.createdBy?.name || "",
+      "Created On": fmtDateTime(t.createdAt),
+      "Transfer ID": String(t._id),
+    };
+    out.push({
+      Row: "From",
+      Account: t.fromAccount || "",
+      "Counterparty Account": t.toAccount || "",
+      "In": "",
+      "Out": t.amount || 0,
+      ...base,
+    });
+    out.push({
+      Row: "To",
+      Account: t.toAccount || "",
+      "Counterparty Account": t.fromAccount || "",
+      "In": t.amount || 0,
+      "Out": "",
+      ...base,
+    });
+  }
+  return out;
+}
+
+// Every staff incentive recorded on a patient, grouped by employee, with whether it has
+// been rolled into an incentive payable and — for that payable — the live paid/pending.
+async function generateIncentivesReport({ from, to, branch }) {
+  const rowMatch = { "incentives.isCancelled": { $ne: true } };
+  if (branch) rowMatch["incentives.branch"] = branch;
+  if (from || to) {
+    rowMatch["incentives.date"] = {};
+    if (from) rowMatch["incentives.date"].$gte = from;
+    if (to) rowMatch["incentives.date"].$lte = to;
+  }
+
+  const rows = await Patient.aggregate([
+    { $match: { "incentives.0": { $exists: true } } },
+    { $unwind: "$incentives" },
+    { $match: rowMatch },
+    {
+      $project: {
+        _id: 0,
+        employeeId: "$incentives.employee",
+        employeeName: "$incentives.employeeName",
+        role: "$incentives.role",
+        purpose: "$incentives.purpose",
+        amount: "$incentives.amount",
+        date: "$incentives.date",
+        branch: "$incentives.branch",
+        payableId: "$incentives.payableId",
+        remarks: "$incentives.remarks",
+        patientName: "$personal.name",
+        patientPhone: "$personal.phone",
+        patientBranch: "$personal.branch",
+      },
+    },
+    { $sort: { employeeName: 1, date: -1 } },
+  ]);
+
+  if (rows.length === 0) return [];
+
+  // Live paid/pending for each distinct incentive payable, looked up once.
+  const payableIds = [...new Set(rows.map((r) => r.payableId).filter(Boolean).map(String))];
+  const payableById = new Map();
+  if (payableIds.length) {
+    const mongoose = (await import("mongoose")).default;
+    const oids = payableIds.map((id) => new mongoose.Types.ObjectId(id));
+    const payables = await Payable.aggregate([
+      { $match: { _id: { $in: oids } } },
+      ...buildPayableAggregationStages(Transactions.collection.name),
+      { $project: { totalAmount: 1, paid: 1, pending: 1, status: 1 } },
+    ]);
+    payables.forEach((p) => payableById.set(String(p._id), p));
+  }
+
+  // Resolve employee names for any incentive missing the denormalised name.
+  const missingName = [...new Set(rows.filter((r) => !r.employeeName && r.employeeId).map((r) => String(r.employeeId)))];
+  const empNameById = new Map();
+  if (missingName.length) {
+    const mongoose = (await import("mongoose")).default;
+    const emps = await Employee.find(
+      { _id: { $in: missingName.map((id) => new mongoose.Types.ObjectId(id)) } },
+      { name: 1, role: 1 },
+    ).lean();
+    emps.forEach((e) => empNameById.set(String(e._id), e));
+  }
+
+  return rows.map((r) => {
+    const p = r.payableId ? payableById.get(String(r.payableId)) : null;
+    const emp = !r.employeeName && r.employeeId ? empNameById.get(String(r.employeeId)) : null;
+    return {
+      Employee: r.employeeName || emp?.name || "",
+      Role: r.role || emp?.role || "",
+      Patient: r.patientName || "",
+      "Patient Phone": r.patientPhone || "",
+      Purpose: r.purpose || "",
+      Amount: r.amount || 0,
+      Date: fmtDay(r.date),
+      Branch: r.branch || r.patientBranch || "",
+      "Payable Raised": r.payableId ? "Yes" : "No",
+      "Payable Total": p ? p.totalAmount : "",
+      "Payable Paid": p ? p.paid : "",
+      "Payable Pending": p ? p.pending : "",
+      "Payable Status": p ? p.status : r.payableId ? "Unknown" : "Not raised",
+      "Payable ID": r.payableId ? String(r.payableId) : "",
+      Remarks: r.remarks || "",
+    };
+  });
 }
 
 async function generateBranchComparisonReport(filters) {

@@ -19,10 +19,13 @@ import {
   AlertTriangle,
   X,
 } from "lucide-react";
+import { Download } from "lucide-react";
 import MetricCard from "@/components/MetricCard";
 import { formatCurrency } from "@/lib/financeUI";
 import { ALL_BRANCHES } from "@/lib/branches";
 import VendorLedgerModal from "@/components/finance/VendorLedgerModal";
+import { exportWorkbook, filterProvenanceRows } from "@/lib/exportToExcel";
+import { fetchInterleavedRows } from "@/lib/finance/headedExport";
 
 
 const initials = (name) =>
@@ -117,6 +120,70 @@ export default function AdminVendorsPage() {
     return { totalOutstanding, totalSettled, withDues };
   }, [ledger]);
 
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const [gJson, interleaved] = await Promise.all([
+        (() => {
+          const p = new URLSearchParams({ level: "1", groupBy: "vendor" });
+          if (scope.branch) p.set("branch", scope.branch);
+          if (scope.dateFrom) p.set("from", scope.dateFrom);
+          if (scope.dateTo) p.set("to", scope.dateTo);
+          return fetch(`/api/payables/grouped?${p.toString()}`).then((r) => r.json());
+        })(),
+        fetchInterleavedRows({ kind: "payables", scope }),
+      ]);
+      if (interleaved.truncated) {
+        toast.error(
+          `Detail sheet capped at the ${interleaved.docLimit || 5000} newest payables — narrow the date range for a complete file.`,
+        );
+      }
+
+      const overviewRows = (gJson.rows || []).map((r) => ({
+        Vendor: r.label,
+        Opening: r.opening,
+        Raised: r.movement,
+        Paid: r.settled,
+        Outstanding: r.closing,
+        Payables: r.count,
+      }));
+
+      // One flat sheet: every vendor payable + its payment lines.
+      const vendorDetail = (interleaved.rows || []).filter((row) => row["Payee Type"] === "VENDOR");
+
+      await exportWorkbook({
+        filename: `Vendors_${scope.branch || "All"}_${scope.dateFrom || "start"}_to_${scope.dateTo || "today"}.xlsx`,
+        sheets: [
+          {
+            name: "Info",
+            rows: filterProvenanceRows({ branch: scope.branch, dateFrom: scope.dateFrom, dateTo: scope.dateTo }),
+            colWidths: [22, 24],
+          },
+          {
+            name: "Overview",
+            rows: overviewRows,
+            colWidths: [26, 14, 14, 14, 16, 10],
+            currencyCols: ["Opening", "Raised", "Paid", "Outstanding"],
+          },
+          {
+            name: "Payables & Payments",
+            rows: vendorDetail,
+            colWidths: [8, 24, 12, 16, 16, 12, 10, 14, 12, 14, 12, 12, 14, 16, 18, 24],
+            currencyCols: ["Total Amount", "Paid", "Pending", "Payment Amount"],
+          },
+        ],
+      });
+      toast.success("Vendors exported");
+    } catch (err) {
+      console.error("Vendor export failed:", err);
+      toast.error("Failed to export");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const hasFilters = !!(scope.branch || scope.dateFrom || scope.dateTo);
   const asOfLabel = scope.dateTo
     ? new Date(scope.dateTo).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
@@ -133,13 +200,23 @@ export default function AdminVendorsPage() {
                 Suppliers you buy from, and what's owed to each one — balance as of {asOfLabel}.
               </p>
             </div>
-            <Link
-              href="/admin/vendors/create"
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-sm shadow-sm shadow-indigo-200 transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              New Vendor
-            </Link>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleExport}
+                disabled={exporting}
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl font-semibold text-sm shadow-sm hover:bg-gray-50 disabled:opacity-50 transition-colors"
+              >
+                {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                Download Excel
+              </button>
+              <Link
+                href="/admin/vendors/create"
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-sm shadow-sm shadow-indigo-200 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                New Vendor
+              </Link>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

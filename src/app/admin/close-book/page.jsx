@@ -6,6 +6,8 @@ import { ACCOUNTS } from "@/constants/bankRouting";
 import { METHOD_LABELS } from "@/constants/paymentMethods";
 import { ALL_BRANCHES } from "@/lib/branches";
 import { formatCurrency, formatDate } from "@/lib/financeUI";
+import { exportWorkbook, filterProvenanceRows } from "@/lib/exportToExcel";
+import { ledgerHeadSheets } from "@/lib/finance/headedExport";
 import {
   BookOpen,
   Loader2,
@@ -618,12 +620,10 @@ function BalanceSheet({ toast }) {
       });
 
       const info = [
-        { Field: "Period", Value: `${formatDate(from)} to ${formatDate(to)}` },
-        { Field: "Branch", Value: branch || "All branches" },
+        ...filterProvenanceRows({ branch, dateFrom: from, dateTo: to }),
         { Field: "Total In", Value: data.grandTotal.totalIn },
         { Field: "Total Out", Value: data.grandTotal.totalOut },
         { Field: "Closing Balance", Value: data.grandTotal.closingBalance },
-        { Field: "Generated", Value: new Date().toLocaleString("en-IN") },
       ];
       if (data.unattributed?.count) {
         info.push({
@@ -632,11 +632,23 @@ function BalanceSheet({ toast }) {
         });
       }
 
-      await writeSheet({
+      // One ledger sheet per account, so the workbook is: Info -> Overview -> per-account.
+      const accountSheets = await ledgerHeadSheets({
+        accounts: data.accounts.map((a) => a.account),
+        scope: { branch, dateFrom: from, dateTo: to },
+      });
+
+      await exportWorkbook({
         filename: `close-book-balance-sheet_${from}_to_${to}${branch ? `_${branch}` : ""}.xlsx`,
         sheets: [
-          { name: "Balance Sheet", rows, colWidths: [22, 17, 15, 15, 15, 17, 13, 11, 12] },
-          { name: "Report Info", rows: info, colWidths: [26, 42] },
+          { name: "Info", rows: info, colWidths: [26, 42] },
+          {
+            name: "Overview",
+            rows,
+            colWidths: [22, 17, 15, 15, 15, 17, 13, 11, 12],
+            currencyCols: ["Opening Balance", "Money In", "Money Out", "Net Movement", "Closing Balance"],
+          },
+          ...accountSheets,
         ],
       });
       toast.success("Balance sheet exported");

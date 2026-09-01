@@ -6,6 +6,8 @@ import { Wallet, AlertTriangle, CheckCircle2, Download, Loader2 } from "lucide-r
 import DrillDownTable from "@/components/finance/DrillDownTable";
 import { formatCurrency } from "@/lib/financeUI";
 import DebouncedDateInput from "@/components/finance/DebouncedDateInput";
+import { exportWorkbook, filterProvenanceRows } from "@/lib/exportToExcel";
+import { receiptPaymentHeadSheets } from "@/lib/finance/headedExport";
 
 const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
 
@@ -59,19 +61,36 @@ function PaymentsPageInner() {
     setExporting(true);
     try {
       const json = await fetch(`/api/payments/grouped?level=1&from=${from}&to=${to}`).then((r) => r.json());
-      const rows = (json.rows || []).map((r) => ({
+      const heads = json.rows || [];
+
+      const overviewRows = heads.map((r) => ({
         "Expense Head": r.label,
         "Before Period": r.opening,
         "This Period": r.movement,
         "Total To Date": r.closing,
         Count: r.count,
       }));
-      const { utils, writeFile } = await import("xlsx");
-      const wb = utils.book_new();
-      const ws = utils.json_to_sheet(rows);
-      ws["!cols"] = [{ wch: 24 }, { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 10 }];
-      utils.book_append_sheet(wb, ws, "Payments");
-      writeFile(wb, `payments_${from}_to_${to}.xlsx`);
+
+      const headSheets = await receiptPaymentHeadSheets({
+        apiBase: "/api/payments",
+        heads: heads.map((r) => r.label),
+        groupBy: "account",
+        scope: { dateFrom: from, dateTo: to },
+      });
+
+      await exportWorkbook({
+        filename: `payments_${from}_to_${to}.xlsx`,
+        sheets: [
+          { name: "Info", rows: filterProvenanceRows({ dateFrom: from, dateTo: to }), colWidths: [22, 24] },
+          {
+            name: "Overview",
+            rows: overviewRows,
+            colWidths: [24, 16, 16, 16, 10],
+            currencyCols: ["Before Period", "This Period", "Total To Date"],
+          },
+          ...headSheets,
+        ],
+      });
     } finally {
       setExporting(false);
     }
@@ -95,7 +114,7 @@ function PaymentsPageInner() {
               className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 rounded-lg text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
             >
               {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-              Export
+              Download Excel
             </button>
           </div>
 

@@ -311,44 +311,41 @@ const REPORTS = [
 
 const CATEGORIES = ["All", ...new Set(REPORTS.map((r) => r.category))];
 
+// Emit the plain calendar day (YYYY-MM-DD), not an ISO instant — the API brackets it to
+// the IST day. Sending a browser-local-shifted `.toISOString()` made the server convert a
+// second time and pull the `from` boundary a day earlier.
+const ymd = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
 function buildDateRange(preset, custom) {
   const now = new Date();
 
   if (preset === "today") {
-    const from = new Date(now); from.setHours(0, 0, 0, 0);
-    const to   = new Date(now); to.setHours(23, 59, 59, 999);
-    return { from: from.toISOString(), to: to.toISOString() };
+    return { from: ymd(now), to: ymd(now) };
   }
   if (preset === "yesterday") {
-    const from = new Date(now); from.setDate(from.getDate() - 1); from.setHours(0, 0, 0, 0);
-    const to   = new Date(from); to.setHours(23, 59, 59, 999);
-    return { from: from.toISOString(), to: to.toISOString() };
+    const d = new Date(now); d.setDate(d.getDate() - 1);
+    return { from: ymd(d), to: ymd(d) };
   }
   if (preset === "last7") {
-    const from = new Date(now); from.setDate(from.getDate() - 6); from.setHours(0, 0, 0, 0);
-    const to   = new Date(now); to.setHours(23, 59, 59, 999);
-    return { from: from.toISOString(), to: to.toISOString() };
+    const from = new Date(now); from.setDate(from.getDate() - 6);
+    return { from: ymd(from), to: ymd(now) };
   }
   if (preset === "last30") {
-    const from = new Date(now); from.setDate(from.getDate() - 29); from.setHours(0, 0, 0, 0);
-    const to   = new Date(now); to.setHours(23, 59, 59, 999);
-    return { from: from.toISOString(), to: to.toISOString() };
+    const from = new Date(now); from.setDate(from.getDate() - 29);
+    return { from: ymd(from), to: ymd(now) };
   }
   if (preset === "thisMonth") {
-    const from = new Date(now.getFullYear(), now.getMonth(), 1);
-    const to   = new Date(now); to.setHours(23, 59, 59, 999);
-    return { from: from.toISOString(), to: to.toISOString() };
+    return { from: ymd(new Date(now.getFullYear(), now.getMonth(), 1)), to: ymd(now) };
   }
   if (preset === "lastMonth") {
-    const from = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const to   = new Date(now.getFullYear(), now.getMonth(), 0); to.setHours(23, 59, 59, 999);
-    return { from: from.toISOString(), to: to.toISOString() };
+    return {
+      from: ymd(new Date(now.getFullYear(), now.getMonth() - 1, 1)),
+      to: ymd(new Date(now.getFullYear(), now.getMonth(), 0)),
+    };
   }
   if (preset === "custom" && custom.from) {
-    const from = new Date(custom.from); from.setHours(0, 0, 0, 0);
-    const to   = custom.to ? new Date(custom.to) : new Date(custom.from);
-    to.setHours(23, 59, 59, 999);
-    return { from: from.toISOString(), to: to.toISOString() };
+    return { from: custom.from, to: custom.to || custom.from };
   }
   return { from: null, to: null };
 }

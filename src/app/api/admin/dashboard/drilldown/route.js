@@ -419,6 +419,22 @@ export async function GET(request) {
         ];
         break;
 
+      case "gross-sales": {
+        label = "Gross Sales";
+        // Every revenue transaction, cash + credit. Matches /api/admin/sales-summary:
+        // no method or account filter, no receivable-split exclusion.
+        const salesMatch = {
+          costType: "Revenue",
+          approvalStatus: { $nin: ["PENDING", "REJECTED"] },
+        };
+        if (branch) salesMatch.branch = branch;
+        if (Object.keys(dateRange).length) salesMatch.date = dateRange;
+        sections = [
+          await txSection({ key: "gross-sales", label: "Revenue transactions", match: salesMatch }),
+        ];
+        break;
+      }
+
       case "pnl-income":
         label = "Income (accrual)";
         sections = await Promise.all([

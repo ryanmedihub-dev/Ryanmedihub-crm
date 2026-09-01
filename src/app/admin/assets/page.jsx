@@ -15,8 +15,13 @@ import MetricCard from "@/components/MetricCard";
 import { formatCurrency, formatDate } from "@/lib/financeUI";
 import { AGEING_BUCKETS } from "@/lib/ageing";
 import { ALL_BRANCHES } from "@/lib/branches";
-import { ENTRY_TYPES } from "@/constants/entryTypes";
-import { exportWorkbook, fetchAllPages, filterProvenanceRows } from "@/lib/exportToExcel";
+import { exportWorkbook, filterProvenanceRows } from "@/lib/exportToExcel";
+import {
+  fetchInterleavedRows,
+  groupInterleavedByHead,
+  summariseInterleaved,
+  ledgerHeadSheets,
+} from "@/lib/finance/headedExport";
 import { useToast } from "@/components/Toast";
 import DebouncedDateInput from "@/components/finance/DebouncedDateInput";
 
@@ -206,61 +211,39 @@ function AssetsPageInner() {
   const handleExport = async () => {
     setExporting(true);
     try {
-      const flowQS = (() => {
-        const p = new URLSearchParams();
-        if (scope.branch) p.set("branch", scope.branch);
-        if (scope.dateFrom) p.set("dateFrom", scope.dateFrom);
-        if (scope.dateTo) p.set("dateTo", scope.dateTo);
-        return p.toString();
-      })();
-
-      const [cashJson, loansJson, receivablesPaged, txJson] = await Promise.all([
+      const [cashJson, loansJson, interleaved] = await Promise.all([
         fetch(`/api/close-book/accounts?filter=cash&${closingQS()}`).then((r) => r.json()),
         fetch(`/api/close-book/accounts?filter=loans&${closingQS()}`).then((r) => r.json()),
-        fetchAllPages((page, limit) => `/api/receivables/list?page=${page}&limit=${limit}&${flowQS}`, "receivables"),
-        fetch(`/api/transactions/get-all?limit=10000&${flowQS}`).then((r) => r.json()),
+        fetchInterleavedRows({ kind: "receivables", scope }),
       ]);
-      const receivablesJson = { receivables: receivablesPaged.rows };
-      if (receivablesPaged.truncated) {
-        toast.error("Export is incomplete — too many receivables in range. Narrow the date filter.");
+      if (interleaved.truncated) {
+        toast.error(
+          `Export capped at the ${interleaved.docLimit || 5000} newest receivables — narrow the date range for a complete file.`,
+        );
       }
 
-      const cashRows = (cashJson.rows || []).map((r) => ({
-        Account: r.label,
-        Opening: r.opening,
-        "Money In": r.movement,
-        "Money Out": r.settled,
-        Closing: r.closing,
-      }));
-      const loanRows = (loansJson.rows || []).map((r) => ({
-        Account: r.label,
-        Opening: r.opening,
-        "Money In": r.movement,
-        "Money Out": r.settled,
-        Closing: r.closing,
-      }));
-      const receivableRows = (receivablesJson.receivables || []).map((r) => ({
-        Head: r.revenueCategory || "—",
-        "Sub-type": (r.purpose || "").replace(/_/g, " "),
-        Party: r.payer?.label || "—",
-        Total: r.totalAmount,
-        Received: r.received,
-        Pending: r.pending,
-        "Due Date": r.dueDate ? new Date(r.dueDate) : null,
-        Ageing: r.ageingBucket || "—",
-        Status: r.isCancelled ? "Cancelled" : r.status,
-      }));
-      const txRows = (txJson.transactions || []).map((t) => ({
-        Date: new Date(t.date),
-        "Account/Head": t.furtherMode || t.expense || "—",
-        Party: t.patient?.personal?.name || t.patientName || t.expenseGiver?.name || "—",
-        Narration: t.remarks || t.procedure || t.expenseType || "—",
-        "Entry Type": ENTRY_TYPES[t.entryType]?.label || "Regular",
-        Method: t.method || "—",
-        Amount: t.amount,
-      }));
+      const overviewRows = [
+        ...(cashJson.rows || []).map((r) => ({
+          Section: "Cash & Bank", Head: r.label,
+          Opening: r.opening, "Money In": r.movement, "Money Out": r.settled, "Balance / Pending": r.closing,
+        })),
+        ...(loansJson.rows || []).map((r) => ({
+          Section: "Loan Accounts", Head: r.label,
+          Opening: r.opening, "Money In": r.movement, "Money Out": r.settled, "Balance / Pending": r.closing,
+        })),
+      ];
 
-      const summaryRows = [
+      // Receivables overview: one line per revenue category, from the obligation lines.
+      const recHeadGroups = groupInterleavedByHead(interleaved.rows, "Revenue Category");
+      recHeadGroups.forEach((g) => {
+        const s = summariseInterleaved(g.rows, { obligationRow: "Receivable", paidKey: "Received" });
+        overviewRows.push({
+          Section: "Receivables", Head: g.name,
+          Opening: "", "Money In": s.total, "Money Out": s.paid, "Balance / Pending": s.total - s.paid,
+        });
+      });
+
+      const infoRows = [
         ...filterProvenanceRows({ branch: scope.branch, dateFrom: scope.dateFrom, dateTo: scope.dateTo }),
         { Field: "Cash & Bank", Value: cashTotal },
         { Field: "Loan Accounts", Value: loansTotal },
@@ -268,14 +251,34 @@ function AssetsPageInner() {
         { Field: "Total Assets", Value: total },
       ];
 
+      const cashAccountNames = (cashJson.rows || []).map((r) => r.label);
+      const loanAccountNames = (loansJson.rows || []).map((r) => r.label);
+      const accountSheets = await ledgerHeadSheets({
+        accounts: [...cashAccountNames, ...loanAccountNames],
+        scope,
+      });
+
+      const REC_COLS = [8, 22, 14, 12, 12, 10, 12, 12, 12, 10, 14, 12, 14, 14, 16, 18, 24];
+      const REC_CUR = ["Total Amount", "Received", "Pending", "Receipt Amount"];
+      const recSheets = recHeadGroups.map((g) => ({
+        name: (g.name || "Uncategorised").slice(0, 31),
+        rows: g.rows,
+        colWidths: REC_COLS,
+        currencyCols: REC_CUR,
+      }));
+
       await exportWorkbook({
         filename: `Assets_${scope.branch || "All"}_${scope.dateFrom || "start"}_to_${scope.dateTo || "today"}.xlsx`,
         sheets: [
-          { name: "Summary", rows: summaryRows, colWidths: [22, 20] },
-          { name: "Cash & Bank", rows: cashRows, colWidths: [22, 16, 16, 16, 16], currencyCols: ["Opening", "Money In", "Money Out", "Closing"] },
-          { name: "Loan Accounts", rows: loanRows, colWidths: [22, 16, 16, 16, 16], currencyCols: ["Opening", "Money In", "Money Out", "Closing"] },
-          { name: "Receivables", rows: receivableRows, colWidths: [16, 18, 22, 14, 14, 14, 14, 10, 16], currencyCols: ["Total", "Received", "Pending"] },
-          { name: "Transactions", rows: txRows, colWidths: [12, 20, 22, 30, 18, 12, 14], currencyCols: ["Amount"] },
+          { name: "Info", rows: infoRows, colWidths: [22, 20] },
+          {
+            name: "Overview",
+            rows: overviewRows,
+            colWidths: [16, 24, 14, 14, 14, 16],
+            currencyCols: ["Opening", "Money In", "Money Out", "Balance / Pending"],
+          },
+          ...accountSheets,
+          ...recSheets,
         ],
       });
       toast.success("Assets exported");

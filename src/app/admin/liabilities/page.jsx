@@ -12,8 +12,13 @@ import MetricCard from "@/components/MetricCard";
 import { formatCurrency, formatDate } from "@/lib/financeUI";
 import { AGEING_BUCKETS } from "@/lib/ageing";
 import { ALL_BRANCHES } from "@/lib/branches";
-import { ENTRY_TYPES } from "@/constants/entryTypes";
 import { exportWorkbook, fetchAllPages, filterProvenanceRows } from "@/lib/exportToExcel";
+import {
+  fetchInterleavedRows,
+  groupInterleavedByHead,
+  summariseInterleaved,
+} from "@/lib/finance/headedExport";
+import { payablePurposeLabel } from "@/constants/payablePurposes";
 import { useToast } from "@/components/Toast";
 import DebouncedDateInput from "@/components/finance/DebouncedDateInput";
 
@@ -182,13 +187,6 @@ function LiabilitiesPageInner() {
   const handleExport = async () => {
     setExporting(true);
     try {
-      const listFlowQS = (() => {
-        const p = new URLSearchParams();
-        if (scope.branch) p.set("branch", scope.branch);
-        if (scope.dateFrom) p.set("dateFrom", scope.dateFrom);
-        if (scope.dateTo) p.set("dateTo", scope.dateTo);
-        return p.toString();
-      })();
       const suspenseFlowQS = (() => {
         const p = new URLSearchParams();
         if (scope.branch) p.set("branch", scope.branch);
@@ -197,61 +195,65 @@ function LiabilitiesPageInner() {
         return p.toString();
       })();
 
-      const [payablesPaged, suspenseGroupJson, suspensePaged, txJson] = await Promise.all([
-        fetchAllPages((page, limit) => `/api/payables/list?page=${page}&limit=${limit}&${listFlowQS}`, "payables"),
+      const [interleaved, suspenseGroupJson, suspensePaged] = await Promise.all([
+        fetchInterleavedRows({ kind: "payables", scope }),
         fetch(`/api/suspense?groupBy=account&${closingQS()}`).then((r) => r.json()),
         fetchAllPages((page, limit) => `/api/suspense?status=all&page=${page}&limit=${limit}&${suspenseFlowQS}`, "entries"),
-        fetch(`/api/transactions/get-all?limit=10000&${listFlowQS}`).then((r) => r.json()),
       ]);
-      const payablesJson = { payables: payablesPaged.rows };
-      const suspenseListJson = { entries: suspensePaged.rows };
-      if (payablesPaged.truncated || suspensePaged.truncated) {
-        toast.error("Export is incomplete — too many rows in range. Narrow the date filter.");
+      if (interleaved.truncated || suspensePaged.truncated) {
+        toast.error(
+          `Export capped at the ${interleaved.docLimit || 5000} newest obligations — narrow the date range for a complete file.`,
+        );
       }
 
-      const payableRows = (payablesJson.payables || []).map((p) => ({
-        Head: p.expenseCategory || "—",
-        "Sub-type": p.expenseSubType || "—",
-        Party: p.payee?.label || "—",
-        Total: p.totalAmount,
-        Paid: p.paid,
-        Pending: p.pending,
-        "Due Date": p.dueDate ? new Date(p.dueDate) : null,
-        Ageing: p.ageingBucket || "—",
-        Status: p.isCancelled ? "Cancelled" : p.status,
+      // Overview: one line per purpose, from the obligation lines of the interleaved list.
+      const headGroups = groupInterleavedByHead(interleaved.rows, "Purpose");
+      const overviewRows = headGroups.map((g) => {
+        const s = summariseInterleaved(g.rows, { obligationRow: "Payable", paidKey: "Paid" });
+        return {
+          "Payable Head": payablePurposeLabel(g.name),
+          Payables: s.count,
+          Total: s.total,
+          Paid: s.paid,
+          Pending: s.total - s.paid,
+        };
+      });
+      const suspenseClosing = (suspenseGroupJson.rows || []).reduce((s, r) => s + (r.closing || 0), 0);
+      overviewRows.push({ "Payable Head": "Suspense (open)", Payables: "", Total: "", Paid: "", Pending: suspenseClosing });
+
+      const infoRows = [
+        ...filterProvenanceRows({ branch: scope.branch, dateFrom: scope.dateFrom, dateTo: scope.dateTo }),
+        { Field: "Payables", Value: payablesTotal },
+        { Field: "Suspense", Value: suspenseClosing },
+        { Field: "Total Liabilities", Value: total },
+      ];
+
+      const OBLIGATION_COLS = [8, 22, 12, 12, 12, 12, 12, 12, 10, 14, 12, 14, 12, 12, 14, 16, 18, 24];
+      const OBLIGATION_CUR = ["Total Amount", "Paid", "Pending", "Payment Amount"];
+
+      const headSheets = headGroups.map((g) => ({
+        name: payablePurposeLabel(g.name).slice(0, 31),
+        rows: g.rows,
+        colWidths: OBLIGATION_COLS,
+        currencyCols: OBLIGATION_CUR,
       }));
-      const suspenseRows = (suspenseListJson.entries || []).map((s) => ({
-        Date: new Date(s.date),
+
+      const suspenseRows = (suspensePaged.rows || []).map((s) => ({
+        Date: s.date ? new Date(s.date) : null,
         Account: s.account,
         Direction: s.direction,
         Amount: s.amount,
         Remarks: s.remarks || s.reference || "—",
         Status: s.isResolved ? "Resolved" : s.isCancelled ? "Cancelled" : "Open",
       }));
-      const txRows = (txJson.transactions || []).map((t) => ({
-        Date: new Date(t.date),
-        "Account/Head": t.furtherMode || t.expense || "—",
-        Party: t.patient?.personal?.name || t.patientName || t.expenseGiver?.name || "—",
-        Narration: t.remarks || t.procedure || t.expenseType || "—",
-        "Entry Type": ENTRY_TYPES[t.entryType]?.label || "Regular",
-        Method: t.method || "—",
-        Amount: t.amount,
-      }));
-
-      const summaryRows = [
-        ...filterProvenanceRows({ branch: scope.branch, dateFrom: scope.dateFrom, dateTo: scope.dateTo }),
-        { Field: "Payables", Value: payablesTotal },
-        { Field: "Suspense", Value: (suspenseGroupJson.rows || []).reduce((s, r) => s + (r.closing || 0), 0) },
-        { Field: "Total Liabilities", Value: total },
-      ];
 
       await exportWorkbook({
         filename: `Liabilities_${scope.branch || "All"}_${scope.dateFrom || "start"}_to_${scope.dateTo || "today"}.xlsx`,
         sheets: [
-          { name: "Summary", rows: summaryRows, colWidths: [22, 20] },
-          { name: "Payables", rows: payableRows, colWidths: [18, 18, 22, 14, 14, 14, 14, 10, 16], currencyCols: ["Total", "Paid", "Pending"] },
+          { name: "Info", rows: infoRows, colWidths: [22, 20] },
+          { name: "Overview", rows: overviewRows, colWidths: [26, 12, 16, 16, 16], currencyCols: ["Total", "Paid", "Pending"] },
+          ...headSheets,
           { name: "Suspense", rows: suspenseRows, colWidths: [12, 20, 10, 14, 30, 12], currencyCols: ["Amount"] },
-          { name: "Transactions", rows: txRows, colWidths: [12, 20, 22, 30, 18, 12, 14], currencyCols: ["Amount"] },
         ],
       });
       toast.success("Liabilities exported");

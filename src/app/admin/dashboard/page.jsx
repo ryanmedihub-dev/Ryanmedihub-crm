@@ -190,6 +190,7 @@ export default function AdminDashboard() {
   const [cashFlow, setCashFlow] = useState(null);
   const [pnl, setPnl] = useState(null);
   const [priorPnl, setPriorPnl] = useState(null);
+  const [grossSales, setGrossSales] = useState(null);
   const [expenseByHead, setExpenseByHead] = useState([]);
   const [expenseHeadMeta, setExpenseHeadMeta] = useState(null);
   const [monthlyTrend, setMonthlyTrend] = useState([]);
@@ -227,6 +228,7 @@ export default function AdminDashboard() {
         const [
           cashJson, suspenseJson,
           pnlJson, priorPnlJson, headJson, ageingPayJson, ageingRecJson, unattributedJson, cashFlowJson,
+          salesJson,
         ] = await Promise.all([
           fetch(`/api/close-book/accounts?to=${iso(to)}${accountsQS}${branchQS}`).then((r) => r.json()),
           fetch(`/api/suspense?groupBy=account&to=${iso(to)}${accountsQS}${branchQS}`).then((r) => r.json()),
@@ -237,6 +239,7 @@ export default function AdminDashboard() {
           fetch(`/api/receivables/summary?ageing=1${appliedBranch ? `&branch=${appliedBranch}` : ""}`).then((r) => r.json()),
           fetch(`/api/close-book/balance-sheet?from=1970-01-01&to=${iso(to)}${branchQS}`).then((r) => r.json()),
           fetch(`/api/close-book/cash-flow?from=${iso(from)}&to=${iso(to)}${accountsQS}${branchQS}`).then((r) => r.json()),
+          fetch(`/api/admin/sales-summary?from=${iso(from)}&to=${iso(to)}${branchQS}`).then((r) => r.json()),
         ]);
         if (cancelled) return;
 
@@ -266,6 +269,7 @@ export default function AdminDashboard() {
         });
         setPnl({ income: pnlJson.income || 0, expense: pnlJson.expense || 0 });
         setPriorPnl({ income: priorPnlJson.income || 0, expense: priorPnlJson.expense || 0 });
+        setGrossSales(salesJson?.success ? { total: salesJson.total || 0, byCategory: salesJson.byCategory || {} } : null);
 
         setExpenseByHead(headJson.rows || []);
         setExpenseHeadMeta({
@@ -567,7 +571,27 @@ export default function AdminDashboard() {
             double-counted against them.
             {accountFilterActive && " The account filter narrows the transaction half only — receivables and payables have no account of their own."}
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <button
+              type="button"
+              onClick={() => openDrill("gross-sales", `Gross Sales — ${periodLabel}`, grossSales?.total)}
+              className="group border border-emerald-100 bg-emerald-50/40 rounded-xl p-4 text-left w-full transition-all hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+            >
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-emerald-700 font-semibold uppercase tracking-wide">Gross Sales</p>
+                <ArrowUpRight className="w-3.5 h-3.5 text-emerald-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+              {batchStatus === "loading" ? (
+                <div className="h-6 w-24 bg-emerald-100/60 rounded animate-pulse mt-1" />
+              ) : (
+                <p className="text-xl font-bold text-gray-900 mt-1">
+                  {grossSales ? formatCurrency(grossSales.total) : "No data for this period"}
+                </p>
+              )}
+              <p className="text-xs text-gray-400 mt-1">
+                Transplant + Service + Medicine booked this period (cash + credit)
+              </p>
+            </button>
             {[
               { label: "Income", value: pnl?.income, prior: priorPnl?.income, metric: "pnl-income", Trend: TrendingUp },
               { label: "Expense", value: pnl?.expense, prior: priorPnl?.expense, metric: "pnl-expense", Trend: TrendingDown },

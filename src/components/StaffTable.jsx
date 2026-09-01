@@ -5,7 +5,10 @@ import Link from "next/link";
 import {
   Filter, X, Plus, ChevronRight, ChevronLeft,
   Search, TrendingUp, Edit, Users, IndianRupee, Activity, Trash2, Calendar, Stethoscope, Eye,
+  Download, Loader2,
 } from "lucide-react";
+import { exportWorkbook, filterProvenanceRows } from "@/lib/exportToExcel";
+import { fetchInterleavedRows } from "@/lib/finance/headedExport";
 
 const CATEGORY_OPTIONS = ["Doctor", "Agent", "Counsellor", "Technician", "Implanter", "Others", "Hr"];
 
@@ -76,6 +79,7 @@ export default function StaffTable({ config = {} }) {
   const [page,     setPage]     = useState(1);
   const [perPage,  setPerPage]  = useState(10);
   const [selectedCategory, setSelectedCategory] = useState("Doctor");
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -205,6 +209,85 @@ export default function StaffTable({ config = {} }) {
     }
   };
 
+  // Payroll export (finance mode only): Overview = every employee's payable rollup,
+  // Detail = one flat sheet of every employee payable + the payments against it.
+  const handleFinanceExport = async () => {
+    setExporting(true);
+    try {
+      const scope = { branch: "", dateFrom: filters.dateFrom || "", dateTo: filters.dateTo || "" };
+      const [summaryJson, interleaved] = await Promise.all([
+        fetch(`/api/employees/finance-summary${filters.dateFrom || filters.dateTo
+          ? `?${new URLSearchParams({
+              ...(filters.dateFrom ? { dateFrom: filters.dateFrom } : {}),
+              ...(filters.dateTo ? { dateTo: filters.dateTo } : {}),
+            })}`
+          : ""}`).then((r) => r.json()),
+        fetchInterleavedRows({ kind: "payables", scope }),
+      ]);
+
+      // Names/roles from the roster already loaded into `data`, keyed by id.
+      const nameById = {};
+      Object.entries(data).forEach(([cat, list]) => {
+        (list || []).forEach((e) => {
+          nameById[String(e._id)] = { name: e.name, role: cat, active: e.status === "active" };
+        });
+      });
+
+      const byEmployee = summaryJson?.byEmployee || {};
+      const overviewRows = Object.entries(byEmployee).map(([id, f]) => ({
+        Employee: nameById[id]?.name || "—",
+        Role: nameById[id]?.role || "—",
+        Active: nameById[id] ? (nameById[id].active ? "Yes" : "No") : "—",
+        "Total Payable": f.totalPayable,
+        "Total Paid": f.totalPaid,
+        "Total Pending": f.totalPending,
+        "Salary Payable": f.salaryPayable,
+        "Salary Paid": f.salaryPaid,
+        "Incentive Payable": f.incentivePayable,
+        "Incentive Paid": f.incentivePaid,
+        Overdue: f.overdueCount,
+      }));
+
+      const detail = (interleaved.rows || []).filter((row) => row["Payee Type"] === "EMPLOYEE");
+      if (interleaved.truncated) {
+        alert(
+          `Detail sheet capped at the ${interleaved.docLimit || 5000} newest payables — narrow the date range for a complete file.`,
+        );
+      }
+
+      await exportWorkbook({
+        filename: `Employees_payroll_${new Date().toISOString().slice(0, 10)}.xlsx`,
+        sheets: [
+          {
+            name: "Info",
+            rows: filterProvenanceRows({ dateFrom: filters.dateFrom, dateTo: filters.dateTo }),
+            colWidths: [22, 24],
+          },
+          {
+            name: "Overview",
+            rows: overviewRows,
+            colWidths: [24, 12, 8, 14, 14, 14, 14, 14, 14, 14, 10],
+            currencyCols: [
+              "Total Payable", "Total Paid", "Total Pending",
+              "Salary Payable", "Salary Paid", "Incentive Payable", "Incentive Paid",
+            ],
+          },
+          {
+            name: "Payables & Payments",
+            rows: detail,
+            colWidths: [8, 24, 12, 16, 16, 12, 10, 14, 12, 14, 12, 12, 14, 16, 18, 24],
+            currencyCols: ["Total Amount", "Paid", "Pending", "Payment Amount"],
+          },
+        ],
+      });
+    } catch (err) {
+      console.error("Payroll export failed:", err);
+      alert("Failed to export");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const activeChips = useMemo(() => {
     const chips = [];
     if (filters.category)    chips.push({ k: "category",    label: `Category: ${filters.category}` });
@@ -262,6 +345,16 @@ export default function StaffTable({ config = {} }) {
                   </span>
                 )}
               </button>
+              {financeColumns && (
+                <button
+                  onClick={handleFinanceExport}
+                  disabled={exporting}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border bg-white shadow-sm hover:bg-gray-50 text-gray-700 transition-colors disabled:opacity-50"
+                >
+                  {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  Download Excel
+                </button>
+              )}
               {addEmployeePath && (
                 <Link
                   href={addEmployeePath}

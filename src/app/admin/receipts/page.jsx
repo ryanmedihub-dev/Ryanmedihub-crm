@@ -6,6 +6,8 @@ import { HandCoins, AlertTriangle, CheckCircle2, Download, Loader2 } from "lucid
 import DrillDownTable from "@/components/finance/DrillDownTable";
 import { formatCurrency } from "@/lib/financeUI";
 import DebouncedDateInput from "@/components/finance/DebouncedDateInput";
+import { exportWorkbook, filterProvenanceRows } from "@/lib/exportToExcel";
+import { receiptPaymentHeadSheets } from "@/lib/finance/headedExport";
 
 const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
 
@@ -59,20 +61,43 @@ function ReceiptsPageInner() {
   const handleExport = async () => {
     setExporting(true);
     try {
-      const json = await fetch(`/api/receipts/grouped?level=1&from=${from}&to=${to}`).then((r) => r.json());
-      const rows = (json.rows || []).map((r) => ({
-        "Receipt Head": r.label,
+      const json = await fetch(
+        `/api/receipts/grouped?level=1&from=${from}&to=${to}&groupBy=${groupBy}`,
+      ).then((r) => r.json());
+      const heads = json.rows || [];
+
+      const overviewRows = heads.map((r) => ({
+        [groupBy === "mode" ? "Receipt Mode" : "Account"]: r.label,
         "Before Period": r.opening,
         "This Period": r.movement,
         "Total To Date": r.closing,
         Count: r.count,
       }));
-      const { utils, writeFile } = await import("xlsx");
-      const wb = utils.book_new();
-      const ws = utils.json_to_sheet(rows);
-      ws["!cols"] = [{ wch: 24 }, { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 10 }];
-      utils.book_append_sheet(wb, ws, "Receipts");
-      writeFile(wb, `receipts_${from}_to_${to}.xlsx`);
+
+      const headSheets = await receiptPaymentHeadSheets({
+        apiBase: "/api/receipts",
+        heads: heads.map((r) => r.label),
+        groupBy,
+        scope: { dateFrom: from, dateTo: to },
+      });
+
+      await exportWorkbook({
+        filename: `receipts_${from}_to_${to}.xlsx`,
+        sheets: [
+          {
+            name: "Info",
+            rows: filterProvenanceRows({ dateFrom: from, dateTo: to }),
+            colWidths: [22, 24],
+          },
+          {
+            name: "Overview",
+            rows: overviewRows,
+            colWidths: [24, 16, 16, 16, 10],
+            currencyCols: ["Before Period", "This Period", "Total To Date"],
+          },
+          ...headSheets,
+        ],
+      });
     } finally {
       setExporting(false);
     }
@@ -96,7 +121,7 @@ function ReceiptsPageInner() {
               className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 rounded-lg text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
             >
               {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-              Export
+              Download Excel
             </button>
           </div>
 

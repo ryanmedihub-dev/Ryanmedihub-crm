@@ -190,7 +190,7 @@ function AdminCreateTransactionPageInner() {
     expenseSection: "agent",
     expenseCategory: "",
     expenseType: "",
-    isVendor: true,
+    isVendor: false,
     vendorId: "",
     expenseGiverName: "",
     amount: "",
