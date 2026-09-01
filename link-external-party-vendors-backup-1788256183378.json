@@ -1,0 +1,87 @@
+[
+  {
+    "transactionId": "69e0994ab061fe900e89fa42",
+    "date": "2026-04-15",
+    "amount": 233.42175066312998,
+    "tier": "PREFIX",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a7c64e7d357aa64bd2f947c"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969cd8f3b5485830705ada",
+      "vendorName": "Monika"
+    }
+  },
+  {
+    "transactionId": "69e0994ab061fe900e89fa41",
+    "date": "2026-04-15",
+    "amount": 766.57824933687,
+    "tier": "PREFIX",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a7c64abd357aa64bd2f9445"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969cd8f3b5485830705ada",
+      "vendorName": "Monika"
+    }
+  },
+  {
+    "transactionId": "6a44ea695aa5726c48af1c46",
+    "date": "2026-06-30",
+    "amount": 2000,
+    "tier": "PREFIX",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a8423d0d56545b06778b175"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969b8bf3b5485830705acf",
+      "vendorName": "Shivam"
+    }
+  },
+  {
+    "transactionId": "6a92a10517068b365e60c4f8",
+    "date": "2026-08-28",
+    "amount": 14000,
+    "tier": "PREFIX",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a92aead9bbd008a2e39f042"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969b8bf3b5485830705acf",
+      "vendorName": "Shivam"
+    }
+  },
+  {
+    "transactionId": "6a6d9b48c93a4524ead37d9c",
+    "date": "2026-08-01",
+    "amount": 19000,
+    "tier": "PREFIX",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a917e35ad6945c09678ca71"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969cd8f3b5485830705ada",
+      "vendorName": "Monika"
+    }
+  }
+]

@@ -1,0 +1,920 @@
+[
+  {
+    "transactionId": "69d1f46fde98fb6b740bf0ab",
+    "date": "2026-04-05",
+    "amount": 5000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a7b2072b9018b1cc2909247"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "69d47c49c0c87c44d9dc0408",
+    "date": "2026-04-07",
+    "amount": 17000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a7c2dcdd357aa64bd2f93cc"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "69d5ed6011ee627c3bde383d",
+    "date": "2026-04-08",
+    "amount": 17000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a7c3318d357aa64bd2f93e3"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "6a1e7b99815cca04e51fc040",
+    "date": "2026-06-02",
+    "amount": 25000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a841f90d56545b06778b115"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "6a228c0689a24cb6111619c3",
+    "date": "2026-06-05",
+    "amount": 43000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a842085d56545b06778b12d"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "6a2272cc8e85a7b0374b2d9c",
+    "date": "2026-06-05",
+    "amount": 45000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a841ffbd56545b06778b121"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "6a251e256df15d5445248d1d",
+    "date": "2026-06-07",
+    "amount": 22000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a8420b1d56545b06778b139"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "6a2a4d3240e27e16a255e583",
+    "date": "2026-06-11",
+    "amount": 35000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a84213fd56545b06778b145"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "6a2ceaa6622733257f636f46",
+    "date": "2026-06-13",
+    "amount": 50000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a8421a32f165923227254d8"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "6a3538f88e07a4f86dc26d7e",
+    "date": "2026-06-19",
+    "amount": 500,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a8421fc2f165923227254e4"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "6a37b1487e0b8bb82a75db62",
+    "date": "2026-06-21",
+    "amount": 44000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a8422412f165923227254f1"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "6a38c53b9986f13ad1c77a57",
+    "date": "2026-06-22",
+    "amount": 22000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a8422992f165923227254fd"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "6a3e553d755fb0d065110a1b",
+    "date": "2026-06-26",
+    "amount": 3617,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a8422e6d56545b06778b151"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "6a3e2a7fc938af512557237c",
+    "date": "2026-06-26",
+    "amount": 1500,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a84246fd56545b06778b183"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "6a3f79aefeef9f2fb94805f0",
+    "date": "2026-06-27",
+    "amount": 40000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a84237dd56545b06778b169"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "6a3f6e7ddd6d476a8b4cc3e3",
+    "date": "2026-06-27",
+    "amount": 37000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a842352d56545b06778b15d"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "6a475b5e4bab43c8d4ec46d1",
+    "date": "2026-07-03",
+    "amount": 25000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a843e0b04015c94264f3f30"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "6a48d2eda7a8858858f993a5",
+    "date": "2026-07-04",
+    "amount": 25000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a843e8364098259be66a1ae"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "6a48b78db6c1323b4b985072",
+    "date": "2026-07-04",
+    "amount": 1617,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a843e3f04015c94264f3f3c"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "6a4a33eeb637a76f0544b666",
+    "date": "2026-07-05",
+    "amount": 1000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a843f0864098259be66a1c3"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "6a4a33afcfc91c16ba01af95",
+    "date": "2026-07-05",
+    "amount": 1000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a843ee364098259be66a1bc"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "6a4b37cadae487202fe5fe84",
+    "date": "2026-07-06",
+    "amount": 55000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a843f3204015c94264f3f54"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "6a51db5cc32040612825c58a",
+    "date": "2026-07-11",
+    "amount": 55000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a84403564098259be66a1c8"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "6a51db42c32040612825c586",
+    "date": "2026-07-11",
+    "amount": 55000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a843fbf04015c94264f3f6c"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "6a51d7b3c32040612825c439",
+    "date": "2026-07-11",
+    "amount": 55000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a843f7d04015c94264f3f60"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "6a562c99ec67402a685bea37",
+    "date": "2026-07-14",
+    "amount": 6000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a84419c64098259be66a1d6"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "6a58b195732774145006789f",
+    "date": "2026-07-16",
+    "amount": 1500,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a84420164098259be66a1de"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "6a5caee0f24d0b2a6e731675",
+    "date": "2026-07-19",
+    "amount": 5000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a84436604015c94264f3f90"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "6a5c8327822fa4b0e95b6c03",
+    "date": "2026-07-19",
+    "amount": 100,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a84427f04015c94264f3f84"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "6a5c7f88e107ae188dadecc7",
+    "date": "2026-07-19",
+    "amount": 1000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a84425364098259be66a1ea"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "6a61f2c8cc40748b9e4790de",
+    "date": "2026-07-23",
+    "amount": 1000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a8443df04015c94264f3f9e"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "6a6c7ef4d3fca9681cd25a6a",
+    "date": "2026-07-31",
+    "amount": 45000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a84456704015c94264f3fa3"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "6a6daf45afe8b3aebb658129",
+    "date": "2026-08-01",
+    "amount": 1617,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a9148820e7bb4783679e860"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "6a7021ecbf238c36fd9d4dc7",
+    "date": "2026-08-03",
+    "amount": 16000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a914ab29df77cf67c5e0072"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "6a717a7c6f454ca319723b48",
+    "date": "2026-08-04",
+    "amount": 20000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a914b810e7bb4783679e877"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "6a7171bdfbe02fb3732ace1f",
+    "date": "2026-08-04",
+    "amount": 29000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a914b399df77cf67c5e0088"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "6a72d53ed7a0be6675b6e799",
+    "date": "2026-08-05",
+    "amount": 1000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a91517029bc48bfca6c106d"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "6a72d442d7a0be6675b6e78f",
+    "date": "2026-08-05",
+    "amount": 1000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a91513e89d5f88577b3fe12"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "6a75cddbc18e9575b7aa8494",
+    "date": "2026-08-07",
+    "amount": 38000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a91616d55160e99a16ee7e5"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "6a78496857f33ecc3eb98f22",
+    "date": "2026-08-09",
+    "amount": 15000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a9164f312496f698add03b4"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "6a7d9c26c5e23ba7cb73a9de",
+    "date": "2026-08-13",
+    "amount": 25000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a916b7e12496f698add03c5"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969ca6f3b5485830705ad8",
+      "vendorName": "Muskan"
+    }
+  },
+  {
+    "transactionId": "69e352ce540accc93bf3718a",
+    "date": "2026-04-18",
+    "amount": 1000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a7c68a8d357aa64bd2f94d3"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969cd8f3b5485830705ada",
+      "vendorName": "Monika"
+    }
+  },
+  {
+    "transactionId": "6a927a35603c05a4b15593e9",
+    "date": "2026-07-01",
+    "amount": 20000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a92b6c95f0bd9bbe2a468db"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969cd8f3b5485830705ada",
+      "vendorName": "Monika"
+    }
+  },
+  {
+    "transactionId": "6a927c708178e4247197ce26",
+    "date": "2026-07-04",
+    "amount": 2000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a92b8625f0bd9bbe2a468e7"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969cd8f3b5485830705ada",
+      "vendorName": "Monika"
+    }
+  },
+  {
+    "transactionId": "6a4906ad36e16cd48783e0cd",
+    "date": "2026-07-04",
+    "amount": 2000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a843ea804015c94264f3f48"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969cd8f3b5485830705ada",
+      "vendorName": "Monika"
+    }
+  },
+  {
+    "transactionId": "6a927dd1603c05a4b1559633",
+    "date": "2026-07-05",
+    "amount": 2000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a92b8a23db43ede571d984e"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969cd8f3b5485830705ada",
+      "vendorName": "Monika"
+    }
+  },
+  {
+    "transactionId": "6a927d38603c05a4b1559631",
+    "date": "2026-07-05",
+    "amount": 1000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a92b8c53db43ede571d985a"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969cd8f3b5485830705ada",
+      "vendorName": "Monika"
+    }
+  },
+  {
+    "transactionId": "6a927e748178e4247197d166",
+    "date": "2026-07-06",
+    "amount": 1000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a92b9a984d8f21e93f510db"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969cd8f3b5485830705ada",
+      "vendorName": "Monika"
+    }
+  },
+  {
+    "transactionId": "6a92823957bc2c86ce571723",
+    "date": "2026-07-10",
+    "amount": 3000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a92b9d43db43ede571d9866"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969cd8f3b5485830705ada",
+      "vendorName": "Monika"
+    }
+  },
+  {
+    "transactionId": "6a9292f26171d269e21af384",
+    "date": "2026-07-13",
+    "amount": 10000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a92bbb23db43ede571d9881"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969cd8f3b5485830705ada",
+      "vendorName": "Monika"
+    }
+  },
+  {
+    "transactionId": "6a92a0ca8ebad810dd09c98a",
+    "date": "2026-07-17",
+    "amount": 1000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a92bbfb3db43ede571d988c"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969cd8f3b5485830705ada",
+      "vendorName": "Monika"
+    }
+  },
+  {
+    "transactionId": "6a92a2e78ebad810dd09c9eb",
+    "date": "2026-07-20",
+    "amount": 500,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a92bc385f0bd9bbe2a468f5"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969cd8f3b5485830705ada",
+      "vendorName": "Monika"
+    }
+  },
+  {
+    "transactionId": "6a69ab726c186d866bd2caa3",
+    "date": "2026-07-29",
+    "amount": 5000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a92c62ae1b9bff371f4015d"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969cd8f3b5485830705ada",
+      "vendorName": "Monika"
+    }
+  },
+  {
+    "transactionId": "6a92bd9384d8f21e93f510e8",
+    "date": "2026-08-10",
+    "amount": 10000,
+    "tier": "EXACT",
+    "before": {
+      "partyKind": "MANUAL",
+      "partyRefId": null,
+      "linkedPayableId": null,
+      "linkedReceivableId": "6a92bd9484d8f21e93f510e9"
+    },
+    "after": {
+      "partyKind": "VENDOR",
+      "partyRefId": "6a969cd8f3b5485830705ada",
+      "vendorName": "Monika"
+    }
+  }
+]
