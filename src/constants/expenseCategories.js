@@ -91,7 +91,7 @@ export const EXPENSE_CATEGORY_TREE = {
     "PATIENT TREATMENT CHARGES",
   ],
   "Interest Expenses": ["Interest Expenses"],
-  "GST": ["GST Ryan Skin"],
+  "GST": ["GST Ryan Skin" , "GST Ryan medihub"],
   Taxes: [
     "ROC",
     "TDS",
