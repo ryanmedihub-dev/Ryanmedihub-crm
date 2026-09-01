@@ -193,14 +193,19 @@ export function buildReceivableGroupedStages(
     from,
     to,
     subTypeField = "purpose",
+    groupBy = "category",
     advancesCollectionName = "advances",
     borrowingsCollectionName = "borrowings",
   } = {},
 ) {
+  const isVendor = groupBy === "vendor";
   const match = { isCancelled: { $ne: true } };
+  if (isVendor) match["payer.kind"] = "VENDOR";
   if (branch) match.branch = branch;
-  if (level !== 1 && category) match.revenueCategory = category;
-  if (level === 2 && subType) match[subTypeField] = subType;
+  if (!isVendor) {
+    if (level !== 1 && category) match.revenueCategory = category;
+    if (level === 2 && subType) match[subTypeField] = subType;
+  }
 
   const fromDate = from ? new Date(from) : null;
   const toDate = to ? new Date(to) : null;
@@ -212,8 +217,9 @@ export function buildReceivableGroupedStages(
   });
   const beforeRange = (field) => (fromDate ? { $lt: [field, fromDate] } : { $literal: false });
 
-  const groupId =
-    level === 1
+  const groupId = isVendor
+    ? { bucket: "$payer.refId" }
+    : level === 1
       ? { bucket: { $ifNull: ["$revenueCategory", "Uncategorised"] } }
       : { bucket: { $ifNull: [`$${subTypeField}`, "Uncategorised"] } };
 
@@ -325,6 +331,7 @@ export function buildReceivableGroupedStages(
     {
       $group: {
         _id: groupId,
+        ...(isVendor ? { label: { $first: "$payer.label" } } : {}),
         opening: { $sum: "$openingRow" },
         movement: { $sum: "$raisedInRange" },
         settled: { $sum: "$receivedInRange" },
@@ -334,8 +341,8 @@ export function buildReceivableGroupedStages(
     {
       $project: {
         _id: 0,
-        key: "$_id.bucket",
-        label: "$_id.bucket",
+        key: isVendor ? { $toString: "$_id.bucket" } : "$_id.bucket",
+        label: isVendor ? "$label" : "$_id.bucket",
         opening: 1,
         movement: 1,
         settled: 1,
@@ -343,6 +350,6 @@ export function buildReceivableGroupedStages(
         count: 1,
       },
     },
-    { $sort: { key: 1 } },
+    { $sort: isVendor ? { closing: -1 } : { key: 1 } },
   ];
 }

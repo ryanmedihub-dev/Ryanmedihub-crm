@@ -15,6 +15,7 @@ import {
   ChevronRight,
   Users,
   Wallet,
+  Coins,
   CheckCircle2,
   AlertTriangle,
   X,
@@ -58,6 +59,7 @@ export default function AdminVendorsPage() {
   const [search, setSearch] = useState("");
   const [scope, setScope] = useState({ branch: "", dateFrom: "", dateTo: "" });
   const [ledger, setLedger] = useState({});
+  const [recvLedger, setRecvLedger] = useState({});
   const [ledgerLoading, setLedgerLoading] = useState(true);
   const [openVendor, setOpenVendor] = useState(null);
 
@@ -82,12 +84,20 @@ export default function AdminVendorsPage() {
       if (scope.branch) p.set("branch", scope.branch);
       if (scope.dateFrom) p.set("from", scope.dateFrom);
       if (scope.dateTo) p.set("to", scope.dateTo);
-      const json = await fetch(`/api/payables/grouped?${p.toString()}`).then((r) => r.json());
+      const [payJson, recvJson] = await Promise.all([
+        fetch(`/api/payables/grouped?${p.toString()}`).then((r) => r.json()),
+        fetch(`/api/receivables/grouped?${p.toString()}`).then((r) => r.json()),
+      ]);
       const byId = {};
-      (json.rows || []).forEach((r) => {
+      (payJson.rows || []).forEach((r) => {
         byId[r.key] = r;
       });
+      const recvById = {};
+      (recvJson.rows || []).forEach((r) => {
+        recvById[r.key] = r;
+      });
       setLedger(byId);
+      setRecvLedger(recvById);
     } catch {
       toast.error("Failed to load vendor balances");
     } finally {
@@ -114,25 +124,29 @@ export default function AdminVendorsPage() {
 
   const stats = useMemo(() => {
     const rows = Object.values(ledger);
+    const recvRows = Object.values(recvLedger);
     const totalOutstanding = rows.reduce((s, r) => s + Math.max(r.closing, 0), 0);
     const totalSettled = rows.reduce((s, r) => s + (r.settled || 0), 0);
     const withDues = rows.filter((r) => r.closing > 0.5).length;
-    return { totalOutstanding, totalSettled, withDues };
-  }, [ledger]);
+    const totalReceivable = recvRows.reduce((s, r) => s + Math.max(r.closing, 0), 0);
+    return { totalOutstanding, totalSettled, withDues, totalReceivable };
+  }, [ledger, recvLedger]);
 
   const [exporting, setExporting] = useState(false);
 
   const handleExport = async () => {
     setExporting(true);
     try {
-      const [gJson, interleaved] = await Promise.all([
-        (() => {
-          const p = new URLSearchParams({ level: "1", groupBy: "vendor" });
-          if (scope.branch) p.set("branch", scope.branch);
-          if (scope.dateFrom) p.set("from", scope.dateFrom);
-          if (scope.dateTo) p.set("to", scope.dateTo);
-          return fetch(`/api/payables/grouped?${p.toString()}`).then((r) => r.json());
-        })(),
+      const groupedQS = () => {
+        const p = new URLSearchParams({ level: "1", groupBy: "vendor" });
+        if (scope.branch) p.set("branch", scope.branch);
+        if (scope.dateFrom) p.set("from", scope.dateFrom);
+        if (scope.dateTo) p.set("to", scope.dateTo);
+        return p.toString();
+      };
+      const [gJson, rJson, interleaved] = await Promise.all([
+        fetch(`/api/payables/grouped?${groupedQS()}`).then((r) => r.json()),
+        fetch(`/api/receivables/grouped?${groupedQS()}`).then((r) => r.json()),
         fetchInterleavedRows({ kind: "payables", scope }),
       ]);
       if (interleaved.truncated) {
@@ -141,14 +155,35 @@ export default function AdminVendorsPage() {
         );
       }
 
-      const overviewRows = (gJson.rows || []).map((r) => ({
-        Vendor: r.label,
-        Opening: r.opening,
-        Raised: r.movement,
-        Paid: r.settled,
-        Outstanding: r.closing,
-        Payables: r.count,
-      }));
+      // Merge payable + receivable rollups so a vendor appearing on only one side is still listed.
+      const byKey = new Map();
+      (gJson.rows || []).forEach((r) => {
+        byKey.set(r.key, {
+          Vendor: r.label,
+          "Payable Billed": r.movement,
+          "Payable Paid": r.settled,
+          "Payable Pending": r.closing,
+          "Receivable Invoiced": 0,
+          "Receivable Received": 0,
+          "Receivable Pending": 0,
+        });
+      });
+      (rJson.rows || []).forEach((r) => {
+        const row = byKey.get(r.key) || {
+          Vendor: r.label,
+          "Payable Billed": 0,
+          "Payable Paid": 0,
+          "Payable Pending": 0,
+          "Receivable Invoiced": 0,
+          "Receivable Received": 0,
+          "Receivable Pending": 0,
+        };
+        row["Receivable Invoiced"] = r.movement;
+        row["Receivable Received"] = r.settled;
+        row["Receivable Pending"] = r.closing;
+        byKey.set(r.key, row);
+      });
+      const overviewRows = [...byKey.values()];
 
       // One flat sheet: every vendor payable + its payment lines.
       const vendorDetail = (interleaved.rows || []).filter((row) => row["Payee Type"] === "VENDOR");
@@ -164,8 +199,15 @@ export default function AdminVendorsPage() {
           {
             name: "Overview",
             rows: overviewRows,
-            colWidths: [26, 14, 14, 14, 16, 10],
-            currencyCols: ["Opening", "Raised", "Paid", "Outstanding"],
+            colWidths: [26, 16, 14, 16, 18, 18, 18],
+            currencyCols: [
+              "Payable Billed",
+              "Payable Paid",
+              "Payable Pending",
+              "Receivable Invoiced",
+              "Receivable Received",
+              "Receivable Pending",
+            ],
           },
           {
             name: "Payables & Payments",
@@ -219,7 +261,7 @@ export default function AdminVendorsPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <MetricCard
               title="Total Vendors"
               value={loading ? "…" : vendors.length}
@@ -227,10 +269,16 @@ export default function AdminVendorsPage() {
               color="from-indigo-500 to-indigo-600"
             />
             <MetricCard
-              title="Outstanding Balance"
+              title="Payable — We Owe"
               value={ledgerLoading ? "…" : formatCurrency(stats.totalOutstanding)}
               icon={Wallet}
               color="from-rose-500 to-rose-600"
+            />
+            <MetricCard
+              title="Receivable — Owed To Us"
+              value={ledgerLoading ? "…" : formatCurrency(stats.totalReceivable)}
+              icon={Coins}
+              color="from-emerald-500 to-emerald-600"
             />
             <MetricCard
               title="Vendors With Dues"
@@ -292,20 +340,31 @@ export default function AdminVendorsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-gray-50/80 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500 border-b border-gray-200">
-                    <th className="px-5 py-3.5">Vendor</th>
-                    <th className="px-4 py-3.5">Deals In</th>
-                    <th className="px-4 py-3.5">Contact</th>
-                    <th className="px-4 py-3.5 text-right">Billed</th>
-                    <th className="px-4 py-3.5 text-right">Settled</th>
-                    <th className="px-4 py-3.5 text-right">Balance Due</th>
-                    <th className="px-4 py-3.5" />
+                    <th className="px-5 py-3.5" rowSpan={2}>Vendor</th>
+                    <th className="px-4 py-3.5" rowSpan={2}>Deals In</th>
+                    <th className="px-4 py-3.5" rowSpan={2}>Contact</th>
+                    <th className="px-4 py-2 text-center text-rose-500 border-l border-gray-200" colSpan={3}>
+                      Payable — We Owe
+                    </th>
+                    <th className="px-4 py-2 text-center text-emerald-600 border-l border-gray-200" colSpan={3}>
+                      Receivable — Owed To Us
+                    </th>
+                    <th className="px-4 py-3.5" rowSpan={2} />
+                  </tr>
+                  <tr className="bg-gray-50/80 text-left text-[10px] font-semibold uppercase tracking-wide text-gray-400 border-b border-gray-200">
+                    <th className="px-4 py-2 text-right border-l border-gray-200">Billed</th>
+                    <th className="px-4 py-2 text-right">Paid</th>
+                    <th className="px-4 py-2 text-right">Pending</th>
+                    <th className="px-4 py-2 text-right border-l border-gray-200">Invoiced</th>
+                    <th className="px-4 py-2 text-right">Received</th>
+                    <th className="px-4 py-2 text-right">Pending</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {loading ? (
                     [...Array(5)].map((_, i) => (
                       <tr key={i}>
-                        {[...Array(7)].map((__, j) => (
+                        {[...Array(10)].map((__, j) => (
                           <td key={j} className="px-4 py-4">
                             <div className="h-4 bg-gray-100 rounded animate-pulse" style={{ width: j === 0 ? "70%" : "50%" }} />
                           </td>
@@ -314,7 +373,7 @@ export default function AdminVendorsPage() {
                     ))
                   ) : !shown.length ? (
                     <tr>
-                      <td colSpan={7} className="px-4 py-16 text-center">
+                      <td colSpan={10} className="px-4 py-16 text-center">
                         <Store className="w-8 h-8 text-gray-200 mx-auto mb-2" />
                         <p className="text-gray-500 font-medium">
                           {vendors.length ? "No vendor matches that search." : "No vendors yet"}
@@ -327,8 +386,11 @@ export default function AdminVendorsPage() {
                   ) : (
                     shown.map((v) => {
                       const bal = ledger[v._id];
+                      const rbal = recvLedger[v._id];
                       const pending = bal?.closing ?? 0;
+                      const rPending = rbal?.closing ?? 0;
                       const isSettled = bal && pending <= 0.5 && bal.movement > 0;
+                      const rIsSettled = rbal && rPending <= 0.5 && rbal.movement > 0;
                       return (
                         <tr
                           key={v._id}
@@ -381,7 +443,7 @@ export default function AdminVendorsPage() {
                               {!v.contact && !v.email && <span className="text-gray-300">—</span>}
                             </div>
                           </td>
-                          <td className="px-4 py-4 text-right tabular-nums text-gray-600">
+                          <td className="px-4 py-4 text-right tabular-nums text-gray-600 border-l border-gray-100">
                             {ledgerLoading ? "…" : bal ? formatCurrency(bal.movement) : <span className="text-gray-300">—</span>}
                           </td>
                           <td className="px-4 py-4 text-right tabular-nums text-emerald-600 font-medium">
@@ -401,6 +463,30 @@ export default function AdminVendorsPage() {
                                 <p className="tabular-nums font-bold text-rose-600">{formatCurrency(pending)}</p>
                                 {bal.opening > 0.5 && (
                                   <p className="text-[10px] text-gray-400">incl. {formatCurrency(bal.opening)} opening</p>
+                                )}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-4 py-4 text-right tabular-nums text-gray-600 border-l border-gray-100">
+                            {ledgerLoading ? "…" : rbal ? formatCurrency(rbal.movement) : <span className="text-gray-300">—</span>}
+                          </td>
+                          <td className="px-4 py-4 text-right tabular-nums text-emerald-600 font-medium">
+                            {ledgerLoading ? "…" : rbal ? formatCurrency(rbal.settled) : <span className="text-gray-300">—</span>}
+                          </td>
+                          <td className="px-4 py-4 text-right">
+                            {ledgerLoading ? (
+                              <span className="text-gray-400">…</span>
+                            ) : !rbal ? (
+                              <span className="text-gray-300">—</span>
+                            ) : rIsSettled ? (
+                              <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600">
+                                <CheckCircle2 className="w-3.5 h-3.5" /> Clear
+                              </span>
+                            ) : (
+                              <div>
+                                <p className="tabular-nums font-bold text-amber-600">{formatCurrency(rPending)}</p>
+                                {rbal.opening > 0.5 && (
+                                  <p className="text-[10px] text-gray-400">incl. {formatCurrency(rbal.opening)} opening</p>
                                 )}
                               </div>
                             )}

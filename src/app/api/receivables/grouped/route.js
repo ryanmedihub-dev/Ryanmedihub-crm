@@ -27,6 +27,7 @@ export async function GET(request) {
     const level = Math.min(4, Math.max(1, parseInt(searchParams.get("level") || "1")));
     const category = searchParams.get("category") || "";
     const subType = searchParams.get("subType") || "";
+    const groupBy = searchParams.get("groupBy") === "vendor" ? "vendor" : "category";
     const branchFilterObj = resolveBranchFilter(session, searchParams.get("branch") || "");
     const branch = typeof branchFilterObj.branch === "string" ? branchFilterObj.branch : "";
     const from = searchParams.get("from") || "";
@@ -47,6 +48,7 @@ export async function GET(request) {
           branch,
           from,
           to,
+          groupBy,
         }),
       );
       return NextResponse.json({ success: true, rows });
