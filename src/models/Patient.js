@@ -252,16 +252,32 @@ patientSchema.pre("save", async function () {
     if (patient.personal) patient.personal.phoneNormalized = normalized;
   }
 
-  if (patient.counselling?.finlpackage && !patient.isModified("payments.totalAmount")) {
+  if (patient.counselling?.finlpackage) {
     patient.payments = patient.payments || {};
-    patient.payments.totalAmount = patient.counselling.finlpackage;
-  }
-  if (patient.counselling?.finlpackage && !patient.isModified("payments.pendingAmount")) {
-    patient.payments = patient.payments || {};
-    patient.payments.pendingAmount =
-      (patient.payments.totalAmount || patient.counselling.finlpackage) -
-      (patient.payments.amountReceived || 0) -
-      (patient.payments.discount || 0);
+
+    // On a brand-new document Mongoose reports every path — defaults included — as
+    // modified, so `isModified("payments.totalAmount")` is true even when the caller
+    // never set it (it just carries the schema default of 0). That made the collab
+    // book-consult flow save a final package that never reached payments.totalAmount,
+    // which is the figure the collab case / "Total Package" reads. For new docs fall
+    // back to inspecting the value itself; keep the isModified guard for updates so a
+    // deliberately revised package still flows through.
+    const totalSetDeliberately = patient.isNew
+      ? (patient.payments.totalAmount || 0) > 0
+      : patient.isModified("payments.totalAmount");
+    if (!totalSetDeliberately) {
+      patient.payments.totalAmount = patient.counselling.finlpackage;
+    }
+
+    const pendingSetDeliberately = patient.isNew
+      ? (patient.payments.pendingAmount || 0) > 0
+      : patient.isModified("payments.pendingAmount");
+    if (!pendingSetDeliberately) {
+      patient.payments.pendingAmount =
+        (patient.payments.totalAmount || patient.counselling.finlpackage) -
+        (patient.payments.amountReceived || 0) -
+        (patient.payments.discount || 0);
+    }
   }
 
   const amountReceived = patient.payments?.amountReceived || 0;
