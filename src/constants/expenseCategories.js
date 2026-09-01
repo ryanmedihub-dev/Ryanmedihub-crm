@@ -91,12 +91,11 @@ export const EXPENSE_CATEGORY_TREE = {
     "PATIENT TREATMENT CHARGES",
   ],
   "Interest Expenses": ["Interest Expenses"],
+  "GST": ["GST Ryan Skin"],
   Taxes: [
-    "GST",
     "ROC",
     "TDS",
     "Income Tax",
-    "GST Ryan Skin",
     "ROC Ryan Medihub",
     "TDS on Rent Ryan Medihub",
     "TDS on Rent Ryan Skin",
@@ -178,6 +177,7 @@ export const PAYABLE_EXPENSE_DROPDOWN_CATEGORIES =
 
 export const DIRECT_PAYMENT_CATEGORIES = [
   "Marketing",
+  "GST",
   "Welfare Expenses",
   "Office Exp.",
   "Travelling Expenses",
@@ -194,7 +194,6 @@ export const DIRECT_PAYMENT_CATEGORIES = [
 ];
 
 export const TDS_TAX_TYPES = [
-  "GST Ryan Skin",
   "ROC Ryan Medihub",
   "TDS on Rent Ryan Medihub",
   "TDS on Rent Ryan Skin",
