@@ -2,6 +2,7 @@ export const MAIN_BRANCHES = ["Delhi", "Mumbai", "Hyderabad", "Noida"];
 
 export const COLLAB_BRANCHES = [
   "Patna",
+  "Gujarat",
   "Kolkata",
   "Ahmedabad",
   "Jaipur",

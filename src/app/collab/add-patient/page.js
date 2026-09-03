@@ -1017,6 +1017,7 @@ export default function PatientRegistration() {
                     onChange={createChangeHandler("personal", "branch")}
                     options={[
                       { value: "Patna", label: "Patna" },
+                      { value: "Gujarat", label: "Gujarat" },
                       { value: "Kolkata", label: "Kolkata" },
                       { value: "Ahmedabad", label: "Ahmedabad" },
                       { value: "Jaipur", label: "Jaipur" },

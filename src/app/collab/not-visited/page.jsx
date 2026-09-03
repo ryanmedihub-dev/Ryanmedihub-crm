@@ -123,6 +123,7 @@ export default function NotVisited() {
               >
                 <option value="all">All Branches</option>
                 <option value="Patna">Patna</option>
+                <option value="Gujarat">Gujarat</option>
                 <option value="Kolkata">Kolkata</option>
                 <option value="Ahmedabad">Ahmedabad</option>
                 <option value="Jaipur">Jaipur</option>

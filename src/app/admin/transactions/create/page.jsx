@@ -2090,6 +2090,7 @@ function AdminCreateTransactionPageInner() {
                               <option value="Hyderabad">Hyderabad</option>
                               <option value="Noida">Noida</option>
                               <option value="Patna">Patna</option>
+                              <option value="Gujarat">Gujarat</option>
                               <option value="Kolkata">Kolkata</option>
                               <option value="Ahmedabad">Ahmedabad</option>
                               <option value="Jaipur">Jaipur</option>

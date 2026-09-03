@@ -243,6 +243,7 @@ const TransactionManager = ({ transactions, onChange, onAdd, onRemove }) => (
             onChange={(e) => onChange(index, "branch", e.target.value)}
             options={[
               { value: "Patna", label: "Patna" },
+              { value: "Gujarat", label: "Gujarat" },
               { value: "Kolkata", label: "Kolkata" },
               { value: "Ahmedabad", label: "Ahmedabad" },
               { value: "Jaipur", label: "Jaipur" },
@@ -1314,6 +1315,7 @@ export default function PatientEditDetails() {
                     onChange={createChangeHandler("personal", "branch")}
                     options={[
                       { value: "Patna", label: "Patna" },
+                      { value: "Gujarat", label: "Gujarat" },
                       { value: "Kolkata", label: "Kolkata" },
                       { value: "Ahmedabad", label: "Ahmedabad" },
                       { value: "Jaipur", label: "Jaipur" },
