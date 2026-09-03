@@ -1,5 +1,6 @@
 export const INCENTIVE_PURPOSES = [
-  "Agent",
+  "Agent (Patient Consult)",
+  "Agent (Patient Surgery)",
   "Counsellor",
   "Doctor",
   "Technician",

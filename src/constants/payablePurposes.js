@@ -1,5 +1,3 @@
-// Mirrors Payable.purpose's enum. Kept here so client components can offer the filter
-// without importing the mongoose model (which would pull mongoose into the browser bundle).
 export const PAYABLE_PURPOSES = [
   "SALARY",
   "INCENTIVE",

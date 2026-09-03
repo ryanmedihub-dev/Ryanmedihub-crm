@@ -664,7 +664,7 @@ export default function SuperAdminLeadsPage() {
                           {fmtDate(lead.createdAt)}
                         </td>
                         <td
-                          className="px-4 py-3 text-sm text-gray-500 max-w-[200px] truncate"
+                          className="px-4 py-3 text-sm text-gray-500 max-w-50 truncate"
                           title={lead.remarks}
                         >
                           {lead.remarks || "—"}
