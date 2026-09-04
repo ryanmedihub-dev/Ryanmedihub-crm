@@ -104,7 +104,7 @@ export async function PATCH(req, { params }) {
         return NextResponse.json(
           {
             error:
-              `An open advance (₹${settlingAdvance.amount.toLocaleString("en-IN")} to ` +
+              `An open advance (₹${(settlingAdvance.settlesPayableAmount ?? settlingAdvance.amount).toLocaleString("en-IN")} to ` +
               `${settlingAdvance.party?.label || "a party"}) is settling this payable. Unsettle it first.`,
           },
           { status: 409 },

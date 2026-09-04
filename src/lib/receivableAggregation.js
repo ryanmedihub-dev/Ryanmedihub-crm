@@ -125,6 +125,37 @@ export function buildReceivableAggregationStages(
       },
     },
     {
+      // An OUT advance applied against a payable is a non-cash recovery of that advance —
+      // the settled portion nets down what still has to come back on this receivable,
+      // exactly as it nets down the payable in buildPayableAggregationStages.
+      $lookup: {
+        from: advancesCollectionName,
+        let: { receivableId: "$_id" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$receivableId", "$$receivableId"] },
+                  { $eq: ["$direction", "OUT"] },
+                  { $ne: ["$isCancelled", true] },
+                  { $ne: [{ $ifNull: ["$settlesPayableId", null] }, null] },
+                ],
+              },
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              received: { $sum: { $ifNull: ["$settlesPayableAmount", "$amount"] } },
+              receiptCount: { $sum: 1 },
+            },
+          },
+        ],
+        as: "advancePayableSettlementAgg",
+      },
+    },
+    {
       $addFields: {
         received: {
           $add: [
@@ -132,6 +163,7 @@ export function buildReceivableAggregationStages(
             { $sum: { $map: { input: "$allocReceipts", as: "tx", in: allocContribution } } },
             { $ifNull: [{ $arrayElemAt: ["$advanceAgg.received", 0] }, 0] },
             { $ifNull: [{ $arrayElemAt: ["$borrowingSettlementAgg.received", 0] }, 0] },
+            { $ifNull: [{ $arrayElemAt: ["$advancePayableSettlementAgg.received", 0] }, 0] },
           ],
         },
         receiptCount: {
@@ -140,6 +172,7 @@ export function buildReceivableAggregationStages(
             { $size: "$allocReceipts" },
             { $ifNull: [{ $arrayElemAt: ["$advanceAgg.receiptCount", 0] }, 0] },
             { $ifNull: [{ $arrayElemAt: ["$borrowingSettlementAgg.receiptCount", 0] }, 0] },
+            { $ifNull: [{ $arrayElemAt: ["$advancePayableSettlementAgg.receiptCount", 0] }, 0] },
           ],
         },
       },
@@ -178,6 +211,7 @@ export function buildReceivableAggregationStages(
         directOnly: 0,
         advanceAgg: 0,
         borrowingSettlementAgg: 0,
+        advancePayableSettlementAgg: 0,
       },
     },
   ];
@@ -262,6 +296,31 @@ export function buildReceivableGroupedStages(
       },
     },
     {
+      // OUT advances applied against a payable — non-cash recovery, mirrors
+      // advancePayableSettlementAgg in buildReceivableAggregationStages.
+      $lookup: {
+        from: advancesCollectionName,
+        let: { receivableId: "$_id" },
+        pipeline: [
+          ...(toDate ? [{ $match: { date: { $lte: toDate } } }] : []),
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$receivableId", "$$receivableId"] },
+                  { $eq: ["$direction", "OUT"] },
+                  { $ne: ["$isCancelled", true] },
+                  { $ne: [{ $ifNull: ["$settlesPayableId", null] }, null] },
+                ],
+              },
+            },
+          },
+          { $project: { date: 1, amount: { $ifNull: ["$settlesPayableAmount", "$amount"] } } },
+        ],
+        as: "advancePayableSettlements",
+      },
+    },
+    {
       // Borrowings that settle a receivable count as money received, exactly as they do in
       // buildReceivableAggregationStages. Omitting them here made the grouped rollup
       // overstate what is still outstanding versus the document list built from the other
@@ -294,6 +353,7 @@ export function buildReceivableGroupedStages(
             { $map: { input: "$directOnly", as: "d", in: { date: "$$d.date", amount: "$$d.amount" } } },
             "$allocReceiptsFlat",
             "$advanceRecoveries",
+            "$advancePayableSettlements",
             "$borrowingRecoveries",
           ],
         },

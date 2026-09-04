@@ -124,7 +124,20 @@ export async function POST(req) {
         { $match: { receivableId: receivable._id, direction: "IN", isCancelled: { $ne: true } } },
         { $group: { _id: null, recovered: { $sum: "$amount" } } },
       ]);
-      const alreadyRecovered = recoveredAgg?.recovered || 0;
+      // Amounts already applied to a payable are a non-cash recovery of this advance and
+      // reduce what's still owed back, exactly like a cash recovery.
+      const [settledAgg] = await Advance.aggregate([
+        {
+          $match: {
+            receivableId: receivable._id,
+            direction: "OUT",
+            isCancelled: { $ne: true },
+            settlesPayableId: { $ne: null },
+          },
+        },
+        { $group: { _id: null, settled: { $sum: { $ifNull: ["$settlesPayableAmount", "$amount"] } } } },
+      ]);
+      const alreadyRecovered = (recoveredAgg?.recovered || 0) + (settledAgg?.settled || 0);
       const pending = Math.max(0, Math.round((receivable.totalAmount - alreadyRecovered) * 100) / 100);
       if (parsedAmount > pending && !allowOverRecovery) {
         return NextResponse.json(

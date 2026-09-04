@@ -6,9 +6,14 @@ import connectDB from "@/lib/db";
 import Advance from "@/models/Advance";
 import Receivable from "@/models/Receivable";
 import Payable from "@/models/Payable";
+import Transactions from "@/models/Transactions";
+import { buildPayableAggregationStages } from "@/lib/payableAggregation";
+import { buildReceivableAggregationStages } from "@/lib/receivableAggregation";
 import { accountsSync } from "@/lib/masterData";
 import { ALL_BRANCHES } from "@/lib/branches";
 import { checkPeriodLock } from "@/lib/periodLock";
+
+const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 
@@ -132,6 +137,7 @@ export async function PATCH(req, { params }) {
               performedAt: new Date(),
             });
             advance.settlesPayableId = null;
+            advance.settlesPayableAmount = null;
             await advance.save({ session: dbSession });
             if (target) {
               target.log.push({
@@ -167,13 +173,69 @@ export async function PATCH(req, { params }) {
         return NextResponse.json({ error: "This payable has been cancelled" }, { status: 400 });
       }
 
+      // How much of the advance to apply. Defaults to the whole advance (legacy behaviour)
+      // when the caller doesn't specify one.
+      const rawAmount = body.amount ?? body.settlesPayableAmount;
+      const settleAmount = rawAmount === undefined || rawAmount === null || rawAmount === ""
+        ? advance.amount
+        : round2(rawAmount);
+
+      if (!(settleAmount > 0)) {
+        return NextResponse.json({ error: "Settlement amount must be greater than zero" }, { status: 400 });
+      }
+      if (settleAmount > round2(advance.amount)) {
+        return NextResponse.json(
+          {
+            error: `Cannot settle more than the advance amount (₹${advance.amount.toLocaleString("en-IN")})`,
+          },
+          { status: 400 },
+        );
+      }
+
+      // Can't apply more than what the payable still owes.
+      const txCollection = Transactions.collection.name;
+      const [payableAgg] = await Payable.aggregate([
+        { $match: { _id: target._id } },
+        ...buildPayableAggregationStages(txCollection),
+      ]);
+      const payablePending = round2(payableAgg?.pending ?? target.totalAmount);
+      if (settleAmount > payablePending) {
+        return NextResponse.json(
+          {
+            error: `Cannot settle more than the payable's outstanding (₹${payablePending.toLocaleString("en-IN")})`,
+          },
+          { status: 400 },
+        );
+      }
+
+      // Can't recover more than the advance's receivable still has outstanding. The advance
+      // isn't linked yet, so this reflects only prior (cash) recoveries.
+      const [receivableAgg] = await Receivable.aggregate([
+        { $match: { _id: advance.receivableId } },
+        ...buildReceivableAggregationStages(txCollection),
+      ]);
+      const receivablePending = round2(
+        receivableAgg?.netPending ?? receivableAgg?.pending ?? advance.amount,
+      );
+      if (settleAmount > receivablePending) {
+        return NextResponse.json(
+          {
+            error: `Only ₹${receivablePending.toLocaleString("en-IN")} is left to recover on this advance — settle that or less`,
+          },
+          { status: 400 },
+        );
+      }
+
       const dbSession = await mongoose.startSession();
       try {
         await dbSession.withTransaction(async () => {
           advance.settlesPayableId = target._id;
+          advance.settlesPayableAmount = settleAmount;
           advance.log.push({
             action: "Note Added",
-            note: note || `Settling against payable ${target._id} (${target.payee?.label || "party"})`,
+            note:
+              note ||
+              `Settling ₹${settleAmount.toLocaleString("en-IN")} against payable ${target._id} (${target.payee?.label || "party"})`,
             performedBy,
             performedAt: new Date(),
           });
@@ -181,7 +243,9 @@ export async function PATCH(req, { params }) {
 
           target.log.push({
             action: "Note Added",
-            note: note || `Settled by advance ${advance._id} (${advance.party.label})`,
+            note:
+              note ||
+              `Settled ₹${settleAmount.toLocaleString("en-IN")} by advance ${advance._id} (${advance.party.label})`,
             performedBy,
             performedAt: new Date(),
           });
@@ -302,13 +366,47 @@ export async function PUT(req, { params }) {
     const performedBy = { name: session.user.name, email: session.user.email };
     const amountChanged = parsedAmount !== advance.amount;
 
+    if (
+      advance.settlesPayableId &&
+      advance.settlesPayableAmount != null &&
+      parsedAmount < round2(advance.settlesPayableAmount)
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            `This advance is settling ₹${advance.settlesPayableAmount.toLocaleString("en-IN")} against a payable. ` +
+            "Unlink or lower that settlement before reducing the advance below it.",
+        },
+        { status: 400 },
+      );
+    }
+
     if (advance.direction === "IN" && amountChanged) {
       const [recoveredAgg] = await Advance.aggregate([
         { $match: { receivableId: advance.receivableId, direction: "IN", isCancelled: { $ne: true }, _id: { $ne: advance._id } } },
         { $group: { _id: null, recovered: { $sum: "$amount" } } },
       ]);
+      const [settledAgg] = await Advance.aggregate([
+        {
+          $match: {
+            receivableId: advance.receivableId,
+            direction: "OUT",
+            isCancelled: { $ne: true },
+            settlesPayableId: { $ne: null },
+          },
+        },
+        { $group: { _id: null, settled: { $sum: { $ifNull: ["$settlesPayableAmount", "$amount"] } } } },
+      ]);
       const receivable = await Receivable.findById(advance.receivableId).lean();
-      const pendingExcludingThis = Math.max(0, Math.round(((receivable?.totalAmount || 0) - (recoveredAgg?.recovered || 0)) * 100) / 100);
+      const pendingExcludingThis = Math.max(
+        0,
+        Math.round(
+          ((receivable?.totalAmount || 0) -
+            (recoveredAgg?.recovered || 0) -
+            (settledAgg?.settled || 0)) *
+            100,
+        ) / 100,
+      );
       if (parsedAmount > pendingExcludingThis && !allowOverRecovery) {
         return NextResponse.json(
           {

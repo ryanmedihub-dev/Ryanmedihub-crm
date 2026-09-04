@@ -15,20 +15,44 @@ export default function SettleAgainstModal({ kind, row, onClose, onSuccess, toas
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState(row[settledField] ? String(row[settledField]) : "");
+  const [amount, setAmount] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  // The advance can only ever apply up to its own value against a payable.
+  const advanceCap = isAdvance ? Number(row.amount) || 0 : 0;
+
   useEffect(() => {
-    fetch(`${listEndpoint}?limit=200`)
-      .then((r) => r.json())
-      .then((data) =>
-        setOptions(
-          (data[isAdvance ? "payables" : "receivables"] || []).filter(
-            (o) => o.pending > 0 && !o.isCancelled,
-          ),
-        ),
-      )
-      .catch(() => setOptions([]))
-      .finally(() => setLoading(false));
+    let cancelled = false;
+    const key = isAdvance ? "payables" : "receivables";
+
+    (async () => {
+      try {
+        const all = [];
+        let page = 1;
+        // Page through every open document so nothing (e.g. a current-month salary or
+        // incentive payable) is dropped by the server's 200-row page cap.
+        for (;;) {
+          const res = await fetch(`${listEndpoint}?outstanding=true&limit=200&page=${page}`);
+          const data = await res.json();
+          const batch = data[key] || [];
+          all.push(...batch);
+          const total = data.total || all.length;
+          if (batch.length === 0 || all.length >= total || page >= 25) break;
+          page += 1;
+        }
+        if (!cancelled) {
+          setOptions(all.filter((o) => o.pending > 0 && !o.isCancelled));
+        }
+      } catch {
+        if (!cancelled) setOptions([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [listEndpoint, isAdvance]);
 
   const partyLabel = (opt) => (isAdvance ? opt.payee?.label : opt.payer?.label) || "—";
@@ -45,17 +69,59 @@ export default function SettleAgainstModal({ kind, row, onClose, onSuccess, toas
 
   const alreadySettling = !!row[settledField];
 
+  const selectedOption = useMemo(
+    () => options.find((o) => o._id === selectedId) || null,
+    [options, selectedId],
+  );
+
+  // Default the amount to the most that can sensibly be applied: the smaller of what the
+  // advance is worth and what the picked payable still owes.
+  const maxSettle = isAdvance
+    ? Math.min(advanceCap, selectedOption ? Number(selectedOption.pending) || 0 : advanceCap)
+    : 0;
+
+  useEffect(() => {
+    if (!isAdvance) return;
+    if (!selectedOption) {
+      setAmount("");
+      return;
+    }
+    setAmount(String(Math.min(advanceCap, Number(selectedOption.pending) || 0)));
+  }, [selectedOption, isAdvance, advanceCap]);
+
   const handleSettle = async () => {
     if (!selectedId) {
       toast.error(`Select a ${targetLabel} to settle against`);
       return;
+    }
+    let settleAmount;
+    if (isAdvance) {
+      settleAmount = Math.round((Number(amount) || 0) * 100) / 100;
+      if (!(settleAmount > 0)) {
+        toast.error("Enter how much of the advance to settle");
+        return;
+      }
+      if (settleAmount > advanceCap) {
+        toast.error(`Can't settle more than the advance (${formatCurrency(advanceCap)})`);
+        return;
+      }
+      if (selectedOption && settleAmount > (Number(selectedOption.pending) || 0)) {
+        toast.error(
+          `Can't settle more than the payable's outstanding (${formatCurrency(selectedOption.pending)})`,
+        );
+        return;
+      }
     }
     setSubmitting(true);
     try {
       const res = await fetch(endpoint, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "settle", [settledField]: selectedId }),
+        body: JSON.stringify({
+          action: "settle",
+          [settledField]: selectedId,
+          ...(isAdvance ? { amount: settleAmount } : {}),
+        }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -180,6 +246,37 @@ export default function SettleAgainstModal({ kind, row, onClose, onSuccess, toas
                   ))}
                 </div>
               )}
+
+              {isAdvance && selectedOption && (
+                <div className="space-y-1.5 pt-1">
+                  <label className="block text-xs font-semibold text-gray-600">
+                    Amount to settle against this payable
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">₹</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      max={maxSettle}
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      className="w-full pl-7 pr-3 py-2 border border-gray-200 rounded-lg text-sm"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-400">
+                    Advance is {formatCurrency(advanceCap)}. This much nets off both the payable and
+                    what {row.party?.label || "the party"} owes back — the rest stays recoverable.
+                    <button
+                      type="button"
+                      onClick={() => setAmount(String(maxSettle))}
+                      className="ml-1 font-semibold text-indigo-600 hover:underline"
+                    >
+                      Use {formatCurrency(maxSettle)}
+                    </button>
+                  </p>
+                </div>
+              )}
             </>
           )}
         </div>
@@ -194,7 +291,11 @@ export default function SettleAgainstModal({ kind, row, onClose, onSuccess, toas
             </button>
             <button
               onClick={handleSettle}
-              disabled={submitting || !selectedId}
+              disabled={
+                submitting ||
+                !selectedId ||
+                (isAdvance && !((Number(amount) || 0) > 0 && (Number(amount) || 0) <= maxSettle))
+              }
               className="flex-1 px-4 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Link Settlement"}

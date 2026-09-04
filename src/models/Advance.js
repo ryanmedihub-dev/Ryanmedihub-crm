@@ -43,6 +43,11 @@ const advanceSchema = new mongoose.Schema(
       index: true,
     },
 
+    // How much of this advance is applied to settlesPayableId — a non-cash contra
+    // settlement that nets against BOTH the payable's outstanding and this advance's
+    // own receivable. null on legacy rows / when unset: treat as the full `amount`.
+    settlesPayableAmount: { type: Number, default: null, min: 0 },
+
     branch: { type: String, enum: ALL_BRANCHES, default: null, index: true },
 
     reference: String,

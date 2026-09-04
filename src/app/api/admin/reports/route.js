@@ -1297,7 +1297,7 @@ async function generatePayablesAllReport(filters) {
       .select("payableId date amount account reference remarks branch")
       .lean(),
     Advance.find({ settlesPayableId: { $in: ids }, direction: "OUT", isCancelled: { $ne: true } })
-      .select("settlesPayableId date amount account reference remarks branch")
+      .select("settlesPayableId settlesPayableAmount date amount account reference remarks branch")
       .lean(),
   ]);
 
@@ -1334,7 +1334,7 @@ async function generatePayablesAllReport(filters) {
     push(a.settlesPayableId, {
       source: "Advance applied",
       date: a.date,
-      amount: a.amount || 0,
+      amount: a.settlesPayableAmount ?? a.amount ?? 0,
       method: "advance",
       account: a.account || "",
       reference: a.reference || "",
@@ -1460,7 +1460,7 @@ async function generateReceivablesAllReport(filters) {
   const ids = receivables.map((r) => r._id);
   const idStrSet = new Set(ids.map(String));
 
-  const [directTx, splitTx, advanceIn, borrowingIn] = await Promise.all([
+  const [directTx, splitTx, advanceIn, borrowingIn, advancePayableOut] = await Promise.all([
     Transactions.find({
       receivableId: { $in: ids },
       costType: "Revenue",
@@ -1482,6 +1482,14 @@ async function generateReceivablesAllReport(filters) {
       .lean(),
     Borrowing.find({ settlesReceivableId: { $in: ids }, direction: "IN", isCancelled: { $ne: true } })
       .select("settlesReceivableId date amount account reference remarks branch")
+      .lean(),
+    Advance.find({
+      receivableId: { $in: ids },
+      direction: "OUT",
+      isCancelled: { $ne: true },
+      settlesPayableId: { $ne: null },
+    })
+      .select("receivableId settlesPayableId settlesPayableAmount date amount account reference remarks branch")
       .lean(),
   ]);
 
@@ -1537,6 +1545,17 @@ async function generateReceivablesAllReport(filters) {
       account: b.account || "",
       reference: b.reference || "",
       remarks: b.remarks || "",
+    }),
+  );
+  advancePayableOut.forEach((a) =>
+    push(a.receivableId, {
+      source: "Advance applied to payable",
+      date: a.date,
+      amount: a.settlesPayableAmount ?? a.amount ?? 0,
+      method: "advance→payable",
+      account: a.account || "",
+      reference: a.reference || "",
+      remarks: a.remarks || "",
     }),
   );
 

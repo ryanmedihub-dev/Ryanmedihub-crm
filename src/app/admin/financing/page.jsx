@@ -633,6 +633,11 @@ function AdvancesTab({ branch, includeCancelled, toast, onTotalsChange }) {
     { key: "branch", label: "Branch" },
     { key: "reference", label: "Reference" },
     { key: "settlesPayableId", label: "Settles Payable", csv: (r) => r.settlesPayableId || "" },
+    {
+      key: "settlesPayableAmount",
+      label: "Settled Amount",
+      csv: (r) => (r.settlesPayableId ? (r.settlesPayableAmount ?? r.amount) : ""),
+    },
     { key: "status", label: "Status", csv: (r) => (r.isCancelled ? "Cancelled" : "Active") },
   ];
 
@@ -662,7 +667,7 @@ function AdvancesTab({ branch, includeCancelled, toast, onTotalsChange }) {
       render: (r) =>
         r.settlesPayableId ? (
           <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-teal-700">
-            <Link2 className="w-3 h-3" /> Settling a payable
+            <Link2 className="w-3 h-3" /> Settling {formatCurrency(r.settlesPayableAmount ?? r.amount)}
           </span>
         ) : (
           "—"

@@ -38,6 +38,7 @@ export async function GET(request) {
     const search = searchParams.get("search") || "";
     const includeCancelled = searchParams.get("includeCancelled") === "true";
     const ageingBucket = searchParams.get("ageingBucket") || "";
+    const outstandingOnly = searchParams.get("outstanding") === "true";
     const sort = searchParams.get("sort") || "";
 
     const match = {};
@@ -74,6 +75,7 @@ export async function GET(request) {
     const txCollection = Transactions.collection.name;
     const basePipeline = [{ $match: match }, ...buildReceivableAggregationStages(txCollection)];
     if (status) basePipeline.push({ $match: { status } });
+    if (outstandingOnly) basePipeline.push({ $match: { pending: { $gt: 0 } } });
     if (ageingBucket) basePipeline.push({ $match: { ageingBucket, pending: { $gt: 0 } } });
     basePipeline.push({ $sort: sort === "createdAt" ? { createdAt: -1 } : AGEING_SORT });
 

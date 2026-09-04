@@ -106,7 +106,10 @@ export default function FinancingTransactions({ kind, from, to, branch = "" }) {
       render: (r) =>
         r[cfg.settlesField] ? (
           <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-teal-700">
-            <Link2 className="w-3 h-3" /> {cfg.settlesLabel}
+            <Link2 className="w-3 h-3" />{" "}
+            {kind === "advance" && r.settlesPayableAmount != null
+              ? `Settling ${formatCurrency(r.settlesPayableAmount)}`
+              : cfg.settlesLabel}
           </span>
         ) : (
           "—"

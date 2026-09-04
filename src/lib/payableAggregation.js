@@ -65,7 +65,13 @@ export function buildPayableAggregationStages(
               },
             },
           },
-          { $group: { _id: null, paid: { $sum: "$amount" }, paymentCount: { $sum: 1 } } },
+          {
+            $group: {
+              _id: null,
+              paid: { $sum: { $ifNull: ["$settlesPayableAmount", "$amount"] } },
+              paymentCount: { $sum: 1 },
+            },
+          },
         ],
         as: "advanceSettlementAgg",
       },
@@ -211,7 +217,7 @@ export function buildPayableGroupedStages(txCollectionName, { level, category, s
               },
             },
           },
-          { $project: { amount: 1, date: 1 } },
+          { $project: { amount: { $ifNull: ["$settlesPayableAmount", "$amount"] }, date: 1 } },
         ],
         as: "advancePayments",
       },
