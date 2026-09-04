@@ -66,6 +66,9 @@ export default function DrillDownTable({
     : key !== "receivables";
   const isGrouped = isDocuments || sectionConfig.mode === "grouped" || key === "payables" || key === "receivables";
   const deepestLevel = isDocuments ? 4 : levels;
+  // "party" grouping collapses the category/sub-type levels: level 1 lists parties, then
+  // straight to that party's documents (level 3), then their transactions (level 4).
+  const groupByParty = sectionConfig.groupBy === "party";
 
   const [internalScope, setInternalScope] = useState({ branch: "", dateFrom: "", dateTo: "", party: "", status: "", ageing: "" });
   const isControlled = !!controlledScope;
@@ -131,7 +134,9 @@ export default function DrillDownTable({
     try {
       if (isGrouped) {
         if (drill.level === 1) {
-          const json = await fetch(`${apiBase}/grouped?level=1&${qs()}`).then((r) => r.json());
+          const json = await fetch(
+            `${apiBase}/grouped?level=1&${groupByParty ? "groupBy=party&" : ""}${qs()}`,
+          ).then((r) => r.json());
           setRows(json.rows || []);
           setMeta({ total: (json.rows || []).length, page: 1, limit: 9999 });
         } else if (drill.level === 2) {
@@ -142,7 +147,9 @@ export default function DrillDownTable({
           setMeta({ total: (json.rows || []).length, page: 1, limit: 9999 });
         } else if (drill.level === 3 && isDocuments) {
           const json = await fetch(
-            `${apiBase}/grouped?level=3&category=${encodeURIComponent(drill.headKey)}&subType=${encodeURIComponent(
+            `${apiBase}/grouped?level=3&${groupByParty ? "groupBy=party&" : ""}category=${encodeURIComponent(
+              drill.headKey,
+            )}&subType=${encodeURIComponent(
               drill.subKey || "",
             )}&page=${page}&${qs({ party: scope.party, status: scope.status, ageing: scope.ageing })}`,
           ).then((r) => r.json());
@@ -257,14 +264,16 @@ export default function DrillDownTable({
     if (drill.level === 4) {
       setDrill({ level: 3, headKey: drill.headKey, headLabel: drill.headLabel, subKey: drill.subKey, subLabel: drill.subLabel });
     } else if (drill.level === 3) {
-      setDrill({ level: 2, headKey: drill.headKey, headLabel: drill.headLabel });
+      setDrill(groupByParty ? { level: 1 } : { level: 2, headKey: drill.headKey, headLabel: drill.headLabel });
     } else {
       setDrill({ level: 1 });
     }
   };
 
   const drillInto = (row) => {
-    if (drill.level === 1) {
+    if (drill.level === 1 && groupByParty && isDocuments) {
+      setDrill({ level: 3, headKey: row.key, headLabel: row.label, subKey: "", subLabel: "" });
+    } else if (drill.level === 1) {
       setDrill({ level: 2, headKey: row.key, headLabel: row.label });
     } else if (drill.level === 2 && deepestLevel >= 3) {
       setDrill({
@@ -289,8 +298,9 @@ export default function DrillDownTable({
     }
   };
 
-  const showVoucherButton = !sectionConfig.hideCreateButtons && (key === "payables" || key === "receivables");
-  const showTransactionButton = !sectionConfig.hideCreateButtons && key !== "suspense";
+  const showVoucherButton =
+    !sectionConfig.hideCreateButtons && !groupByParty && (key === "payables" || key === "receivables");
+  const showTransactionButton = !sectionConfig.hideCreateButtons && !groupByParty && key !== "suspense";
 
   const voucherHref = (() => {
     if (key === "payables") {
@@ -511,7 +521,7 @@ export default function DrillDownTable({
   };
 
   const groupColumns = [
-    { key: "label", label: "Category" },
+    { key: "label", label: groupByParty ? "Party" : "Category" },
     { key: "opening", label: columnLabels.opening, numeric: true },
     { key: "movement", label: columnLabels.movement, numeric: true },
     { key: "settled", label: columnLabels.settled, numeric: true },
@@ -667,13 +677,15 @@ export default function DrillDownTable({
         <div className="flex items-center gap-2 flex-wrap">
           {atDocuments && (
             <>
-              <input
-                type="text"
-                value={scope.party}
-                onChange={(e) => updateScope({ party: e.target.value })}
-                placeholder="Search party…"
-                className="px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs w-32"
-              />
+              {!groupByParty && (
+                <input
+                  type="text"
+                  value={scope.party}
+                  onChange={(e) => updateScope({ party: e.target.value })}
+                  placeholder="Search party…"
+                  className="px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs w-32"
+                />
+              )}
               <select
                 value={scope.status}
                 onChange={(e) => updateScope({ status: e.target.value })}

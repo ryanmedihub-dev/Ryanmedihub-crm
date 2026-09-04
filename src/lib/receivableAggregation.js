@@ -233,10 +233,14 @@ export function buildReceivableGroupedStages(
   } = {},
 ) {
   const isVendor = groupBy === "vendor";
+  // "party" groups every receivable by its payer's label (patient, vendor, clinic — any
+  // kind), so the Assets page can show a Monika / Muskan / … breakdown instead of the
+  // revenue-category one.
+  const isParty = groupBy === "party";
   const match = { isCancelled: { $ne: true } };
   if (isVendor) match["payer.kind"] = "VENDOR";
   if (branch) match.branch = branch;
-  if (!isVendor) {
+  if (!isVendor && !isParty) {
     if (level !== 1 && category) match.revenueCategory = category;
     if (level === 2 && subType) match[subTypeField] = subType;
   }
@@ -253,9 +257,11 @@ export function buildReceivableGroupedStages(
 
   const groupId = isVendor
     ? { bucket: "$payer.refId" }
-    : level === 1
-      ? { bucket: { $ifNull: ["$revenueCategory", "Uncategorised"] } }
-      : { bucket: { $ifNull: [`$${subTypeField}`, "Uncategorised"] } };
+    : isParty
+      ? { bucket: { $ifNull: ["$payer.label", "Unknown"] } }
+      : level === 1
+        ? { bucket: { $ifNull: ["$revenueCategory", "Uncategorised"] } }
+        : { bucket: { $ifNull: [`$${subTypeField}`, "Uncategorised"] } };
 
   return [
     { $match: match },

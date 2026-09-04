@@ -210,6 +210,7 @@ function BorrowingsTab({ branch, includeCancelled, toast, onTotalsChange }) {
   const [rowsError, setRowsError] = useState("");
   const [rowsSearch, setRowsSearch] = useState("");
   const [directionFilter, setDirectionFilter] = useState("");
+  const [view, setView] = useState("ledger");
 
   const loadRows = useCallback(
     async (page = 1) => {
@@ -370,6 +371,26 @@ function BorrowingsTab({ branch, includeCancelled, toast, onTotalsChange }) {
         </button>
       </div>
 
+      <div className="inline-flex rounded-xl border border-gray-200 p-1 bg-white shadow-sm mt-4">
+        <button
+          onClick={() => setView("ledger")}
+          className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+            view === "ledger" ? "bg-violet-600 text-white" : "text-gray-600 hover:bg-gray-50"
+          }`}
+        >
+          Loans
+        </button>
+        <button
+          onClick={() => setView("transactions")}
+          className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+            view === "transactions" ? "bg-violet-600 text-white" : "text-gray-600 hover:bg-gray-50"
+          }`}
+        >
+          Transactions
+        </button>
+      </div>
+
+      {view === "ledger" && (
       <section className="space-y-3 mt-4">
         <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide">Loans</h2>
         {loansError ? (
@@ -413,8 +434,10 @@ function BorrowingsTab({ branch, includeCancelled, toast, onTotalsChange }) {
           />
         )}
       </section>
+      )}
 
-      <section className="space-y-3 mt-6">
+      {view === "transactions" && (
+      <section className="space-y-3 mt-4">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide">Borrowing Transactions</h2>
           <select value={directionFilter} onChange={(e) => setDirectionFilter(e.target.value)} className="px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs bg-white">
@@ -456,6 +479,7 @@ function BorrowingsTab({ branch, includeCancelled, toast, onTotalsChange }) {
           />
         )}
       </section>
+      )}
 
       {borrowModal && (
         <RecordBorrowingModal open mode={borrowModal.mode} payable={borrowModal.payable} toast={toast} onClose={() => setBorrowModal(null)} onSuccess={handleBorrowSuccess} />
@@ -534,6 +558,7 @@ function AdvancesTab({ branch, includeCancelled, toast, onTotalsChange }) {
   const [rowsError, setRowsError] = useState("");
   const [rowsSearch, setRowsSearch] = useState("");
   const [directionFilter, setDirectionFilter] = useState("");
+  const [view, setView] = useState("ledger");
 
   const loadRows = useCallback(
     async (page = 1) => {
@@ -699,6 +724,26 @@ function AdvancesTab({ branch, includeCancelled, toast, onTotalsChange }) {
         </button>
       </div>
 
+      <div className="inline-flex rounded-xl border border-gray-200 p-1 bg-white shadow-sm mt-4">
+        <button
+          onClick={() => setView("ledger")}
+          className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+            view === "ledger" ? "bg-teal-600 text-white" : "text-gray-600 hover:bg-gray-50"
+          }`}
+        >
+          Advances
+        </button>
+        <button
+          onClick={() => setView("transactions")}
+          className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+            view === "transactions" ? "bg-teal-600 text-white" : "text-gray-600 hover:bg-gray-50"
+          }`}
+        >
+          Transactions
+        </button>
+      </div>
+
+      {view === "ledger" && (
       <section className="space-y-3 mt-4">
         <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide">Advances</h2>
         {advancesError ? (
@@ -742,8 +787,10 @@ function AdvancesTab({ branch, includeCancelled, toast, onTotalsChange }) {
           />
         )}
       </section>
+      )}
 
-      <section className="space-y-3 mt-6">
+      {view === "transactions" && (
+      <section className="space-y-3 mt-4">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide">Advance Transactions</h2>
           <select value={directionFilter} onChange={(e) => setDirectionFilter(e.target.value)} className="px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs bg-white">
@@ -785,6 +832,7 @@ function AdvancesTab({ branch, includeCancelled, toast, onTotalsChange }) {
           />
         )}
       </section>
+      )}
 
       {advanceModal && (
         <RecordAdvanceModal open mode={advanceModal.mode} receivable={advanceModal.receivable} toast={toast} onClose={() => setAdvanceModal(null)} onSuccess={handleAdvanceSuccess} />

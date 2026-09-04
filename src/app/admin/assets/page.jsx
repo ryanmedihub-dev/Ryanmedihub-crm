@@ -3,14 +3,12 @@
 import { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { Landmark, Banknote, HandCoins, AlertTriangle, CheckCircle2, Clock, Download, Loader2, X, ArrowUpRight } from "lucide-react";
+import { Landmark, Banknote, HandCoins, AlertTriangle, CheckCircle2, Clock, Download, Loader2 } from "lucide-react";
 import DrillDownTable from "@/components/finance/DrillDownTable";
 import LoanSettlementModal from "@/components/finance/LoanSettlementModal";
 import CancelLoanModal from "@/components/finance/CancelLoanModal";
 import LoanRowActions from "@/components/finance/LoanRowActions";
 import RecordAdvanceModal from "@/components/finance/RecordAdvanceModal";
-import AdvanceDocumentActions from "@/components/finance/AdvanceDocumentActions";
-import DocumentHistory from "@/components/finance/DocumentHistory";
 import MetricCard from "@/components/MetricCard";
 import { formatCurrency, formatDate } from "@/lib/financeUI";
 import { AGEING_BUCKETS } from "@/lib/ageing";
@@ -63,35 +61,9 @@ function AssetsPageInner() {
   const [exporting, setExporting] = useState(false);
 
   const [advanceModal, setAdvanceModal] = useState(null);
-  const [advancesRefreshKey, setAdvancesRefreshKey] = useState(0);
-  const [advanceHistoryDoc, setAdvanceHistoryDoc] = useState(null);
-  const [advanceHistoryRows, setAdvanceHistoryRows] = useState([]);
-  const [advanceHistoryLoading, setAdvanceHistoryLoading] = useState(false);
-
-  const openAdvanceHistory = async (row) => {
-    setAdvanceHistoryDoc(row);
-    setAdvanceHistoryLoading(true);
-    try {
-      const res = await fetch(`/api/advances/grouped?level=4&documentId=${row._id}&limit=200`);
-      const data = await res.json();
-      setAdvanceHistoryRows(
-        (data.rows || []).map((r) => ({
-          _id: r._id,
-          amount: r.amount,
-          date: r.date,
-          method: `${r.direction === "IN" ? "Recovered" : "Paid out"} · ${r.account}`,
-          paymentId: r.reference,
-          createdBy: r.createdBy,
-        })),
-      );
-    } finally {
-      setAdvanceHistoryLoading(false);
-    }
-  };
 
   const handleAdvanceSuccess = () => {
     setAdvanceModal(null);
-    setAdvancesRefreshKey((k) => k + 1);
     fetchHeaderTotals();
   };
 
@@ -143,9 +115,10 @@ function AssetsPageInner() {
       return;
     }
     const head = searchParams.get("head") || "";
-    const sub = searchParams.get("sub") || "";
     const doc = searchParams.get("doc") || "";
 
+    // Receivables are grouped by party — a deep link's `head` is a payer label and drops
+    // straight to that party's documents (level 3); there is no category/sub level.
     if (doc) {
       fetch(`/api/receivables/${doc}`)
         .then((r) => r.json())
@@ -157,17 +130,15 @@ function AssetsPageInner() {
           }
           setReceivablesInitialDrill({
             level: 3,
-            headKey: rec.revenueCategory,
-            headLabel: rec.revenueCategory,
-            subKey: rec.purpose || "",
-            subLabel: rec.purpose || "",
+            headKey: rec.payer?.label || "",
+            headLabel: rec.payer?.label || "",
+            subKey: "",
+            subLabel: "",
           });
         })
         .catch(() => setReceivablesInitialDrill(null));
-    } else if (sub) {
-      setReceivablesInitialDrill({ level: 3, headKey: head, headLabel: head, subKey: sub, subLabel: sub });
     } else if (head) {
-      setReceivablesInitialDrill({ level: 2, headKey: head, headLabel: head });
+      setReceivablesInitialDrill({ level: 3, headKey: head, headLabel: head, subKey: "", subLabel: "" });
     } else {
       setReceivablesInitialDrill(null);
     }
@@ -511,6 +482,7 @@ function AssetsPageInner() {
                 sectionConfig={{
                   key: "receivables",
                   mode: "documents",
+                  groupBy: "party",
                   apiBase: "/api/receivables",
                   title: "Receivables",
                   columnLabels: {
@@ -528,49 +500,6 @@ function AssetsPageInner() {
               />
             )}
           </section>
-
-          <section className="space-y-3">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <HandCoins className="w-4 h-4 text-teal-500" />
-                <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide">Advances</h2>
-              </div>
-              <Link
-                href="/admin/financing?tab=advances"
-                className="inline-flex items-center gap-1 text-xs font-semibold text-teal-700 hover:text-teal-800"
-              >
-                Manage all advances <ArrowUpRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-            <DrillDownTable
-              key={advancesRefreshKey}
-              levels={3}
-              sectionConfig={{
-                key: "advances",
-                mode: "documents",
-                documentShape: "receivable",
-                hideCreateButtons: true,
-                apiBase: "/api/advances",
-                title: "Advances",
-                columnLabels: {
-                  opening: "Opening owed to us",
-                  movement: "Advanced",
-                  settled: "Recovered",
-                  closing: "Still owed to us",
-                },
-              }}
-              renderDocumentActions={(row) => (
-                <AdvanceDocumentActions
-                  row={row}
-                  onRecover={(r) => setAdvanceModal({ mode: "IN", receivable: r })}
-                  onFurther={(r) => setAdvanceModal({ mode: "OUT", receivable: r })}
-                  onHistory={openAdvanceHistory}
-                />
-              )}
-              scope={scope}
-              onScopeChange={setScope}
-            />
-          </section>
         </div>
       </main>
 
@@ -583,29 +512,6 @@ function AssetsPageInner() {
           onClose={() => setAdvanceModal(null)}
           onSuccess={handleAdvanceSuccess}
         />
-      )}
-
-      {advanceHistoryDoc && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-5 border-b border-gray-100 sticky top-0 bg-white">
-              <h3 className="text-lg font-bold text-gray-900">
-                History — {advanceHistoryDoc.payer?.label || "Advance"}
-              </h3>
-              <button onClick={() => setAdvanceHistoryDoc(null)} className="p-1.5 hover:bg-gray-100 rounded-lg">
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
-            </div>
-            <div className="p-5">
-              <DocumentHistory
-                doc={advanceHistoryDoc}
-                kind="receivable"
-                transactions={advanceHistoryRows}
-                loading={advanceHistoryLoading}
-              />
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );

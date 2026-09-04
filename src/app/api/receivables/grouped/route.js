@@ -27,7 +27,10 @@ export async function GET(request) {
     const level = Math.min(4, Math.max(1, parseInt(searchParams.get("level") || "1")));
     const category = searchParams.get("category") || "";
     const subType = searchParams.get("subType") || "";
-    const groupBy = searchParams.get("groupBy") === "vendor" ? "vendor" : "category";
+    const groupByParam = searchParams.get("groupBy");
+    const groupBy =
+      groupByParam === "vendor" ? "vendor" : groupByParam === "party" ? "party" : "category";
+    const isParty = groupBy === "party";
     const branchFilterObj = resolveBranchFilter(session, searchParams.get("branch") || "");
     const branch = typeof branchFilterObj.branch === "string" ? branchFilterObj.branch : "";
     const from = searchParams.get("from") || "";
@@ -144,13 +147,22 @@ export async function GET(request) {
     }
 
     if (!category) {
-      return NextResponse.json({ error: "category is required at level 3" }, { status: 400 });
+      return NextResponse.json(
+        { error: isParty ? "party is required at level 3" : "category is required at level 3" },
+        { status: 400 },
+      );
     }
-    const match = { revenueCategory: category };
+    const match = {};
     match.isCancelled = status === "Cancelled" ? true : { $ne: true };
-    if (subType) match.purpose = subType;
+    if (isParty) {
+      // `category` carries the exact payer label when grouping by party.
+      match["payer.label"] = category;
+    } else {
+      match.revenueCategory = category;
+      if (subType) match.purpose = subType;
+      if (party) match["payer.label"] = { $regex: party, $options: "i" };
+    }
     if (branch) match.branch = branch;
-    if (party) match["payer.label"] = { $regex: party, $options: "i" };
 
     const stages = [
       { $match: match },
