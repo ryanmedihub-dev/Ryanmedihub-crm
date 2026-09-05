@@ -9,6 +9,7 @@ import { accountsSync } from "@/lib/masterData";
 import { ALL_BRANCHES } from "@/lib/branches";
 import { ADVANCE_TYPES, ADVANCE_REVENUE_CATEGORY } from "@/constants/advanceTypes";
 import { checkPeriodLock } from "@/lib/periodLock";
+import { settledTotalExpr } from "@/lib/advanceSettlements";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 const REFID_REQUIRED_KINDS = ["EMPLOYEE", "VENDOR", "PATIENT"];
@@ -127,15 +128,8 @@ export async function POST(req) {
       // Amounts already applied to a payable are a non-cash recovery of this advance and
       // reduce what's still owed back, exactly like a cash recovery.
       const [settledAgg] = await Advance.aggregate([
-        {
-          $match: {
-            receivableId: receivable._id,
-            direction: "OUT",
-            isCancelled: { $ne: true },
-            settlesPayableId: { $ne: null },
-          },
-        },
-        { $group: { _id: null, settled: { $sum: { $ifNull: ["$settlesPayableAmount", "$amount"] } } } },
+        { $match: { receivableId: receivable._id, direction: "OUT", isCancelled: { $ne: true } } },
+        { $group: { _id: null, settled: { $sum: settledTotalExpr } } },
       ]);
       const alreadyRecovered = (recoveredAgg?.recovered || 0) + (settledAgg?.settled || 0);
       const pending = Math.max(0, Math.round((receivable.totalAmount - alreadyRecovered) * 100) / 100);

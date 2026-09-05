@@ -36,6 +36,10 @@ const advanceSchema = new mongoose.Schema(
       index: true,
     },
 
+    // Deprecated single-payable settlement pair — kept only so pre-existing settled
+    // advances keep reading correctly. Every settle action now writes to `settlements`
+    // below instead (folding one of these into it first if present) — see
+    // src/lib/advanceSettlements.js, which every consumer of either shape goes through.
     settlesPayableId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Payable",
@@ -47,6 +51,25 @@ const advanceSchema = new mongoose.Schema(
     // settlement that nets against BOTH the payable's outstanding and this advance's
     // own receivable. null on legacy rows / when unset: treat as the full `amount`.
     settlesPayableAmount: { type: Number, default: null, min: 0 },
+
+    // One advance can now net against several payables (e.g. a 10k advance split 2k/3k/1k/2k
+    // across four salary payables) — each line nets against BOTH that payable's outstanding
+    // and this advance's own receivable, exactly like settlesPayableAmount did for one.
+    settlements: {
+      type: [
+        new mongoose.Schema(
+          {
+            payableId: { type: mongoose.Schema.Types.ObjectId, ref: "Payable", required: true },
+            amount: { type: Number, required: true, min: 0.01 },
+            note: String,
+            settledAt: { type: Date, default: Date.now },
+            settledBy: { name: String, email: String },
+          },
+          { _id: true },
+        ),
+      ],
+      default: [],
+    },
 
     branch: { type: String, enum: ALL_BRANCHES, default: null, index: true },
 
@@ -96,6 +119,9 @@ advanceSchema.index(
   { settlesPayableId: 1, isCancelled: 1, direction: 1 },
   { partialFilterExpression: { settlesPayableId: { $type: "objectId" } } },
 );
+
+// Same lookup cost for the multi-settlement array's per-line payableId.
+advanceSchema.index({ "settlements.payableId": 1, isCancelled: 1, direction: 1 });
 
 export const ADVANCE_PARTY_KINDS = PARTY_KINDS;
 

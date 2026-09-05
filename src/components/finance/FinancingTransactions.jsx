@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { AlertTriangle, Link2 } from "lucide-react";
 import AccountingTable from "@/components/finance/AccountingTable";
 import { formatCurrency, formatDate, StatusBadge } from "@/lib/financeUI";
+import { settlementLinesFor } from "@/lib/advanceSettlements";
 
 /**
  * Read-only listing of advance or borrowing transactions for a period — the same
@@ -103,17 +104,28 @@ export default function FinancingTransactions({ kind, from, to, branch = "" }) {
     {
       key: "settlement",
       label: "Settlement",
-      render: (r) =>
-        r[cfg.settlesField] ? (
+      render: (r) => {
+        if (kind !== "advance") {
+          return r[cfg.settlesField] ? (
+            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-teal-700">
+              <Link2 className="w-3 h-3" /> {cfg.settlesLabel}
+            </span>
+          ) : (
+            "—"
+          );
+        }
+        const lines = settlementLinesFor(r);
+        if (lines.length === 0) return "—";
+        const total = lines.reduce((sum, l) => sum + (l.amount || 0), 0);
+        return (
           <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-teal-700">
             <Link2 className="w-3 h-3" />{" "}
-            {kind === "advance" && r.settlesPayableAmount != null
-              ? `Settling ${formatCurrency(r.settlesPayableAmount)}`
-              : cfg.settlesLabel}
+            {lines.length > 1
+              ? `Settling ${lines.length} payables · ${formatCurrency(total)}`
+              : `Settling ${formatCurrency(total)}`}
           </span>
-        ) : (
-          "—"
-        ),
+        );
+      },
     },
     {
       key: "status",

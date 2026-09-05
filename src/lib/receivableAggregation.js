@@ -1,5 +1,6 @@
 import { buildAgeingStages } from "@/lib/ageing";
 import { unsettledMethodsSync } from "@/lib/masterData";
+import { settledTotalExpr } from "@/lib/advanceSettlements";
 
 // A receivable's receipts can arrive two ways: a transaction whose own `receivableId` field
 // points straight at it, or a transaction split across several receivables via
@@ -139,7 +140,26 @@ export function buildReceivableAggregationStages(
                   { $eq: ["$receivableId", "$$receivableId"] },
                   { $eq: ["$direction", "OUT"] },
                   { $ne: ["$isCancelled", true] },
+                ],
+              },
+            },
+          },
+          {
+            // A doc may now settle several payables (settlements array) — sum ALL of them
+            // for this advance's own receivable, since every line nets down what it owes back
+            // regardless of which payable each individual line targets.
+            $project: {
+              amt: settledTotalExpr,
+              hasSettlement: {
+                $or: [
                   { $ne: [{ $ifNull: ["$settlesPayableId", null] }, null] },
+                  { $gt: [{ $size: { $ifNull: ["$settlements", []] } }, 0] },
+                ],
+              },
+              lineCount: {
+                $add: [
+                  { $cond: [{ $ne: [{ $ifNull: ["$settlesPayableId", null] }, null] }, 1, 0] },
+                  { $size: { $ifNull: ["$settlements", []] } },
                 ],
               },
             },
@@ -147,8 +167,8 @@ export function buildReceivableAggregationStages(
           {
             $group: {
               _id: null,
-              received: { $sum: { $ifNull: ["$settlesPayableAmount", "$amount"] } },
-              receiptCount: { $sum: 1 },
+              received: { $sum: "$amt" },
+              receiptCount: { $sum: "$lineCount" },
             },
           },
         ],
@@ -316,12 +336,32 @@ export function buildReceivableGroupedStages(
                   { $eq: ["$receivableId", "$$receivableId"] },
                   { $eq: ["$direction", "OUT"] },
                   { $ne: ["$isCancelled", true] },
-                  { $ne: [{ $ifNull: ["$settlesPayableId", null] }, null] },
                 ],
               },
             },
           },
-          { $project: { date: 1, amount: { $ifNull: ["$settlesPayableAmount", "$amount"] } } },
+          {
+            // Flatten to one {date, amount} row per settlement line (legacy pair, if any,
+            // plus every settlements[] entry) — a doc settling several payables previously
+            // collapsed to a single row here, undercounting the movement.
+            $project: {
+              date: 1,
+              lines: {
+                $concatArrays: [
+                  {
+                    $cond: [
+                      { $ne: [{ $ifNull: ["$settlesPayableId", null] }, null] },
+                      [{ $ifNull: ["$settlesPayableAmount", "$amount"] }],
+                      [],
+                    ],
+                  },
+                  { $map: { input: { $ifNull: ["$settlements", []] }, as: "s", in: "$$s.amount" } },
+                ],
+              },
+            },
+          },
+          { $unwind: "$lines" },
+          { $project: { date: 1, amount: "$lines" } },
         ],
         as: "advancePayableSettlements",
       },

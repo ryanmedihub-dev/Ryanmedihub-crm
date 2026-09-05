@@ -468,10 +468,7 @@ function PageHeader({
             <SectionLabel>Finance / Transactions</SectionLabel>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-950">
-            {activeCategory === "ALL" ? "Transactions" : category.label}
-          </h1>
-
+          
           <p className="mt-1 text-sm text-slate-500">
             Review, manage and track your financial activity.
           </p>
@@ -1569,6 +1566,7 @@ function MobileTransactionCard({
   onDelete,
   onReverse,
   onBill,
+  onEdit,
   linkedInfo,
   linkedLoading,
 }) {
@@ -1669,6 +1667,14 @@ function MobileTransactionCard({
             </button>
 
             <button
+              onClick={() => onEdit(row)}
+              className="p-2 rounded-lg text-slate-500 hover:bg-indigo-50 hover:text-indigo-600"
+              title="Update"
+            >
+              <Edit2 className="w-4 h-4" />
+            </button>
+
+            <button
               onClick={() => onReverse(row)}
               disabled={
                 !!row.reversalOf ||
@@ -1714,6 +1720,7 @@ function DesktopTable({
   onDelete,
   onReverse,
   onBill,
+  onEdit,
   expandedId,
   onExpand,
   linkedInfo,
@@ -1831,6 +1838,14 @@ function DesktopTable({
               title="Bill"
             >
               <FileText className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={() => onEdit(row)}
+              className="p-1.5 rounded-lg text-slate-500 hover:bg-indigo-50 hover:text-indigo-600"
+              title="Update"
+            >
+              <Edit2 className="w-4 h-4" />
             </button>
 
             <button
@@ -2519,6 +2534,10 @@ function AllTransactionsPageInner({ Sidebar }) {
     setBillTransaction(row);
   };
 
+  const onEditRow = (row) => {
+    router.push(`/admin/transactions/edit/${row._id}`);
+  };
+
   // Pages through /api/transactions/get-all under the currently applied filters until
   // every matching row has been fetched — export must cover everything the filters match,
   // not just the `perPage` rows the screen happens to be showing right now.
@@ -2747,6 +2766,7 @@ function AllTransactionsPageInner({ Sidebar }) {
                   onDelete={setDeleteTarget}
                   onReverse={setReverseTarget}
                   onBill={openBill}
+                  onEdit={onEditRow}
                   expandedId={expandedId}
                   onExpand={toggleExpand}
                   linkedInfo={expandedInfo}
@@ -2774,6 +2794,7 @@ function AllTransactionsPageInner({ Sidebar }) {
                         setReverseTarget
                       }
                       onBill={openBill}
+                      onEdit={onEditRow}
                       linkedInfo={expandedInfo}
                       linkedLoading={expandedLoading}
                     />

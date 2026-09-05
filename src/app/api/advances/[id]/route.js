@@ -12,6 +12,7 @@ import { buildReceivableAggregationStages } from "@/lib/receivableAggregation";
 import { accountsSync } from "@/lib/masterData";
 import { ALL_BRANCHES } from "@/lib/branches";
 import { checkPeriodLock } from "@/lib/periodLock";
+import { foldLegacyIntoArray, totalSettledAmount, settledTotalExpr } from "@/lib/advanceSettlements";
 
 const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
 
@@ -123,30 +124,67 @@ export async function PATCH(req, { params }) {
       }
 
       if (action === "unsettle") {
-        if (!advance.settlesPayableId) {
+        // Which line to remove. `settlementId` addresses one entry in the settlements array;
+        // omitted, it only works when there's exactly one settlement total (back-compat with
+        // the old single-payable UI, and the common case of a fresh multi-settle advance).
+        const { settlementId } = body;
+        const hasLegacy = advance.settlesPayableId != null;
+        const arr = advance.settlements || [];
+
+        let targetPayableId;
+        let removedAmount;
+        let removeLegacy = false;
+        let removeIdx = -1;
+
+        if (settlementId) {
+          removeIdx = arr.findIndex((s) => String(s._id) === String(settlementId));
+          if (removeIdx === -1) {
+            return NextResponse.json({ error: "Settlement not found on this advance" }, { status: 400 });
+          }
+          targetPayableId = arr[removeIdx].payableId;
+          removedAmount = arr[removeIdx].amount;
+        } else if (hasLegacy && arr.length === 0) {
+          targetPayableId = advance.settlesPayableId;
+          removedAmount = advance.settlesPayableAmount ?? advance.amount;
+          removeLegacy = true;
+        } else if (!hasLegacy && arr.length === 1) {
+          targetPayableId = arr[0].payableId;
+          removedAmount = arr[0].amount;
+          removeIdx = 0;
+        } else if (!hasLegacy && arr.length === 0) {
           return NextResponse.json({ error: "This advance isn't settling a payable" }, { status: 400 });
+        } else {
+          return NextResponse.json(
+            { error: "This advance is settling multiple payables — specify which one to unlink (settlementId)" },
+            { status: 400 },
+          );
         }
+
         const dbSession = await mongoose.startSession();
         try {
           await dbSession.withTransaction(async () => {
-            const target = await Payable.findById(advance.settlesPayableId).session(dbSession);
+            const targetDoc = await Payable.findById(targetPayableId).session(dbSession);
             advance.log.push({
               action: "Note Added",
-              note: note || `Unlinked from payable ${advance.settlesPayableId}`,
+              note: note || `Unlinked ₹${Number(removedAmount).toLocaleString("en-IN")} from payable ${targetPayableId}`,
               performedBy,
               performedAt: new Date(),
             });
-            advance.settlesPayableId = null;
-            advance.settlesPayableAmount = null;
+            if (removeLegacy) {
+              advance.settlesPayableId = null;
+              advance.settlesPayableAmount = null;
+            } else {
+              advance.settlements.splice(removeIdx, 1);
+            }
             await advance.save({ session: dbSession });
-            if (target) {
-              target.log.push({
+            if (targetDoc) {
+              targetDoc.log.push({
                 action: "Note Added",
                 note: note || `No longer settled by advance ${advance._id}`,
                 performedBy,
                 performedAt: new Date(),
               });
-              await target.save({ session: dbSession });
+              await targetDoc.save({ session: dbSession });
             }
           });
         } finally {
@@ -155,12 +193,6 @@ export async function PATCH(req, { params }) {
         return NextResponse.json({ message: "Settlement unlinked", advance });
       }
 
-      if (advance.settlesPayableId) {
-        return NextResponse.json(
-          { error: "Already settling a payable — unsettle it first" },
-          { status: 400 },
-        );
-      }
       const { settlesPayableId } = body;
       if (!settlesPayableId || !mongoose.Types.ObjectId.isValid(settlesPayableId)) {
         return NextResponse.json({ error: "A valid settlesPayableId is required" }, { status: 400 });
@@ -173,26 +205,33 @@ export async function PATCH(req, { params }) {
         return NextResponse.json({ error: "This payable has been cancelled" }, { status: 400 });
       }
 
-      // How much of the advance to apply. Defaults to the whole advance (legacy behaviour)
-      // when the caller doesn't specify one.
+      // How much of the advance is left to apply to a NEW line, after every existing
+      // settlement (legacy pair + settlements array) already on this advance.
+      const alreadySettled = totalSettledAmount(advance);
+      const remainingOnAdvance = round2(round2(advance.amount) - alreadySettled);
+
+      // How much of the advance to apply. Defaults to whatever's left when the caller
+      // doesn't specify one.
       const rawAmount = body.amount ?? body.settlesPayableAmount;
       const settleAmount = rawAmount === undefined || rawAmount === null || rawAmount === ""
-        ? advance.amount
+        ? remainingOnAdvance
         : round2(rawAmount);
 
       if (!(settleAmount > 0)) {
         return NextResponse.json({ error: "Settlement amount must be greater than zero" }, { status: 400 });
       }
-      if (settleAmount > round2(advance.amount)) {
+      if (settleAmount > remainingOnAdvance) {
         return NextResponse.json(
           {
-            error: `Cannot settle more than the advance amount (₹${advance.amount.toLocaleString("en-IN")})`,
+            error: `Cannot settle more than what's left on this advance (₹${remainingOnAdvance.toLocaleString("en-IN")})`,
           },
           { status: 400 },
         );
       }
 
-      // Can't apply more than what the payable still owes.
+      // Can't apply more than what the payable still owes. buildPayableAggregationStages
+      // already sums every settlement line (from this advance or any other) against this
+      // payable, so this naturally reflects prior lines too.
       const txCollection = Transactions.collection.name;
       const [payableAgg] = await Payable.aggregate([
         { $match: { _id: target._id } },
@@ -208,8 +247,8 @@ export async function PATCH(req, { params }) {
         );
       }
 
-      // Can't recover more than the advance's receivable still has outstanding. The advance
-      // isn't linked yet, so this reflects only prior (cash) recoveries.
+      // Can't recover more than the advance's receivable still has outstanding. Reflects
+      // prior (cash) recoveries plus any settlement lines already saved on this advance.
       const [receivableAgg] = await Receivable.aggregate([
         { $match: { _id: advance.receivableId } },
         ...buildReceivableAggregationStages(txCollection),
@@ -229,8 +268,14 @@ export async function PATCH(req, { params }) {
       const dbSession = await mongoose.startSession();
       try {
         await dbSession.withTransaction(async () => {
-          advance.settlesPayableId = target._id;
-          advance.settlesPayableAmount = settleAmount;
+          foldLegacyIntoArray(advance, { performedBy });
+          advance.settlements.push({
+            payableId: target._id,
+            amount: settleAmount,
+            note: note || undefined,
+            settledAt: new Date(),
+            settledBy: performedBy,
+          });
           advance.log.push({
             action: "Note Added",
             note:
@@ -366,16 +411,14 @@ export async function PUT(req, { params }) {
     const performedBy = { name: session.user.name, email: session.user.email };
     const amountChanged = parsedAmount !== advance.amount;
 
-    if (
-      advance.settlesPayableId &&
-      advance.settlesPayableAmount != null &&
-      parsedAmount < round2(advance.settlesPayableAmount)
-    ) {
+    const totalSettled = totalSettledAmount(advance);
+    if (totalSettled > 0 && parsedAmount < round2(totalSettled)) {
       return NextResponse.json(
         {
           error:
-            `This advance is settling ₹${advance.settlesPayableAmount.toLocaleString("en-IN")} against a payable. ` +
-            "Unlink or lower that settlement before reducing the advance below it.",
+            `This advance is settling ₹${totalSettled.toLocaleString("en-IN")} against ${
+              (advance.settlements?.length || 0) + (advance.settlesPayableId ? 1 : 0) > 1 ? "payables" : "a payable"
+            }. ` + "Unlink or lower those settlements before reducing the advance below it.",
         },
         { status: 400 },
       );
@@ -387,15 +430,8 @@ export async function PUT(req, { params }) {
         { $group: { _id: null, recovered: { $sum: "$amount" } } },
       ]);
       const [settledAgg] = await Advance.aggregate([
-        {
-          $match: {
-            receivableId: advance.receivableId,
-            direction: "OUT",
-            isCancelled: { $ne: true },
-            settlesPayableId: { $ne: null },
-          },
-        },
-        { $group: { _id: null, settled: { $sum: { $ifNull: ["$settlesPayableAmount", "$amount"] } } } },
+        { $match: { receivableId: advance.receivableId, direction: "OUT", isCancelled: { $ne: true } } },
+        { $group: { _id: null, settled: { $sum: settledTotalExpr } } },
       ]);
       const receivable = await Receivable.findById(advance.receivableId).lean();
       const pendingExcludingThis = Math.max(

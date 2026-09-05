@@ -8,6 +8,7 @@ import Transactions from "@/models/Transactions";
 import Advance from "@/models/Advance";
 import DeleteLog from "@/models/DeleteLog";
 import { buildPayableAggregationStages } from "@/lib/payableAggregation";
+import { settlementLinesFor } from "@/lib/advanceSettlements";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 
@@ -97,14 +98,17 @@ export async function PATCH(req, { params }) {
     let linkedTdsPayable = null;
     if (isCancelled === true && !payable.isCancelled) {
       const settlingAdvance = await Advance.findOne({
-        settlesPayableId: payable._id,
+        $or: [{ settlesPayableId: payable._id }, { "settlements.payableId": payable._id }],
         isCancelled: { $ne: true },
       });
       if (settlingAdvance) {
+        const line = settlementLinesFor(settlingAdvance).find(
+          (l) => String(l.payableId) === String(payable._id),
+        );
         return NextResponse.json(
           {
             error:
-              `An open advance (₹${(settlingAdvance.settlesPayableAmount ?? settlingAdvance.amount).toLocaleString("en-IN")} to ` +
+              `An open advance (₹${(line?.amount ?? settlingAdvance.amount).toLocaleString("en-IN")} to ` +
               `${settlingAdvance.party?.label || "a party"}) is settling this payable. Unsettle it first.`,
           },
           { status: 409 },

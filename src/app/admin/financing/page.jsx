@@ -25,6 +25,7 @@ import SettleAgainstModal from "@/components/finance/SettleAgainstModal";
 import DocumentHistory from "@/components/finance/DocumentHistory";
 import { formatCurrency, formatDate, StatusBadge } from "@/lib/financeUI";
 import { ALL_BRANCHES } from "@/lib/branches";
+import { settlementLinesFor } from "@/lib/advanceSettlements";
 import { useToast } from "@/components/Toast";
 
 function FinancingPageInner() {
@@ -657,11 +658,18 @@ function AdvancesTab({ branch, includeCancelled, toast, onTotalsChange }) {
     { key: "account", label: "Account" },
     { key: "branch", label: "Branch" },
     { key: "reference", label: "Reference" },
-    { key: "settlesPayableId", label: "Settles Payable", csv: (r) => r.settlesPayableId || "" },
+    {
+      key: "settlesPayableId",
+      label: "Settles Payable(s)",
+      csv: (r) => settlementLinesFor(r).map((l) => l.payableId).join("; "),
+    },
     {
       key: "settlesPayableAmount",
       label: "Settled Amount",
-      csv: (r) => (r.settlesPayableId ? (r.settlesPayableAmount ?? r.amount) : ""),
+      csv: (r) => {
+        const lines = settlementLinesFor(r);
+        return lines.length ? lines.map((l) => l.amount).join("; ") : "";
+      },
     },
     { key: "status", label: "Status", csv: (r) => (r.isCancelled ? "Cancelled" : "Active") },
   ];
@@ -689,14 +697,19 @@ function AdvancesTab({ branch, includeCancelled, toast, onTotalsChange }) {
     {
       key: "settlement",
       label: "Settlement",
-      render: (r) =>
-        r.settlesPayableId ? (
+      render: (r) => {
+        const lines = settlementLinesFor(r);
+        if (lines.length === 0) return "—";
+        const total = lines.reduce((sum, l) => sum + (l.amount || 0), 0);
+        return (
           <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-teal-700">
-            <Link2 className="w-3 h-3" /> Settling {formatCurrency(r.settlesPayableAmount ?? r.amount)}
+            <Link2 className="w-3 h-3" />{" "}
+            {lines.length > 1
+              ? `Settling ${lines.length} payables · ${formatCurrency(total)}`
+              : `Settling ${formatCurrency(total)}`}
           </span>
-        ) : (
-          "—"
-        ),
+        );
+      },
     },
     { key: "status", label: "Status", render: (r) => <StatusBadge status={r.isCancelled ? "Cancelled" : "Active"} /> },
   ];

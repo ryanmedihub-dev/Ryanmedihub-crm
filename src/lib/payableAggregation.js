@@ -1,4 +1,5 @@
 import { buildAgeingStages } from "@/lib/ageing";
+import { settledAgainstPayableExpr, settlesPayableExprMatch } from "@/lib/advanceSettlements";
 
 export function buildPayableAggregationStages(
   txCollectionName,
@@ -69,7 +70,7 @@ export function buildPayableAggregationStages(
             $match: {
               $expr: {
                 $and: [
-                  { $eq: ["$settlesPayableId", "$$payableId"] },
+                  settlesPayableExprMatch("$$payableId"),
                   { $eq: ["$direction", "OUT"] },
                   { $ne: ["$isCancelled", true] },
                 ],
@@ -79,7 +80,10 @@ export function buildPayableAggregationStages(
           {
             $group: {
               _id: null,
-              paid: { $sum: { $ifNull: ["$settlesPayableAmount", "$amount"] } },
+              // A document can now hold several settlement lines (see settlements array on
+              // the Advance model) — sum only the ones that target THIS payable, not the
+              // whole document, so a doc settling multiple payables isn't double-counted here.
+              paid: { $sum: settledAgainstPayableExpr("$$payableId") },
               paymentCount: { $sum: 1 },
             },
           },
@@ -223,14 +227,17 @@ export function buildPayableGroupedStages(txCollectionName, { level, category, s
             $match: {
               $expr: {
                 $and: [
-                  { $eq: ["$settlesPayableId", "$$payableId"] },
+                  settlesPayableExprMatch("$$payableId"),
                   { $eq: ["$direction", "OUT"] },
                   { $ne: ["$isCancelled", true] },
                 ],
               },
             },
           },
-          { $project: { amount: { $ifNull: ["$settlesPayableAmount", "$amount"] }, date: 1 } },
+          // A doc's own date covers every line on it — using it for every matched line here
+          // (rather than each line's settledAt) mirrors the original single-settlement
+          // behaviour and keeps the range-bucketing math unchanged.
+          { $project: { amount: settledAgainstPayableExpr("$$payableId"), date: 1 } },
         ],
         as: "advancePayments",
       },

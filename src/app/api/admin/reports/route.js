@@ -19,6 +19,7 @@ import { buildReceivableAggregationStages } from "@/lib/receivableAggregation";
 import { ALL_BRANCHES, COLLAB_BRANCHES } from "@/lib/branches";
 import { SETTLEMENT_EXCLUSION } from "@/constants/bankRouting";
 import { unsettledMethodsSync } from "@/lib/masterData";
+import { settlementLinesFor } from "@/lib/advanceSettlements";
 import { getISTStartOfDay, getISTEndOfDay } from "@/lib/dateHelpers";
 
 function branchAllowed(branchFilter, branchName) {
@@ -1284,6 +1285,7 @@ async function generatePayablesAllReport(filters) {
   if (payables.length === 0) return [];
 
   const ids = payables.map((p) => p._id);
+  const idStrSet = new Set(ids.map(String));
 
   const [txPayments, borrowingPayments, advancePayments] = await Promise.all([
     Transactions.find({
@@ -1296,8 +1298,12 @@ async function generatePayablesAllReport(filters) {
     Borrowing.find({ payableId: { $in: ids }, direction: "OUT", isCancelled: { $ne: true } })
       .select("payableId date amount account reference remarks branch")
       .lean(),
-    Advance.find({ settlesPayableId: { $in: ids }, direction: "OUT", isCancelled: { $ne: true } })
-      .select("settlesPayableId settlesPayableAmount date amount account reference remarks branch")
+    Advance.find({
+      direction: "OUT",
+      isCancelled: { $ne: true },
+      $or: [{ settlesPayableId: { $in: ids } }, { "settlements.payableId": { $in: ids } }],
+    })
+      .select("settlesPayableId settlesPayableAmount settlements date amount account reference remarks branch")
       .lean(),
   ]);
 
@@ -1330,17 +1336,23 @@ async function generatePayablesAllReport(filters) {
       remarks: b.remarks || "",
     }),
   );
-  advancePayments.forEach((a) =>
-    push(a.settlesPayableId, {
-      source: "Advance applied",
-      date: a.date,
-      amount: a.settlesPayableAmount ?? a.amount ?? 0,
-      method: "advance",
-      account: a.account || "",
-      reference: a.reference || "",
-      remarks: a.remarks || "",
-    }),
-  );
+  advancePayments.forEach((a) => {
+    // One advance can now settle several payables — emit one payment row per line, only
+    // for the ones targeting a payable actually in this report's set.
+    settlementLinesFor(a)
+      .filter((line) => idStrSet.has(String(line.payableId)))
+      .forEach((line) => {
+        push(line.payableId, {
+          source: "Advance applied",
+          date: line.settledAt || a.date,
+          amount: line.amount || 0,
+          method: "advance",
+          account: a.account || "",
+          reference: a.reference || "",
+          remarks: line.note || a.remarks || "",
+        });
+      });
+  });
 
   const d = (v) => (v ? new Date(v).toLocaleDateString("en-IN") : "");
   const out = [];
@@ -1487,9 +1499,9 @@ async function generateReceivablesAllReport(filters) {
       receivableId: { $in: ids },
       direction: "OUT",
       isCancelled: { $ne: true },
-      settlesPayableId: { $ne: null },
+      $or: [{ settlesPayableId: { $ne: null } }, { "settlements.0": { $exists: true } }],
     })
-      .select("receivableId settlesPayableId settlesPayableAmount date amount account reference remarks branch")
+      .select("receivableId settlesPayableId settlesPayableAmount settlements date amount account reference remarks branch")
       .lean(),
   ]);
 
@@ -1547,17 +1559,21 @@ async function generateReceivablesAllReport(filters) {
       remarks: b.remarks || "",
     }),
   );
-  advancePayableOut.forEach((a) =>
-    push(a.receivableId, {
-      source: "Advance applied to payable",
-      date: a.date,
-      amount: a.settlesPayableAmount ?? a.amount ?? 0,
-      method: "advance→payable",
-      account: a.account || "",
-      reference: a.reference || "",
-      remarks: a.remarks || "",
-    }),
-  );
+  advancePayableOut.forEach((a) => {
+    // Every settlement line on this advance nets its own receivable, regardless of which
+    // payable it targets — one report row per line.
+    settlementLinesFor(a).forEach((line) => {
+      push(a.receivableId, {
+        source: "Advance applied to payable",
+        date: line.settledAt || a.date,
+        amount: line.amount || 0,
+        method: "advance→payable",
+        account: a.account || "",
+        reference: a.reference || "",
+        remarks: line.note || a.remarks || "",
+      });
+    });
+  });
 
   const d = (v) => (v ? new Date(v).toLocaleDateString("en-IN") : "");
   const out = [];

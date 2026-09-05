@@ -6,6 +6,7 @@ import Receivable from "@/models/Receivable";
 import { accountsSync } from "@/lib/masterData";
 import { ALL_BRANCHES } from "@/lib/branches";
 import { ADVANCE_TYPES, ADVANCE_REVENUE_CATEGORY } from "@/constants/advanceTypes";
+import { settledTotalExpr } from "@/lib/advanceSettlements";
 
 const REFID_REQUIRED_KINDS = ["EMPLOYEE", "VENDOR", "PATIENT"];
 
@@ -52,8 +53,8 @@ export async function createAdvance({ payload, session: authSession }) {
       { $group: { _id: null, recovered: { $sum: "$amount" } } },
     ]);
     const [settledAgg] = await Advance.aggregate([
-      { $match: { receivableId: receivable._id, direction: "OUT", isCancelled: { $ne: true }, settlesPayableId: { $ne: null } } },
-      { $group: { _id: null, settled: { $sum: { $ifNull: ["$settlesPayableAmount", "$amount"] } } } },
+      { $match: { receivableId: receivable._id, direction: "OUT", isCancelled: { $ne: true } } },
+      { $group: { _id: null, settled: { $sum: settledTotalExpr } } },
     ]);
     const alreadyRecovered = (recoveredAgg?.recovered || 0) + (settledAgg?.settled || 0);
     const pending = Math.max(0, Math.round((receivable.totalAmount - alreadyRecovered) * 100) / 100);
