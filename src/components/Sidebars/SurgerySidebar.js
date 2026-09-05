@@ -10,7 +10,8 @@ import {
   Clock,
   X,
   Menu,
-  FileCheck
+  FileCheck,
+  Gift
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -52,6 +53,7 @@ export default function SurgerySidebar() {
     { name: "Patients",        path: "/surgery/patients",    icon: HeartPulse },
     { name: "Visited Patients",path: "/surgery/visited",     icon: CheckCircle2 },
     { name: "Not Visited",     path: "/surgery/not-visited", icon: Clock },
+    { name: "Incentives",      path: "/surgery/incentives",  icon: Gift },
     { name: "Reports",         path: "/surgery/reports",     icon: FileBarChart },
   ];
 

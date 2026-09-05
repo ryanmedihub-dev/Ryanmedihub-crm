@@ -9,6 +9,7 @@ import {
   Receipt,
   FileBarChart,
   Target,
+  Gift,
   X,
   Menu,
 } from "lucide-react";
@@ -53,6 +54,7 @@ export default function SalesSidebar() {
     { name: "Book Appointment", path: "/sales/book-appointment", icon: CalendarPlus },
     { name: "Agents",           path: "/sales/agents",           icon: Handshake },
     { name: "Transactions",     path: "/sales/transactions",     icon: Receipt },
+    { name: "Incentives",       path: "/sales/incentives",       icon: Gift },
     { name: "Reports",          path: "/sales/reports",          icon: FileBarChart },
   ];
 

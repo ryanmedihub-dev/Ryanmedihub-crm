@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X, Loader2, Wallet2 } from "lucide-react";
 import TransactionFieldSet, { validateTransactionFields } from "@/components/TransactionFieldSet";
+import useMasterData from "@/lib/useMasterData";
 import { formatCurrency } from "@/lib/financeUI";
 
 const PURPOSE_LABELS = {
@@ -14,6 +15,7 @@ const PURPOSE_LABELS = {
 };
 
 export default function RecordReceiptModal({ receivable, onClose, onSuccess, toast }) {
+  const { nonCashMethods, unsettledMethods } = useMasterData();
   const [fields, setFields] = useState({
     amount: String(receivable.pending || ""),
     date: new Date().toISOString().split("T")[0],
@@ -32,7 +34,7 @@ export default function RecordReceiptModal({ receivable, onClose, onSuccess, toa
   const overBalance = parseFloat(fields.amount || 0) > receivable.pending;
 
   const handleSubmit = async () => {
-    const invalid = validateTransactionFields(fields, "receivable-receipt");
+    const invalid = validateTransactionFields(fields, "receivable-receipt", { nonCashMethods, unsettledMethods });
     if (invalid) {
       toast.error(invalid);
       return;

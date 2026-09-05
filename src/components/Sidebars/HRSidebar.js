@@ -13,6 +13,7 @@ import {
   FileText,
   QrCode,
   Globe,
+  Gift,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -166,6 +167,13 @@ export default function HRSidebar() {
               href="/hr/employees"
               icon={UsersRound}
               active={isActive("/hr/employees")}
+              onClick={close}
+            />
+            <NavItem
+              label="Incentives"
+              href="/hr/incentives"
+              icon={Gift}
+              active={isActive("/hr/incentives")}
               onClick={close}
             />
             <NavItem

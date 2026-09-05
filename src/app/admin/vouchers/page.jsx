@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { ShieldAlert } from "lucide-react";
 import SearchableSelect from "@/components/SearchableSelect";
-import TransactionFieldSet, { validateTransactionFields } from "@/components/finance/TransactionFieldSet";
+import TransactionFieldSet, { validateTransactionFields } from "@/components/TransactionFieldSet";
 import useMasterData from "@/lib/useMasterData";
 import { useToast } from "@/components/Toast";
 
@@ -30,8 +30,12 @@ function VouchersPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const toast = useToast();
-  const { payableExpenseDropdownCategories: PAYABLE_EXPENSE_DROPDOWN_CATEGORIES, getExpenseTypes } =
-    useMasterData();
+  const {
+    payableExpenseDropdownCategories: PAYABLE_EXPENSE_DROPDOWN_CATEGORIES,
+    getExpenseTypes,
+    nonCashMethods,
+    unsettledMethods,
+  } = useMasterData();
 
   const [type, setType] = useState(searchParams.get("type") === "Receivable" ? "Receivable" : "Payable");
   const [category, setCategory] = useState(searchParams.get("category") || "");
@@ -157,7 +161,7 @@ function VouchersPageInner() {
       toast.error("Enter an amount greater than zero");
       return;
     }
-    const fieldError = validateTransactionFields(fields, "voucher");
+    const fieldError = validateTransactionFields(fields, "voucher", { nonCashMethods, unsettledMethods });
     if (fieldError) {
       toast.error(fieldError);
       return;

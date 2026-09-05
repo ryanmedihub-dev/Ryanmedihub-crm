@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X, Loader2, Banknote } from "lucide-react";
 import TransactionFieldSet, { validateTransactionFields } from "@/components/TransactionFieldSet";
+import useMasterData from "@/lib/useMasterData";
 import { formatCurrency } from "@/lib/financeUI";
 
 const PURPOSE_LABELS = {
@@ -32,6 +33,7 @@ export function buildGiverForPayable(payable) {
 }
 
 export default function RecordPaymentModal({ payable, onClose, onSuccess, toast }) {
+  const { nonCashMethods, unsettledMethods } = useMasterData();
   const [fields, setFields] = useState({
     amount: String(payable.pending || ""),
     date: new Date().toISOString().split("T")[0],
@@ -50,7 +52,7 @@ export default function RecordPaymentModal({ payable, onClose, onSuccess, toast 
   const overBalance = parseFloat(fields.amount || 0) > payable.pending;
 
   const handleSubmit = async () => {
-    const invalid = validateTransactionFields(fields, "payable-payment");
+    const invalid = validateTransactionFields(fields, "payable-payment", { nonCashMethods, unsettledMethods });
     if (invalid) {
       toast.error(invalid);
       return;

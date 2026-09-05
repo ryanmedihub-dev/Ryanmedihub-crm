@@ -1813,7 +1813,7 @@ function SettleModal({ clinic, balance, openCases, onClose, onSuccess, toast }) 
           </div>
         </div>
 
-        <div>
+        <div>  
           <label className={labelCls}>
             {direction === "THEY_PAID" ? `Amount ${clinic} paid us (₹)` : `Amount we paid ${clinic} (₹)`} *
           </label>

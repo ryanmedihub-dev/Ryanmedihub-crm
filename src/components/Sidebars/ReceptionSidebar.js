@@ -15,6 +15,7 @@ import {
   Users,
   Droplets,
   History,
+  Gift,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -60,6 +61,7 @@ export default function ReceptionSidebar({ sidebarOpen: externalOpen, setSidebar
     { name: "Add Patient",  path: "/reception/add-patient", icon: UserPlus },
     { name: "Not Visited",  path: "/reception/not-visited", icon: UserMinus },
     { name: "Transactions", path: "/reception/transactions",icon: Receipt },
+    { name: "Incentives",   path: "/reception/incentives",  icon: Gift },
     { name: "PRP",          path: "/reception/prp",               icon: Droplets },
     { name: "Old PRP",      path: "/reception/old-prp-patients", icon: History },
     { name: "Reports",      path: "/reception/reports",          icon: FileBarChart },

@@ -1,5 +1,4 @@
 import { buildAgeingStages } from "@/lib/ageing";
-import { unsettledMethodsSync } from "@/lib/masterData";
 
 export function buildPayableAggregationStages(
   txCollectionName,
@@ -18,7 +17,19 @@ export function buildPayableAggregationStages(
                 $and: [
                   { $eq: ["$payableId", "$$payableId"] },
                   { $eq: ["$approvalStatus", "APPROVED"] },
-                  { $not: [{ $in: ["$method", unsettledMethodsSync()] }] },
+                  // No unsettled-method (paid_by_other/paid_to_external) exclusion here —
+                  // unlike a blanket balance/P&L rollup, this lookup only ever matches
+                  // transactions that were explicitly linked to THIS payable's own _id via
+                  // an intentional payableId, which only happens through deliberate
+                  // "settle this payable" user action (RecordPaymentModal, vouchers, collab
+                  // settlements) — never through the "spawn a brand-new document" path an
+                  // unlinked external-party transaction takes (that path always saves
+                  // payableId: null, so it can never reach this lookup regardless). If the
+                  // vendor was paid — even via an external party fronting the money — this
+                  // payable is genuinely settled; excluding the method here was the bug that
+                  // let a "Paid by Other" payment against an existing payable leave it stuck
+                  // pending forever while a duplicate, disconnected payable was raised to
+                  // the external party.
                 ],
               },
             },
@@ -160,12 +171,14 @@ export function buildPayableGroupedStages(txCollectionName, { level, category, s
         pipeline: [
           ...(toDate ? [{ $match: { date: { $lte: toDate } } }] : []),
           {
+            // Same reasoning as buildPayableAggregationStages' paymentAgg lookup above: no
+            // unsettled-method exclusion, since a payableId match here only ever comes from
+            // a deliberate "settle this payable" link.
             $match: {
               $expr: {
                 $and: [
                   { $eq: ["$payableId", "$$payableId"] },
                   { $eq: ["$approvalStatus", "APPROVED"] },
-                  { $not: [{ $in: ["$method", unsettledMethodsSync()] }] },
                 ],
               },
             },

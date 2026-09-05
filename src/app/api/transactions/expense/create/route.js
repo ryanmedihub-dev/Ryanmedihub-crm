@@ -10,7 +10,7 @@ import {
   createExternalPayable,
   validateExternalParty,
 } from "@/lib/externalPartyDerivation";
-import { expenseTypesSync, unsettledMethodsSync, nonCashMethodsSync } from "@/lib/masterData";
+import { expenseTypesSync, nonCashMethodsSync } from "@/lib/masterData";
 import { backDateGuard } from "@/lib/backDateGuard";
 
 const NO_GIVER_CATEGORIES = [
@@ -137,12 +137,14 @@ export async function POST(req) {
         );
       }
 
+      // No unsettled-method exclusion — a transaction only reaches here (matched by this
+      // exact payableId) via a deliberate "settle this payable" link, so a "Paid by Other"
+      // payment counts too (the vendor was paid, just via an external party).
       const [paidAgg] = await Transactions.aggregate([
         {
           $match: {
             payableId: payableDoc._id,
             approvalStatus: "APPROVED",
-            method: { $nin: unsettledMethodsSync() },
           },
         },
         { $group: { _id: null, paid: { $sum: "$amount" } } },
@@ -246,6 +248,7 @@ export async function POST(req) {
           branch: resolvedBranch,
           relatedPatient: patientId || undefined,
           actor: transactionData.createdBy,
+          settledPayableLabel: payableDoc?.payee?.label,
         });
         txn.externalParty.linkedPayableId = payable._id;
         await txn.save({ session: dbSession });

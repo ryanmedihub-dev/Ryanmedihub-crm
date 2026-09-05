@@ -5,7 +5,13 @@ import MethodField from "@/components/MethodField";
 import BankRoutingFields from "@/components/BankRoutingFields";
 import ExternalPartyFields from "@/components/ExternalPartyFields";
 import ReceiptUpload from "@/components/ReceiptUpload";
-import { NON_CASH_METHODS, UNSETTLED_METHODS } from "@/constants/bankRouting";
+import TaxBreakdownFields from "@/components/TaxBreakdownFields";
+import useMasterData from "@/lib/useMasterData";
+import { deriveClinicSettlement } from "@/lib/collabFormula";
+import {
+  NON_CASH_METHODS as LITERAL_NON_CASH_METHODS,
+  UNSETTLED_METHODS as LITERAL_UNSETTLED_METHODS,
+} from "@/constants/bankRouting";
 import { ALL_BRANCHES } from "@/lib/branches";
 
 export const TRANSACTION_CONTEXTS = [
@@ -56,7 +62,15 @@ export default function TransactionFieldSet({
   amountLabel = "Amount (₹)",
   disabled = false,
   patientId,
+  // "voucher" context only — GST/TDS breakdown, shown below the routing fields.
+  taxValue,
+  onTaxChange,
+  // "collab-settlement" context only — the one-line "you owe / you're owed" sentence.
+  clinicLabel,
+  clinicReceived,
+  clinicShare,
 }) {
+  const { nonCashMethods, unsettledMethods } = useMasterData();
   const category = transactionCategory || CONTEXT_CATEGORY[context] || "TRANSPLANT";
   const expenseSide = isExpenseSide(context, transactionCategory);
   const isSettlement = SETTLEMENT_CONTEXTS.has(context);
@@ -65,12 +79,12 @@ export default function TransactionFieldSet({
   const set = (patch) => onChange({ ...patch });
 
   const furtherModeRequired = useMemo(
-    () => isSettlement && !NON_CASH_METHODS.includes(value.method),
-    [isSettlement, value.method],
+    () => isSettlement && !nonCashMethods.includes(value.method),
+    [isSettlement, value.method, nonCashMethods],
   );
 
   const externalDirection = expenseSide ? "PAID_BY" : "RECEIVED_BY";
-  const showExternal = !hidePaymentFields && UNSETTLED_METHODS.includes(value.method);
+  const showExternal = !hidePaymentFields && unsettledMethods.includes(value.method);
 
   return (
     <div className="space-y-4">
@@ -165,6 +179,23 @@ export default function TransactionFieldSet({
         />
       )}
 
+      {context === "voucher" && (
+        <TaxBreakdownFields
+          value={taxValue || {}}
+          baseAmount={value.amount}
+          onChange={onTaxChange}
+          allowTDS
+        />
+      )}
+
+      {context === "collab-settlement" && clinicLabel && (
+        <CollabDirectionLine
+          clinicLabel={clinicLabel}
+          clinicReceived={clinicReceived}
+          clinicShare={clinicShare}
+        />
+      )}
+
       {showRemarks && (
         <div>
           <label className={fieldLabelClass}>Remarks</label>
@@ -194,7 +225,21 @@ export default function TransactionFieldSet({
   );
 }
 
-export function validateTransactionFields(value, context, { requireAmount = true } = {}) {
+/**
+ * `nonCashMethods`/`unsettledMethods` default to the literal constants — the same values a
+ * cold render would use before useMasterData()'s fetch lands — so every existing call site
+ * (none of which passed these) keeps behaving exactly as before. Pass the live arrays from
+ * useMasterData() to validate against the current master-data state instead.
+ */
+export function validateTransactionFields(
+  value,
+  context,
+  {
+    requireAmount = true,
+    nonCashMethods = LITERAL_NON_CASH_METHODS,
+    unsettledMethods = LITERAL_UNSETTLED_METHODS,
+  } = {},
+) {
   const isSettlement = SETTLEMENT_CONTEXTS.has(context);
   const hidePaymentFields = HIDE_PAYMENT_FIELDS_CONTEXTS.has(context);
 
@@ -206,17 +251,44 @@ export function validateTransactionFields(value, context, { requireAmount = true
 
   if (hidePaymentFields) return null;
 
-  if (isSettlement && !NON_CASH_METHODS.includes(value.method) && !value.furtherMode) {
+  if (isSettlement && !nonCashMethods.includes(value.method) && !value.furtherMode) {
     return "Select the account this money moved through — a settlement without account attribution can't be reconciled in Close Book";
   }
 
-  if (UNSETTLED_METHODS.includes(value.method)) {
+  if (unsettledMethods.includes(value.method)) {
     const p = value.externalParty || {};
     if (!p.name?.trim()) return "Enter the name of the party who handled the money";
     if (!p.method) return "Select the method the external party used";
   }
 
   return null;
+}
+
+function CollabDirectionLine({ clinicLabel, clinicReceived, clinicShare }) {
+  const { kind, amount } = deriveClinicSettlement({
+    clinicReceived: Number(clinicReceived) || 0,
+    clinicShare: Number(clinicShare) || 0,
+  });
+  const fmt = (n) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
+
+  if (kind === "NONE") {
+    return (
+      <p className="text-sm text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+        {clinicLabel} collected exactly its share — nothing to settle.
+      </p>
+    );
+  }
+
+  const text =
+    kind === "RECEIVABLE"
+      ? `You are recording that ${clinicLabel} paid you ${fmt(amount)}`
+      : `You are recording that you paid ${clinicLabel} ${fmt(amount)}`;
+
+  return (
+    <p className="text-sm font-medium text-indigo-800 bg-indigo-50 border border-indigo-200 rounded-lg px-3 py-2">
+      {text}
+    </p>
+  );
 }
 
 export { SETTLEMENT_CONTEXTS };

@@ -1,237 +1,405 @@
 "use client";
 
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import {
+  Search,
+  Plus,
+  X,
+  RefreshCw,
+  Loader2,
+  ChevronDown,
+  ChevronRight,
+  ChevronLeft,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  MoreHorizontal,
+  Edit2,
+  Trash2,
+  RotateCcw,
+  FileText,
+  FileDown,
+  Calendar,
+  Building2,
+  CreditCard,
+  Landmark,
+  Tag,
+  Receipt,
+  Link2,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  Wallet,
+  TrendingUp,
+  TrendingDown,
+  LayoutGrid,
+  User,
+  Package,
+  IndianRupee,
+  SlidersHorizontal,
+  Sparkles,
+} from "lucide-react";
+
 import { useToast } from "@/components/Toast";
 import BillGenerator from "@/components/BillGenerator";
 import { ALL_BRANCHES } from "@/lib/branches";
 import { formatCurrency, StatusBadge } from "@/lib/financeUI";
-import {
-  Filter,
-  X,
-  ChevronLeft,
-  ChevronRight,
-  Search,
-  Plus,
-  Edit2,
-  User,
-  Calendar,
-  CreditCard,
-  Building2,
-  AlertCircle,
-  Trash2,
-  RefreshCw,
-  Loader2,
-  Tag,
-  ArrowUpDown,
-  ChevronDown,
-  Package,
-  FileText as Bill,
-  FileDown,
-  Clock,
-  ChevronUp,
-  Receipt,
-  Percent,
-  Users,
-  Link2,
-  HelpCircle,
-  ArrowLeftRight,
-  Image as ImageIcon,
-  Landmark,
-  RotateCcw,
-} from "lucide-react";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { METHOD_LABELS } from "@/constants/paymentMethods";
 import { UNSETTLED_METHODS, FURTHER_MODES } from "@/constants/bankRouting";
-import { EXPENSE_CATEGORIES, getExpenseTypes } from "@/constants/expenseCategories";
+import {
+  EXPENSE_CATEGORIES,
+  getExpenseTypes,
+} from "@/constants/expenseCategories";
+import {
+  ENTRY_TYPES,
+  ENTRY_TYPE_TONE_CLASSES,
+  ENTRY_TYPE_FILTER_OPTIONS,
+} from "@/constants/entryTypes";
+
 import ReverseTransactionModal from "@/components/finance/ReverseTransactionModal";
 import TransactionStatusBadges from "@/components/finance/StatusBadges";
-import { ENTRY_TYPES, ENTRY_TYPE_TONE_CLASSES, ENTRY_TYPE_FILTER_OPTIONS } from "@/constants/entryTypes";
 import SuspenseManager from "@/components/SuspenseManager";
 import ContraManager from "@/components/ContraManager";
 import SearchableMultiSelect from "@/components/SearchableMultiSelect";
 
-const calculateNetAmount = (transaction) => Math.max(0, parseFloat(transaction?.amount) || 0);
+/* -------------------------------------------------------------------------- */
+/* Helpers                                                                    */
+/* -------------------------------------------------------------------------- */
 
 const getTodayDate = () => new Date().toISOString().split("T")[0];
 
-const formatDateForDisplay = (date) => {
-  if (!date) return "N/A";
-  return new Date(date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+const isoDate = (d) => d.toISOString().split("T")[0];
+
+const DATE_PRESETS = [
+  { key: "today", label: "Today" },
+  { key: "yesterday", label: "Yesterday" },
+  { key: "thisMonth", label: "This Month" },
+  { key: "all", label: "All Time" },
+];
+
+/** dateFrom/dateTo for one of the DATE_PRESETS keys — "all" means no date filter at all. */
+const getPresetRange = (key) => {
+  if (key === "yesterday") {
+    const y = new Date();
+    y.setDate(y.getDate() - 1);
+    const v = isoDate(y);
+    return { dateFrom: v, dateTo: v };
+  }
+  if (key === "thisMonth") {
+    const now = new Date();
+    const first = new Date(now.getFullYear(), now.getMonth(), 1);
+    return { dateFrom: isoDate(first), dateTo: getTodayDate() };
+  }
+  if (key === "all") {
+    return { dateFrom: "", dateTo: "" };
+  }
+  return { dateFrom: getTodayDate(), dateTo: getTodayDate() };
 };
+
+/** Which preset (if any) the current dateFrom/dateTo pair matches — for highlighting. */
+const matchingPreset = (dateFrom, dateTo) => {
+  const found = DATE_PRESETS.find((p) => {
+    const r = getPresetRange(p.key);
+    return (dateFrom || "") === r.dateFrom && (dateTo || "") === r.dateTo;
+  });
+  return found?.key || null;
+};
+
+const calculateNetAmount = (transaction) =>
+  Math.max(0, parseFloat(transaction?.amount) || 0);
+
+const formatDateForDisplay = (date) => {
+  if (!date) return "—";
+
+  return new Date(date).toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
+
+const formatTime = (date) => {
+  if (!date) return "";
+
+  return new Date(date).toLocaleTimeString("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+};
+
+const getPatientName = (row) =>
+  row.patient?.personal?.name ||
+  row.patientName ||
+  "Walk-in Customer";
+
+const getPatientPhone = (row) =>
+  row.patient?.personal?.phone ||
+  row.patientPhone ||
+  "";
+
+const getMedicineName = (row) =>
+  typeof row.medicineId === "object"
+    ? row.medicineId?.name || "Medicine"
+    : "Medicine";
 
 const getExpenseGiverName = (row) => {
   if (row.expenseGiver?.type === "VENDOR") {
     return typeof row.expenseGiver.vendorId === "object"
-      ? row.expenseGiver.vendorId?.name || row.expenseGiver.name || "N/A"
-      : row.expenseGiver.name || "N/A";
+      ? row.expenseGiver.vendorId?.name ||
+          row.expenseGiver.name ||
+          "Vendor"
+      : row.expenseGiver.name || "Vendor";
   }
+
   return row.expenseGiver?.name || "N/A";
 };
 
-const PAYMENT_METHODS = Object.keys(METHOD_LABELS);
-const TRANSPLANT_PROCEDURES = ["Sapphire FUE", "DHI", "Turkish DHI", "Beard Transplant"];
-const SERVICE_PROCEDURES    = ["PRP", "GFC", "Alopecia", "Headwash", "Canacot"];
-const REVENUE_CATEGORIES = ["TRANSPLANT", "SERVICE", "MEDICINE"];
-const UNTRACKED_FURTHER_MODE = "__UNTRACKED__";
-// Categorical filters are multi-select (arrays); dateFrom/dateTo stay strings.
-const MULTI_FILTER_KEYS = ["branch", "paymentMethod", "procedure", "furtherMode", "expenseCategory", "expenseType", "entryType"];
-const FILTER_KEYS = ["branch", "dateFrom", "dateTo", "paymentMethod", "procedure", "furtherMode", "expenseCategory", "expenseType", "entryType"];
-const parseList = (raw) => (raw ? raw.split(",").map((s) => s.trim()).filter(Boolean) : []);
+const parseList = (raw) =>
+  raw
+    ? raw
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : [];
+
+const MULTI_FILTER_KEYS = [
+  "branch",
+  "paymentMethod",
+  "procedure",
+  "furtherMode",
+  "expenseCategory",
+  "expenseType",
+  "entryType",
+];
+
+const FILTER_KEYS = [
+  "branch",
+  "dateFrom",
+  "dateTo",
+  "paymentMethod",
+  "procedure",
+  "furtherMode",
+  "expenseCategory",
+  "expenseType",
+  "entryType",
+];
+
+const defaultFilters = () => ({
+  branch: [],
+  dateFrom: getTodayDate(),
+  dateTo: getTodayDate(),
+  paymentMethod: [],
+  procedure: [],
+  furtherMode: [],
+  expenseCategory: [],
+  expenseType: [],
+  entryType: [],
+});
+
+const filtersFromParams = (params) => ({
+  branch: parseList(params.get("branch")),
+  dateFrom: params.get("dateFrom") || getTodayDate(),
+  dateTo: params.get("dateTo") || getTodayDate(),
+  paymentMethod: parseList(params.get("paymentMethod")),
+  procedure: parseList(params.get("procedure")),
+  furtherMode: parseList(params.get("furtherMode")),
+  expenseCategory: parseList(params.get("expenseCategory")),
+  expenseType: parseList(params.get("expenseType")),
+  entryType: parseList(params.get("entryType")),
+});
+
 const filterEquals = (a, b) =>
   Array.isArray(a) || Array.isArray(b)
-    ? (a || []).length === (b || []).length && (a || []).every((v, i) => v === (b || [])[i])
+    ? (a || []).length === (b || []).length &&
+      (a || []).every((v, i) => v === (b || [])[i])
     : a === b;
-const defaultFilters = () => ({
-  branch: [], dateFrom: getTodayDate(), dateTo: getTodayDate(), paymentMethod: [], procedure: [],
-  furtherMode: [], expenseCategory: [], expenseType: [], entryType: [],
-});
-const filtersFromParams = (params) => ({
-  branch:        parseList(params.get("branch")),
-  dateFrom:      params.get("dateFrom") || getTodayDate(),
-  dateTo:        params.get("dateTo") || getTodayDate(),
-  paymentMethod: parseList(params.get("paymentMethod")),
-  procedure:     parseList(params.get("procedure")),
-  furtherMode:      parseList(params.get("furtherMode")),
-  expenseCategory:  parseList(params.get("expenseCategory")),
-  expenseType:      parseList(params.get("expenseType")),
-  entryType:        parseList(params.get("entryType")),
-});
-
-const SortIcon = ({ columnKey, sortConfig }) => {
-  if (sortConfig.key !== columnKey) {
-    return <ArrowUpDown className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />;
-  }
-  return sortConfig.direction === "asc"
-    ? <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4 rotate-90 text-indigo-600" />
-    : <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 rotate-90 text-indigo-600" />;
-};
 
 const TRANSACTION_CATEGORIES = [
-  { value: "TRANSPLANT", label: "Transplant", icon: User, color: "indigo" },
-  { value: "SERVICE",    label: "Services",   icon: User, color: "pink"   },
-  { value: "MEDICINE",   label: "Medicine",   icon: User, color: "emerald"},
-  { value: "EXPENSE",    label: "Expenses",   icon: User, color: "rose"   },
-  { value: "CONTRA",     label: "Contra",     icon: ArrowLeftRight, color: "violet" },
-  { value: "SUSPENSE",   label: "Suspense",   icon: HelpCircle, color: "amber" },
+  {
+    value: "ALL",
+    label: "All",
+    icon: LayoutGrid,
+    tone: "slate",
+  },
+  {
+    value: "TRANSPLANT",
+    label: "Transplants",
+    icon: User,
+    tone: "indigo",
+  },
+  {
+    value: "SERVICE",
+    label: "Services",
+    icon: Sparkles,
+    tone: "pink",
+  },
+  {
+    value: "MEDICINE",
+    label: "Medicine",
+    icon: Package,
+    tone: "emerald",
+  },
+  {
+    value: "EXPENSE",
+    label: "Expenses",
+    icon: TrendingDown,
+    tone: "rose",
+  },
+  {
+    value: "CONTRA",
+    label: "Contra",
+    icon: Wallet,
+    tone: "violet",
+  },
+  {
+    value: "SUSPENSE",
+    label: "Suspense",
+    icon: AlertCircle,
+    tone: "amber",
+  },
 ];
 
 const NON_TRANSACTION_TABS = ["CONTRA", "SUSPENSE"];
-const VALID_CATEGORIES = new Set(TRANSACTION_CATEGORIES.map((c) => c.value));
 
-const getCategoryGradientClass = (categoryValue, isActive) => {
-  if (!isActive) return "bg-gray-50 text-gray-600 hover:bg-gray-100";
-  const gradients = {
-    TRANSPLANT: "bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-md",
-    SERVICE:    "bg-gradient-to-r from-pink-500 to-pink-600 text-white shadow-md",
-    MEDICINE:   "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-md",
-    EXPENSE:    "bg-gradient-to-r from-rose-500 to-rose-600 text-white shadow-md",
-    SUSPENSE:   "bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md",
-    CONTRA:     "bg-gradient-to-r from-violet-500 to-violet-600 text-white shadow-md",
+const VALID_CATEGORIES = new Set(
+  TRANSACTION_CATEGORIES.map((x) => x.value)
+);
+
+const REVENUE_CATEGORIES = [
+  "TRANSPLANT",
+  "SERVICE",
+  "MEDICINE",
+];
+
+const TRANSPLANT_PROCEDURES = [
+  "Sapphire FUE",
+  "DHI",
+  "Turkish DHI",
+  "Beard Transplant",
+];
+
+const SERVICE_PROCEDURES = [
+  "PRP",
+  "GFC",
+  "Alopecia",
+  "Headwash",
+  "Canacot",
+];
+
+const UNTRACKED_FURTHER_MODE = "__UNTRACKED__";
+
+const getCategoryStyle = (category) => {
+  const styles = {
+    TRANSPLANT:
+      "bg-indigo-50 text-indigo-700 border-indigo-100",
+    SERVICE:
+      "bg-pink-50 text-pink-700 border-pink-100",
+    MEDICINE:
+      "bg-emerald-50 text-emerald-700 border-emerald-100",
+    EXPENSE:
+      "bg-rose-50 text-rose-700 border-rose-100",
+    CONTRA:
+      "bg-violet-50 text-violet-700 border-violet-100",
+    SUSPENSE:
+      "bg-amber-50 text-amber-700 border-amber-100",
   };
-  return gradients[categoryValue] || "bg-gray-50 text-gray-600";
+
+  return (
+    styles[category] ||
+    "bg-slate-50 text-slate-700 border-slate-100"
+  );
 };
 
-function ApprovalBadge({ status }) {
-  if (status !== "PENDING" && status !== "REJECTED") return null;
-  return <StatusBadge status={status} />;
-}
+const getMethodStyle = (method) => {
+  const styles = {
+    cash: "bg-emerald-50 text-emerald-700",
+    upi: "bg-blue-50 text-blue-700",
+    card: "bg-purple-50 text-purple-700",
+    banking: "bg-indigo-50 text-indigo-700",
+    bajaj_loan: "bg-orange-50 text-orange-700",
+    fibe_loan: "bg-orange-50 text-orange-700",
+    hdfc_skin_bank_transfer: "bg-sky-50 text-sky-700",
+    hdfc_ryan_medihub_bank_transfer:
+      "bg-teal-50 text-teal-700",
+    icici_medihub_bank_transfer:
+      "bg-rose-50 text-rose-700",
+  };
 
-function StatCard({ title, value, icon: Icon, gradient, count, iconBg, iconColor }) {
   return (
-    <div className={`bg-linear-to-br ${gradient} p-4 sm:p-6 rounded-2xl shadow-lg text-white relative overflow-hidden transform hover:scale-105 transition-transform duration-300`}>
-      <div className="absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 bg-white/10 rounded-full -mr-12 -mt-12 sm:-mr-16 sm:-mt-16" />
-      <div className="relative">
-        <div className="flex justify-between items-start mb-3 sm:mb-4">
-          <div className="flex-1 min-w-0">
-            <p className="text-white/90 text-xs sm:text-sm font-medium mb-1 truncate">{title}</p>
-            <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold truncate">{value}</h3>
-          </div>
-          <div className={`${iconBg} p-2 sm:p-3 rounded-xl shrink-0 ml-2`}>
-            <Icon className={`w-4 h-4 sm:w-6 sm:h-6 ${iconColor}`} />
-          </div>
-        </div>
-        <p className="text-white/80 text-xs sm:text-sm font-medium truncate">{count}</p>
-      </div>
-    </div>
+    styles[method?.toLowerCase()] ||
+    "bg-slate-50 text-slate-700"
+  );
+};
+
+/* -------------------------------------------------------------------------- */
+/* Small UI primitives                                                        */
+/* -------------------------------------------------------------------------- */
+
+function SectionLabel({ children }) {
+  return (
+    <p className="text-[17px] font-bold uppercase tracking-wider text-slate-400">
+      {children}
+    </p>
   );
 }
 
-function DeleteConfirmModal({ transaction, onClose, onConfirm }) {
-  const [deleting, setDeleting] = useState(false);
-  const handleDelete = async () => { setDeleting(true); await onConfirm(); setDeleting(false); };
-  const netAmount  = calculateNetAmount(transaction);
-  const hasDiscount = parseFloat(transaction?.discount || 0) > 0;
+function CategoryBadge({ category }) {
+  if (!category) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full mx-4">
-        <div className="p-6 sm:p-8">
-          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="w-6 h-6 sm:w-8 sm:h-8 text-red-600" />
-          </div>
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 text-center mb-2">Delete Transaction?</h2>
-          <p className="text-gray-600 text-center mb-4 sm:mb-6 text-sm sm:text-base">
-            Are you sure you want to delete this transaction? This action cannot be undone.
-          </p>
-          <div className="bg-gray-50 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6 space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Category:</span>
-              <span className="font-bold text-gray-900 text-sm sm:text-base">{transaction?.transactionCategory || "Uncategorized"}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Amount:</span>
-              <span className="font-bold text-emerald-600 text-sm sm:text-base">{formatCurrency(netAmount)}</span>
-            </div>
-            {hasDiscount && (
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Discount:</span>
-                <span className="font-bold text-amber-600 text-sm sm:text-base">-{formatCurrency(transaction?.discount || 0)}</span>
-              </div>
-            )}
-            <div className="flex justify-between items-center pt-2 border-t border-gray-200">
-              <span className="text-sm text-gray-600">Date:</span>
-              <span className="font-medium text-gray-900 text-sm sm:text-base">{formatDateForDisplay(transaction?.date)}</span>
-            </div>
-          </div>
-          <div className="flex flex-col xs:flex-row gap-3">
-            <button onClick={onClose} disabled={deleting} className="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 border-2 border-gray-200 rounded-xl hover:bg-gray-50 transition-all font-semibold text-gray-700 disabled:opacity-50 text-sm sm:text-base">
-              Cancel
-            </button>
-            <button onClick={handleDelete} disabled={deleting} className="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-all font-semibold disabled:opacity-50 flex items-center justify-center gap-2 text-sm sm:text-base">
-              {deleting ? <><Loader2 className="w-4 h-4 animate-spin" />Deleting...</> : <><Trash2 className="w-4 h-4" />Delete</>}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <span
+      className={`inline-flex items-center px-2 py-1 rounded-md border text-[11px] font-bold ${getCategoryStyle(
+        category
+      )}`}
+    >
+      {category}
+    </span>
   );
 }
 
-function Input({ label, type = "text", value, onChange, icon: Icon, required, placeholder, min, max }) {
+function MethodBadge({ method }) {
+  if (!method) return null;
+
   return (
-    <label className="block">
-      <span className="text-sm font-semibold text-gray-700 mb-2 block">{label} {required && <span className="text-red-500">*</span>}</span>
-      <div className="relative">
-        {Icon && <Icon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />}
-        <input
-          type={type} value={value} onChange={(e) => onChange(e.target.value)}
-          required={required} placeholder={placeholder} min={min} max={max}
-          className={`w-full border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 transition-all text-sm sm:text-base ${Icon ? "pl-9 sm:pl-11 pr-4" : "px-4"} py-2.5 sm:py-3`}
-        />
-      </div>
-    </label>
+    <span
+      className={`inline-flex items-center px-2 py-1 rounded-md text-[11px] font-semibold ${getMethodStyle(
+        method
+      )}`}
+    >
+      {METHOD_LABELS[method] || method}
+    </span>
+  );
+}
+
+function EntryBadge({ row }) {
+  const type = ENTRY_TYPES[row.entryType];
+
+  if (!type || row.entryType === "REGULAR") return null;
+
+  const tone =
+    ENTRY_TYPE_TONE_CLASSES[type.tone] ||
+    ENTRY_TYPE_TONE_CLASSES.gray;
+
+  return (
+    <span
+      className={`inline-flex items-center px-2 py-1 rounded-md border text-[10px] font-bold ${tone}`}
+    >
+      {type.label}
+    </span>
   );
 }
 
 function FilterChip({ label, onRemove }) {
   return (
-    <span className="inline-flex items-center gap-1 pl-2 pr-1 py-1 bg-white text-indigo-700 rounded-md text-xs font-medium border border-indigo-200">
+    <span className="inline-flex items-center gap-1.5 bg-white border border-indigo-100 text-indigo-700 rounded-lg px-2.5 py-1.5 text-xs font-medium shadow-sm">
       {label}
+
       <button
         type="button"
         onClick={onRemove}
-        className="p-0.5 rounded hover:bg-indigo-100 text-indigo-400 hover:text-indigo-700"
-        aria-label={`Remove filter: ${label}`}
+        className="text-indigo-400 hover:text-indigo-700"
       >
         <X className="w-3 h-3" />
       </button>
@@ -239,679 +407,2017 @@ function FilterChip({ label, onRemove }) {
   );
 }
 
-const UNSETTLED_LABELS = { paid_to_external: "Held by external", paid_by_other: "Paid by other" };
-
-function EntryTypeBadge({ row }) {
-  const type = ENTRY_TYPES[row.entryType];
-  if (!type || row.entryType === "REGULAR") return null;
-  const tone = ENTRY_TYPE_TONE_CLASSES[type.tone] || ENTRY_TYPE_TONE_CLASSES.gray;
-  const badge = (
-    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border ${tone}`}>
-      {type.label}
-    </span>
-  );
-  if (!row.linkedDocId) return badge;
-  const href =
-    row.linkedDocType === "RECEIVABLE"
-      ? `/admin/assets?section=receivables&doc=${row.linkedDocId}`
-      : `/admin/liabilities?section=payables&doc=${row.linkedDocId}`;
+function Input({
+  label,
+  type = "text",
+  value,
+  onChange,
+  icon: Icon,
+}) {
   return (
-    <a href={href} className="hover:opacity-80">
-      {badge}
-    </a>
+    <label className="block">
+      <span className="block text-xs font-semibold text-slate-600 mb-1.5">
+        {label}
+      </span>
+
+      <div className="relative">
+        {Icon && (
+          <Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        )}
+
+        <input
+          type={type}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className={`w-full h-10 rounded-lg border border-slate-200 bg-white text-sm text-slate-800 outline-none transition focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 ${
+            Icon ? "pl-9 pr-3" : "px-3"
+          }`}
+        />
+      </div>
+    </label>
   );
 }
 
-function TransactionBadges({ row, expanded, onToggle }) {
-  const isUnsettled = UNSETTLED_METHODS.includes(row.method);
-  const linkedReceivableId = row.receivableId || row.externalParty?.linkedReceivableId;
-  const linkedPayableId = row.payableId || row.externalParty?.linkedPayableId;
-  const hasLink = !!(linkedReceivableId || linkedPayableId);
-  const hasTax = row.taxDetails?.gstAmount || row.taxDetails?.tdsAmount;
-  const hasCollab = row.collabSplit?.ourShare || row.collabSplit?.clinicShare || row.collabRef?.caseId;
-  const hasReceipts = row.receipts?.length > 0;
+/* -------------------------------------------------------------------------- */
+/* Header                                                                     */
+/* -------------------------------------------------------------------------- */
+
+function PageHeader({
+  activeCategory,
+  refreshing,
+  onRefresh,
+  onExport,
+  exporting,
+  onCreate,
+  hasExport,
+}) {
+  const category =
+    TRANSACTION_CATEGORIES.find(
+      (x) => x.value === activeCategory
+    ) || TRANSACTION_CATEGORIES[0];
 
   return (
-    <div className="flex items-center gap-1.5 flex-wrap px-4 pb-2 pt-0.5">
-      <button
-        type="button"
-        onClick={onToggle}
-        className="inline-flex items-center gap-1 text-xs font-semibold text-gray-500 hover:text-indigo-600 transition-colors"
-      >
-        {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-        Details
-      </button>
-      <EntryTypeBadge row={row} />
-      {row.furtherMode && (
-        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
-          {row.costType === "Expenses" ? "Paid From" : "Received In"}: {row.furtherMode}
-        </span>
-      )}
-      {isUnsettled && (
-        <button
-          type="button"
-          onClick={onToggle}
-          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-700 border border-amber-200 hover:bg-amber-200"
-          title="Excluded from totals until settled"
+    <header className="mb-6">
+      <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-5">
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center shadow-sm">
+              <category.icon className="w-5 h-5 text-white" />
+            </div>
+
+            <SectionLabel>Finance / Transactions</SectionLabel>
+          </div>
+
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-950">
+            {activeCategory === "ALL" ? "Transactions" : category.label}
+          </h1>
+
+          <p className="mt-1 text-sm text-slate-500">
+            Review, manage and track your financial activity.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onRefresh}
+            disabled={refreshing}
+            className="h-10 w-10 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-600 hover:bg-slate-50 transition disabled:opacity-50"
+            title="Refresh"
+          >
+            <RefreshCw
+              className={`w-4 h-4 ${
+                refreshing ? "animate-spin" : ""
+              }`}
+            />
+          </button>
+
+          {hasExport && (
+            <button
+              onClick={onExport}
+              disabled={exporting}
+              className="h-10 px-3 rounded-lg border border-slate-200 bg-white flex items-center gap-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition disabled:opacity-50"
+              title="Export every transaction matching the current filters"
+            >
+              {exporting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <FileDown className="w-4 h-4" />
+              )}
+              <span className="hidden sm:inline">
+                {exporting ? "Exporting…" : "Export"}
+              </span>
+            </button>
+          )}
+
+          <button
+            onClick={onCreate}
+            className="h-10 px-4 rounded-lg bg-slate-950 hover:bg-slate-800 text-white flex items-center gap-2 text-sm font-semibold shadow-sm transition"
+          >
+            <Plus className="w-4 h-4" />
+            New Transaction
+          </button>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* KPI strip                                                                  */
+/* -------------------------------------------------------------------------- */
+
+function KPIItem({
+  label,
+  value,
+  count,
+  icon: Icon,
+  color,
+}) {
+  return (
+    <div className="flex-1 min-w-[180px] px-5 py-4 bg-white">
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-xs font-medium text-slate-500">
+            {label}
+          </p>
+
+          <p className="mt-1 text-xl font-bold tracking-tight text-slate-950">
+            {value}
+          </p>
+
+          <p className="mt-1 text-xs text-slate-400">
+            {count} transactions
+          </p>
+        </div>
+
+        <div
+          className={`w-9 h-9 rounded-lg flex items-center justify-center ${color}`}
         >
-          {UNSETTLED_LABELS[row.method] || "Unsettled"}
-        </button>
-      )}
-      {hasLink && (
-        <button
-          type="button"
-          onClick={onToggle}
-          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100"
-        >
-          <Link2 className="w-3 h-3" /> Linked
-        </button>
-      )}
-      {hasReceipts && (
-        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200" title="Receipt attached">
-          <Receipt className="w-3 h-3" /> {row.receipts.length}
-        </span>
-      )}
-      {hasTax && (
-        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-50 text-purple-700 border border-purple-200" title="Tax applied">
-          <Percent className="w-3 h-3" /> Tax
-        </span>
-      )}
-      {hasCollab && (
-        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-teal-50 text-teal-700 border border-teal-200" title="Collab split">
-          <Users className="w-3 h-3" /> Collab
-        </span>
-      )}
-      <TransactionStatusBadges row={row} onShowDetail={onToggle} />
+          <Icon className="w-4 h-4" />
+        </div>
+      </div>
     </div>
   );
 }
 
-function TransactionDetail({ row, linkedInfo, linkedLoading }) {
-  const router = useRouter();
-  const hasTax = row.taxDetails && (row.taxDetails.gstAmount || row.taxDetails.tdsAmount);
-  const hasCollab = row.collabSplit?.ourShare || row.collabSplit?.clinicShare;
-  const hasExternalParty = !!row.externalParty?.name;
-  const hasReceipts = row.receipts?.length > 0;
-  const hasLink = !!(linkedInfo || linkedLoading);
+function KPIBar({ stats }) {
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mb-5">
+      <div className="flex flex-wrap divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
+        <KPIItem
+          label="Total activity"
+          value={formatCurrency(stats.ALL?.total || 0)}
+          count={stats.ALL?.count || 0}
+          icon={IndianRupee}
+          color="bg-slate-100 text-slate-700"
+        />
 
-  if (!hasTax && !hasCollab && !hasExternalParty && !hasReceipts && !hasLink) {
-    return <div className="px-4 pb-4 pt-1 text-xs text-gray-400">No additional detail for this transaction.</div>;
+        <KPIItem
+          label="Transplant revenue"
+          value={formatCurrency(
+            stats.TRANSPLANT?.total || 0
+          )}
+          count={stats.TRANSPLANT?.count || 0}
+          icon={TrendingUp}
+          color="bg-indigo-50 text-indigo-600"
+        />
+
+        <KPIItem
+          label="Service revenue"
+          value={formatCurrency(stats.SERVICE?.total || 0)}
+          count={stats.SERVICE?.count || 0}
+          icon={TrendingUp}
+          color="bg-pink-50 text-pink-600"
+        />
+
+        <KPIItem
+          label="Medicine revenue"
+          value={formatCurrency(
+            stats.MEDICINE?.total || 0
+          )}
+          count={stats.MEDICINE?.count || 0}
+          icon={Package}
+          color="bg-emerald-50 text-emerald-600"
+        />
+
+        <KPIItem
+          label="Expenses"
+          value={formatCurrency(stats.EXPENSE?.total || 0)}
+          count={stats.EXPENSE?.count || 0}
+          icon={TrendingDown}
+          color="bg-rose-50 text-rose-600"
+        />
+      </div>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Category navigation                                                        */
+/* -------------------------------------------------------------------------- */
+
+function CategoryNavigation({
+  activeCategory,
+  stats,
+  onChange,
+}) {
+  return (
+    <div className="flex gap-1 p-1 bg-slate-100 rounded-xl overflow-x-auto">
+      {TRANSACTION_CATEGORIES.map((cat) => {
+        const Icon = cat.icon;
+        const active = activeCategory === cat.value;
+
+        return (
+          <button
+            key={cat.value}
+            onClick={() => onChange(cat.value)}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition ${
+              active
+                ? "bg-white text-slate-950 shadow-sm"
+                : "text-slate-500 hover:text-slate-800 hover:bg-white/60"
+            }`}
+          >
+            <Icon className="w-4 h-4" />
+
+            {cat.label}
+
+            {stats[cat.value] && (
+              <span
+                className={`text-[11px] ${
+                  active
+                    ? "text-slate-500"
+                    : "text-slate-400"
+                }`}
+              >
+                {stats[cat.value].count || 0}
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Toolbar                                                                    */
+/* -------------------------------------------------------------------------- */
+
+function TransactionToolbar({
+  search,
+  onSearch,
+  showFilters,
+  onToggleFilters,
+  pendingOnly,
+  onPendingToggle,
+  activeCategory,
+  hasActiveFilters,
+  activeFilterCount = 0,
+  onClear,
+  activeDatePreset,
+  onDatePreset,
+}) {
+  return (
+    <div className="px-4 sm:px-5 py-3 border-b border-slate-200 bg-white space-y-3">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mr-1">
+          Range
+        </span>
+
+        {DATE_PRESETS.map((preset) => (
+          <button
+            key={preset.key}
+            onClick={() => onDatePreset(preset.key)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+              activeDatePreset === preset.key
+                ? "bg-indigo-600 text-white"
+                : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+            }`}
+          >
+            {preset.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between">
+        <div className="relative w-full lg:max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+
+          <input
+            value={search}
+            onChange={(e) => onSearch(e.target.value)}
+            placeholder="Search patient, transaction ID, expense..."
+            className="w-full h-10 pl-9 pr-9 rounded-lg border border-slate-200 bg-slate-50/60 text-sm outline-none focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 transition"
+          />
+
+          {search && (
+            <button
+              onClick={() => onSearch("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2">
+          {activeCategory === "EXPENSE" && (
+            <button
+              onClick={onPendingToggle}
+              className={`h-10 px-3 rounded-lg text-sm font-semibold flex items-center gap-2 transition ${
+                pendingOnly
+                  ? "bg-amber-500 text-white"
+                  : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+              }`}
+            >
+              <Clock className="w-4 h-4" />
+              Pending
+            </button>
+          )}
+
+          <button
+            onClick={onToggleFilters}
+            className={`h-10 px-3 rounded-lg border text-sm font-semibold flex items-center gap-2 transition ${
+              showFilters
+                ? "border-indigo-200 bg-indigo-50 text-indigo-700"
+                : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+            }`}
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+            Filters
+            {activeFilterCount > 0 && (
+              <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full bg-indigo-600 text-white text-[11px] font-bold">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+
+          {hasActiveFilters && (
+            <button
+              onClick={onClear}
+              className="h-10 px-3 rounded-lg text-sm font-semibold text-slate-500 hover:bg-slate-100"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Filters                                                                    */
+/* -------------------------------------------------------------------------- */
+function FilterPanel({
+  activeCategory,
+  draftFilters,
+  setDraftFilters,
+  applyFilters,
+  hasPendingChanges,
+  appliedFilters,
+  removeFilter,
+  onReset,
+}) {
+  const hasAppliedFilters =
+    MULTI_FILTER_KEYS.some(
+      (key) => appliedFilters[key]?.length
+    ) ||
+    appliedFilters.dateFrom !== getTodayDate() ||
+    appliedFilters.dateTo !== getTodayDate();
+
+  const activeFilterCount = MULTI_FILTER_KEYS.reduce(
+    (count, key) =>
+      count + (appliedFilters[key]?.length || 0),
+    0
+  ) +
+    (appliedFilters.dateFrom !== getTodayDate() ? 1 : 0) +
+    (appliedFilters.dateTo !== getTodayDate() ? 1 : 0);
+
+  return (
+    <div className="border-b border-slate-200 bg-white">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          applyFilters();
+        }}
+      >
+        {/* Header */}
+        <div className="px-4 sm:px-6 pt-5 pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 border border-slate-200">
+                <svg
+                  className="h-5 w-5 text-slate-700"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M3 5h18M6 12h12M10 19h4"
+                  />
+                </svg>
+              </div>
+
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-slate-900">
+                    Filter transactions
+                  </h3>
+
+                  {activeFilterCount > 0 && (
+                    <span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-slate-900 text-[10px] font-bold text-white">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </div>
+
+                <p className="mt-0.5 text-xs text-slate-500">
+                  Refine your financial records using the filters below.
+                </p>
+              </div>
+            </div>
+
+            {hasPendingChanges && (
+              <div className="inline-flex items-center gap-2 self-start sm:self-auto rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                <span className="text-[11px] font-semibold text-amber-700">
+                  Unsaved changes
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Filter Area */}
+        <div className="px-4 sm:px-6 pb-5">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-3 sm:p-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
+              {/* Branch */}
+              <SearchableMultiSelect
+                label="Branch"
+                icon={Building2}
+                allLabel="All Branches"
+                value={draftFilters.branch}
+                onChange={(v) =>
+                  setDraftFilters((f) => ({
+                    ...f,
+                    branch: v,
+                  }))
+                }
+                options={ALL_BRANCHES.map((b) => ({
+                  value: b,
+                  label: b,
+                }))}
+              />
+
+              {/* Date From */}
+              <Input
+                label="From date"
+                type="date"
+                icon={Calendar}
+                value={draftFilters.dateFrom}
+                onChange={(v) =>
+                  setDraftFilters((f) => ({
+                    ...f,
+                    dateFrom: v,
+                  }))
+                }
+              />
+
+              {/* Date To */}
+              <Input
+                label="To date"
+                type="date"
+                icon={Calendar}
+                value={draftFilters.dateTo}
+                onChange={(v) =>
+                  setDraftFilters((f) => ({
+                    ...f,
+                    dateTo: v,
+                  }))
+                }
+              />
+
+              {/* Payment Method */}
+              <SearchableMultiSelect
+                label="Payment method"
+                icon={CreditCard}
+                allLabel="All Methods"
+                value={draftFilters.paymentMethod}
+                onChange={(v) =>
+                  setDraftFilters((f) => ({
+                    ...f,
+                    paymentMethod: v,
+                  }))
+                }
+                options={Object.keys(METHOD_LABELS).map((m) => ({
+                  value: m,
+                  label: METHOD_LABELS[m] || m,
+                }))}
+              />
+
+              {/* Entry Type */}
+              {!NON_TRANSACTION_TABS.includes(activeCategory) && (
+                <SearchableMultiSelect
+                  label="Entry type"
+                  icon={Link2}
+                  allLabel="All Entry Types"
+                  value={draftFilters.entryType}
+                  onChange={(v) =>
+                    setDraftFilters((f) => ({
+                      ...f,
+                      entryType: v,
+                    }))
+                  }
+                  options={ENTRY_TYPE_FILTER_OPTIONS.filter(
+                    (o) => o.value
+                  ).map((o) => ({
+                    value: o.value,
+                    label: o.label.replace(/ only$/, ""),
+                  }))}
+                />
+              )}
+
+              {/* Procedure */}
+              {(activeCategory === "ALL" ||
+                activeCategory === "TRANSPLANT" ||
+                activeCategory === "SERVICE") && (
+                <SearchableMultiSelect
+                  label="Procedure"
+                  icon={Tag}
+                  allLabel="All Procedures"
+                  value={draftFilters.procedure}
+                  onChange={(v) =>
+                    setDraftFilters((f) => ({
+                      ...f,
+                      procedure: v,
+                    }))
+                  }
+                  options={[
+                    ...TRANSPLANT_PROCEDURES,
+                    ...SERVICE_PROCEDURES,
+                  ].map((p) => ({
+                    value: p,
+                    label: p,
+                  }))}
+                />
+              )}
+
+              {/* Account */}
+              {(REVENUE_CATEGORIES.includes(activeCategory) ||
+                activeCategory === "EXPENSE" ||
+                activeCategory === "ALL") && (
+                <SearchableMultiSelect
+                  label={
+                    activeCategory === "EXPENSE"
+                      ? "Paid from"
+                      : "Received in"
+                  }
+                  icon={Landmark}
+                  allLabel="All Accounts"
+                  value={draftFilters.furtherMode}
+                  onChange={(v) =>
+                    setDraftFilters((f) => ({
+                      ...f,
+                      furtherMode: v,
+                    }))
+                  }
+                  options={[
+                    {
+                      value: UNTRACKED_FURTHER_MODE,
+                      label: "Untracked",
+                    },
+                    ...FURTHER_MODES.map((m) => ({
+                      value: m,
+                      label: m,
+                    })),
+                  ]}
+                />
+              )}
+
+              {/* Expense Category */}
+              {(activeCategory === "EXPENSE" ||
+                activeCategory === "ALL") && (
+                <>
+                  <SearchableMultiSelect
+                    label="Expense category"
+                    allLabel="All Categories"
+                    value={draftFilters.expenseCategory}
+                    onChange={(v) =>
+                      setDraftFilters((f) => ({
+                        ...f,
+                        expenseCategory: v,
+                        expenseType: [],
+                      }))
+                    }
+                    options={EXPENSE_CATEGORIES.map((c) => ({
+                      value: c,
+                      label: c,
+                    }))}
+                  />
+
+                  {/* Expense Type */}
+                  <SearchableMultiSelect
+                    label="Expense type"
+                    allLabel="All Types"
+                    value={draftFilters.expenseType}
+                    onChange={(v) =>
+                      setDraftFilters((f) => ({
+                        ...f,
+                        expenseType: v,
+                      }))
+                    }
+                    options={(
+                      draftFilters.expenseCategory.length
+                        ? [
+                            ...new Set(
+                              draftFilters.expenseCategory.flatMap(
+                                (c) => getExpenseTypes(c)
+                              )
+                            ),
+                          ]
+                        : [
+                            ...new Set(
+                              EXPENSE_CATEGORIES.flatMap((c) =>
+                                getExpenseTypes(c)
+                              )
+                            ),
+                          ]
+                    ).map((t) => ({
+                      value: t,
+                      label: t,
+                    }))}
+                  />
+                </>
+              )}
+            </div>
+
+            {/* Bottom Actions */}
+            <div className="mt-4 pt-4 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="text-xs text-slate-500">
+                {hasPendingChanges ? (
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                    Review your changes before applying.
+                  </span>
+                ) : (
+                  <span>
+                    Select one or more filters to narrow the results.
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                {onReset && (
+                  <button
+                    type="button"
+                    onClick={onReset}
+                    className="
+                      h-10 px-4
+                      rounded-xl
+                      border border-slate-200
+                      bg-white
+                      text-sm font-semibold text-slate-600
+                      hover:bg-slate-100
+                      hover:text-slate-900
+                      active:scale-[0.98]
+                      transition-all duration-150
+                    "
+                  >
+                    Reset
+                  </button>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={!hasPendingChanges}
+                  className="
+                    h-10 px-5
+                    rounded-xl
+                    bg-slate-950
+                    text-white
+                    text-sm font-semibold
+                    shadow-sm
+                    hover:bg-slate-800
+                    active:scale-[0.98]
+                    disabled:bg-slate-200
+                    disabled:text-slate-400
+                    disabled:shadow-none
+                    disabled:cursor-not-allowed
+                    transition-all duration-150
+                  "
+                >
+                  Apply filters
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+
+      {/* Applied Filters */}
+      {hasAppliedFilters && (
+        <div className="px-4 sm:px-6 pb-5">
+          <div className="rounded-2xl border border-slate-200 bg-white p-3 sm:p-4">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+              <div className="shrink-0">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100">
+                    <svg
+                      className="h-3.5 w-3.5 text-slate-600"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M3 5h18M6 12h12M10 19h4"
+                      />
+                    </svg>
+                  </span>
+
+                  <span className="text-xs font-bold text-slate-700">
+                    Active filters
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex flex-1 flex-wrap gap-2">
+                {/* Branch */}
+                {appliedFilters.branch.map((v) => (
+                  <FilterChip
+                    key={`branch-${v}`}
+                    label={`Branch: ${v}`}
+                    onRemove={() =>
+                      removeFilter("branch", v)
+                    }
+                  />
+                ))}
+
+                {/* From Date */}
+                {appliedFilters.dateFrom && (
+                  <FilterChip
+                    label={`From: ${formatDateForDisplay(
+                      appliedFilters.dateFrom
+                    )}`}
+                    onRemove={() =>
+                      removeFilter("dateFrom")
+                    }
+                  />
+                )}
+
+                {/* To Date */}
+                {appliedFilters.dateTo && (
+                  <FilterChip
+                    label={`To: ${formatDateForDisplay(
+                      appliedFilters.dateTo
+                    )}`}
+                    onRemove={() =>
+                      removeFilter("dateTo")
+                    }
+                  />
+                )}
+
+                {/* Payment Method */}
+                {appliedFilters.paymentMethod.map((v) => (
+                  <FilterChip
+                    key={`method-${v}`}
+                    label={`Method: ${
+                      METHOD_LABELS[v] || v
+                    }`}
+                    onRemove={() =>
+                      removeFilter("paymentMethod", v)
+                    }
+                  />
+                ))}
+
+                {/* Procedure */}
+                {appliedFilters.procedure.map((v) => (
+                  <FilterChip
+                    key={`procedure-${v}`}
+                    label={`Procedure: ${v}`}
+                    onRemove={() =>
+                      removeFilter("procedure", v)
+                    }
+                  />
+                ))}
+
+                {/* Account */}
+                {appliedFilters.furtherMode.map((v) => (
+                  <FilterChip
+                    key={`account-${v}`}
+                    label={`Account: ${
+                      v === UNTRACKED_FURTHER_MODE
+                        ? "Untracked"
+                        : v
+                    }`}
+                    onRemove={() =>
+                      removeFilter("furtherMode", v)
+                    }
+                  />
+                ))}
+
+                {/* Expense Category */}
+                {appliedFilters.expenseCategory.map((v) => (
+                  <FilterChip
+                    key={`expense-category-${v}`}
+                    label={`Category: ${v}`}
+                    onRemove={() =>
+                      removeFilter("expenseCategory", v)
+                    }
+                  />
+                ))}
+
+                {/* Expense Type */}
+                {appliedFilters.expenseType.map((v) => (
+                  <FilterChip
+                    key={`expense-type-${v}`}
+                    label={`Type: ${v}`}
+                    onRemove={() =>
+                      removeFilter("expenseType", v)
+                    }
+                  />
+                ))}
+
+                {/* Entry Type */}
+                {appliedFilters.entryType.map((v) => (
+                  <FilterChip
+                    key={`entry-${v}`}
+                    label={`Entry: ${
+                      ENTRY_TYPE_FILTER_OPTIONS.find(
+                        (o) => o.value === v
+                      )?.label || v
+                    }`}
+                    onRemove={() =>
+                      removeFilter("entryType", v)
+                    }
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+/* -------------------------------------------------------------------------- */
+/* Transaction details                                                        */
+/* -------------------------------------------------------------------------- */
+
+function TransactionDetails({
+  row,
+  linkedInfo,
+  linkedLoading,
+}) {
+  const router = useRouter();
+
+  const hasTax =
+    row.taxDetails &&
+    (row.taxDetails.gstAmount ||
+      row.taxDetails.tdsAmount);
+
+  const hasCollab =
+    row.collabSplit?.ourShare ||
+    row.collabSplit?.clinicShare;
+
+  const hasExternalParty =
+    !!row.externalParty?.name;
+
+  const hasReceipts =
+    row.receipts?.length > 0;
+
+  const hasLink =
+    linkedLoading || !!linkedInfo;
+
+  const hasAudit =
+    !!row.createdBy?.name ||
+    row.editors?.length > 0;
+
+  if (
+    !hasTax &&
+    !hasCollab &&
+    !hasExternalParty &&
+    !hasReceipts &&
+    !hasLink &&
+    !hasAudit
+  ) {
+    return (
+      <div className="px-5 py-4 bg-slate-50 text-xs text-slate-400">
+        No additional details available.
+      </div>
+    );
   }
 
   return (
-    <div className="px-4 pb-4 pt-1 bg-slate-50/70 border-t border-slate-100">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+    <div className="px-5 py-5 bg-slate-50 border-t border-slate-100">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
         {hasTax && (
-          <div className="bg-white rounded-lg border border-slate-200 p-3">
-            <p className="font-semibold text-slate-700 mb-1.5">Tax Breakdown</p>
-            <dl className="space-y-1 text-slate-600">
-              {row.taxDetails.baseAmount != null && <div className="flex justify-between"><dt>Base</dt><dd>{formatCurrency(row.taxDetails.baseAmount)}</dd></div>}
-              {row.taxDetails.gstAmount != null && <div className="flex justify-between"><dt>GST ({row.taxDetails.gstRate || 0}%)</dt><dd>{formatCurrency(row.taxDetails.gstAmount)}</dd></div>}
-              {row.taxDetails.invoiceTotal != null && <div className="flex justify-between font-medium text-slate-800"><dt>Invoice Total</dt><dd>{formatCurrency(row.taxDetails.invoiceTotal)}</dd></div>}
-              {row.taxDetails.tdsApplied && <div className="flex justify-between text-rose-600"><dt>TDS ({row.taxDetails.tdsRate || 0}%)</dt><dd>-{formatCurrency(row.taxDetails.tdsAmount)}</dd></div>}
-              {row.taxDetails.tdsApplied && (
-                <div className="flex justify-between font-medium text-slate-800">
-                  <dt>Net</dt><dd>{formatCurrency((row.taxDetails.invoiceTotal || 0) - (row.taxDetails.tdsAmount || 0))}</dd>
-                </div>
+          <DetailBox title="Tax">
+            <DetailLine
+              label="Base"
+              value={formatCurrency(
+                row.taxDetails.baseAmount || 0
               )}
-            </dl>
-          </div>
+            />
+
+            <DetailLine
+              label={`GST (${row.taxDetails.gstRate || 0}%)`}
+              value={formatCurrency(
+                row.taxDetails.gstAmount || 0
+              )}
+            />
+
+            {row.taxDetails.tdsApplied && (
+              <DetailLine
+                label={`TDS (${row.taxDetails.tdsRate || 0}%)`}
+                value={`-${formatCurrency(
+                  row.taxDetails.tdsAmount || 0
+                )}`}
+                danger
+              />
+            )}
+          </DetailBox>
         )}
 
         {hasCollab && (
-          <div className="bg-white rounded-lg border border-slate-200 p-3">
-            <p className="font-semibold text-slate-700 mb-1.5">Collab Split</p>
-            <dl className="space-y-1 text-slate-600">
-              <div className="flex justify-between"><dt>Package</dt><dd>{formatCurrency((row.collabSplit.ourShare || 0) + (row.collabSplit.clinicShare || 0))}</dd></div>
-              <div className="flex justify-between"><dt>Our Share</dt><dd>{formatCurrency(row.collabSplit.ourShare)}</dd></div>
-              <div className="flex justify-between"><dt>Clinic Share</dt><dd>{formatCurrency(row.collabSplit.clinicShare)}</dd></div>
-              <div className="flex justify-between"><dt>Received by Us</dt><dd>{formatCurrency(row.collabSplit.ourReceived)}</dd></div>
-              <div className="flex justify-between"><dt>Received by Clinic</dt><dd>{formatCurrency(row.collabSplit.clinicReceived)}</dd></div>
-            </dl>
-          </div>
+          <DetailBox title="Collaboration split">
+            <DetailLine
+              label="Our share"
+              value={formatCurrency(
+                row.collabSplit.ourShare || 0
+              )}
+            />
+
+            <DetailLine
+              label="Clinic share"
+              value={formatCurrency(
+                row.collabSplit.clinicShare || 0
+              )}
+            />
+
+            <DetailLine
+              label="Received by us"
+              value={formatCurrency(
+                row.collabSplit.ourReceived || 0
+              )}
+            />
+          </DetailBox>
         )}
 
         {hasExternalParty && (
-          <div className="bg-white rounded-lg border border-slate-200 p-3">
-            <p className="font-semibold text-slate-700 mb-1.5">External Party</p>
-            <dl className="space-y-1 text-slate-600">
-              <div className="flex justify-between"><dt>Name</dt><dd>{row.externalParty.name}</dd></div>
-              <div className="flex justify-between"><dt>Their Method</dt><dd>{row.externalParty.method || "—"}</dd></div>
-              <div className="flex justify-between"><dt>Type</dt><dd>{row.externalParty.partyKind || "—"}</dd></div>
-            </dl>
-          </div>
+          <DetailBox title="External party">
+            <DetailLine
+              label="Name"
+              value={row.externalParty.name}
+            />
+
+            <DetailLine
+              label="Type"
+              value={
+                row.externalParty.partyKind || "—"
+              }
+            />
+
+            <DetailLine
+              label="Method"
+              value={
+                row.externalParty.method || "—"
+              }
+            />
+          </DetailBox>
         )}
 
         {hasReceipts && (
-          <div className="bg-white rounded-lg border border-slate-200 p-3">
-            <p className="font-semibold text-slate-700 mb-1.5">Receipts</p>
+          <DetailBox title="Receipts">
             <div className="flex flex-wrap gap-2">
-              {row.receipts.map((r) => (
+              {row.receipts.map((receipt) => (
                 <a
-                  key={r.publicId || r.url}
-                  href={r.url}
+                  key={
+                    receipt.publicId ||
+                    receipt.url
+                  }
+                  href={receipt.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1 px-2 py-1 bg-slate-100 rounded text-slate-700 hover:bg-slate-200 max-w-35"
+                  className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-white border border-slate-200 text-xs text-slate-700 hover:border-indigo-300 transition"
                 >
-                  {r.fileType === "pdf" ? <Bill className="w-3.5 h-3.5 shrink-0" /> : <ImageIcon className="w-3.5 h-3.5 shrink-0" />}
-                  <span className="truncate">{r.fileName || "File"}</span>
+                  <Receipt className="w-3.5 h-3.5 text-indigo-500" />
+
+                  <span className="max-w-32 truncate">
+                    {receipt.fileName || "Receipt"}
+                  </span>
                 </a>
               ))}
             </div>
-          </div>
+          </DetailBox>
         )}
 
         {hasLink && (
-          <div className="bg-white rounded-lg border border-slate-200 p-3">
-            <p className="font-semibold text-slate-700 mb-1.5">
-              Linked {linkedInfo?.type === "payable" ? "Payable" : "Receivable"}
-            </p>
+          <DetailBox title="Linked document">
             {linkedLoading ? (
               <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
             ) : linkedInfo?.data ? (
-              <dl className="space-y-1 text-slate-600">
-                <div className="flex justify-between"><dt>Total</dt><dd>{formatCurrency(linkedInfo.data.totalAmount)}</dd></div>
-                <div className="flex justify-between"><dt>{linkedInfo.type === "payable" ? "Paid" : "Received"}</dt><dd>{formatCurrency(linkedInfo.data.paid ?? linkedInfo.data.received)}</dd></div>
-                <div className="flex justify-between font-medium text-rose-600"><dt>Pending</dt><dd>{formatCurrency(linkedInfo.data.pending)}</dd></div>
+              <>
+                <DetailLine
+                  label="Total"
+                  value={formatCurrency(
+                    linkedInfo.data.totalAmount
+                  )}
+                />
+
+                <DetailLine
+                  label={
+                    linkedInfo.type === "payable"
+                      ? "Paid"
+                      : "Received"
+                  }
+                  value={formatCurrency(
+                    linkedInfo.data.paid ??
+                      linkedInfo.data.received ??
+                      0
+                  )}
+                />
+
                 <button
-                  type="button"
                   onClick={() =>
                     router.push(
                       linkedInfo.type === "payable"
                         ? `/admin/liabilities?section=payables&doc=${linkedInfo.data._id}`
-                        : `/admin/assets?section=receivables&doc=${linkedInfo.data._id}`,
+                        : `/admin/assets?section=receivables&doc=${linkedInfo.data._id}`
                     )
                   }
-                  className="mt-1 text-indigo-600 hover:underline text-xs font-medium"
+                  className="mt-2 text-xs font-semibold text-indigo-600 hover:text-indigo-800"
                 >
-                  View in {linkedInfo.type === "payable" ? "Liabilities" : "Assets"} →
+                  Open document →
                 </button>
-              </dl>
+              </>
             ) : (
-              <p className="text-slate-400">Not found</p>
+              <p className="text-xs text-slate-400">
+                Document not found.
+              </p>
             )}
-          </div>
+          </DetailBox>
+        )}
+
+        {hasAudit && (
+          <DetailBox title="Audit trail">
+            {row.createdBy?.name && (
+              <DetailLine
+                label="Created by"
+                value={`${row.createdBy.name}${
+                  row.createdBy.date
+                    ? ` · ${formatDateForDisplay(row.createdBy.date)}`
+                    : ""
+                }`}
+              />
+            )}
+
+            {row.editors?.length > 0 ? (
+              (() => {
+                const lastEditor = row.editors[row.editors.length - 1];
+                return (
+                  <>
+                    <DetailLine
+                      label="Last updated by"
+                      value={`${lastEditor.name || "—"}${
+                        lastEditor.date
+                          ? ` · ${formatDateForDisplay(lastEditor.date)}`
+                          : ""
+                      }`}
+                    />
+
+                    {row.editors.length > 1 && (
+                      <DetailLine
+                        label="Total edits"
+                        value={String(row.editors.length)}
+                      />
+                    )}
+
+                    {lastEditor.updatedFields?.length > 0 && (
+                      <p className="text-[11px] text-slate-400 mt-1">
+                        Changed:{" "}
+                        {lastEditor.updatedFields
+                          .map((f) => f.name)
+                          .join(", ")}
+                      </p>
+                    )}
+                  </>
+                );
+              })()
+            ) : (
+              <DetailLine label="Last updated by" value="Not edited" />
+            )}
+          </DetailBox>
         )}
       </div>
     </div>
   );
 }
 
-function DataTable({ category, rows, onDelete, onReverse, onSort, sortConfig, pagination, onGenerateBill }) {
+function DetailBox({ title, children }) {
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl p-3.5">
+      <p className="text-xs font-bold text-slate-700 mb-3">
+        {title}
+      </p>
+
+      <div className="space-y-2">{children}</div>
+    </div>
+  );
+}
+
+function DetailLine({
+  label,
+  value,
+  danger = false,
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 text-xs">
+      <span className="text-slate-500">{label}</span>
+
+      <span
+        className={`font-semibold ${
+          danger
+            ? "text-rose-600"
+            : "text-slate-800"
+        }`}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Mobile transaction card                                                    */
+/* -------------------------------------------------------------------------- */
+
+function MobileTransactionCard({
+  row,
+  category,
+  onExpand,
+  expanded,
+  onDelete,
+  onReverse,
+  onBill,
+  linkedInfo,
+  linkedLoading,
+}) {
+  const rowCategory =
+    row.transactionCategory ||
+    row.category ||
+    "TRANSPLANT";
+
+  const isExpense = rowCategory === "EXPENSE";
+
+  const title = isExpense
+    ? getExpenseGiverName(row)
+    : getPatientName(row);
+
+  const subtitle = isExpense
+    ? row.expense ||
+      row.expenseCategory ||
+      "Expense"
+    : row.procedure ||
+      (rowCategory === "MEDICINE"
+        ? getMedicineName(row)
+        : "Transaction");
+
+  const amount = calculateNetAmount(row);
+
+  return (
+    <div className="border-b border-slate-100 last:border-0">
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-1.5 mb-2">
+              {category === "ALL" && (
+                <CategoryBadge category={rowCategory} />
+              )}
+
+              <MethodBadge method={row.method} />
+              <EntryBadge row={row} />
+
+              {row.approvalStatus === "PENDING" && (
+                <span className="px-2 py-1 rounded-md bg-amber-50 text-amber-700 text-[10px] font-bold">
+                  Pending
+                </span>
+              )}
+            </div>
+
+            <h3 className="font-bold text-slate-900 truncate">
+              {title}
+            </h3>
+
+            <p className="text-sm text-slate-500 mt-0.5 truncate">
+              {subtitle}
+            </p>
+
+            {!isExpense && getPatientPhone(row) && (
+              <p className="text-xs text-slate-400 mt-1">
+                {getPatientPhone(row)}
+              </p>
+            )}
+          </div>
+
+          <div className="text-right shrink-0">
+            <p
+              className={`text-lg font-bold ${
+                isExpense
+                  ? "text-rose-600"
+                  : "text-emerald-600"
+              }`}
+            >
+              {formatCurrency(amount)}
+            </p>
+
+            <p className="text-xs text-slate-400 mt-1">
+              {formatDateForDisplay(row.date)}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-100">
+          <button
+            onClick={onExpand}
+            className="text-xs font-semibold text-slate-500 hover:text-indigo-600 flex items-center gap-1"
+          >
+            {expanded ? (
+              <ChevronDown className="w-3.5 h-3.5" />
+            ) : (
+              <ChevronRight className="w-3.5 h-3.5" />
+            )}
+            Details
+          </button>
+
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => onBill(row)}
+              className="p-2 rounded-lg text-slate-500 hover:bg-emerald-50 hover:text-emerald-600"
+              title="Bill"
+            >
+              <FileText className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={() => onReverse(row)}
+              disabled={
+                !!row.reversalOf ||
+                !!row.isReversed ||
+                !(row.amount > 0)
+              }
+              className="p-2 rounded-lg text-slate-500 hover:bg-violet-50 hover:text-violet-600 disabled:hidden"
+              title="Reverse"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={() => onDelete(row)}
+              className="p-2 rounded-lg text-slate-500 hover:bg-rose-50 hover:text-rose-600"
+              title="Delete"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {expanded && (
+        <TransactionDetails
+          row={row}
+          linkedInfo={linkedInfo}
+          linkedLoading={linkedLoading}
+        />
+      )}
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Desktop table                                                              */
+/* -------------------------------------------------------------------------- */
+function DesktopTable({
+  category,
+  rows,
+  sortConfig,
+  onSort,
+  onDelete,
+  onReverse,
+  onBill,
+  expandedId,
+  onExpand,
+  linkedInfo,
+  linkedLoading,
+}) {
+  const getColumns = () => {
+    const base = [["date", "Date"]];
+
+    if (category === "EXPENSE") {
+      return [
+        ...base,
+        ["party", "Paid to"],
+        ["description", "Category"],
+        ["method", "Method"],
+        ["branch", "Branch"],
+        ["amount", "Amount"],
+        ["actions", ""],
+      ];
+    }
+
+    if (category === "ALL") {
+      return [
+        ...base,
+        ["category", "Type"],
+        ["party", "Party"],
+        ["description", "Details"],
+        ["method", "Method"],
+        ["branch", "Branch"],
+        ["amount", "Amount"],
+        ["actions", ""],
+      ];
+    }
+
+    // TRANSPLANT / SERVICE / MEDICINE
+    return [
+      ...base,
+      ["party", "Patient"],
+      ["description", category === "MEDICINE" ? "Medicine" : "Procedure"],
+      ["method", "Method"],
+      ["branch", "Branch"],
+      ["amount", "Amount"],
+      ["actions", ""],
+    ];
+  };
+
+  const columns = getColumns();
+
+  const SortButton = ({ column }) => {
+    if (!["date", "amount", "branch", "method"].includes(column)) return null;
+    if (sortConfig.key !== column) {
+      return <ArrowUpDown className="w-3 h-3 text-slate-300" />;
+    }
+    return sortConfig.direction === "asc" ? (
+      <ArrowUp className="w-3 h-3 text-indigo-600" />
+    ) : (
+      <ArrowDown className="w-3 h-3 text-indigo-600" />
+    );
+  };
+
+  const renderCell = (row, key) => {
+    const rowCategory = row.transactionCategory || row.category || "TRANSPLANT";
+    const isExpense = rowCategory === "EXPENSE";
+
+    switch (key) {
+      case "date":
+        return (
+          <div>
+            <p className="text-sm font-medium text-slate-700">{formatDateForDisplay(row.date)}</p>
+            <p className="text-[11px] text-slate-400">{formatTime(row.date)}</p>
+          </div>
+        );
+
+      case "category":
+        return <CategoryBadge category={rowCategory} />;
+
+      case "party": {
+        const name = isExpense ? getExpenseGiverName(row) : getPatientName(row);
+        const phone = !isExpense ? getPatientPhone(row) : "";
+        return (
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-slate-800 truncate max-w-[180px]">{name}</p>
+            {phone && <p className="text-[11px] text-slate-400">{phone}</p>}
+          </div>
+        );
+      }
+
+      case "description": {
+        const text = isExpense
+          ? row.expenseType || row.expense || row.expenseCategory || "Expense"
+          : rowCategory === "MEDICINE"
+            ? getMedicineName(row)
+            : row.procedure || "—";
+        return <span className="text-sm text-slate-600 truncate block max-w-[220px]">{text}</span>;
+      }
+
+      case "method":
+        return <MethodBadge method={row.method} />;
+
+      case "branch":
+        return <span className="text-sm text-slate-600">{row.branch || "—"}</span>;
+
+      case "amount":
+        return (
+          <span className={`text-sm font-bold ${isExpense ? "text-rose-600" : "text-emerald-600"}`}>
+            {formatCurrency(calculateNetAmount(row))}
+          </span>
+        );
+
+      case "actions":
+        return (
+          <div className="flex items-center justify-end gap-1">
+            <button
+              onClick={() => onBill(row)}
+              className="p-1.5 rounded-lg text-slate-500 hover:bg-emerald-50 hover:text-emerald-600"
+              title="Bill"
+            >
+              <FileText className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={() => onReverse(row)}
+              disabled={!!row.reversalOf || !!row.isReversed || !(row.amount > 0)}
+              className="p-1.5 rounded-lg text-slate-500 hover:bg-violet-50 hover:text-violet-600 disabled:opacity-30 disabled:pointer-events-none"
+              title="Reverse"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={() => onDelete(row)}
+              className="p-1.5 rounded-lg text-slate-500 hover:bg-rose-50 hover:text-rose-600"
+              title="Delete"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="hidden md:block overflow-x-auto">
+      <table className="w-full border-collapse">
+        <thead className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200">
+          <tr>
+            {columns.map(([key, label]) => (
+              <th
+                key={key}
+                className={`px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500 ${
+                  key === "amount" ? "text-right" : key === "actions" ? "text-right" : ""
+                }`}
+              >
+                {label ? (
+                  <button
+                    onClick={() =>
+                      ["date", "amount", "branch", "method"].includes(key) && onSort(key)
+                    }
+                    className={`inline-flex items-center gap-1.5 ${
+                      ["date", "amount", "branch", "method"].includes(key)
+                        ? "hover:text-slate-900"
+                        : ""
+                    }`}
+                  >
+                    {label}
+                    <SortButton column={key} />
+                  </button>
+                ) : null}
+              </th>
+            ))}
+          </tr>
+        </thead>
+
+        {/* ✅ Single tbody – no nesting */}
+        <tbody className="divide-y divide-slate-100">
+          {rows.flatMap((row) => {
+            const expanded = expandedId === row._id;
+
+            // Main row
+            const mainRow = (
+              <tr
+                key={`${row._id}-main`}
+                className={`group transition-colors ${
+                  expanded ? "bg-indigo-50/40" : "hover:bg-slate-50/70"
+                }`}
+              >
+                {columns.map(([key]) => (
+                  <td
+                    key={key}
+                    className={`px-4 py-3.5 align-middle ${
+                      key === "amount" ? "text-right" : key === "actions" ? "text-right" : ""
+                    }`}
+                  >
+                    {renderCell(row, key)}
+                  </td>
+                ))}
+              </tr>
+            );
+
+            // Detail row (always present, but content conditionally expanded)
+            const detailRow = (
+              <tr key={`${row._id}-detail`}>
+                <td colSpan={columns.length} className="p-0">
+                  <div className="flex items-center gap-2 px-4 py-2 bg-white">
+                    <button
+                      onClick={() => onExpand(row)}
+                      className="text-[11px] font-semibold text-slate-400 hover:text-indigo-600 flex items-center gap-1"
+                    >
+                      {expanded ? (
+                        <ChevronDown className="w-3.5 h-3.5" />
+                      ) : (
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      )}
+                      Details
+                    </button>
+
+                    {row.furtherMode && (
+                      <span className="text-[10px] text-slate-400">
+                        •{" "}
+                        {row.costType === "Expenses" ? "Paid from" : "Received in"}{" "}
+                        {row.furtherMode}
+                      </span>
+                    )}
+
+                    {UNSETTLED_METHODS.includes(row.method) && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-600">
+                        <Clock className="w-3 h-3" />
+                        Unsettled
+                      </span>
+                    )}
+
+                    {row.receipts?.length > 0 && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-blue-600">
+                        <Receipt className="w-3 h-3" />
+                        {row.receipts.length} receipt{row.receipts.length > 1 ? "s" : ""}
+                      </span>
+                    )}
+
+                    {(row.taxDetails?.gstAmount || row.taxDetails?.tdsAmount) && (
+                      <span className="text-[10px] font-semibold text-purple-600">Tax</span>
+                    )}
+
+                    <TransactionStatusBadges row={row} onShowDetail={() => onExpand(row)} />
+                  </div>
+
+                  {expanded && (
+                    <TransactionDetails
+                      row={row}
+                      linkedInfo={linkedInfo}
+                      linkedLoading={linkedLoading}
+                    />
+                  )}
+                </td>
+              </tr>
+            );
+
+            return [mainRow, detailRow];
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Empty state                                                                */
+/* -------------------------------------------------------------------------- */
+
+function EmptyState({ hasFilters }) {
+  return (
+    <div className="py-20 px-6 text-center">
+      <div className="mx-auto w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
+        <Search className="w-6 h-6 text-slate-400" />
+      </div>
+
+      <h3 className="font-bold text-slate-900">
+        No transactions found
+      </h3>
+
+      <p className="text-sm text-slate-500 max-w-sm mx-auto mt-1">
+        {hasFilters
+          ? "Try changing or clearing your filters to see more records."
+          : "There are no transactions available for this period."}
+      </p>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Pagination                                                                 */
+/* -------------------------------------------------------------------------- */
+
+function Pagination({
+  page,
+  pages,
+  perPage,
+  total,
+  startIdx,
+  endIdx,
+  setPage,
+  setPerPage,
+}) {
+  return (
+    <div className="px-4 sm:px-5 py-3.5 border-t border-slate-200 bg-white flex flex-col sm:flex-row gap-3 items-center justify-between">
+      <p className="text-xs sm:text-sm text-slate-500">
+        Showing{" "}
+        <span className="font-semibold text-slate-800">
+          {total === 0 ? 0 : startIdx + 1}–{endIdx}
+        </span>{" "}
+        of{" "}
+        <span className="font-semibold text-slate-800">
+          {total.toLocaleString()}
+        </span>
+      </p>
+
+      <div className="flex items-center gap-2">
+        <select
+          value={perPage}
+          onChange={(e) => {
+            setPerPage(Number(e.target.value));
+            setPage(1);
+          }}
+          className="h-9 px-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 bg-white outline-none"
+        >
+          {[10, 25, 50, 100].map((n) => (
+            <option key={n} value={n}>
+              {n} / page
+            </option>
+          ))}
+        </select>
+
+        <button
+          disabled={page <= 1}
+          onClick={() =>
+            setPage((p) => Math.max(1, p - 1))
+          }
+          className="w-9 h-9 rounded-lg border border-slate-200 flex items-center justify-center disabled:opacity-30 hover:bg-slate-50"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+
+        <span className="px-2 text-xs font-semibold text-slate-600">
+          {page} / {pages}
+        </span>
+
+        <button
+          disabled={page >= pages}
+          onClick={() =>
+            setPage((p) =>
+              Math.min(pages, p + 1)
+            )
+          }
+          className="w-9 h-9 rounded-lg border border-slate-200 flex items-center justify-center disabled:opacity-30 hover:bg-slate-50"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Main page                                                                  */
+/* -------------------------------------------------------------------------- */
+
+function AllTransactionsPageInner({ Sidebar }) {
   const router = useRouter();
-  const [expandedId, setExpandedId] = useState(null);
-  const [expandedInfo, setExpandedInfo] = useState(null);
-  const [expandedLoading, setExpandedLoading] = useState(false);
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const toast = useToast();
+
+  const [transactions, setTransactions] = useState([]);
+  const [total, setTotal] = useState(0);
+
+  const [stats, setStats] = useState({
+    ALL: { count: 0, total: 0 },
+    TRANSPLANT: { count: 0, total: 0 },
+    SERVICE: { count: 0, total: 0 },
+    MEDICINE: { count: 0, total: 0 },
+    EXPENSE: { count: 0, total: 0 },
+  });
+
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [error, setError] = useState(null);
+
+  const [activeCategory, setActiveCategory] =
+    useState(() => {
+      const category =
+        searchParams.get("category");
+
+      return VALID_CATEGORIES.has(category)
+        ? category
+        : "ALL";
+    });
+
+  const [appliedFilters, setAppliedFilters] =
+    useState(() =>
+      filtersFromParams(searchParams)
+    );
+
+  const [draftFilters, setDraftFilters] =
+    useState(() =>
+      filtersFromParams(searchParams)
+    );
+
+  const [tableSearch, setTableSearch] =
+    useState("");
+
+  const [debouncedSearch, setDebouncedSearch] =
+    useState("");
+
+  const [showFilters, setShowFilters] =
+    useState(false);
+
+  const [pendingOnly, setPendingOnly] =
+    useState(false);
+
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
+
+  const [sortConfig, setSortConfig] =
+    useState({
+      key: "date",
+      direction: "desc",
+    });
+
+  const [expandedId, setExpandedId] =
+    useState(null);
+
+  const [expandedInfo, setExpandedInfo] =
+    useState(null);
+
+  const [expandedLoading, setExpandedLoading] =
+    useState(false);
+
+  const [deleteTarget, setDeleteTarget] =
+    useState(null);
+
+  const [reverseTarget, setReverseTarget] =
+    useState(null);
+
+  const [billTransaction, setBillTransaction] =
+    useState(null);
+
+  const searchDebounceRef = useRef(null);
+
+  const handleSearch = (value) => {
+    setTableSearch(value);
+
+    clearTimeout(searchDebounceRef.current);
+
+    searchDebounceRef.current =
+      setTimeout(() => {
+        setDebouncedSearch(value);
+        setPage(1);
+      }, 400);
+  };
+
+  // Shared by fetchData (one page, for the screen) and the export (every page, for the
+  // download) so the two can never drift on what "the current filters" means.
+  const buildFilterParams = useCallback(
+    (overrides = {}) => {
+      const p = new URLSearchParams({
+        category: activeCategory,
+        ...overrides,
+      });
+
+      const addArray = (key) => {
+        if (appliedFilters[key]?.length) {
+          p.set(key, appliedFilters[key].join(","));
+        }
+      };
+
+      addArray("branch");
+      addArray("paymentMethod");
+      addArray("procedure");
+      addArray("furtherMode");
+      addArray("expenseCategory");
+      addArray("expenseType");
+      addArray("entryType");
+
+      if (appliedFilters.dateFrom) p.set("dateFrom", appliedFilters.dateFrom);
+      if (appliedFilters.dateTo) p.set("dateTo", appliedFilters.dateTo);
+      if (debouncedSearch) p.set("search", debouncedSearch);
+      if (activeCategory === "EXPENSE" && pendingOnly) p.set("approvalStatus", "PENDING");
+
+      return p;
+    },
+    [activeCategory, appliedFilters, debouncedSearch, pendingOnly]
+  );
+
+  const fetchData = useCallback(
+    async (refresh = false) => {
+      if (
+        NON_TRANSACTION_TABS.includes(
+          activeCategory
+        )
+      ) {
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
+
+      try {
+        refresh
+          ? setRefreshing(true)
+          : setLoading(true);
+
+        setError(null);
+
+        const p = buildFilterParams({
+          page,
+          limit: perPage,
+          sortKey: sortConfig.key,
+          sortDir: sortConfig.direction,
+        });
+
+        const res = await fetch(
+          `/api/transactions/get-all?${p.toString()}`,
+          {
+            credentials: "include",
+          }
+        );
+
+        if (!res.ok) {
+          throw new Error(
+            `HTTP ${res.status}`
+          );
+        }
+
+        const data = await res.json();
+
+        if (!data.success) {
+          throw new Error(
+            data.message ||
+              data.error ||
+              "Failed to load transactions"
+          );
+        }
+
+        setTransactions(
+          data.transactions || []
+        );
+
+        setTotal(data.total || 0);
+
+        if (data.stats) {
+          // The API only aggregates TRANSPLANT/SERVICE/MEDICINE/EXPENSE — "ALL" (the KPI
+          // strip's "Total activity" card) has to be summed client-side or it always shows 0.
+          const revenueAndExpense = ["TRANSPLANT", "SERVICE", "MEDICINE", "EXPENSE"];
+          const all = revenueAndExpense.reduce(
+            (acc, cat) => {
+              const s = data.stats[cat] || { count: 0, total: 0 };
+              return { count: acc.count + (s.count || 0), total: acc.total + (s.total || 0) };
+            },
+            { count: 0, total: 0 },
+          );
+          setStats({ ...data.stats, ALL: all });
+        }
+      } catch (err) {
+        setError(err.message);
+
+        toast?.error?.(
+          "Unable to load transactions"
+        );
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [
+      activeCategory,
+      buildFilterParams,
+      page,
+      perPage,
+      sortConfig,
+    ]
+  );
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [
+    activeCategory,
+    appliedFilters,
+    debouncedSearch,
+    pendingOnly,
+    sortConfig,
+  ]);
+
+  useEffect(() => {
+    if (activeCategory !== "EXPENSE") {
+      setPendingOnly(false);
+    }
+  }, [activeCategory]);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+
+    if (activeCategory !== "ALL") {
+      params.set(
+        "category",
+        activeCategory
+      );
+    }
+
+    Object.entries(appliedFilters).forEach(
+      ([key, value]) => {
+        if (Array.isArray(value)) {
+          if (value.length) {
+            params.set(key, value.join(","));
+          }
+        } else if (value) {
+          params.set(key, value);
+        }
+      }
+    );
+
+    const qs = params.toString();
+
+    router.replace(
+      qs ? `${pathname}?${qs}` : pathname,
+      { scroll: false }
+    );
+  }, [
+    activeCategory,
+    appliedFilters,
+    pathname,
+    router,
+  ]);
 
   const toggleExpand = async (row) => {
-    if (expandedId === row._id) { setExpandedId(null); return; }
+    if (expandedId === row._id) {
+      setExpandedId(null);
+      return;
+    }
+
     setExpandedId(row._id);
     setExpandedInfo(null);
 
-    const linkedReceivableId = row.receivableId || row.externalParty?.linkedReceivableId;
-    const linkedPayableId = row.payableId || row.externalParty?.linkedPayableId;
-    if (!linkedReceivableId && !linkedPayableId) return;
+    const receivableId =
+      row.receivableId ||
+      row.externalParty?.linkedReceivableId;
+
+    const payableId =
+      row.payableId ||
+      row.externalParty?.linkedPayableId;
+
+    if (!receivableId && !payableId) {
+      return;
+    }
 
     setExpandedLoading(true);
+
     try {
-      if (linkedReceivableId) {
-        const res = await fetch(`/api/receivables/${linkedReceivableId}`);
-        const data = await res.json();
-        if (res.ok) setExpandedInfo({ type: "receivable", data: data.receivable });
-      } else {
-        const res = await fetch(`/api/payables/${linkedPayableId}`);
-        const data = await res.json();
-        if (res.ok) setExpandedInfo({ type: "payable", data: data.payable });
+      const endpoint = receivableId
+        ? `/api/receivables/${receivableId}`
+        : `/api/payables/${payableId}`;
+
+      const res = await fetch(endpoint);
+      const data = await res.json();
+
+      if (res.ok) {
+        setExpandedInfo({
+          type: receivableId
+            ? "receivable"
+            : "payable",
+          data:
+            data.receivable ||
+            data.payable,
+        });
       }
-    } catch (error) {
-      console.error("Error fetching linked receivable/payable:", error);
+    } catch (err) {
+      console.error(err);
     } finally {
       setExpandedLoading(false);
     }
   };
 
-  const getColumns = () => {
-    const base = [{ key: "date", label: "Date", sortable: true, width: "110px" }];
-    switch (category) {
-      case "TRANSPLANT": return [...base,
-        { key: "patient",     label: "Patient",      sortable: true,  width: "160px" },
-        { key: "procedure",   label: "Procedure",    sortable: true,  width: "130px" },
-        { key: "paymentType", label: "Payment Type", sortable: true,  width: "120px" },
-        { key: "amount",      label: "Amount",       sortable: true,  width: "130px" },
-        { key: "method",      label: "Method",       sortable: true,  width: "110px" },
-        { key: "paymentId",   label: "Trans ID",     sortable: true,  width: "150px" },
-        { key: "branch",      label: "Branch",       sortable: true,  width: "110px" },
-        { key: "actions",     label: "Actions",      sortable: false, width: "120px" },
-      ];
-      case "SERVICE": return [...base,
-        { key: "patient",       label: "Patient/Customer", sortable: true,  width: "160px" },
-        { key: "procedure",     label: "Service",          sortable: true,  width: "100px" },
-        { key: "quantity",      label: "Sessions",         sortable: true,  width: "90px"  },
-        { key: "perSessionCost",label: "Per Session",      sortable: true,  width: "120px" },
-        { key: "amount",        label: "Total",            sortable: true,  width: "130px" },
-        { key: "method",        label: "Method",           sortable: true,  width: "110px" },
-        { key: "paymentId",     label: "Trans ID",         sortable: true,  width: "150px" },
-        { key: "batchId",       label: "Batch",            sortable: false, width: "100px" },
-        { key: "branch",        label: "Branch",           sortable: true,  width: "110px" },
-        { key: "actions",       label: "Actions",          sortable: false, width: "120px" },
-      ];
-      case "MEDICINE": return [...base,
-        { key: "patient",    label: "Patient/Customer", sortable: true,  width: "160px" },
-        { key: "medicine",   label: "Medicine",         sortable: true,  width: "160px" },
-        { key: "quantity",   label: "Qty",              sortable: true,  width: "80px"  },
-        { key: "perUnitCost",label: "Per Unit",         sortable: true,  width: "110px" },
-        { key: "amount",     label: "Total",            sortable: true,  width: "130px" },
-        { key: "method",     label: "Method",           sortable: true,  width: "110px" },
-        { key: "paymentId",  label: "Trans ID",         sortable: true,  width: "150px" },
-        { key: "batchId",    label: "Batch",            sortable: false, width: "100px" },
-        { key: "branch",     label: "Branch",           sortable: true,  width: "110px" },
-        { key: "actions",    label: "Actions",          sortable: false, width: "120px" },
-      ];
-      case "EXPENSE": return [...base,
-        { key: "expense",     label: "Expense",  sortable: true,  width: "160px" },
-        { key: "expenseGiver",label: "Paid To",  sortable: false, width: "160px" },
-        { key: "amount",      label: "Amount",   sortable: true,  width: "130px" },
-        { key: "method",      label: "Method",   sortable: true,  width: "110px" },
-        { key: "paymentId",   label: "Trans ID", sortable: true,  width: "150px" },
-        { key: "branch",      label: "Branch",   sortable: true,  width: "110px" },
-        { key: "approvalStatus", label: "Status", sortable: false, width: "140px" },
-        { key: "actions",     label: "Actions",  sortable: false, width: "120px" },
-      ];
-      default: return base;
-    }
-  };
-
-  const columns = getColumns();
-  const gridTemplateColumns = columns.map((c) => c.width).join(" ");
-
-  const getProcedureColor = (proc) => {
-    const colors = {
-      "sapphire fue": "bg-indigo-100 text-indigo-700 border-indigo-200",
-      dhi:            "bg-purple-100 text-purple-700 border-purple-200",
-      "turkish dhi":  "bg-pink-100 text-pink-700 border-pink-200",
-      "beard transplant": "bg-amber-100 text-amber-700 border-amber-200",
-      prp:     "bg-emerald-100 text-emerald-700 border-emerald-200",
-      gfc:     "bg-cyan-100 text-cyan-700 border-cyan-200",
-      alopecia:"bg-rose-100 text-rose-700 border-rose-200",
-      headwash:"bg-sky-100 text-sky-700 border-sky-200",
-      canacot: "bg-lime-100 text-lime-700 border-lime-200",
-    };
-    return colors[proc?.toLowerCase()] || "bg-gray-100 text-gray-700 border-gray-200";
-  };
-
-  const getMethodColor = (method) => {
-    const colors = {
-      cash:    "bg-emerald-100 text-emerald-700 border-emerald-200",
-      upi:     "bg-blue-100 text-blue-700 border-blue-200",
-      card:    "bg-purple-100 text-purple-700 border-purple-200",
-      banking: "bg-indigo-100 text-indigo-700 border-indigo-200",
-      bajaj_loan:    "bg-orange-100 text-orange-700 border-orange-200",
-      fibe_loan:    "bg-orange-100 text-gray-700 border-orange-200",
-      hdfc_skin_bank_transfer: "bg-sky-100 text-sky-700 border-sky-200",
-      hdfc_ryan_medihub_bank_transfer: "bg-teal-100 text-teal-700 border-teal-200",
-      icici_medihub_bank_transfer: "bg-rose-100 text-rose-700 border-rose-200",
-    };
-    return colors[method?.toLowerCase()] || "bg-gray-100 text-gray-700 border-gray-200";
-  };
-
-  const getPatientName  = (row) => row.patient?.personal?.name || row.patientName || "Walk-in Customer";
-  const getPatientPhone = (row) => row.patient?.personal?.phone || row.patientPhone || "";
-  const getMedicineName = (row) => (typeof row.medicineId === "object" ? row.medicineId?.name : null) || "N/A";
-
-  return (
-    <div className="flex flex-col h-full bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
-      <div className="hidden md:grid items-center bg-linear-to-r from-slate-50 to-slate-100 border-b border-slate-200 min-h-13 px-2" style={{ gridTemplateColumns }}>
-        {columns.map((col) => (
-          <div
-            key={col.key}
-            className={`px-2 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wide truncate ${col.sortable ? "cursor-pointer hover:bg-slate-200/50 transition-colors duration-150 group" : ""}`}
-            onClick={() => col.sortable && onSort(col.key)}
-          >
-            <div className="flex items-center gap-1.5">
-              <span className="truncate">{col.label}</span>
-              {col.sortable && <SortIcon columnKey={col.key} sortConfig={sortConfig} />}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="md:hidden bg-linear-to-r from-slate-50 to-slate-100 border-b border-slate-200 px-4 py-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-sm font-bold text-slate-900">{category} Records</h3>
-            <p className="text-xs text-slate-600">Showing {rows.length} of {pagination.total}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-xs font-medium text-slate-700">Sorted by</p>
-            <p className="text-sm font-bold text-indigo-700">{sortConfig.key.replace(/([A-Z])/g, " $1").trim()}</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-auto">
-        {rows.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 sm:py-16 px-4">
-            <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mb-4">
-              <Search className="w-8 h-8 text-indigo-400" />
-            </div>
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">No records found</h3>
-            <p className="text-sm text-slate-600 text-center max-w-md">Try adjusting your search filters or add a new transaction</p>
-          </div>
-        ) : (
-          <div className="divide-y divide-slate-100">
-            {rows.map((row, i) => {
-              const netAmount   = calculateNetAmount(row);
-              const hasDiscount = parseFloat(row.discount || 0) > 0;
-              const rowCategory = row.transactionCategory || row.category || "TRANSPLANT";
-
-              return (
-                <div key={row._id || i} className="group transition-all duration-200 hover:bg-indigo-50/30">
-                  <div className="hidden md:grid items-center min-h-16 px-2" style={{ gridTemplateColumns }}>
-                    <div className="px-2 py-3 text-sm font-medium text-slate-900">{formatDateForDisplay(row.date)}</div>
-
-                    {rowCategory === "TRANSPLANT" && (<>
-                      <div className="px-2 py-3">
-                        <div className="text-sm font-semibold text-slate-900 truncate">{getPatientName(row)}</div>
-                        <div className="text-xs text-slate-600 font-medium">{getPatientPhone(row) || "No phone"}</div>
-                      </div>
-                      <div className="px-2 py-3"><span className={`inline-flex px-2 py-1 rounded-lg text-xs font-semibold border ${getProcedureColor(row.procedure)}`}>{row.procedure}</span></div>
-                      <div className="px-2 py-3"><span className="inline-flex px-2 py-1 rounded-lg text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200">{row.paymentType}</span></div>
-                      <div className="px-2 py-3 text-right">
-                        <div className="text-sm font-bold text-emerald-700">{formatCurrency(netAmount)}</div>
-                        {hasDiscount && <div className="flex items-center justify-center gap-1 mt-1"><Tag className="w-3 h-3 text-amber-500" /><span className="text-xs text-amber-600 font-medium">-{formatCurrency(row.discount)}</span></div>}
-                      </div>
-                      <div className="px-2 py-3"><span className={`inline-flex px-2 py-1 rounded-lg text-xs font-semibold border ${getMethodColor(row.method)}`}>{METHOD_LABELS[row.method] || row.method}</span></div>
-                      <div className="px-2 py-3">{row.paymentId ? <div className="bg-slate-100 px-2 py-1 rounded text-xs font-mono text-slate-700 truncate">{row.paymentId}</div> : <span className="text-xs text-slate-400">-</span>}</div>
-                      <div className="px-2 py-3"><span className="inline-flex px-2 py-1 rounded-lg text-xs font-semibold bg-purple-100 text-purple-700 border border-purple-200">{row.branch}</span></div>
-                    </>)}
-
-                    {rowCategory === "SERVICE" && (<>
-                      <div className="px-2 py-3">
-                        <div className="text-sm font-semibold text-slate-900 truncate">{getPatientName(row)}</div>
-                        <div className="text-xs text-slate-600 font-medium">{getPatientPhone(row) || "No phone"}</div>
-                      </div>
-                      <div className="px-2 py-3"><span className={`inline-flex px-2 py-1 rounded-lg text-xs font-semibold border ${getProcedureColor(row.procedure)}`}>{row.procedure}</span></div>
-                      <div className="px-2 py-3 text-right"><div className="text-sm font-bold text-indigo-700">{row.quantity || 1}</div></div>
-                      <div className="px-2 py-3 text-right"><div className="text-sm font-medium text-slate-900">{formatCurrency(row.perSessionCost || 0)}</div></div>
-                      <div className="px-2 py-3 text-right">
-                        <div className="text-sm font-bold text-emerald-700">{formatCurrency(netAmount)}</div>
-                        {hasDiscount && <div className="flex items-center justify-center gap-1 mt-1"><Tag className="w-3 h-3 text-amber-500" /><span className="text-xs text-amber-600 font-medium">-{formatCurrency(row.discount)}</span></div>}
-                      </div>
-                      <div className="px-2 py-3"><span className={`inline-flex px-2 py-1 rounded-lg text-xs font-semibold border ${getMethodColor(row.method)}`}>{METHOD_LABELS[row.method] || row.method}</span></div>
-                      <div className="px-2 py-3">{row.paymentId ? <div className="bg-slate-100 px-2 py-1 rounded text-xs font-mono text-slate-700 truncate">{row.paymentId}</div> : <span className="text-xs text-slate-400">-</span>}</div>
-                      <div className="px-2 py-3">{row.batchId ? <div className="flex items-center gap-1"><Package className="w-3 h-3 text-indigo-600" /><span className="text-xs font-mono text-indigo-700">{row.batchId.slice(-8)}</span></div> : <span className="text-xs text-slate-400">-</span>}</div>
-                      <div className="px-2 py-3"><span className="inline-flex px-2 py-1 rounded-lg text-xs font-semibold bg-purple-100 text-purple-700 border border-purple-200">{row.branch}</span></div>
-                    </>)}
-
-                    {rowCategory === "MEDICINE" && (<>
-                      <div className="px-2 py-3">
-                        <div className="text-sm font-semibold text-slate-900 truncate">{getPatientName(row)}</div>
-                        <div className="text-xs text-slate-600 font-medium">{getPatientPhone(row) || "No phone"}</div>
-                      </div>
-                      <div className="px-2 py-3"><div className="text-sm font-semibold text-slate-900 truncate">{getMedicineName(row)}</div></div>
-                      <div className="px-2 py-3 text-right"><div className="text-sm font-bold text-indigo-700">{row.quantity || 1}</div></div>
-                      <div className="px-2 py-3 text-right"><div className="text-sm font-medium text-slate-900">{formatCurrency(row.perUnitCost || 0)}</div></div>
-                      <div className="px-2 py-3 text-right">
-                        <div className="text-sm font-bold text-emerald-700">{formatCurrency(netAmount)}</div>
-                        {hasDiscount && <div className="flex items-center justify-center gap-1 mt-1"><Tag className="w-3 h-3 text-amber-500" /><span className="text-xs text-amber-600 font-medium">-{formatCurrency(row.discount)}</span></div>}
-                      </div>
-                      <div className="px-2 py-3"><span className={`inline-flex px-2 py-1 rounded-lg text-xs font-semibold border ${getMethodColor(row.method)}`}>{METHOD_LABELS[row.method] || row.method}</span></div>
-                      <div className="px-2 py-3">{row.paymentId ? <div className="bg-slate-100 px-2 py-1 rounded text-xs font-mono text-slate-700 truncate">{row.paymentId}</div> : <span className="text-xs text-slate-400">-</span>}</div>
-                      <div className="px-2 py-3">{row.batchId ? <div className="flex items-center gap-1"><Package className="w-3 h-3 text-indigo-600" /><span className="text-xs font-mono text-indigo-700">{row.batchId.slice(-8)}</span></div> : <span className="text-xs text-slate-400">-</span>}</div>
-                      <div className="px-2 py-3"><span className="inline-flex px-2 py-1 rounded-lg text-xs font-semibold bg-purple-100 text-purple-700 border border-purple-200">{row.branch}</span></div>
-                    </>)}
-
-                    {rowCategory === "EXPENSE" && (<>
-                      <div className="px-2 py-3"><div className="text-sm font-semibold text-slate-900 truncate">{row.expense || row.expenseCategory || "N/A"}</div></div>
-                      <div className="px-2 py-3"><div className="text-sm text-slate-900 truncate">{getExpenseGiverName(row)}</div></div>
-                      <div className="px-2 py-3 text-right"><div className="text-sm font-bold text-rose-600">{formatCurrency(row.amount)}</div></div>
-                      <div className="px-2 py-3"><span className={`inline-flex px-2 py-1 rounded-lg text-xs font-semibold border ${getMethodColor(row.method)}`}>{METHOD_LABELS[row.method] || row.method}</span></div>
-                      <div className="px-2 py-3">{row.paymentId ? <div className="bg-slate-100 px-2 py-1 rounded text-xs font-mono text-slate-700 truncate">{row.paymentId}</div> : <span className="text-xs text-slate-400">-</span>}</div>
-                      <div className="px-2 py-3"><span className="inline-flex px-2 py-1 rounded-lg text-xs font-semibold bg-purple-100 text-purple-700 border border-purple-200">{row.branch}</span></div>
-                      <div className="px-2 py-3"><ApprovalBadge status={row.approvalStatus} /></div>
-                    </>)}
-
-                    <div className="px-2 py-3">
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => onGenerateBill(row)} className="p-2 hover:bg-emerald-100 rounded-lg transition-colors text-emerald-600 hover:text-emerald-800" title="Generate Bill"><Bill size={18} /></button>
-                        <button onClick={() => router.push(`/admin/transactions/edit/${row._id}`)} className="p-2 hover:bg-indigo-100 rounded-lg transition-colors text-indigo-600 hover:text-indigo-800" title="Edit record"><Edit2 size={18} /></button>
-                        {!row.reversalOf && !row.isReversed && (row.amount || 0) > 0 && (
-                          <button onClick={() => onReverse(row)} className="p-2 hover:bg-purple-100 rounded-lg transition-colors text-purple-600 hover:text-purple-800" title="Reverse / Refund"><RotateCcw size={18} /></button>
-                        )}
-                        <button onClick={() => onDelete(row)} className="p-2 hover:bg-red-100 rounded-lg transition-colors text-red-600 hover:text-red-800" title="Delete record"><Trash2 size={18} /></button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <TransactionBadges row={row} expanded={expandedId === row._id} onToggle={() => toggleExpand(row)} />
-                  {expandedId === row._id && (
-                    <TransactionDetail row={row} linkedInfo={expandedInfo} linkedLoading={expandedLoading} />
-                  )}
-
-                  <div className="md:hidden p-4">
-                    <div className="space-y-4">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <span className={`px-2 py-1 rounded text-xs font-semibold ${rowCategory === "EXPENSE" ? "bg-rose-100 text-rose-700 border border-rose-200" : getProcedureColor(row.procedure)}`}>
-                              {rowCategory === "MEDICINE" ? getMedicineName(row) : rowCategory === "EXPENSE" ? (row.expense || row.expenseCategory || "Expense") : row.procedure}
-                            </span>
-                            <span className={`px-2 py-1 rounded text-xs font-semibold ${getMethodColor(row.method)}`}>{METHOD_LABELS[row.method] || row.method}</span>
-                            {rowCategory === "EXPENSE" && <ApprovalBadge status={row.approvalStatus} />}
-                          </div>
-                          <h4 className="text-base font-bold text-slate-900">{rowCategory !== "EXPENSE" ? getPatientName(row) : getExpenseGiverName(row)}</h4>
-                          {rowCategory !== "EXPENSE" && <p className="text-sm text-slate-600 font-medium">{getPatientPhone(row)}</p>}
-                          {rowCategory === "EXPENSE" && <p className="text-sm text-slate-600 font-medium">{row.expense || row.expenseCategory || "General Expense"}</p>}
-                        </div>
-                        <div className="text-right">
-                          <div className={`text-lg font-bold ${rowCategory === "EXPENSE" ? "text-rose-600" : "text-emerald-700"}`}>{formatCurrency(netAmount)}</div>
-                          <p className="text-xs text-slate-500">{formatDateForDisplay(row.date)}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-end pt-3 border-t border-slate-200 gap-2">
-                        <button onClick={() => onGenerateBill(row)} className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-sm font-medium hover:bg-emerald-100 transition-colors"><Bill size={14} />Bill</button>
-                        <button onClick={() => router.push(`/admin/transactions/edit/${row._id}`)} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-100 transition-colors"><Edit2 size={14} />Edit</button>
-                        {!row.reversalOf && !row.isReversed && (row.amount || 0) > 0 && (
-                          <button onClick={() => onReverse(row)} className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 text-purple-700 rounded-lg text-sm font-medium hover:bg-purple-100 transition-colors"><RotateCcw size={14} />Reverse</button>
-                        )}
-                        <button onClick={() => onDelete(row)} className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 text-rose-700 rounded-lg text-sm font-medium hover:bg-rose-100 transition-colors"><Trash2 size={14} />Delete</button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      <div className="border-t border-slate-200 bg-white">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 sm:px-6 py-4">
-          <div className="text-sm text-slate-600">
-            <span className="font-medium text-slate-900">{pagination.total === 0 ? 0 : pagination.startIdx + 1}–{pagination.endIdx}</span>
-            <span className="mx-2">of</span>
-            <span className="font-medium text-slate-900">{pagination.total.toLocaleString()}</span>
-            <span className="ml-2">records</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-slate-600 hidden sm:inline">Show</span>
-              <select
-                className="text-sm border border-slate-300 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white font-medium transition-all"
-                value={pagination.perPage}
-                onChange={(e) => { pagination.setPerPage(Number(e.target.value)); pagination.setPage(1); }}
-              >
-                {[10, 25, 50, 100].map((n) => <option key={n} value={n}>{n}</option>)}
-              </select>
-              <span className="text-sm text-slate-600 hidden sm:inline">per page</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <button onClick={() => pagination.setPage((p) => Math.max(1, p - 1))} disabled={pagination.page <= 1} className="p-2 rounded-lg border border-slate-300 bg-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 transition-all">
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <div className="flex items-center gap-1 mx-2">
-                {(() => {
-                  const pages = [];
-                  const totalPages = pagination.pages;
-                  const currentPage = pagination.page;
-                  if (currentPage > 2) { pages.push(1); if (currentPage > 3) pages.push("..."); }
-                  for (let i = Math.max(1, currentPage - 1); i <= Math.min(totalPages, currentPage + 1); i++) pages.push(i);
-                  if (currentPage < totalPages - 1) { if (currentPage < totalPages - 2) pages.push("..."); pages.push(totalPages); }
-                  return pages.map((p, idx) =>
-                    p === "..." ? <span key={idx} className="px-2 text-slate-400">...</span> :
-                    <button key={idx} onClick={() => pagination.setPage(p)} className={`w-8 h-8 rounded-lg text-sm font-medium transition-all ${p === currentPage ? "bg-indigo-600 text-white border border-indigo-600" : "text-slate-700 hover:bg-slate-100 border border-transparent"}`}>{p}</button>
-                  );
-                })()}
-              </div>
-              <button onClick={() => pagination.setPage((p) => Math.min(pagination.pages, p + 1))} disabled={pagination.page >= pagination.pages} className="p-2 rounded-lg border border-slate-300 bg-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 transition-all">
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export default function TransactionsListPage({ Sidebar }) {
-  return (
-    <Suspense fallback={null}>
-      <AllTransactionsPageInner Sidebar={Sidebar} />
-    </Suspense>
-  );
-}
-
-function AllTransactionsPageInner({ Sidebar }) {
-  const tenantBranches = ALL_BRANCHES;
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const toast  = useToast();
-
-  const [transactions, setTransactions] = useState([]);
-  const [total, setTotal]               = useState(0);
-  const [stats, setStats]               = useState({ TRANSPLANT: { count: 0, total: 0 }, SERVICE: { count: 0, total: 0 }, MEDICINE: { count: 0, total: 0 }, EXPENSE: { count: 0, total: 0 } });
-  const [loading, setLoading]           = useState(true);
-  const [error, setError]               = useState(null);
-  const [refreshing, setRefreshing]     = useState(false);
-
-  const [activeCategory, setActiveCategory] = useState(() => {
-    const fromUrl = searchParams.get("category");
-    return VALID_CATEGORIES.has(fromUrl) ? fromUrl : "TRANSPLANT";
-  });
-  const [appliedFilters, setAppliedFilters] = useState(() => filtersFromParams(searchParams));
-  const [draftFilters, setDraftFilters]     = useState(() => filtersFromParams(searchParams));
-  const [tableSearch, setTableSearch]   = useState("");
-  const [showFilters, setShowFilters]   = useState(false);
-  const [pendingOnly, setPendingOnly]   = useState(false);
-  const [page, setPage]                 = useState(1);
-  const [perPage, setPerPage]           = useState(10);
-  const [sortConfig, setSortConfig]     = useState({ key: "date", direction: "desc" });
-
-  const [showDeleteConfirm, setShowDeleteConfirm]   = useState(false);
-  const [deletingTransaction, setDeletingTransaction] = useState(null);
-  const [showBillGenerator, setShowBillGenerator]     = useState(false);
-  const [selectedTransactionId, setSelectedTransactionId] = useState(null);
-
-  const searchDebounceRef = useRef(null);
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const handleSearchChange = (val) => {
-    setTableSearch(val);
-    clearTimeout(searchDebounceRef.current);
-    searchDebounceRef.current = setTimeout(() => { setDebouncedSearch(val); setPage(1); }, 400);
-  };
-
-  const fetchData = useCallback(async (isRefresh = false) => {
-    if (NON_TRANSACTION_TABS.includes(activeCategory)) {
-      setLoading(false);
-      setRefreshing(false);
-      return;
-    }
-    try {
-      if (isRefresh) setRefreshing(true); else setLoading(true);
-      setError(null);
-
-      const p = new URLSearchParams({
-        page,
-        limit: perPage,
-        category:      activeCategory,
-        sortKey:       sortConfig.key,
-        sortDir:       sortConfig.direction,
-      });
-      if (appliedFilters.branch.length)        p.set("branch",         appliedFilters.branch.join(","));
-      if (appliedFilters.dateFrom)      p.set("dateFrom",       appliedFilters.dateFrom);
-      if (appliedFilters.dateTo)        p.set("dateTo",         appliedFilters.dateTo);
-      if (appliedFilters.paymentMethod.length) p.set("paymentMethod",  appliedFilters.paymentMethod.join(","));
-      if (appliedFilters.procedure.length)     p.set("procedure",      appliedFilters.procedure.join(","));
-      if (appliedFilters.furtherMode.length)     p.set("furtherMode",     appliedFilters.furtherMode.join(","));
-      if (appliedFilters.expenseCategory.length) p.set("expenseCategory", appliedFilters.expenseCategory.join(","));
-      if (appliedFilters.expenseType.length)     p.set("expenseType",     appliedFilters.expenseType.join(","));
-      if (appliedFilters.entryType.length)       p.set("entryType",       appliedFilters.entryType.join(","));
-      if (debouncedSearch)       p.set("search",         debouncedSearch);
-      if (activeCategory === "EXPENSE" && pendingOnly) p.set("approvalStatus", "PENDING");
-
-      const res = await fetch(`/api/transactions/get-all?${p.toString()}`, { credentials: "include" });
-      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-      const data = await res.json();
-      if (!data.success) throw new Error(data.message || data.error || "Invalid data format");
-
-      setTransactions(data.transactions || []);
-      setTotal(data.total || 0);
-      if (data.stats) setStats(data.stats);
-    } catch (e) {
-      setError(e.message);
-      toast?.error?.("Error loading data: " + e.message);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [page, perPage, activeCategory, sortConfig, appliedFilters, debouncedSearch, pendingOnly]);
-
-  useEffect(() => { fetchData(); }, [fetchData]);
-
-  useEffect(() => { setPage(1); }, [appliedFilters, activeCategory, debouncedSearch, sortConfig, pendingOnly]);
-
-  useEffect(() => { if (activeCategory !== "EXPENSE") setPendingOnly(false); }, [activeCategory]);
-
-  useEffect(() => {
-    const patch = {};
-    if (!(activeCategory === "TRANSPLANT" || activeCategory === "SERVICE")) patch.procedure = [];
-    if (activeCategory !== "EXPENSE") { patch.expenseCategory = []; patch.expenseType = []; }
-
-    const applyPatch = (f) => {
-      const changed = Object.keys(patch).filter((k) => (f[k] || []).length > 0);
-      return changed.length ? { ...f, ...patch } : f;
-    };
-    setDraftFilters(applyPatch);
-    setAppliedFilters(applyPatch);
-  }, [activeCategory]);
-
-  useEffect(() => {
-    const params = new URLSearchParams();
-    if (activeCategory !== "TRANSPLANT") params.set("category", activeCategory);
-    if (appliedFilters.branch.length)        params.set("branch", appliedFilters.branch.join(","));
-    if (appliedFilters.dateFrom)      params.set("dateFrom", appliedFilters.dateFrom);
-    if (appliedFilters.dateTo)        params.set("dateTo", appliedFilters.dateTo);
-    if (appliedFilters.paymentMethod.length) params.set("paymentMethod", appliedFilters.paymentMethod.join(","));
-    if (appliedFilters.procedure.length)     params.set("procedure", appliedFilters.procedure.join(","));
-    if (appliedFilters.furtherMode.length)     params.set("furtherMode", appliedFilters.furtherMode.join(","));
-    if (appliedFilters.expenseCategory.length) params.set("expenseCategory", appliedFilters.expenseCategory.join(","));
-    if (appliedFilters.expenseType.length)     params.set("expenseType", appliedFilters.expenseType.join(","));
-    if (appliedFilters.entryType.length)       params.set("entryType", appliedFilters.entryType.join(","));
-    const qs = params.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-  }, [appliedFilters, activeCategory]);
-
-  const handleRefresh = () => fetchData(true);
-
   const handleSort = (key) => {
-    setSortConfig((prev) => ({ key, direction: prev.key === key && prev.direction === "asc" ? "desc" : "asc" }));
+    setSortConfig((previous) => ({
+      key,
+      direction:
+        previous.key === key &&
+        previous.direction === "asc"
+          ? "desc"
+          : "asc",
+    }));
+  };
+
+  const applyFilters = () => {
+    setAppliedFilters(draftFilters);
   };
 
   const clearFilters = () => {
     const defaults = defaultFilters();
+
     setDraftFilters(defaults);
     setAppliedFilters(defaults);
     setTableSearch("");
@@ -919,543 +2425,537 @@ function AllTransactionsPageInner({ Sidebar }) {
     setPage(1);
   };
 
-  const applyQuickFilter = (preset) => {
-    const today = getTodayDate();
-    const date  = new Date();
-    let patch = {};
-    switch (preset) {
-      case "today":     patch = { dateFrom: today, dateTo: today }; break;
-      case "yesterday": { const y = new Date(date.setDate(date.getDate() - 1)).toISOString().split("T")[0]; patch = { dateFrom: y, dateTo: y }; break; }
-      case "week":      { const w = new Date(date.setDate(date.getDate() - 7)).toISOString().split("T")[0]; patch = { dateFrom: w, dateTo: today }; break; }
-      case "month":     { const m = new Date(date.setMonth(date.getMonth() - 1)).toISOString().split("T")[0]; patch = { dateFrom: m, dateTo: today }; break; }
-      case "all":       patch = { dateFrom: "", dateTo: "" }; break;
-    }
-    setDraftFilters((f) => ({ ...f, ...patch }));
-    setAppliedFilters((f) => ({ ...f, ...patch }));
-  };
-
-  const applyFilters = () => setAppliedFilters(draftFilters);
-
   const removeFilter = (key, value) => {
-    const reset = (f) => {
-      if (MULTI_FILTER_KEYS.includes(key)) {
-        return { ...f, [key]: value != null ? (f[key] || []).filter((v) => v !== value) : [] };
+    const update = (filters) => {
+      if (
+        MULTI_FILTER_KEYS.includes(key)
+      ) {
+        return {
+          ...filters,
+          [key]: value
+            ? filters[key].filter(
+                (v) => v !== value
+              )
+            : [],
+        };
       }
-      return { ...f, [key]: "" };
+
+      // dateFrom/dateTo default to today, not "" — clearing them to "" left the chip
+      // showing "From: —" instead of actually resetting to (and hiding behind) today.
+      if (key === "dateFrom" || key === "dateTo") {
+        return { ...filters, [key]: getTodayDate() };
+      }
+
+      return {
+        ...filters,
+        [key]: "",
+      };
     };
-    setDraftFilters(reset);
-    setAppliedFilters(reset);
+
+    setDraftFilters(update);
+    setAppliedFilters(update);
   };
 
-  const hasPendingChanges = FILTER_KEYS.some((k) => !filterEquals(draftFilters[k], appliedFilters[k]));
-
-  const pages    = Math.max(1, Math.ceil(total / perPage));
-  const current  = Math.min(page, pages);
-  const startIdx = (current - 1) * perPage;
-  const endIdx   = Math.min(startIdx + perPage, total);
-
-  const hasActiveFilters = MULTI_FILTER_KEYS.some((k) => appliedFilters[k].length > 0) || tableSearch ||
-    appliedFilters.dateFrom !== getTodayDate() || appliedFilters.dateTo !== getTodayDate();
-
-  const exportToExcel = async () => {
-    try {
-      const p = new URLSearchParams({
-        page: 1, limit: 10000,
-        category: activeCategory,
-        sortKey: sortConfig.key, sortDir: sortConfig.direction,
-      });
-      if (appliedFilters.branch.length)        p.set("branch",        appliedFilters.branch.join(","));
-      if (appliedFilters.dateFrom)      p.set("dateFrom",      appliedFilters.dateFrom);
-      if (appliedFilters.dateTo)        p.set("dateTo",        appliedFilters.dateTo);
-      if (appliedFilters.paymentMethod.length) p.set("paymentMethod", appliedFilters.paymentMethod.join(","));
-      if (appliedFilters.procedure.length)     p.set("procedure",     appliedFilters.procedure.join(","));
-      if (appliedFilters.furtherMode.length)     p.set("furtherMode",     appliedFilters.furtherMode.join(","));
-      if (appliedFilters.expenseCategory.length) p.set("expenseCategory", appliedFilters.expenseCategory.join(","));
-      if (appliedFilters.expenseType.length)     p.set("expenseType",     appliedFilters.expenseType.join(","));
-      if (appliedFilters.entryType.length)       p.set("entryType",       appliedFilters.entryType.join(","));
-      if (debouncedSearch)       p.set("search",        debouncedSearch);
-      if (activeCategory === "EXPENSE" && pendingOnly) p.set("approvalStatus", "PENDING");
-
-      const res  = await fetch(`/api/transactions/get-all?${p.toString()}`, { credentials: "include" });
-      const data = await res.json();
-      const all  = data.transactions || [];
-
-      const { utils, writeFile } = await import("xlsx");
-
-      const stamp = (d) =>
-        d ? new Date(d).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true }) : "";
-      const yesNo = (v) => (v ? "Yes" : "No");
-
-      const isExpenseExport = activeCategory === "EXPENSE";
-
-      const expenseRow = (t) => {
-        const tax = t.taxDetails || {};
-        const invoiceTotal = tax.invoiceTotal ?? null;
-        const tdsAmount = tax.tdsAmount ?? null;
-        return {
-          "Date":                formatDateForDisplay(t.date),
-          "Entry Type":          ENTRY_TYPES[t.entryType]?.label || "",
-          "Branch":              t.branch || "",
-          "Expense Category":    t.expense || t.expenseCategory || "",
-          "Expense Type":        t.expenseType || "",
-          "Paid To":             getExpenseGiverName(t),
-          "Payee Type":          t.expenseGiver?.type || "",
-          "Amount":              parseFloat(t.amount) || 0,
-          "Payment Method":      METHOD_LABELS[t.method] || t.method || "",
-          "Paid From Account":   t.furtherMode || "",
-          "Transaction ID":      t.paymentId || "",
-          "Approval Status":     t.approvalStatus || "",
-          "Approved/Rejected By": t.approvalActionBy?.name || "",
-          "GST Included":        yesNo(tax.gstAmount != null),
-          "Base Amount":         tax.baseAmount ?? "",
-          "GST Rate %":          tax.gstRate ?? "",
-          "GST Amount":          tax.gstAmount ?? "",
-          "Invoice Total":       invoiceTotal ?? "",
-          "TDS Applied":         yesNo(tax.tdsApplied),
-          "TDS Category":        tax.tdsCategory || "",
-          "TDS Rate %":          tax.tdsRate ?? "",
-          "TDS Amount":          tdsAmount ?? "",
-          "Net After TDS":       tax.tdsApplied && invoiceTotal != null ? invoiceTotal - (tdsAmount || 0) : "",
-          "Commission Receiver": t.commissionReceiver?.name || "",
-          "Commission Payee Type": t.commissionReceiver?.type || "",
-          "Against Payable":     yesNo(t.payableId),
-          "Payable ID":          t.payableId ? String(t.payableId) : "",
-          "Paid By (External)":  t.externalParty?.name || "",
-          "External Party Type": t.externalParty?.partyKind || "",
-          "External Party Method": t.externalParty?.method || "",
-          "Linked Patient":      t.patient?.personal?.name || "",
-          "Receipts":            t.receipts?.length || 0,
-          "Receipt Files":       (t.receipts || []).map((r) => r.fileName).filter(Boolean).join(", "),
-          "Receipt URLs":        (t.receipts || []).map((r) => r.url).filter(Boolean).join(", "),
-          "Remarks":             t.remarks || "",
-          "Created By":          t.createdBy?.name || "",
-          "Created By Email":    t.createdBy?.email || "",
-          "Created At":          stamp(t.createdAt),
-          "Total Edits":         t.editors?.length || 0,
-        };
-      };
-
-      const revenueRow = (t) => {
-        const amount   = parseFloat(t.amount)   || 0;
-        const discount = parseFloat(t.discount) || 0;
-        const medicineName = t.transactionCategory === "MEDICINE"
-          ? (typeof t.medicineId === "object" ? t.medicineId?.name : "") || t.procedure || "" : "";
-
-        return {
-          "Date":             formatDateForDisplay(t.date),
-          "Entry Type":       ENTRY_TYPES[t.entryType]?.label || "",
-          "Patient Name":     t.patient?.personal?.name || t.patientName || "Walk-in Customer",
-          "Phone":            t.patient?.personal?.phone || t.patientPhone || "",
-          "Branch":           t.branch || "",
-          "Category":         t.transactionCategory || "",
-          "Procedure":        t.procedure || "",
-          "Medicine Name":    medicineName,
-          "Quantity":         t.transactionCategory === "MEDICINE" ? (t.quantity || "") : "",
-          "Payment Type":     t.paymentType || "",
-          "Payment Method":   t.method || "",
-          "Received In Account": t.furtherMode || "",
-          "Receipt Mode":     t.receiptMode || "",
-          "Original Amount":  amount + discount,
-          "TransID / CardNo": t.paymentId || "",
-          "Discount":         discount,
-          "Net Amount":       amount,
-          "Pending Amount":   parseFloat(t.patient?.payments?.pendingAmount) || 0,
-          "Remarks":          t.remarks || "",
-          "Created By":       t.createdBy?.name || "",
-          "Date & Time":      stamp(t.createdAt),
-          "Total Edits":      t.editors?.length || 0,
-        };
-      };
-
-      const rows = all.map(isExpenseExport ? expenseRow : revenueRow);
-
-      const ws = utils.json_to_sheet(rows);
-      ws["!cols"] = (isExpenseExport
-        ? [14,12,22,28,24,13,13,20,20,20,15,20,13,13,11,12,14,12,26,11,12,14,22,20,15,26,22,18,20,22,10,30,40,30,18,26,22,12]
-        : [14,24,14,12,12,18,24,10,15,16,20,18,16,20,12,14,16,24,18,22,12]
-      ).map((w) => ({ wch: w }));
-
-      const wb = utils.book_new();
-      utils.book_append_sheet(wb, ws, isExpenseExport ? "Expenses" : "Transactions");
-
-      const historyRows = [];
-      all.forEach((t) => {
-        if (!t.editors?.length) return;
-        const subject = isExpenseExport
-          ? getExpenseGiverName(t)
-          : t.patient?.personal?.name || t.patientName || "Walk-in Customer";
-        const txDate = formatDateForDisplay(t.date);
-        t.editors.forEach((editor, editIdx) => {
-          const editedAt = stamp(editor.date);
-          const fields = editor.updatedFields?.length ? editor.updatedFields : [{ name: "(no field details)", previousValue: "", newValue: "" }];
-          fields.forEach((field) => historyRows.push({
-            "Transaction Date": txDate,
-            [isExpenseExport ? "Paid To" : "Patient Name"]: subject,
-            ...(isExpenseExport ? { "Expense Category": t.expense || t.expenseCategory || "" } : {}),
-            "Branch": t.branch || "",
-            "Edit #": editIdx + 1, "Edited By": editor.name || "", "Editor Email": editor.email || "",
-            "Editor Branch": editor.branch || "", "Edited At": editedAt,
-            "Field Changed": field.name || "", "Previous Value": field.previousValue || "", "New Value": field.newValue || "",
-          }));
-        });
-      });
-
-      if (historyRows.length > 0) {
-        const wsHistory = utils.json_to_sheet(historyRows);
-        wsHistory["!cols"] = (isExpenseExport
-          ? [16,24,22,12,8,20,26,14,22,20,24,24]
-          : [16,24,12,8,20,26,14,22,20,24,24]
-        ).map((w) => ({ wch: w }));
-        utils.book_append_sheet(wb, wsHistory, "Edit History");
-      }
-
-      const prefix = isExpenseExport ? "expenses" : `transactions_${activeCategory}`;
-      writeFile(wb, `${prefix}_${appliedFilters.dateFrom || "all"}_to_${appliedFilters.dateTo || "all"}.xlsx`);
-    } catch (e) {
-      toast?.error?.(e.message || "Export failed");
-    }
+  // Preset range buttons (Today/Yesterday/This Month/All Time) bypass the draft->apply
+  // gate — they apply immediately, same as removeFilter above.
+  const onDatePreset = (key) => {
+    const range = getPresetRange(key);
+    setDraftFilters((f) => ({ ...f, ...range }));
+    setAppliedFilters((f) => ({ ...f, ...range }));
+    setPage(1);
   };
 
-  const [reverseTarget, setReverseTarget] = useState(null);
-
-  const openDeleteConfirm  = (t)  => { setDeletingTransaction(t); setShowDeleteConfirm(true); };
-  const openBillGenerator  = (data) => {
-    const isRevenue   = data.costType === "Revenue";
-    const hasCategory = data.transactionCategory && data.transactionCategory !== "undefined" && data.transactionCategory !== "";
-    if (isRevenue && (!hasCategory || data.transactionCategory === "TRANSPLANT") && data.patient) {
-      const patientId = typeof data.patient === "object" ? data.patient._id : data.patient;
-      setSelectedTransactionId(patientId || data._id);
-    } else {
-      setSelectedTransactionId(data._id);
-    }
-    setShowBillGenerator(true);
-  };
-  const closeBillGenerator = () => { setShowBillGenerator(false); setSelectedTransactionId(null); };
-
-  const handleDelete = async () => {
-    if (!deletingTransaction) return;
-    try {
-      const cat = deletingTransaction.transactionCategory || deletingTransaction.category || "TRANSPLANT";
-      const endpoint = cat === "TRANSPLANT" ? "/api/transactions/transplant/delete"
-        : cat === "SERVICE"  ? "/api/transactions/service/delete"
-        : cat === "MEDICINE" ? "/api/transactions/medicine/delete"
-        : "/api/transactions/expense/delete";
-      const res  = await fetch(endpoint, { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ transactionId: deletingTransaction._id }), credentials: "include" });
-      const data = await res.json();
-      if (res.ok) {
-        toast.success("Transaction deleted successfully");
-        fetchData();
-        setShowDeleteConfirm(false);
-        setDeletingTransaction(null);
-      } else {
-        toast.error(data.error || "Failed to delete transaction");
-      }
-    } catch {
-      toast.error("An error occurred while deleting");
-    }
-  };
-
-  if (loading) return (
-    <div className="flex h-screen items-center justify-center bg-linear-to-br from-blue-50 via-indigo-50 to-purple-50">
-      <div className="text-center">
-        <Loader2 className="animate-spin h-16 w-16 text-indigo-500 mx-auto mb-4" />
-        <p className="text-gray-600 font-medium">Loading transactions...</p>
-      </div>
-    </div>
+  const activeDatePreset = matchingPreset(
+    appliedFilters.dateFrom,
+    appliedFilters.dateTo
   );
 
-  if (error) return (
-    <div className="flex h-screen items-center justify-center bg-linear-to-br from-blue-50 via-indigo-50 to-purple-50">
-      <div className="text-center bg-white p-8 rounded-3xl shadow-xl border border-red-100">
-        <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
-          <AlertCircle className="w-8 h-8 text-red-500" />
+  const pages = Math.max(
+    1,
+    Math.ceil(total / perPage)
+  );
+
+  const current = Math.min(page, pages);
+
+  const startIdx =
+    (current - 1) * perPage;
+
+  const endIdx = Math.min(
+    startIdx + perPage,
+    total
+  );
+
+  const hasPendingChanges =
+    FILTER_KEYS.some(
+      (key) =>
+        !filterEquals(
+          draftFilters[key],
+          appliedFilters[key]
+        )
+    );
+
+  const hasActiveFilters =
+    MULTI_FILTER_KEYS.some(
+      (key) =>
+        appliedFilters[key]?.length > 0
+    ) ||
+    appliedFilters.dateFrom !==
+      getTodayDate() ||
+    appliedFilters.dateTo !==
+      getTodayDate() ||
+    !!tableSearch;
+
+  // Drives the numeric badge on the "Filters" toggle — how many distinct filter
+  // selections are applied, not counting the free-text search box.
+  const activeFilterCount =
+    MULTI_FILTER_KEYS.reduce(
+      (sum, key) => sum + (appliedFilters[key]?.length || 0),
+      0
+    ) +
+    (appliedFilters.dateFrom !== getTodayDate() ? 1 : 0) +
+    (appliedFilters.dateTo !== getTodayDate() ? 1 : 0);
+
+  const openBill = (row) => {
+    setBillTransaction(row);
+  };
+
+  // Pages through /api/transactions/get-all under the currently applied filters until
+  // every matching row has been fetched — export must cover everything the filters match,
+  // not just the `perPage` rows the screen happens to be showing right now.
+  const fetchAllMatchingFilters = async () => {
+    const BATCH_SIZE = 2000;
+    let batchPage = 1;
+    let all = [];
+    for (;;) {
+      const p = buildFilterParams({
+        page: batchPage,
+        limit: BATCH_SIZE,
+        sortKey: sortConfig.key,
+        sortDir: sortConfig.direction,
+      });
+      const res = await fetch(`/api/transactions/get-all?${p.toString()}`, { credentials: "include" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || data.error || "Failed to load transactions");
+
+      const batch = data.transactions || [];
+      all = all.concat(batch);
+
+      const grandTotal = data.total || 0;
+      if (batch.length === 0 || all.length >= grandTotal) break;
+      batchPage += 1;
+    }
+    return all;
+  };
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const allRows = await fetchAllMatchingFilters();
+      if (!allRows.length) {
+        toast?.error?.("No transactions match the current filters");
+        return;
+      }
+
+      const headers = ["Date", "Category", "Party", "Details", "Method", "Branch", "Amount", "Account", "Remarks"];
+      const csvRows = allRows.map((row) => {
+        const rowCategory = row.transactionCategory || row.category || "TRANSPLANT";
+        const isExpense = rowCategory === "EXPENSE";
+        return [
+          formatDateForDisplay(row.date),
+          rowCategory,
+          isExpense ? getExpenseGiverName(row) : getPatientName(row),
+          isExpense
+            ? row.expenseType || row.expense || row.expenseCategory || ""
+            : rowCategory === "MEDICINE"
+              ? getMedicineName(row)
+              : row.procedure || "",
+          METHOD_LABELS[row.method] || row.method || "",
+          row.branch || "",
+          calculateNetAmount(row),
+          row.furtherMode || "",
+          row.remarks || "",
+        ];
+      });
+
+      const csv = [headers, ...csvRows]
+        .map((line) => line.map((cell) => `"${String(cell ?? "").replace(/"/g, '""')}"`).join(","))
+        .join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `transactions_${activeCategory.toLowerCase()}_${getTodayDate()}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast?.success?.(`Exported ${allRows.length.toLocaleString()} transaction${allRows.length === 1 ? "" : "s"}`);
+    } catch (err) {
+      toast?.error?.(err.message || "Export failed");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 shadow-sm flex items-center justify-center mx-auto mb-4">
+            <Loader2 className="w-6 h-6 text-indigo-600 animate-spin" />
+          </div>
+
+          <p className="text-sm font-semibold text-slate-700">
+            Loading transactions
+          </p>
+
+          <p className="text-xs text-slate-400 mt-1">
+            Fetching your financial records...
+          </p>
         </div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Data</h2>
-        <p className="text-gray-600 mb-4">{error}</p>
-        <button onClick={handleRefresh} className="px-6 py-2.5 bg-indigo-500 text-white rounded-xl hover:bg-indigo-600 transition-all font-medium">
-          Try Again
-        </button>
       </div>
-    </div>
-  );
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm max-w-md w-full p-7 text-center">
+          <div className="w-12 h-12 bg-rose-50 rounded-xl flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="w-6 h-6 text-rose-500" />
+          </div>
+
+          <h2 className="font-bold text-slate-900">
+            Unable to load transactions
+          </h2>
+
+          <p className="text-sm text-slate-500 mt-2">
+            {error}
+          </p>
+
+          <button
+            onClick={() => fetchData(true)}
+            className="mt-5 h-10 px-4 rounded-lg bg-slate-950 text-white text-sm font-semibold"
+          >
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex min-h-screen bg-linear-to-br from-blue-50 via-indigo-50 to-purple-50">
+    <div className="min-h-screen bg-[#f6f7f9]">
       {Sidebar && <Sidebar />}
 
-      <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full lg:w-auto min-w-0">
-        <div className="mb-4 sm:mb-6">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">All Transactions</h1>
-              <p className="text-gray-600 text-sm sm:text-base">View and manage all transaction categories</p>
-            </div>
-            <div className="flex gap-2 sm:gap-3">
-              <button onClick={handleRefresh} disabled={refreshing} className="p-2 sm:p-3 bg-white border-2 border-gray-200 rounded-xl hover:bg-gray-50 transition-all shadow-sm disabled:opacity-50 shrink-0" title="Refresh data">
-                <RefreshCw className={`w-4 h-4 sm:w-5 sm:h-5 text-gray-600 ${refreshing ? "animate-spin" : ""}`} />
-              </button>
-              {!NON_TRANSACTION_TABS.includes(activeCategory) && (
-                <button onClick={exportToExcel} className="p-2 sm:p-3 bg-white border-2 border-gray-200 rounded-xl hover:bg-indigo-50 hover:border-indigo-200 transition-all shadow-sm shrink-0" title="Download Excel">
-                  <FileDown className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600" />
-                </button>
-              )}
-              <button onClick={() => router.push("/admin/transactions/create")} className="bg-linear-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white px-3 sm:px-5 py-2 sm:py-3 rounded-xl flex items-center gap-1 sm:gap-2 transition-all shadow-lg text-sm sm:text-base shrink-0">
-                <Plus size={18} strokeWidth={2.5} />
-                <span className="font-semibold hidden sm:inline">Add Transaction</span>
-                <span className="font-semibold sm:hidden">Add</span>
-              </button>
-            </div>
-          </div>
-        </div>
+      <main className="lg:pl-0">
+        <div className="max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-7">
+          <PageHeader
+            activeCategory={activeCategory}
+            refreshing={refreshing}
+            onRefresh={() => fetchData(true)}
+            onExport={handleExport}
+            exporting={exporting}
+            onCreate={() =>
+              router.push(
+                "/admin/transactions/create"
+              )
+            }
+            hasExport={
+              !NON_TRANSACTION_TABS.includes(
+                activeCategory
+              )
+            }
+          />
 
-        <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5 mb-4 sm:mb-6">
-          <StatCard title="Transplants" value={formatCurrency(stats.TRANSPLANT.total)} icon={User} gradient="from-indigo-400 to-purple-500" count={`${stats.TRANSPLANT.count} transactions`} iconBg="bg-indigo-100" iconColor="text-indigo-600" />
-          <StatCard title="Services"    value={formatCurrency(stats.SERVICE.total)}    icon={User} gradient="from-pink-400 to-rose-500"    count={`${stats.SERVICE.count} transactions`}    iconBg="bg-pink-100"    iconColor="text-pink-600"    />
-          <StatCard title="Medicines"   value={formatCurrency(stats.MEDICINE.total)}   icon={User} gradient="from-emerald-400 to-green-500" count={`${stats.MEDICINE.count} transactions`}   iconBg="bg-emerald-100" iconColor="text-emerald-600" />
-          <StatCard title="Expenses"    value={formatCurrency(stats.EXPENSE.total)}    icon={User} gradient="from-rose-400 to-red-500"      count={`${stats.EXPENSE.count} transactions`}    iconBg="bg-rose-100"    iconColor="text-rose-600"    />
-        </div>
+          <KPIBar stats={stats} />
 
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-          <div className="border-b border-gray-200">
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3 sm:gap-4 p-4 sm:px-6 sm:py-4">
-              <div className="flex gap-1 sm:gap-2 w-full lg:w-auto overflow-x-auto pb-2 lg:pb-0">
-                {TRANSACTION_CATEGORIES.map((cat) => {
-                  const Icon = cat.icon;
-                  return (
-                    <button
-                      key={cat.value}
-                      className={`px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl font-semibold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${getCategoryGradientClass(cat.value, activeCategory === cat.value)}`}
-                      onClick={() => setActiveCategory(cat.value)}
-                    >
-                      <Icon size={18} />
-                      {cat.label}
-                      {stats[cat.value] ? ` (${stats[cat.value].count})` : ""}
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className={`flex gap-2 sm:gap-3 w-full lg:w-auto ${NON_TRANSACTION_TABS.includes(activeCategory) ? "hidden" : ""}`}>
-                <div className="relative flex-1 lg:flex-initial min-w-0">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-                  <input
-                    type="text"
-                    placeholder="Search transactions..."
-                    value={tableSearch}
-                    onChange={(e) => handleSearchChange(e.target.value)}
-                    className="pl-9 sm:pl-11 pr-4 py-2 sm:py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 text-sm w-full lg:w-64 transition-all"
-                  />
-                </div>
-                {activeCategory === "EXPENSE" && (
-                  <button
-                    onClick={() => setPendingOnly((v) => !v)}
-                    className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl transition-all shrink-0 flex items-center gap-2 text-sm font-semibold whitespace-nowrap ${pendingOnly ? "bg-amber-500 text-white shadow-md" : "bg-amber-50 text-amber-700 hover:bg-amber-100"}`}
-                  >
-                    <Clock className="w-4 h-4" />
-                    <span className="hidden sm:inline">Pending Approvals</span>
-                    <span className="sm:hidden">Pending</span>
-                  </button>
-                )}
-                <button
-                  onClick={() => setShowFilters(!showFilters)}
-                  className={`p-2 sm:p-2.5 rounded-xl transition-all shrink-0 flex items-center gap-2 ${showFilters ? "bg-indigo-50 text-indigo-600 ring-2 ring-indigo-200" : "bg-gray-50 hover:bg-gray-100 text-gray-600"}`}
-                >
-                  <Filter className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <ChevronDown className={`w-4 h-4 hidden sm:block transition-transform ${showFilters ? "rotate-180" : ""}`} />
-                </button>
-                {hasActiveFilters && (
-                  <button onClick={clearFilters} className="px-3 sm:px-4 py-2 sm:py-2.5 text-sm bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl transition-all font-medium flex items-center gap-1 sm:gap-2 whitespace-nowrap shrink-0">
-                    <X className="w-4 h-4" /><span className="hidden xs:inline">Clear</span>
-                  </button>
-                )}
-              </div>
+          <section className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+            <div className="px-4 sm:px-5 pt-4 pb-3 border-b border-slate-200">
+              <CategoryNavigation
+                activeCategory={activeCategory}
+                stats={stats}
+                onChange={setActiveCategory}
+              />
             </div>
 
-            {showFilters && (
-              <div className="px-4 sm:px-6 pb-4 sm:pb-5 border-t border-gray-100 pt-4 sm:pt-5 bg-linear-to-b from-indigo-50/30 to-white">
-                <div className="mb-4">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Quick Filters</label>
-                  <div className="flex flex-wrap gap-2">
-                    {[{label:"Today",value:"today"},{label:"Yesterday",value:"yesterday"},{label:"Last 7 Days",value:"week"},{label:"Last 30 Days",value:"month"},{label:"All Time",value:"all"}].map((preset) => (
-                      <button key={preset.value} onClick={() => applyQuickFilter(preset.value)} className="px-3 sm:px-4 py-1.5 sm:py-2 bg-white border-2 border-indigo-200 text-indigo-700 rounded-lg hover:bg-indigo-50 transition-all text-xs sm:text-sm font-semibold">
-                        {preset.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <form
-                  onSubmit={(e) => { e.preventDefault(); applyFilters(); }}
-                  className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4"
-                >
-                  <SearchableMultiSelect
-                    label="Branch" icon={Building2} allLabel="All Branches"
-                    value={draftFilters.branch}
-                    onChange={(v) => setDraftFilters((f) => ({ ...f, branch: v }))}
-                    options={tenantBranches.map((b) => ({ value: b, label: b }))}
-                  />
-                  <Input  label="From Date" type="date" value={draftFilters.dateFrom} onChange={(v) => setDraftFilters((f) => ({ ...f, dateFrom: v }))} icon={Calendar} />
-                  <Input  label="To Date"   type="date" value={draftFilters.dateTo}   onChange={(v) => setDraftFilters((f) => ({ ...f, dateTo: v }))}   icon={Calendar} />
-                  <SearchableMultiSelect
-                    label="Payment Method" icon={CreditCard} allLabel="All Methods"
-                    value={draftFilters.paymentMethod}
-                    onChange={(v) => setDraftFilters((f) => ({ ...f, paymentMethod: v }))}
-                    options={PAYMENT_METHODS.map((m) => ({ value: m, label: METHOD_LABELS[m] || m }))}
-                  />
-                  {!NON_TRANSACTION_TABS.includes(activeCategory) && (
-                    <SearchableMultiSelect
-                      label="Entry Type" icon={Link2} allLabel="All Entry Types"
-                      value={draftFilters.entryType}
-                      onChange={(v) => setDraftFilters((f) => ({ ...f, entryType: v }))}
-                      options={ENTRY_TYPE_FILTER_OPTIONS.filter((o) => o.value).map((o) => ({
-                        value: o.value,
-                        label: o.label.replace(/ only$/, ""),
-                      }))}
-                    />
-                  )}
-                  {(activeCategory === "TRANSPLANT" || activeCategory === "SERVICE") && (
-                    <SearchableMultiSelect
-                      label="Procedure" allLabel="All Procedures"
-                      value={draftFilters.procedure}
-                      onChange={(v) => setDraftFilters((f) => ({ ...f, procedure: v }))}
-                      options={(activeCategory === "TRANSPLANT" ? TRANSPLANT_PROCEDURES : SERVICE_PROCEDURES).map((p) => ({ value: p, label: p }))}
-                    />
-                  )}
-                  {(REVENUE_CATEGORIES.includes(activeCategory) || activeCategory === "EXPENSE") && (
-                    <SearchableMultiSelect
-                      label={activeCategory === "EXPENSE" ? "Paid From" : "Received In"}
-                      icon={Landmark} allLabel="All Accounts"
-                      value={draftFilters.furtherMode}
-                      onChange={(v) => setDraftFilters((f) => ({ ...f, furtherMode: v }))}
-                      options={[
-                        { value: UNTRACKED_FURTHER_MODE, label: "Untracked (no account recorded)" },
-                        ...FURTHER_MODES.map((m) => ({ value: m, label: m })),
-                      ]}
-                    />
-                  )}
-                  {activeCategory === "EXPENSE" && (
-                    <>
-                      <SearchableMultiSelect
-                        label="Expense Category" allLabel="All Categories"
-                        value={draftFilters.expenseCategory}
-                        onChange={(v) => setDraftFilters((f) => ({ ...f, expenseCategory: v, expenseType: [] }))}
-                        options={EXPENSE_CATEGORIES.map((c) => ({ value: c, label: c }))}
-                      />
-                      <SearchableMultiSelect
-                        label="Expense Type" allLabel="All Types"
-                        value={draftFilters.expenseType}
-                        onChange={(v) => setDraftFilters((f) => ({ ...f, expenseType: v }))}
-                        options={(draftFilters.expenseCategory.length
-                          ? [...new Set(draftFilters.expenseCategory.flatMap((c) => getExpenseTypes(c)))]
-                          : [...new Set(EXPENSE_CATEGORIES.flatMap((c) => getExpenseTypes(c)))]
-                        ).map((t) => ({ value: t, label: t }))}
-                      />
-                    </>
-                  )}
-                  <button
-                    type="submit"
-                    disabled={!hasPendingChanges}
-                    className="relative self-end px-4 py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
-                  >
-                    Apply Filters
-                    {hasPendingChanges && (
-                      <span className="absolute -top-1.5 -right-1.5 w-3 h-3 rounded-full bg-amber-400 ring-2 ring-white" />
-                    )}
-                  </button>
-                </form>
-                {hasActiveFilters && (
-                  <div className="mt-4 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-semibold text-indigo-900">Active Filters:</span>
-                      <span className="text-xs text-indigo-700">{total} results</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {appliedFilters.branch.map((v) => (
-                        <FilterChip key={`branch-${v}`} label={`Branch: ${v}`} onRemove={() => removeFilter("branch", v)} />
-                      ))}
-                      {appliedFilters.dateFrom && (
-                        <FilterChip label={`From: ${formatDateForDisplay(appliedFilters.dateFrom)}`} onRemove={() => removeFilter("dateFrom")} />
-                      )}
-                      {appliedFilters.dateTo && (
-                        <FilterChip label={`To: ${formatDateForDisplay(appliedFilters.dateTo)}`} onRemove={() => removeFilter("dateTo")} />
-                      )}
-                      {appliedFilters.paymentMethod.map((v) => (
-                        <FilterChip key={`method-${v}`} label={`Method: ${METHOD_LABELS[v] || v}`} onRemove={() => removeFilter("paymentMethod", v)} />
-                      ))}
-                      {appliedFilters.procedure.map((v) => (
-                        <FilterChip key={`proc-${v}`} label={`Procedure: ${v}`} onRemove={() => removeFilter("procedure", v)} />
-                      ))}
-                      {appliedFilters.furtherMode.map((v) => (
-                        <FilterChip
-                          key={`fm-${v}`}
-                          label={`${activeCategory === "EXPENSE" ? "Paid From" : "Received In"}: ${v === UNTRACKED_FURTHER_MODE ? "Untracked" : v}`}
-                          onRemove={() => removeFilter("furtherMode", v)}
-                        />
-                      ))}
-                      {appliedFilters.expenseCategory.map((v) => (
-                        <FilterChip key={`ec-${v}`} label={`Category: ${v}`} onRemove={() => removeFilter("expenseCategory", v)} />
-                      ))}
-                      {appliedFilters.expenseType.map((v) => (
-                        <FilterChip key={`et-${v}`} label={`Type: ${v}`} onRemove={() => removeFilter("expenseType", v)} />
-                      ))}
-                      {appliedFilters.entryType.map((v) => (
-                        <FilterChip
-                          key={`entry-${v}`}
-                          label={`Entry: ${(ENTRY_TYPE_FILTER_OPTIONS.find((o) => o.value === v)?.label || v).replace(/ only$/, "")}`}
-                          onRemove={() => removeFilter("entryType", v)}
-                        />
-                      ))}
-                      {tableSearch && (
-                        <FilterChip label={`Search: "${tableSearch}"`} onRemove={() => { setTableSearch(""); setDebouncedSearch(""); }} />
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
+            {!NON_TRANSACTION_TABS.includes(
+              activeCategory
+            ) && (
+              <TransactionToolbar
+                search={tableSearch}
+                onSearch={handleSearch}
+                showFilters={showFilters}
+                onToggleFilters={() =>
+                  setShowFilters((v) => !v)
+                }
+                pendingOnly={pendingOnly}
+                onPendingToggle={() =>
+                  setPendingOnly((v) => !v)
+                }
+                activeCategory={activeCategory}
+                hasActiveFilters={
+                  hasActiveFilters
+                }
+                activeFilterCount={activeFilterCount}
+                onClear={clearFilters}
+                activeDatePreset={activeDatePreset}
+                onDatePreset={onDatePreset}
+              />
             )}
-          </div>
 
-          {activeCategory === "SUSPENSE" ? (
-            <SuspenseManager />
-          ) : activeCategory === "CONTRA" ? (
-            <ContraManager />
-          ) : refreshing ? (
-            <div className="flex items-center justify-center py-20">
-              <Loader2 className="animate-spin h-10 w-10 text-indigo-400" />
-            </div>
-          ) : (
-            <DataTable
-              category={activeCategory}
-              rows={transactions}
-              onDelete={openDeleteConfirm}
-              onReverse={setReverseTarget}
-              onGenerateBill={openBillGenerator}
-              onSort={handleSort}
-              sortConfig={sortConfig}
-              pagination={{ page: current, pages, perPage, setPage, setPerPage, startIdx, endIdx, total }}
-            />
-          )}
+            {showFilters &&
+              !NON_TRANSACTION_TABS.includes(
+                activeCategory
+              ) && (
+                <FilterPanel
+                  activeCategory={activeCategory}
+                  draftFilters={draftFilters}
+                  setDraftFilters={
+                    setDraftFilters
+                  }
+                  applyFilters={applyFilters}
+                  hasPendingChanges={
+                    hasPendingChanges
+                  }
+                  appliedFilters={
+                    appliedFilters
+                  }
+                  removeFilter={removeFilter}
+                  onReset={clearFilters}
+                />
+              )}
+
+            {activeCategory === "SUSPENSE" ? (
+              <SuspenseManager />
+            ) : activeCategory === "CONTRA" ? (
+              <ContraManager />
+            ) : transactions.length === 0 ? (
+              <EmptyState
+                hasFilters={
+                  hasActiveFilters
+                }
+              />
+            ) : (
+              <>
+                <DesktopTable
+                  category={activeCategory}
+                  rows={transactions}
+                  sortConfig={sortConfig}
+                  onSort={handleSort}
+                  onDelete={setDeleteTarget}
+                  onReverse={setReverseTarget}
+                  onBill={openBill}
+                  expandedId={expandedId}
+                  onExpand={toggleExpand}
+                  linkedInfo={expandedInfo}
+                  linkedLoading={
+                    expandedLoading
+                  }
+                />
+
+                <div className="md:hidden">
+                  {transactions.map((row) => (
+                    <MobileTransactionCard
+                      key={row._id}
+                      row={row}
+                      category={activeCategory}
+                      expanded={
+                        expandedId === row._id
+                      }
+                      onExpand={() =>
+                        toggleExpand(row)
+                      }
+                      onDelete={
+                        setDeleteTarget
+                      }
+                      onReverse={
+                        setReverseTarget
+                      }
+                      onBill={openBill}
+                      linkedInfo={expandedInfo}
+                      linkedLoading={expandedLoading}
+                    />
+                  ))}
+                </div>
+
+                <Pagination
+                  page={current}
+                  pages={pages}
+                  perPage={perPage}
+                  total={total}
+                  startIdx={startIdx}
+                  endIdx={endIdx}
+                  setPage={setPage}
+                  setPerPage={setPerPage}
+                />
+              </>
+            )}
+          </section>
         </div>
       </main>
 
-      {showDeleteConfirm && (
-        <DeleteConfirmModal
-          transaction={deletingTransaction}
-          onClose={() => { setShowDeleteConfirm(false); setDeletingTransaction(null); }}
-          onConfirm={handleDelete}
-        />
+      {/* Keep your existing delete modal here */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div className="w-11 h-11 rounded-xl bg-rose-50 flex items-center justify-center mb-4">
+              <Trash2 className="w-5 h-5 text-rose-600" />
+            </div>
+
+            <h2 className="text-lg font-bold text-slate-950">
+              Delete transaction?
+            </h2>
+
+            <p className="text-sm text-slate-500 mt-2">
+              This action cannot be undone.
+            </p>
+
+            <div className="mt-5 p-4 rounded-xl bg-slate-50 border border-slate-100">
+              <div className="flex justify-between">
+                <span className="text-xs text-slate-500">
+                  Amount
+                </span>
+
+                <span className="font-bold text-rose-600">
+                  {formatCurrency(
+                    deleteTarget.amount
+                  )}
+                </span>
+              </div>
+
+              <div className="flex justify-between mt-2">
+                <span className="text-xs text-slate-500">
+                  Date
+                </span>
+
+                <span className="text-sm font-semibold text-slate-700">
+                  {formatDateForDisplay(
+                    deleteTarget.date
+                  )}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex gap-2 mt-5">
+              <button
+                onClick={() =>
+                  setDeleteTarget(null)
+                }
+                className="flex-1 h-10 rounded-lg border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={async () => {
+                  try {
+                    const category =
+                      deleteTarget.transactionCategory ||
+                      deleteTarget.category ||
+                      "TRANSPLANT";
+
+                    const endpoint =
+                      category === "TRANSPLANT"
+                        ? "/api/transactions/transplant/delete"
+                        : category === "SERVICE"
+                        ? "/api/transactions/service/delete"
+                        : category === "MEDICINE"
+                        ? "/api/transactions/medicine/delete"
+                        : "/api/transactions/expense/delete";
+
+                    const res = await fetch(
+                      endpoint,
+                      {
+                        method: "DELETE",
+                        headers: {
+                          "Content-Type":
+                            "application/json",
+                        },
+                        credentials: "include",
+                        body: JSON.stringify({
+                          transactionId:
+                            deleteTarget._id,
+                        }),
+                      }
+                    );
+
+                    const data =
+                      await res.json();
+
+                    if (!res.ok) {
+                      throw new Error(
+                        data.error ||
+                          "Delete failed"
+                      );
+                    }
+
+                    toast.success(
+                      "Transaction deleted"
+                    );
+
+                    setDeleteTarget(null);
+                    fetchData(true);
+                  } catch (err) {
+                    toast.error(
+                      err.message ||
+                        "Delete failed"
+                    );
+                  }
+                }}
+                className="flex-1 h-10 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {reverseTarget && (
         <ReverseTransactionModal
           transaction={reverseTarget}
-          onClose={() => setReverseTarget(null)}
-          onDone={fetchData}
+          onClose={() =>
+            setReverseTarget(null)
+          }
+          onDone={() => fetchData(true)}
         />
       )}
 
-      {showBillGenerator && selectedTransactionId && (
-        <BillGenerator transactionId={selectedTransactionId} onClose={closeBillGenerator} />
+      {billTransaction && (
+        <BillGenerator
+          transactionId={
+            billTransaction.patient &&
+            billTransaction.costType ===
+              "Revenue"
+              ? typeof billTransaction.patient ===
+                "object"
+                ? billTransaction.patient._id
+                : billTransaction.patient
+              : billTransaction._id
+          }
+          onClose={() =>
+            setBillTransaction(null)
+          }
+        />
       )}
     </div>
+  );
+}
+
+export default function TransactionsListPage({
+  Sidebar,
+}) {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-slate-50" />
+      }
+    >
+      <AllTransactionsPageInner
+        Sidebar={Sidebar}
+      />
+    </Suspense>
   );
 }

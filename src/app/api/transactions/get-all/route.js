@@ -119,7 +119,7 @@ export async function GET(request) {
       query.patient = new mongoose.Types.ObjectId(patientId);
     }
 
-    if (category) {
+    if (category && category !== "ALL") {
       if (category === "TRANSPLANT") {
         query.$or = [
           { transactionCategory: "TRANSPLANT" },

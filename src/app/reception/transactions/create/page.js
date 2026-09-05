@@ -99,6 +99,7 @@ export default function AllTransactionsPage() {
   const [medicineItems, setMedicineItems] = useState([
     {
       id: Date.now(),
+      
       medicineId: "",
       medicineName: "",
       quantity: 1,
