@@ -467,13 +467,7 @@ function PageHeader({
 
             <SectionLabel>Finance / Transactions</SectionLabel>
           </div>
-
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-            {activeCategory === "ALL"
-              ? "All Transactions"
-              : `${category.label}`}
-          </h1>
-
+          
           <p className="mt-1 text-sm text-slate-500">
             Review, manage and track your financial activity.
           </p>
@@ -2581,24 +2575,61 @@ function AllTransactionsPageInner({ Sidebar }) {
         return;
       }
 
-      const headers = ["Date", "Category", "Party", "Details", "Method", "Branch", "Amount", "Account", "Remarks"];
+      const headers = [
+        "Date",
+        "Patient Name",
+        "Phone",
+        "Branch",
+        "Category",
+        "Procedure",
+        "Medicine Name",
+        "Quantity",
+        "Payment Type",
+        "Payment Method",
+        "Original Amount",
+        "TransID / Card No",
+        "Discount",
+        "Net Amount",
+        "Pending Amount",
+        "Remarks",
+        "Created By",
+        "Date & Time",
+        "Total Edits",
+      ];
+
+      const dateTime = (d) => (d ? `${formatDateForDisplay(d)} ${formatTime(d)}`.trim() : "");
+
       const csvRows = allRows.map((row) => {
         const rowCategory = row.transactionCategory || row.category || "TRANSPLANT";
         const isExpense = rowCategory === "EXPENSE";
+        const isMedicine = rowCategory === "MEDICINE";
+        const discount = Number(row.discount) || 0;
+        const net = calculateNetAmount(row);
+
         return [
           formatDateForDisplay(row.date),
-          rowCategory,
           isExpense ? getExpenseGiverName(row) : getPatientName(row),
-          isExpense
-            ? row.expenseType || row.expense || row.expenseCategory || ""
-            : rowCategory === "MEDICINE"
-              ? getMedicineName(row)
-              : row.procedure || "",
-          METHOD_LABELS[row.method] || row.method || "",
+          isExpense ? "" : getPatientPhone(row),
           row.branch || "",
-          calculateNetAmount(row),
-          row.furtherMode || "",
+          rowCategory,
+          isMedicine
+            ? ""
+            : isExpense
+              ? row.expenseType || row.expense || row.expenseCategory || ""
+              : row.procedure || "",
+          isMedicine ? getMedicineName(row) : "",
+          isMedicine ? (row.quantity ?? "") : "",
+          row.paymentType || "",
+          METHOD_LABELS[row.method] || row.method || "",
+          Math.round((net + discount) * 100) / 100,
+          row.paymentId || "",
+          discount,
+          net,
+          row.patient?.payments?.pendingAmount ?? "",
           row.remarks || "",
+          row.createdBy?.name || "",
+          dateTime(row.createdBy?.date || row.createdAt),
+          row.editors?.length || 0,
         ];
       });
 
