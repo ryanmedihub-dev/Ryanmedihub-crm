@@ -4,8 +4,10 @@ import mongoose from "mongoose";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
 import Payable from "@/models/Payable";
+import Advance from "@/models/Advance";
 import Transactions from "@/models/Transactions";
 import { buildPayableAggregationStages } from "@/lib/payableAggregation";
+import { settledTotalExpr } from "@/lib/advanceSettlements";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 
@@ -94,10 +96,47 @@ export async function GET(request) {
       },
     ]);
 
+    // Advances given to the employee (money OUT held with them) net of what has since been
+    // settled against their payables or recovered in cash — a running balance, so it is NOT
+    // bound by the createdAt date range the payable figures use.
+    const advMatch = {
+      "party.kind": "EMPLOYEE",
+      "party.refId": { $ne: null },
+      isCancelled: { $ne: true },
+    };
+    if (branch) advMatch.branch = branch;
+    if (employeeId && mongoose.Types.ObjectId.isValid(employeeId)) {
+      advMatch["party.refId"] = new mongoose.Types.ObjectId(employeeId);
+    }
+
+    const advRows = await Advance.aggregate([
+      { $match: advMatch },
+      {
+        $group: {
+          _id: "$party.refId",
+          advanceGiven: { $sum: { $cond: [{ $eq: ["$direction", "OUT"] }, "$amount", 0] } },
+          advanceRecovered: { $sum: { $cond: [{ $eq: ["$direction", "IN"] }, "$amount", 0] } },
+          advanceSettled: {
+            $sum: { $cond: [{ $eq: ["$direction", "OUT"] }, settledTotalExpr, 0] },
+          },
+          advanceCount: { $sum: { $cond: [{ $eq: ["$direction", "OUT"] }, 1, 0] } },
+        },
+      },
+    ]);
+
     const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
+    const blank = () => ({
+      totalPayable: 0, totalPaid: 0, totalPending: 0,
+      salaryPayable: 0, salaryPaid: 0, salaryPending: 0,
+      incentivePayable: 0, incentivePaid: 0, incentivePending: 0,
+      payableCount: 0, overdueCount: 0,
+      advanceGiven: 0, advanceSettled: 0, advanceRecovered: 0, advanceOutstanding: 0, advanceCount: 0,
+    });
+
     const byEmployee = {};
     for (const r of rows) {
       byEmployee[String(r._id)] = {
+        ...blank(),
         totalPayable: round2(r.totalPayable),
         totalPaid: round2(r.totalPaid),
         totalPending: round2(r.totalPending),
@@ -111,8 +150,21 @@ export async function GET(request) {
         overdueCount: r.overdueCount || 0,
       };
     }
+    for (const a of advRows) {
+      const key = String(a._id);
+      const row = byEmployee[key] || (byEmployee[key] = blank());
+      row.advanceGiven = round2(a.advanceGiven);
+      row.advanceSettled = round2(a.advanceSettled);
+      row.advanceRecovered = round2(a.advanceRecovered);
+      row.advanceOutstanding = Math.max(0, round2(a.advanceGiven - a.advanceSettled - a.advanceRecovered));
+      row.advanceCount = a.advanceCount || 0;
+    }
 
-    return NextResponse.json({ success: true, byEmployee, employeeCount: rows.length });
+    return NextResponse.json({
+      success: true,
+      byEmployee,
+      employeeCount: Object.keys(byEmployee).length,
+    });
   } catch (error) {
     console.error("Error building employee finance summary:", error);
     return NextResponse.json({ error: "Failed to build employee finance summary" }, { status: 500 });

@@ -76,6 +76,7 @@ const FINANCE_COLUMNS = [
   { key: "salaryPaid",       label: "Salary Paid",     tone: "text-emerald-600" },
   { key: "incentivePayable", label: "Total Incentive", tone: "text-slate-600" },
   { key: "incentivePaid",    label: "Incentive Paid",  tone: "text-emerald-600" },
+  { key: "advanceOutstanding", label: "Advance O/S",   tone: "text-amber-600 font-semibold" },
 ];
 
 const EMPTY_FINANCE = {
@@ -83,6 +84,7 @@ const EMPTY_FINANCE = {
   salaryPayable: 0, salaryPaid: 0, salaryPending: 0,
   incentivePayable: 0, incentivePaid: 0, incentivePending: 0,
   payableCount: 0, overdueCount: 0,
+  advanceGiven: 0, advanceSettled: 0, advanceRecovered: 0, advanceOutstanding: 0, advanceCount: 0,
 };
 
 export default function StaffTable({ config = {} }) {

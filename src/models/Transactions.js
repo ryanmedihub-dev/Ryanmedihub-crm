@@ -68,6 +68,11 @@ const transactionSchema = new mongoose.Schema(
 
     isSettlement: { type: Boolean, default: false, index: true },
 
+    // Set only by expense/create-with-settlement: the advance settlement line _id(s) this
+    // payment was booked alongside. On a full reversal of this transaction those lines are
+    // unsettled too, so the advance-receivable isn't left half-recovered.
+    advanceSettlementIds: [{ type: mongoose.Schema.Types.ObjectId }],
+
     reversalOf: { type: mongoose.Schema.Types.ObjectId, ref: "Transactions", default: null, index: true },
     isReversed: { type: Boolean, default: false },
     reversalReason: { type: String, default: "" },

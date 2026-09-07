@@ -276,6 +276,10 @@ export async function GET(request) {
         data = await generateFinanceDaybookReport({ from: fromDate, to: toDate, branch });
         break;
 
+      case "party-net-balance":
+        data = await generatePartyNetBalanceReport({ dateFilter: obligationDateFilter, branch });
+        break;
+
       case "incentives-all":
         data = await generateIncentivesReport({ from: fromDate, to: toDate, branch });
         break;
@@ -1670,6 +1674,213 @@ async function generateReceivablesAllReport(filters) {
 const fmtDay = (v) => (v ? new Date(v).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" }) : "");
 const fmtDateTime = (v) =>
   v ? new Date(v).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }) : "";
+
+/**
+ * Net balance per party (EMPLOYEE + VENDOR) — Payable Pending − Receivable Pending — with a
+ * full statement of every payable and receivable behind it and the transactions against each.
+ * One flat sheet: a "Party" summary row, then its "  Payable" / "  Receivable" obligation rows,
+ * each followed by "    ↳ Payment" / "    ↳ Receipt" detail lines that sum to the figure above.
+ */
+async function generatePartyNetBalanceReport({ dateFilter, branch }) {
+  const txCollection = Transactions.collection.name;
+  const KINDS = ["EMPLOYEE", "VENDOR"];
+  const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
+  const d = (v) => (v ? new Date(v).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" }) : "");
+
+  const payableMatch = {
+    isCancelled: { $ne: true },
+    "payee.kind": { $in: KINDS },
+    "payee.refId": { $ne: null },
+    ...dateFilter,
+  };
+  const receivableMatch = {
+    isCancelled: { $ne: true },
+    "payer.kind": { $in: KINDS },
+    "payer.refId": { $ne: null },
+    ...dateFilter,
+  };
+  if (branch) {
+    payableMatch.branch = branch;
+    receivableMatch.branch = branch;
+  }
+
+  const [payables, receivables] = await Promise.all([
+    Payable.aggregate([
+      { $match: payableMatch },
+      ...buildPayableAggregationStages(txCollection),
+      { $sort: { "payee.refId": 1, createdAt: -1 } },
+      { $limit: 5000 },
+    ]),
+    Receivable.aggregate([
+      { $match: receivableMatch },
+      ...buildReceivableAggregationStages(txCollection),
+      { $sort: { "payer.refId": 1, createdAt: -1 } },
+      { $limit: 5000 },
+    ]),
+  ]);
+  if (payables.length === 0 && receivables.length === 0) return [];
+
+  const payableIds = payables.map((p) => p._id);
+  const receivableIds = receivables.map((r) => r._id);
+  const payIdSet = new Set(payableIds.map(String));
+  const rcvIdSet = new Set(receivableIds.map(String));
+
+  // Payment lines per payable — Transaction, Borrowing OUT, Advance settlements.
+  const [txPay, borrowPay, advPay] = await Promise.all([
+    Transactions.find({ payableId: { $in: payableIds }, approvalStatus: "APPROVED", method: { $nin: unsettledMethodsSync() } })
+      .select("payableId date amount method furtherMode paymentId remarks").lean(),
+    Borrowing.find({ payableId: { $in: payableIds }, direction: "OUT", isCancelled: { $ne: true } })
+      .select("payableId date amount account reference remarks").lean(),
+    Advance.find({
+      direction: "OUT", isCancelled: { $ne: true },
+      $or: [{ settlesPayableId: { $in: payableIds } }, { "settlements.payableId": { $in: payableIds } }],
+    }).select("settlesPayableId settlesPayableAmount settlements date amount account reference remarks").lean(),
+  ]);
+  const payLines = new Map();
+  const pushPay = (k, row) => {
+    const s = String(k);
+    if (!payLines.has(s)) payLines.set(s, []);
+    payLines.get(s).push(row);
+  };
+  txPay.forEach((t) => pushPay(t.payableId, { source: "Transaction", date: t.date, amount: t.amount || 0, method: (t.method || "").replace(/_/g, " "), account: t.furtherMode || "", reference: t.paymentId || "", remarks: t.remarks || "" }));
+  borrowPay.forEach((b) => pushPay(b.payableId, { source: "Borrowing", date: b.date, amount: b.amount || 0, method: "borrowing", account: b.account || "", reference: b.reference || "", remarks: b.remarks || "" }));
+  advPay.forEach((a) =>
+    settlementLinesFor(a)
+      .filter((l) => payIdSet.has(String(l.payableId)))
+      .forEach((l) => pushPay(l.payableId, { source: "Advance applied", date: l.settledAt || a.date, amount: l.amount || 0, method: "advance", account: a.account || "", reference: a.reference || "", remarks: l.note || a.remarks || "" })),
+  );
+
+  // Receipt lines per receivable — Transaction (direct + split), Advance IN, Borrowing IN, Advance→payable.
+  const [dirTx, splitTx, advIn, borrowIn, advOut] = await Promise.all([
+    Transactions.find({ receivableId: { $in: receivableIds }, costType: "Revenue", approvalStatus: "APPROVED", method: { $nin: unsettledMethodsSync() } })
+      .select("receivableId date amount method furtherMode paymentId remarks").lean(),
+    Transactions.find({ "receivableAllocations.receivableId": { $in: receivableIds }, costType: "Revenue", approvalStatus: "APPROVED", method: { $nin: unsettledMethodsSync() } })
+      .select("receivableAllocations date method furtherMode paymentId remarks").lean(),
+    Advance.find({ receivableId: { $in: receivableIds }, direction: "IN", isCancelled: { $ne: true } })
+      .select("receivableId date amount account reference remarks").lean(),
+    Borrowing.find({ settlesReceivableId: { $in: receivableIds }, direction: "IN", isCancelled: { $ne: true } })
+      .select("settlesReceivableId date amount account reference remarks").lean(),
+    Advance.find({
+      receivableId: { $in: receivableIds }, direction: "OUT", isCancelled: { $ne: true },
+      $or: [{ settlesPayableId: { $ne: null } }, { "settlements.0": { $exists: true } }],
+    }).select("receivableId settlesPayableId settlesPayableAmount settlements date amount account reference remarks").lean(),
+  ]);
+  const rcpLines = new Map();
+  const pushRcp = (k, row) => {
+    const s = String(k);
+    if (!rcpLines.has(s)) rcpLines.set(s, []);
+    rcpLines.get(s).push(row);
+  };
+  dirTx.forEach((t) => pushRcp(t.receivableId, { source: "Transaction", date: t.date, amount: t.amount || 0, method: (t.method || "").replace(/_/g, " "), account: t.furtherMode || "", reference: t.paymentId || "", remarks: t.remarks || "" }));
+  splitTx.forEach((t) => (t.receivableAllocations || []).forEach((a) => {
+    if (!rcvIdSet.has(String(a.receivableId))) return;
+    pushRcp(a.receivableId, { source: "Transaction (split)", date: t.date, amount: a.amount || 0, method: (t.method || "").replace(/_/g, " "), account: t.furtherMode || "", reference: t.paymentId || "", remarks: t.remarks || "" });
+  }));
+  advIn.forEach((a) => pushRcp(a.receivableId, { source: "Advance applied", date: a.date, amount: a.amount || 0, method: "advance", account: a.account || "", reference: a.reference || "", remarks: a.remarks || "" }));
+  borrowIn.forEach((b) => pushRcp(b.settlesReceivableId, { source: "Borrowing", date: b.date, amount: b.amount || 0, method: "borrowing", account: b.account || "", reference: b.reference || "", remarks: b.remarks || "" }));
+  advOut.forEach((a) => settlementLinesFor(a).forEach((l) => pushRcp(a.receivableId, { source: "Advance→payable", date: l.settledAt || a.date, amount: l.amount || 0, method: "advance→payable", account: a.account || "", reference: a.reference || "", remarks: l.note || a.remarks || "" })));
+
+  // Merge by party ref id.
+  const parties = new Map();
+  const getParty = (kind, refId, label) => {
+    const k = String(refId);
+    if (!parties.has(k)) parties.set(k, { kind, label, payables: [], receivables: [], pT: 0, pPaid: 0, pPend: 0, rT: 0, rR: 0, rPend: 0 });
+    const p = parties.get(k);
+    if (label && !p.label) p.label = label;
+    return p;
+  };
+  for (const p of payables) {
+    const party = getParty(p.payee.kind, p.payee.refId, p.payee.label);
+    party.payables.push(p);
+    party.pT += p.totalAmount || 0;
+    party.pPaid += p.paid || 0;
+    party.pPend += p.pending || 0;
+  }
+  for (const r of receivables) {
+    const party = getParty(r.payer.kind, r.payer.refId, r.payer.label);
+    party.receivables.push(r);
+    party.rT += r.totalAmount || 0;
+    party.rR += r.received || 0;
+    party.rPend += r.pending || 0;
+  }
+
+  const list = [...parties.values()]
+    .map((p) => ({ ...p, net: round2(p.pPend - p.rPend) }))
+    .sort((a, b) => Math.abs(b.net) - Math.abs(a.net) || (a.label || "").localeCompare(b.label || ""));
+
+  const BLANK = {
+    "Net Balance ₹": "", "Payable Pending": "", "Receivable Pending": "",
+    "Payable Total": "", "Paid / Received": "", "Receivable Total": "", Received: "",
+    "Purpose / Category": "", "Sub-type / Head": "", Period: "", Branch: "",
+    "Raised On": "", "Due Date": "", "Total Amount": "", Pending: "", Status: "",
+    "Txn Date": "", "Txn Amount": "", "Txn Source": "", Method: "", Account: "", Reference: "", Remarks: "",
+  };
+
+  const out = [];
+  for (const party of list) {
+    const ctx = { Party: party.label || "", "Party Type": party.kind || "" };
+
+    out.push({
+      Row: "Party", ...ctx, ...BLANK,
+      "Net Balance ₹": round2(party.net),
+      "Payable Pending": round2(party.pPend),
+      "Receivable Pending": round2(party.rPend),
+      "Payable Total": round2(party.pT),
+      "Receivable Total": round2(party.rT),
+    });
+
+    for (const p of party.payables) {
+      const lines = (payLines.get(String(p._id)) || []).sort((a, b) => new Date(a.date) - new Date(b.date));
+      out.push({
+        Row: "  Payable", ...ctx, ...BLANK,
+        "Paid / Received": round2(p.paid),
+        "Purpose / Category": p.purpose || "",
+        "Sub-type / Head": p.expenseSubType || p.expenseCategory || "",
+        Period: p.period?.month && p.period?.year ? `${p.period.month}/${p.period.year}` : "",
+        Branch: p.branch || "",
+        "Raised On": d(p.createdAt),
+        "Due Date": d(p.dueDate),
+        "Total Amount": round2(p.totalAmount),
+        Pending: round2(p.pending),
+        Status: p.status || "",
+        Remarks: p.remarks || "",
+      });
+      for (const ln of lines) {
+        out.push({
+          Row: "    ↳ Payment", ...ctx, ...BLANK,
+          "Txn Date": d(ln.date), "Txn Amount": round2(ln.amount), "Txn Source": ln.source,
+          Method: ln.method, Account: ln.account, Reference: ln.reference, Remarks: ln.remarks,
+        });
+      }
+    }
+
+    for (const r of party.receivables) {
+      const lines = (rcpLines.get(String(r._id)) || []).sort((a, b) => new Date(a.date) - new Date(b.date));
+      out.push({
+        Row: "  Receivable", ...ctx, ...BLANK,
+        "Paid / Received": round2(r.received),
+        "Purpose / Category": r.revenueCategory || r.purpose || "",
+        "Sub-type / Head": r.revenueSubType || "",
+        Period: r.period?.month && r.period?.year ? `${r.period.month}/${r.period.year}` : "",
+        Branch: r.branch || "",
+        "Raised On": d(r.createdAt),
+        "Due Date": d(r.dueDate),
+        "Total Amount": round2(r.totalAmount),
+        Pending: round2(r.pending),
+        Status: r.status || "",
+        Remarks: r.remarks || "",
+      });
+      for (const ln of lines) {
+        out.push({
+          Row: "    ↳ Receipt", ...ctx, ...BLANK,
+          "Txn Date": d(ln.date), "Txn Amount": round2(ln.amount), "Txn Source": ln.source,
+          Method: ln.method, Account: ln.account, Reference: ln.reference, Remarks: ln.remarks,
+        });
+      }
+    }
+  }
+  return out;
+}
 
 // Every unexplained credit/debit parked in a suspense account. `from`/`to` are already
 // IST-bracketed Date objects (getISTStartOfDay / getISTEndOfDay), or null.

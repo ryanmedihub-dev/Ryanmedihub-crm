@@ -11,14 +11,21 @@ import { withExternalPartyLink, createExternalPayable, validateExternalParty } f
 import { expenseTypesSync, nonCashMethodsSync } from "@/lib/masterData";
 import { EXPENSE_NO_GIVER_CATEGORIES } from "@/lib/entryEngine/derive";
 
-export async function createExpense({ payload, session: authSession }) {
+export async function createExpense({ payload, session: authSession, dbSession = null }) {
   const {
     expenseCategory, expenseType, expenseGiver, amount, method, paymentId, branch, date, remarks,
     patientId, commissionReceiver, payableId, allowOverpayment, receipts, furtherMode, receiptMode,
-    externalParty, taxDetails,
+    externalParty, taxDetails, advanceSettlementIds,
   } = payload;
 
   if (!expenseCategory || !amount) return { error: "Missing required fields", status: 400 };
+
+  // The "paid by other" path spawns its own payable in its own transaction — it can't join a
+  // caller's session, and settling an advance there is meaningless anyway (the debt just moves
+  // to the external party).
+  if (dbSession && method === "paid_by_other") {
+    return { error: "Advance settlement is not supported with 'Paid by Other'", status: 400 };
+  }
 
   if (payableId && furtherMode !== undefined && !furtherMode && !nonCashMethodsSync().includes(method)) {
     return { error: "furtherMode is required — name the account this payment left from", status: 400 };
@@ -42,13 +49,13 @@ export async function createExpense({ payload, session: authSession }) {
   let vendorDoc = null;
   if (expenseGiver?.type === "VENDOR") {
     if (!expenseGiver.vendorId) return { error: "Vendor ID required for vendor expenses", status: 400 };
-    vendorDoc = await Vendor.findById(expenseGiver.vendorId);
+    vendorDoc = await Vendor.findById(expenseGiver.vendorId).session(dbSession);
     if (!vendorDoc) return { error: "Vendor not found", status: 404 };
   }
 
   let payableDoc = null;
   if (payableId) {
-    payableDoc = await Payable.findById(payableId);
+    payableDoc = await Payable.findById(payableId).session(dbSession);
     if (!payableDoc) return { error: "Payable not found", status: 404 };
     if (payableDoc.isCancelled) return { error: "This payable has been cancelled", status: 400 };
 
@@ -58,7 +65,7 @@ export async function createExpense({ payload, session: authSession }) {
     const [paidAgg] = await Transactions.aggregate([
       { $match: { payableId: payableDoc._id, approvalStatus: "APPROVED" } },
       { $group: { _id: null, paid: { $sum: "$amount" } } },
-    ]);
+    ]).session(dbSession);
     const currentPaid = paidAgg?.paid || 0;
     const remaining = payableDoc.totalAmount - currentPaid;
     if (parseFloat(amount) > remaining && !allowOverpayment) {
@@ -94,6 +101,9 @@ export async function createExpense({ payload, session: authSession }) {
     furtherMode: furtherMode || "", receiptMode: receiptMode || "",
     isSettlement: payableDoc ? payableDoc.costAlreadyRecognised === true : false,
     taxDetails: taxDetails || undefined,
+    ...(Array.isArray(advanceSettlementIds) && advanceSettlementIds.length
+      ? { advanceSettlementIds }
+      : {}),
     vendor: expenseGiver?.type === "VENDOR" ? expenseGiver.vendorId : null,
     approvalStatus: "APPROVED",
     createdBy: { name: authSession.user.name, email: authSession.user.email, branch: authSession.user.branch, date: new Date() },
@@ -126,7 +136,7 @@ export async function createExpense({ payload, session: authSession }) {
     });
   } else {
     transaction = new Transactions(transactionData);
-    await transaction.save();
+    await transaction.save({ session: dbSession });
   }
 
   if (vendorDoc) {
@@ -136,7 +146,7 @@ export async function createExpense({ payload, session: authSession }) {
       name: authSession.user.name, email: authSession.user.email, branch: authSession.user.branch, date: new Date(),
       updatedFields: [{ name: "Transactions", previousValue, newValue: transaction._id.toString() }],
     });
-    await vendorDoc.save();
+    await vendorDoc.save({ session: dbSession });
   }
 
   return { data: transaction, status: 201 };

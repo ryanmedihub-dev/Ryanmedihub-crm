@@ -15,8 +15,10 @@ import { useSession } from "next-auth/react";
 import { maskPhone } from "@/utils/phoneUtils";
 import { PAYABLE_EXPENSE_DROPDOWN_CATEGORIES } from "@/constants/expenseCategories";
 import { getPayableContext } from "@/lib/entryForm/getPayableContext";
+import { getAdvanceContext } from "@/lib/entryForm/getAdvanceContext";
 import { buildExpensePayload } from "@/lib/entryForm/buildTransactionPayload";
 import { validateExpenseEntry } from "@/lib/entryForm/validateExpenseEntry";
+import AdvanceSettlementPanel from "@/components/finance/AdvanceSettlementPanel";
 import {
   ArrowLeft,
   Plus,
@@ -114,6 +116,8 @@ function AdminCreateTransactionPageInner() {
   const [expandedPayableTx, setExpandedPayableTx] = useState([]);
   const [expandedPayableTxLoading, setExpandedPayableTxLoading] = useState(false);
   const [payableRefreshKey, setPayableRefreshKey] = useState(0);
+  const [openAdvances, setOpenAdvances] = useState([]);
+  const [advanceAllocations, setAdvanceAllocations] = useState({}); // { [advanceId]: amount }
 
   const [transplantData, setTransplantData] = useState({
     patient: "",
@@ -379,6 +383,7 @@ function AdminCreateTransactionPageInner() {
   }, []);
 
   const payableContext = getPayableContext({ expenseData, employees, employeeCache, patients, patientCache, vendors });
+  const advanceContext = getAdvanceContext({ expenseData, employees, employeeCache, patients, patientCache, vendors });
 
   useEffect(() => {
     if (activeTab !== "expense" || !payableContext) {
@@ -456,17 +461,85 @@ function AdminCreateTransactionPageInner() {
     setSelectedPayableId("");
     setAllowOverpayment(false);
     setExpandedPayableId(null);
+    setAdvanceAllocations({});
   }, [
     expenseData.expenseSection,
     expenseData.agentSubTab,
     expenseData.employeeId,
+    expenseData.patientSubTab,
+    expenseData.receiverType,
+    expenseData.receiverId,
     expenseData.payableCategory,
     expenseData.rentSubType,
+  ]);
+
+  // A stale allocation carried across a payable switch is the obvious bug — clear it.
+  useEffect(() => {
+    setAdvanceAllocations({});
+  }, [selectedPayableId, payableAction]);
+
+  // Open advances for whoever this expense is paid to — only relevant when recording a
+  // payment against a specific payable (settling an advance needs a payableId).
+  useEffect(() => {
+    if (activeTab !== "expense" || !advanceContext?.refId || payableAction !== "pay") {
+      setOpenAdvances([]);
+      return;
+    }
+    const params = new URLSearchParams({
+      partyKind: advanceContext.kind,
+      partyRefId: advanceContext.refId,
+    });
+    let cancelled = false;
+    fetch(`/api/advances/open-for-party?${params}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (!cancelled) setOpenAdvances(d.success ? d.advances || [] : []);
+      })
+      .catch(() => {
+        if (!cancelled) setOpenAdvances([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    activeTab,
+    payableAction,
+    advanceContext?.kind,
+    advanceContext?.refId,
+    expenseData.expenseSection,
+    expenseData.agentSubTab,
+    payableRefreshKey,
   ]);
 
   useEffect(() => {
     setExpenseData((d) => (d.payableVendorId ? { ...d, payableVendorId: "" } : d));
   }, [expenseData.expenseSection, expenseData.payableCategory]);
+
+  /* ---- advance settlement derived state ---- */
+  const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
+  const selectedPayableForSettle = openPayables.find((p) => p._id === selectedPayableId) || null;
+
+  // {advanceId, amount, remaining}[] — only ticked advances, keyed to their live `remaining`.
+  const advanceAllocList = Object.entries(advanceAllocations)
+    .filter(([, v]) => v !== "" && v != null)
+    .map(([advanceId, amount]) => {
+      const adv = openAdvances.find((a) => a._id === advanceId);
+      return { advanceId, amount: round2(amount), remaining: adv ? adv.remaining : 0 };
+    });
+  const hasAdvanceAllocations = advanceAllocList.length > 0;
+  const advanceApplied = round2(advanceAllocList.reduce((s, a) => s + a.amount, 0));
+  const advanceNet =
+    selectedPayableForSettle != null
+      ? round2((selectedPayableForSettle.pending || 0) - advanceApplied)
+      : round2(parseFloat(expenseData.amount || 0) - advanceApplied);
+
+  // §4.4 — while advances are ticked, the Amount field IS the net (cash leaving the account).
+  // Auto-set it and lock the input; the caption tells the user to untick to edit.
+  useEffect(() => {
+    if (!hasAdvanceAllocations) return;
+    const nextStr = String(advanceNet);
+    setExpenseData((d) => (d.amount === nextStr ? d : { ...d, amount: nextStr }));
+  }, [hasAdvanceAllocations, advanceNet]);
 
   const toggleExpandPayable = async (payableId) => {
     if (expandedPayableId === payableId) {
@@ -720,6 +793,16 @@ function AdminCreateTransactionPageInner() {
               </label>
             )}
           </div>
+        )}
+
+        {payableAction === "pay" && selectedPayableId && openAdvances.length > 0 && (
+          <AdvanceSettlementPanel
+            advances={openAdvances}
+            selectedPayable={selectedPayable}
+            allocations={advanceAllocations}
+            onChange={setAdvanceAllocations}
+            disabled={loading}
+          />
         )}
 
         {!payablesLoading && openPayables.length === 0 && ctx.payeeKind === "VENDOR" && (
@@ -1045,14 +1128,24 @@ function AdminCreateTransactionPageInner() {
   };
 
   const handleSaveExpense = async () => {
-    const error = validateExpenseEntry({ expenseData, payableAction, selectedPayableId });
+    const error = validateExpenseEntry({
+      expenseData,
+      payableAction,
+      selectedPayableId,
+      advanceAllocations: advanceAllocList,
+      selectedPayable: selectedPayableForSettle,
+    });
     if (error) {
       alert(error);
       return;
     }
     setLoading(true);
     try {
-      const res = await fetch("/api/transactions/expense/create", {
+      // With advances ticked, one action spans two documents — route through the orchestrator.
+      const endpoint = hasAdvanceAllocations
+        ? "/api/transactions/expense/create-with-settlement"
+        : "/api/transactions/expense/create";
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
@@ -1061,6 +1154,7 @@ function AdminCreateTransactionPageInner() {
             payableAction,
             selectedPayableId,
             allowOverpayment,
+            advanceAllocations: advanceAllocList,
             employees,
             employeeCache,
             patients,
@@ -1072,7 +1166,11 @@ function AdminCreateTransactionPageInner() {
         ),
       });
       if (res.ok) {
-        alert("Expense transaction created successfully!");
+        alert(
+          hasAdvanceAllocations && advanceNet === 0
+            ? "Advance settled — payable closed with no cash movement."
+            : "Expense transaction created successfully!",
+        );
         router.push("/admin/transactions");
       } else {
         const d = await res.json();
@@ -1461,9 +1559,18 @@ function AdminCreateTransactionPageInner() {
                               })
                             }
                             min="0"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                            readOnly={hasAdvanceAllocations}
+                            className={`w-full px-3 py-2 border border-gray-300 rounded-lg ${
+                              hasAdvanceAllocations ? "bg-gray-100 text-gray-500" : ""
+                            }`}
                             placeholder="0"
                           />
+                          {hasAdvanceAllocations && (
+                            <p className="mt-1 text-xs text-gray-500">
+                              Auto-calculated from payable pending − advance applied. Untick every
+                              advance to edit.
+                            </p>
+                          )}
                         </div>
                         {expenseData.agentSubTab === "incentive" && (
                           <p className="text-xs text-gray-500 mt-2">
@@ -1690,9 +1797,18 @@ function AdminCreateTransactionPageInner() {
                               })
                             }
                             min="0"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                            readOnly={hasAdvanceAllocations}
+                            className={`w-full px-3 py-2 border border-gray-300 rounded-lg ${
+                              hasAdvanceAllocations ? "bg-gray-100 text-gray-500" : ""
+                            }`}
                             placeholder="0"
                           />
+                          {hasAdvanceAllocations && (
+                            <p className="mt-1 text-xs text-gray-500">
+                              Auto-calculated from payable pending − advance applied. Untick every
+                              advance to edit.
+                            </p>
+                          )}
                         </div>
                         {expenseData.patientSubTab === "commission" && renderPayableActions()}
                       </div>
@@ -1799,9 +1915,18 @@ function AdminCreateTransactionPageInner() {
                               })
                             }
                             min="0"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                            readOnly={hasAdvanceAllocations}
+                            className={`w-full px-3 py-2 border border-gray-300 rounded-lg ${
+                              hasAdvanceAllocations ? "bg-gray-100 text-gray-500" : ""
+                            }`}
                             placeholder="0"
                           />
+                          {hasAdvanceAllocations && (
+                            <p className="mt-1 text-xs text-gray-500">
+                              Auto-calculated from payable pending − advance applied. Untick every
+                              advance to edit.
+                            </p>
+                          )}
                         </div>
                         {renderPayableActions()}
                       </div>
@@ -2186,7 +2311,11 @@ function AdminCreateTransactionPageInner() {
                           ) : (
                             <div className="flex items-center justify-center gap-2">
                               <Save className="w-4 h-4" />
-                              {payableAction === "pay" ? "Record Payment" : "Save Expense"}
+                              {hasAdvanceAllocations && advanceNet === 0
+                                ? "Settle & Close"
+                                : payableAction === "pay"
+                                  ? "Record Payment"
+                                  : "Save Expense"}
                             </div>
                           )}
                         </button>

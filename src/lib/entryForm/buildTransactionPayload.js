@@ -5,6 +5,7 @@ export function buildExpensePayload({
   payableAction,
   selectedPayableId,
   allowOverpayment,
+  advanceAllocations = [],
   employees,
   employeeCache,
   patients,
@@ -23,6 +24,16 @@ export function buildExpensePayload({
     furtherMode: expenseData.furtherMode,
     externalParty: expenseData.method === "paid_by_other" ? expenseData.externalParty : undefined,
     ...(payableAction === "pay" ? { payableId: selectedPayableId, allowOverpayment } : {}),
+    // `expenseData.amount` is already the NET (payable pending − advance applied), auto-set and
+    // locked by the form while allocations are active — so every branch below stays as-is.
+    ...(advanceAllocations.length
+      ? {
+          advanceSettlements: advanceAllocations.map((a) => ({
+            advanceId: a.advanceId,
+            amount: Number(a.amount),
+          })),
+        }
+      : {}),
   };
 
   if (expenseData.expenseSection === "agent") {

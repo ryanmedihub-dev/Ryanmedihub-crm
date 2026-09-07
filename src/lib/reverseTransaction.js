@@ -1,7 +1,9 @@
 import Transactions from "@/models/Transactions";
 import Patient from "@/models/Patient";
+import Advance from "@/models/Advance";
 import { checkPeriodLock } from "@/lib/periodLock";
 import { checkCascadeOnDelete } from "@/lib/cascadeIntegrity";
+import { unsettleAdvanceFromPayable } from "@/lib/entryCore/settleAdvanceAgainstPayable";
 
 const MIRRORED_FIELDS = [
   "patient",
@@ -160,6 +162,32 @@ export async function reverseTransaction({
       updatedFields: [{ name: "isReversed", previousValue: "false", newValue: "true" }],
     });
     await original.save({ session: dbSession });
+
+    // This payment was booked alongside advance settlements (expense/create-with-settlement).
+    // A full reversal must undo those too, or the advance-receivable is left half-recovered.
+    // A PARTIAL reversal leaves them — the settlement still stands against the reduced payment.
+    const settleIds = (original.advanceSettlementIds || []).map(String);
+    if (settleIds.length) {
+      const advances = await Advance.find({ "settlements._id": { $in: settleIds } }).session(dbSession);
+      try {
+        for (const adv of advances) {
+          for (const line of [...adv.settlements]) {
+            if (!settleIds.includes(String(line._id))) continue;
+            await unsettleAdvanceFromPayable({
+              advanceId: String(adv._id),
+              settlementId: String(line._id),
+              note: `Auto-unlinked — source payment ${original._id} was reversed`,
+              session: { user: actor || {} },
+              dbSession,
+            });
+          }
+        }
+      } catch (e) {
+        throw new ReversalError(409, {
+          error: `Could not undo the advance settlement on this payment: ${e?.settleResult?.error || e?.message || "unknown error"}`,
+        });
+      }
+    }
   }
 
   let patientStatus = null;

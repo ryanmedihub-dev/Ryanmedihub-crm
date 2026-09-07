@@ -45,9 +45,37 @@ export function validateExpenseSection({ expenseData, payableAction, selectedPay
   return null;
 }
 
-export function validateExpenseEntry({ expenseData, payableAction, selectedPayableId }) {
+const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
+
+export function validateExpenseEntry({
+  expenseData,
+  payableAction,
+  selectedPayableId,
+  advanceAllocations = [],
+  selectedPayable = null,
+}) {
   const sectionError = validateExpenseSection({ expenseData, payableAction, selectedPayableId });
   if (sectionError) return sectionError;
+
+  const allocs = advanceAllocations.filter((a) => a && a.advanceId);
+  if (allocs.length > 0) {
+    if (!selectedPayableId) return "Select which payable these advances settle against";
+    for (const a of allocs) {
+      const amt = round2(a.amount);
+      if (!(amt > 0)) return "Enter how much of the advance to apply";
+      if (a.remaining != null && amt > round2(a.remaining) + 0.005) {
+        return `An advance allocation (₹${amt.toLocaleString("en-IN")}) is more than that advance has left (₹${round2(a.remaining).toLocaleString("en-IN")})`;
+      }
+    }
+    const applied = round2(allocs.reduce((s, a) => s + round2(a.amount), 0));
+    const pending = selectedPayable ? round2(selectedPayable.pending) : null;
+    if (pending != null && applied > pending + 0.005) {
+      return `Advance applied (₹${applied.toLocaleString("en-IN")}) is more than this payable's outstanding (₹${pending.toLocaleString("en-IN")})`;
+    }
+    if (pending != null && round2(pending - applied) < 0) {
+      return "Net payable cannot be negative";
+    }
+  }
 
   if (expenseData.method !== "cash" && !expenseData.paymentId) {
     return expenseData.method === "card"

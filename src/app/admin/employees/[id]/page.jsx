@@ -40,6 +40,7 @@ export default function EmployeeDetailPage() {
   // The same payable rollup the staff list's money columns are built from, so clicking
   // through from a row shows that row's figures broken out rather than a different number.
   const [finance, setFinance] = useState(null);
+  const [advances, setAdvances] = useState([]);
 
   useEffect(() => {
     if (!id) return;
@@ -47,6 +48,14 @@ export default function EmployeeDetailPage() {
       .then((r) => r.json())
       .then((json) => setFinance(json?.byEmployee?.[id] || null))
       .catch(() => setFinance(null));
+  }, [id]);
+
+  useEffect(() => {
+    if (!id) return;
+    fetch(`/api/advances/open-for-party?partyKind=EMPLOYEE&partyRefId=${id}`)
+      .then((r) => r.json())
+      .then((json) => setAdvances(Array.isArray(json?.advances) ? json.advances : []))
+      .catch(() => setAdvances([]));
   }, [id]);
 
   useEffect(() => {
@@ -184,6 +193,67 @@ export default function EmployeeDetailPage() {
                 </tbody>
               </table>
             </div>
+          </div>
+        )}
+
+        {finance && (finance.advanceGiven > 0 || advances.length > 0) && (
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+            <h2 className="text-lg font-bold text-gray-900 mb-1 flex items-center gap-2">
+              <Wallet className="w-5 h-5 text-amber-600" /> Advances / Receivable
+            </h2>
+            <p className="text-xs text-gray-400 mb-4">
+              Money given in advance to this employee — {finance.advanceCount}{" "}
+              advance{finance.advanceCount === 1 ? "" : "s"}. Outstanding is what is still
+              recoverable after settling against payables and any cash recovered.
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+              <div className="rounded-xl bg-gray-50 p-3">
+                <p className="text-xs text-gray-500 uppercase tracking-wide">Given</p>
+                <p className="text-lg font-bold text-gray-900 mt-0.5">{formatCurrency(finance.advanceGiven)}</p>
+              </div>
+              <div className="rounded-xl bg-gray-50 p-3">
+                <p className="text-xs text-gray-500 uppercase tracking-wide">Settled vs payables</p>
+                <p className="text-lg font-bold text-indigo-700 mt-0.5">{formatCurrency(finance.advanceSettled)}</p>
+              </div>
+              <div className="rounded-xl bg-gray-50 p-3">
+                <p className="text-xs text-gray-500 uppercase tracking-wide">Recovered (cash)</p>
+                <p className="text-lg font-bold text-emerald-700 mt-0.5">{formatCurrency(finance.advanceRecovered)}</p>
+              </div>
+              <div className="rounded-xl bg-amber-50 p-3">
+                <p className="text-xs text-amber-600 uppercase tracking-wide">Outstanding</p>
+                <p className="text-lg font-bold text-amber-700 mt-0.5">{formatCurrency(finance.advanceOutstanding)}</p>
+              </div>
+            </div>
+            {advances.length > 0 && (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="text-gray-500 border-b border-gray-100">
+                    <tr>
+                      <th className="text-left py-2 font-semibold">Date</th>
+                      <th className="text-left py-2 font-semibold">Account</th>
+                      <th className="text-left py-2 font-semibold">Reference</th>
+                      <th className="text-right py-2 font-semibold">Amount</th>
+                      <th className="text-right py-2 font-semibold">Applied</th>
+                      <th className="text-right py-2 font-semibold">Remaining</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {advances.map((a) => (
+                      <tr key={a._id}>
+                        <td className="py-2 text-gray-700">{formatDate(a.date)}</td>
+                        <td className="py-2 text-gray-600">{a.account || "—"}</td>
+                        <td className="py-2 text-gray-600">{a.reference || "—"}</td>
+                        <td className="py-2 text-right tabular-nums">{formatCurrency(a.amount)}</td>
+                        <td className="py-2 text-right tabular-nums text-indigo-700">
+                          {formatCurrency((a.settledTotal || 0) + (a.cashRecovered || 0))}
+                        </td>
+                        <td className="py-2 text-right tabular-nums text-amber-700">{formatCurrency(a.remaining)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
 
