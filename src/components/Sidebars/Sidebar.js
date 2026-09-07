@@ -24,6 +24,7 @@ import {
   FileText,
   Banknote,
   SlidersHorizontal,
+  Upload,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -261,6 +262,18 @@ export default function AdminSidebar() {
               onClick={close}
             />
           </NavSection>
+
+          {(session?.user?.role === "admin" || session?.user?.role === "super-admin") && (
+            <NavSection title="Bulk Tools">
+              <NavItem
+                label="Uploads"
+                href="/admin/uploads"
+                icon={Upload}
+                active={isActive("/admin/uploads")}
+                onClick={close}
+              />
+            </NavSection>
+          )}
 
           {(session?.user?.role === "super-admin" || session?.user?.role === "owner") && (
             <NavSection title="Settings">

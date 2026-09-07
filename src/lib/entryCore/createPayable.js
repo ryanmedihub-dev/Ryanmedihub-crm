@@ -12,7 +12,7 @@ const PATIENT_REQUIRED_PURPOSES = ["INCENTIVE", "PATIENT_COMMISSION"];
 export async function createPayable({ payload, session: authSession }) {
   const {
     payee, purpose, expenseCategory, expenseSubType, period, relatedPatient, totalAmount,
-    dueDate, branch, remarks, costAlreadyRecognised, receipts,
+    dueDate, branch, remarks, costAlreadyRecognised, excludeFromPnl, uploadBatch, receipts,
     includeGST, gstRate, gstAmount, includeTDS, tdsCategory, tdsRate, tdsAmount,
   } = payload;
 
@@ -68,6 +68,8 @@ export async function createPayable({ payload, session: authSession }) {
     branch: branch || authSession.user.branch,
     remarks: remarks || "",
     costAlreadyRecognised: costAlreadyRecognised === true,
+    excludeFromPnl: excludeFromPnl === true,
+    ...(uploadBatch ? { uploadBatch } : {}),
     receipts: receipts || [],
     ...(periodStartDate ? { createdAt: periodStartDate } : {}),
     createdBy: { name: authSession.user.name, email: authSession.user.email, branch: authSession.user.branch, date: new Date() },

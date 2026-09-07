@@ -468,7 +468,12 @@ function PageHeader({
             <SectionLabel>Finance / Transactions</SectionLabel>
           </div>
 
-          
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+            {activeCategory === "ALL"
+              ? "All Transactions"
+              : `${category.label}`}
+          </h1>
+
           <p className="mt-1 text-sm text-slate-500">
             Review, manage and track your financial activity.
           </p>
@@ -2619,19 +2624,22 @@ function AllTransactionsPageInner({ Sidebar }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 shadow-sm flex items-center justify-center mx-auto mb-4">
-            <Loader2 className="w-6 h-6 text-indigo-600 animate-spin" />
+      <div className={`min-h-screen bg-slate-50 ${Sidebar ? "lg:flex" : ""}`}>
+        {Sidebar && <Sidebar />}
+        <div className="flex-1 min-w-0 flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 shadow-sm flex items-center justify-center mx-auto mb-4">
+              <Loader2 className="w-6 h-6 text-indigo-600 animate-spin" />
+            </div>
+
+            <p className="text-sm font-semibold text-slate-700">
+              Loading transactions
+            </p>
+
+            <p className="text-xs text-slate-400 mt-1">
+              Fetching your financial records...
+            </p>
           </div>
-
-          <p className="text-sm font-semibold text-slate-700">
-            Loading transactions
-          </p>
-
-          <p className="text-xs text-slate-400 mt-1">
-            Fetching your financial records...
-          </p>
         </div>
       </div>
     );
@@ -2639,7 +2647,9 @@ function AllTransactionsPageInner({ Sidebar }) {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+      <div className={`min-h-screen bg-slate-50 ${Sidebar ? "lg:flex" : ""}`}>
+        {Sidebar && <Sidebar />}
+        <div className="flex-1 min-w-0 flex items-center justify-center min-h-screen p-6">
         <div className="bg-white border border-slate-200 rounded-2xl shadow-sm max-w-md w-full p-7 text-center">
           <div className="w-12 h-12 bg-rose-50 rounded-xl flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="w-6 h-6 text-rose-500" />
@@ -2660,16 +2670,31 @@ function AllTransactionsPageInner({ Sidebar }) {
             Try again
           </button>
         </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#f6f7f9]">
+    <div
+      className={`min-h-screen bg-[#f6f7f9] ${
+        Sidebar ? "lg:flex" : ""
+      }`}
+    >
       {Sidebar && <Sidebar />}
 
-      <main className="lg:pl-0">
-        <div className="max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-7">
+      <main
+        className={
+          Sidebar ? "flex-1 min-w-0" : "w-full"
+        }
+      >
+        <div
+          className={`max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 pb-5 sm:pb-7 ${
+            Sidebar
+              ? "pt-16 lg:pt-7"
+              : "pt-5 sm:pt-7"
+          }`}
+        >
           <PageHeader
             activeCategory={activeCategory}
             refreshing={refreshing}

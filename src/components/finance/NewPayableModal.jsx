@@ -5,7 +5,13 @@ import { X, Loader2, Receipt } from "lucide-react";
 import SearchableSelect from "@/components/SearchableSelect";
 import useMasterData from "@/lib/useMasterData";
 import { ALL_BRANCHES, COLLAB_BRANCHES } from "@/lib/branches";
+import {
+  PURPOSE_TO_CATEGORY,
+  PURPOSE_LABELS,
+  GENERIC_SUBTYPE_PURPOSES,
+} from "@/lib/uploads/payableRowMapper";
 
+// Dropdown order for this modal only (the shared module keys by purpose, not order).
 const PURPOSES = [
   "SALARY",
   "INCENTIVE",
@@ -22,49 +28,6 @@ const PURPOSES = [
   "SOFTWARE_RENTAL",
   "HARDWARE_RENTAL",
 ];
-const GENERIC_SUBTYPE_PURPOSES = [
-  "MEDICAL_CONSUMABLES",
-  "MEDICINE_PROCUREMENT",
-  "PROFESSIONAL_EXPENSES",
-  "LAB_EXPENSES",
-  "INTEREST_EXPENSES",
-  "SOFTWARE_RENTAL",
-  "HARDWARE_RENTAL",
-];
-
-const PURPOSE_LABELS = {
-  SALARY: "Salary",
-  INCENTIVE: "Incentive",
-  RENT: "Rent",
-  ELECTRICITY: "Electricity",
-  COLLAB_CLINIC: "Collab Clinic",
-  PATIENT_COMMISSION: "Patient Commission",
-  TAX: "Taxes",
-  MEDICAL_CONSUMABLES: "Medical Consumables",
-  MEDICINE_PROCUREMENT: "Medicine Procurement",
-  PROFESSIONAL_EXPENSES: "Professional Expenses",
-  LAB_EXPENSES: "Lab Expenses",
-  INTEREST_EXPENSES: "Interest Expenses",
-  SOFTWARE_RENTAL: "Software Rental",
-  HARDWARE_RENTAL: "Hardware Rental",
-};
-
-const PURPOSE_TO_CATEGORY = {
-  SALARY: "Salary",
-  INCENTIVE: "Incentive",
-  RENT: "Rent",
-  ELECTRICITY: "Electricity Bill",
-  COLLAB_CLINIC: "Collab Clinic Payment",
-  PATIENT_COMMISSION: "Commision",
-  TAX: "Taxes",
-  MEDICAL_CONSUMABLES: "Medical Consumables",
-  MEDICINE_PROCUREMENT: "Medicine Procurement",
-  PROFESSIONAL_EXPENSES: "Professional Expenses",
-  LAB_EXPENSES: "Lab Expenses",
-  INTEREST_EXPENSES: "Interest Expenses",
-  SOFTWARE_RENTAL: "Software Rental Expenses",
-  HARDWARE_RENTAL: "Hardware Rental Expenses",
-};
 
 const inputClass =
   "w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100";

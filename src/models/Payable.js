@@ -98,6 +98,10 @@ const payableSchema = new mongoose.Schema(
       tdsRate: Number,
       tdsAmount: Number,
     },
+
+    // Set when this payable was created by an /admin/uploads bulk run — lets that batch's
+    // revert find exactly the documents it made. Null for every normal single-entry payable.
+    uploadBatch: { type: mongoose.Schema.Types.ObjectId, ref: "UploadBatch", default: null, index: true },
   },
   { timestamps: true },
 );
