@@ -8,6 +8,7 @@ import Patient from "@/models/Patient";
 import { resolveBranchFilter } from "@/lib/branches";
 import { SETTLEMENT_EXCLUSION } from "@/constants/bankRouting";
 import { unsettledMethodsSync, nonCashMethodsSync } from "@/lib/masterData";
+import { getISTStartOfDay, getISTEndOfDay } from "@/lib/dateHelpers";
 
 function deriveEntryType(tx) {
   if (tx.reversalOf) return "REVERSAL";
@@ -138,17 +139,12 @@ export async function GET(request) {
     }
 
     if (dateFrom || dateTo) {
+      // Bracket the plain YYYY-MM-DD to the IST calendar day. setHours() here would use the
+      // server's timezone (UTC on Vercel), shifting the window 5.5h and pulling neighbouring-
+      // day rows into the export.
       query.date = {};
-      if (dateFrom) {
-        const from = new Date(dateFrom);
-        from.setHours(0, 0, 0, 0);
-        query.date.$gte = from;
-      }
-      if (dateTo) {
-        const to = new Date(dateTo);
-        to.setHours(23, 59, 59, 999);
-        query.date.$lte = to;
-      }
+      if (dateFrom) query.date.$gte = getISTStartOfDay(dateFrom);
+      if (dateTo) query.date.$lte = getISTEndOfDay(dateTo);
     }
 
     if (paymentMethods.length) {

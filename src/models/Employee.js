@@ -16,10 +16,14 @@ const employeeSchema = new mongoose.Schema({
     trim: true,
     lowercase: true
   },
+  employeeId: {
+    type: String,
+    trim: true,
+    default: ""
+  },
   role: {
     type: String,
     required: [true, 'Role is required'],
-    enum : ["Agent", "Counsellor" , "Doctor" , "Technician" , "Implanter" , "Others", "Hr"],
     trim: true
   },
   isactive : {
@@ -46,5 +50,6 @@ const employeeSchema = new mongoose.Schema({
 
 employeeSchema.index({ role: 1, isactive: 1, branch: 1 });
 employeeSchema.index({ branch: 1 });
+employeeSchema.index({ employeeId: 1 });
 
 export default mongoose.models.Employee || mongoose.model('Employee', employeeSchema);

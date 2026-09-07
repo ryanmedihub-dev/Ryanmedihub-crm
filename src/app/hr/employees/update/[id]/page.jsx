@@ -73,7 +73,7 @@ export default function HRUpdateEmployee() {
   const [isLoading, setIsLoading]     = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [notFound, setNotFound]       = useState(false);
-  const [formData, setFormData]       = useState({ name: "", phone: "", email: "", role: "", isactive: true });
+  const [formData, setFormData]       = useState({ name: "", phone: "", email: "", employeeId: "", role: "", isactive: true });
 
   useEffect(() => {
     if (!employeeId) { setNotFound(true); setIsLoading(false); return; }
@@ -82,7 +82,7 @@ export default function HRUpdateEmployee() {
       .then((result) => {
         if (result.success && result.data) {
           const d = result.data;
-          setFormData({ name: d.name || "", phone: d.phone || "", email: d.email || "", role: d.role || "", isactive: d.isactive !== undefined ? d.isactive : true });
+          setFormData({ name: d.name || "", phone: d.phone || "", email: d.email || "", employeeId: d.employeeId || "", role: d.role || "", isactive: d.isactive !== undefined ? d.isactive : true });
         }
       })
       .catch(() => toast.error("Error fetching employee data"))
@@ -190,7 +190,8 @@ export default function HRUpdateEmployee() {
                   <InputField label="Full Name" required value={formData.name} onChange={createChangeHandler("name")} placeholder="Enter employee's full name" className="md:col-span-2" />
                   <InputField label="Phone Number" type="tel" value={formData.phone} onChange={createChangeHandler("phone")} placeholder="10-digit mobile number" />
                   <InputField label="Email Address" type="email" value={formData.email} onChange={createChangeHandler("email")} placeholder="employee@example.com" />
-                  <InputField label="Role" type="select" required value={formData.role} onChange={createChangeHandler("role")} options={roleOptions} className="md:col-span-2" />
+                  <InputField label="Employee ID" value={formData.employeeId} onChange={createChangeHandler("employeeId")} placeholder="e.g. RYN-014 (optional)" />
+                  <InputField label="Designation / Role" type="combobox" required value={formData.role} onChange={createChangeHandler("role")} options={roleOptions} placeholder="Type any post, or pick a common one" />
                   {formData.role && <div className="md:col-span-2"><RoleDescriptionCard role={formData.role} /></div>}
                   <InputField label="Active Status" type="checkbox" value={formData.isactive} onChange={createChangeHandler("isactive")} className="md:col-span-2" />
                 </div>

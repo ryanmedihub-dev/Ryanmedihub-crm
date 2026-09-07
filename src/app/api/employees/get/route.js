@@ -32,7 +32,7 @@ export async function GET(request) {
 
     const [employees, total] = await Promise.all([
       Employee.find(query)
-        .select("name phone email role isactive salaryStructure incentiveRate")
+        .select("name phone email employeeId role isactive salaryStructure incentiveRate")
         .sort({ name: 1 })
         .collation(NAME_COLLATION)
         .skip((page - 1) * limit)

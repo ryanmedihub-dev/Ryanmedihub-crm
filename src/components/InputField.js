@@ -154,6 +154,34 @@ export default function InputField({
             </option>
           ))}
         </select>
+      ) : type === "combobox" ? (
+        <>
+          <input
+            id={id}
+            type="text"
+            list={`${id}-list`}
+            className={`
+              w-full px-4 py-3 rounded-lg border border-gray-300
+              focus:ring-2 focus:ring-blue-500 focus:border-transparent
+              transition-all duration-200 ease-in-out
+              placeholder:text-gray-400
+              ${disabled ? "bg-gray-100 cursor-not-allowed" : "bg-white"}
+            `}
+            value={value}
+            onChange={onChange}
+            placeholder={placeholder || `Type or pick a ${label || "value"}`}
+            required={required}
+            disabled={disabled}
+            autoComplete="off"
+          />
+          <datalist id={`${id}-list`}>
+            {options.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </datalist>
+        </>
       ) : type === "searchable-select" ? (
         <SearchableSelect
           id={id}

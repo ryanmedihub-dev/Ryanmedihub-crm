@@ -131,6 +131,7 @@ export default function EmployeeUpdate() {
     name: "",
     phone: "",
     email: "",
+    employeeId: "",
     role: "",
     isactive: true,
     salaryStructure: {
@@ -173,6 +174,7 @@ export default function EmployeeUpdate() {
             name: result.data.name || "",
             phone: result.data.phone || "",
             email: result.data.email || "",
+            employeeId: result.data.employeeId || "",
             role: result.data.role || "",
             isactive: result.data.isactive !== undefined ? result.data.isactive : true,
             salaryStructure: {
@@ -396,12 +398,20 @@ export default function EmployeeUpdate() {
                   />
 
                   <InputField
-                    label="Role"
-                    type="select"
+                    label="Employee ID"
+                    value={formData.employeeId}
+                    onChange={createChangeHandler("employeeId")}
+                    placeholder="e.g. RYN-014 (optional)"
+                  />
+
+                  <InputField
+                    label="Designation / Role"
+                    type="combobox"
                     required
                     value={formData.role}
                     onChange={createChangeHandler("role")}
                     options={roleOptions}
+                    placeholder="Type any post, or pick a common one"
                     className="md:col-span-2"
                   />
 

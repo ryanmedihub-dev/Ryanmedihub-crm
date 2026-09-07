@@ -108,7 +108,12 @@ export default function EmployeeDetailPage() {
         </button>
 
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-          <h1 className="text-xl font-bold text-gray-900">{employee.name}</h1>
+          <h1 className="text-xl font-bold text-gray-900">
+            {employee.name}
+            {employee.employeeId ? (
+              <span className="ml-2 text-sm font-medium text-gray-400">#{employee.employeeId}</span>
+            ) : null}
+          </h1>
           <p className="text-sm text-gray-500 mt-0.5">
             {employee.role} · {employee.branch || "N/A"}
             {employee.phone ? ` · ${employee.phone}` : ""}

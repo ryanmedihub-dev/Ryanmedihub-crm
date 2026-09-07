@@ -272,6 +272,10 @@ export async function GET(request) {
         data = await generateContraReport({ from: fromDate, to: toDate, branch });
         break;
 
+      case "finance-daybook":
+        data = await generateFinanceDaybookReport({ from: fromDate, to: toDate, branch });
+        break;
+
       case "incentives-all":
         data = await generateIncentivesReport({ from: fromDate, to: toDate, branch });
         break;
@@ -374,7 +378,7 @@ async function generateComprehensivePatientReport(filters) {
     Address: p.personal?.address || "",
     Profession: p.personal?.profession || "",
     "Visit Date": p.personal?.visitDate
-      ? new Date(p.personal.visitDate).toLocaleDateString()
+      ? new Date(p.personal.visitDate).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })
       : "",
     "Reference Agent": p.personal?.reference?.name || "",
     "Package Quoted": p.personal?.packageQuoted || "",
@@ -388,7 +392,7 @@ async function generateComprehensivePatientReport(filters) {
     "Grafts Suggested": p.counselling?.graftsSuggested || "",
     "Ready For Surgery": p.counselling?.readyForSurgery ? "Yes" : "No",
     "Surgery Date": p.surgery?.surgeryDate
-      ? new Date(p.surgery.surgeryDate).toLocaleDateString()
+      ? new Date(p.surgery.surgeryDate).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })
       : "",
     "Surgery Location": p.surgery?.location || "",
     "Surgery Technique": p.surgery?.technique || "",
@@ -401,7 +405,7 @@ async function generateComprehensivePatientReport(filters) {
     "Amount Received": p.payments?.amountReceived || 0,
     "Pending Amount": p.payments?.pendingAmount || 0,
     Status: p.ops?.status || "",
-    "Created At": p.createdAt ? new Date(p.createdAt).toLocaleDateString() : "",
+    "Created At": p.createdAt ? new Date(p.createdAt).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" }) : "",
   }));
 }
 
@@ -430,7 +434,7 @@ async function generateDemographicsReport(filters) {
     Branch: p.personal?.branch || "",
     Address: p.personal?.address || "",
     "Visit Date": p.personal?.visitDate
-      ? new Date(p.personal.visitDate).toLocaleDateString()
+      ? new Date(p.personal.visitDate).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })
       : "",
   }));
 }
@@ -460,7 +464,7 @@ async function generateStatusReport(filters) {
     Branch: p.personal?.branch || "",
     Status: p.ops?.status || "",
     "Visit Date": p.personal?.visitDate
-      ? new Date(p.personal.visitDate).toLocaleDateString()
+      ? new Date(p.personal.visitDate).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })
       : "",
     "Reference Agent": p.personal?.reference?.name || "",
     "Days in Current Status": p.updatedAt
@@ -892,7 +896,7 @@ async function generateSurgeryScheduleReport(filters) {
 
   return patients.map((p) => ({
     "Surgery Date": p.surgery?.surgeryDate
-      ? new Date(p.surgery.surgeryDate).toLocaleDateString()
+      ? new Date(p.surgery.surgeryDate).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })
       : "",
     "Patient Name": p.personal?.name || "",
     Phone: p.personal?.phone || "",
@@ -943,7 +947,7 @@ async function generateGraftsAnalysisReport(filters) {
         "%"
       : "N/A",
     "Surgery Date": p.surgery?.surgeryDate
-      ? new Date(p.surgery.surgeryDate).toLocaleDateString()
+      ? new Date(p.surgery.surgeryDate).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })
       : "",
   }));
 }
@@ -997,7 +1001,7 @@ async function generateRevenueReport(filters) {
     .lean();
 
   return transactions.map((t) => ({
-    Date: t.date ? new Date(t.date).toLocaleDateString() : "",
+    Date: t.date ? new Date(t.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" }) : "",
     "Patient Name": t.patient?.personal?.name || "",
     "Patient Phone": t.patient?.personal?.phone || "",
     Branch: t.branch || "",
@@ -1019,7 +1023,7 @@ async function generateExpensesReport(filters) {
   const transactions = await Transactions.find(query).sort({ date: -1 }).limit(5000).lean();
 
   return transactions.map((t) => ({
-    Date: t.date ? new Date(t.date).toLocaleDateString() : "",
+    Date: t.date ? new Date(t.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" }) : "",
     Branch: t.branch || "",
     "Expense Category": t.expense || "",
     "Expense Type": t.expenseType || "",
@@ -1042,7 +1046,7 @@ async function generateTransactionsReport(filters) {
     .lean();
 
   return transactions.map((t) => ({
-    Date: t.date ? new Date(t.date).toLocaleDateString() : "",
+    Date: t.date ? new Date(t.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" }) : "",
     "Cost Type": t.costType || "",
     Branch: t.branch || "",
     "Patient Name": t.patient?.personal?.name || "N/A",
@@ -1139,7 +1143,7 @@ async function generateOutstandingPaymentsReport(filters) {
         rows.push({
           ...base,
           "Transaction Date": t.date
-            ? new Date(t.date).toLocaleDateString("en-IN")
+            ? new Date(t.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })
             : "",
           "Transaction Amount": t.amount || 0,
           "Payment Type": t.paymentType || "",
@@ -1354,7 +1358,7 @@ async function generatePayablesAllReport(filters) {
       });
   });
 
-  const d = (v) => (v ? new Date(v).toLocaleDateString("en-IN") : "");
+  const d = (v) => (v ? new Date(v).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" }) : "");
   const out = [];
 
   for (const p of payables) {
@@ -1575,7 +1579,7 @@ async function generateReceivablesAllReport(filters) {
     });
   });
 
-  const d = (v) => (v ? new Date(v).toLocaleDateString("en-IN") : "");
+  const d = (v) => (v ? new Date(v).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" }) : "");
   const out = [];
 
   for (const r of receivables) {
@@ -1663,7 +1667,7 @@ async function generateReceivablesAllReport(filters) {
   return out;
 }
 
-const fmtDay = (v) => (v ? new Date(v).toLocaleDateString("en-IN") : "");
+const fmtDay = (v) => (v ? new Date(v).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" }) : "");
 const fmtDateTime = (v) =>
   v ? new Date(v).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }) : "";
 
@@ -1757,6 +1761,159 @@ async function generateContraReport({ from, to, branch }) {
     });
   }
   return out;
+}
+
+// One flat "day book" of every finance entry CREATED in the range (filters on createdAt, not
+// the entry's own date) — payables, receivables, advances, borrowings, revenue & expense
+// transactions, contra transfers and suspense entries. Sorted oldest-created first so it
+// reads top to bottom as the day happened. `from`/`to` are IST-bracketed Date objects or null.
+async function generateFinanceDaybookReport({ from, to, branch }) {
+  const createdRange = {};
+  if (from) createdRange.$gte = from;
+  if (to) createdRange.$lte = to;
+  const hasRange = from || to;
+
+  const base = hasRange ? { createdAt: createdRange } : {};
+  const withBranch = (extra = {}) => {
+    const q = { ...base, ...extra };
+    if (branch) q.branch = branch;
+    return q;
+  };
+  const CAP = 20000;
+
+  const [payables, receivables, advances, borrowings, txns, transfers, suspense] =
+    await Promise.all([
+      Payable.find(withBranch()).sort({ createdAt: 1 }).limit(CAP).lean(),
+      Receivable.find(withBranch()).sort({ createdAt: 1 }).limit(CAP).lean(),
+      Advance.find(withBranch()).sort({ createdAt: 1 }).limit(CAP).lean(),
+      Borrowing.find(withBranch()).sort({ createdAt: 1 }).limit(CAP).lean(),
+      Transactions.find(withBranch()).sort({ createdAt: 1 }).limit(CAP).lean(),
+      AccountTransfer.find(withBranch()).sort({ createdAt: 1 }).limit(CAP).lean(),
+      SuspenseEntry.find(withBranch()).sort({ createdAt: 1 }).limit(CAP).lean(),
+    ]);
+
+  const CONTRA_KIND = {
+    MANUAL: "Manual",
+    LOAN_SETTLEMENT: "Loan settlement",
+    LOAN_CANCELLATION: "Loan cancellation",
+  };
+
+  const shape = ({
+    type, ts, entryDate, party = "", purpose = "", subType = "", direction = "",
+    amount = 0, cash = "—", branch: br = "", account = "", method = "", reference = "",
+    status = "", remarks = "", createdBy = "", id,
+  }) => ({
+    row: {
+      "Entry Type": type,
+      "Created On": fmtDateTime(ts),
+      "Entry Date": fmtDay(entryDate),
+      "Party": party || "",
+      "Purpose / Category": purpose || "",
+      "Sub-type": subType || "",
+      "Direction": direction || "",
+      "Amount": Number(amount) || 0,
+      "Cash Impact": cash,
+      "Branch": br || "",
+      "Account": account || "",
+      "Method": method || "",
+      "Reference": reference || "",
+      "Status": status || "",
+      "Remarks": remarks || "",
+      "Created By": createdBy || "",
+      "Entry ID": String(id),
+    },
+    ts: ts ? new Date(ts).getTime() : 0,
+  });
+
+  const rows = [];
+
+  for (const p of payables) {
+    rows.push(shape({
+      type: "Payable", ts: p.createdAt, entryDate: p.dueDate || p.createdAt,
+      party: p.payee?.label, purpose: (p.purpose || "").replace(/_/g, " "),
+      subType: p.expenseSubType || p.expenseCategory || "", direction: "Payable raised",
+      amount: p.totalAmount, cash: "—", branch: p.branch, remarks: p.remarks,
+      status: p.isCancelled ? "Cancelled" : "Open",
+      createdBy: p.createdBy?.name, id: p._id,
+    }));
+  }
+  for (const r of receivables) {
+    rows.push(shape({
+      type: "Receivable", ts: r.createdAt, entryDate: r.dueDate || r.createdAt,
+      party: r.payer?.label, purpose: (r.purpose || "").replace(/_/g, " "),
+      subType: r.revenueSubType || r.revenueCategory || "", direction: "Receivable raised",
+      amount: r.totalAmount, cash: "—", branch: r.branch, remarks: r.remarks,
+      status: r.isCancelled ? "Cancelled" : "Open",
+      createdBy: r.createdBy?.name, id: r._id,
+    }));
+  }
+  for (const a of advances) {
+    const out = a.direction === "OUT";
+    rows.push(shape({
+      type: "Advance", ts: a.createdAt, entryDate: a.date,
+      party: a.party?.label, purpose: "Advance",
+      direction: out ? "Advance paid out" : "Advance recovered",
+      amount: a.amount, cash: out ? "Outflow" : "Inflow", branch: a.branch,
+      account: a.account, reference: a.reference, remarks: a.remarks,
+      status: a.isCancelled ? "Cancelled" : "Active",
+      createdBy: a.createdBy?.name, id: a._id,
+    }));
+  }
+  for (const b of borrowings) {
+    const inbound = b.direction === "IN";
+    rows.push(shape({
+      type: "Borrowing", ts: b.createdAt, entryDate: b.date,
+      party: b.party?.label, purpose: "Borrowing",
+      direction: inbound ? "Borrowing received" : "Borrowing repaid",
+      amount: b.amount, cash: inbound ? "Inflow" : "Outflow", branch: b.branch,
+      account: b.account, reference: b.reference, remarks: b.remarks,
+      status: b.isCancelled ? "Cancelled" : "Active",
+      createdBy: b.createdBy?.name, id: b._id,
+    }));
+  }
+  for (const t of txns) {
+    const isExpense = t.costType === "Expenses";
+    rows.push(shape({
+      type: isExpense ? "Expense" : "Revenue", ts: t.createdAt, entryDate: t.date,
+      party: isExpense ? (t.expenseGiver?.name || "") : (t.patientName || ""),
+      purpose: isExpense
+        ? (t.expenseType || t.expense || "Expense")
+        : (t.transactionCategory || "Revenue"),
+      subType: isExpense ? (t.expense || "") : (t.procedure || ""),
+      direction: isExpense ? "Expense" : "Revenue",
+      amount: t.amount, cash: isExpense ? "Outflow" : "Inflow", branch: t.branch,
+      account: t.furtherMode || "", method: t.method || "", reference: t.paymentId || "",
+      remarks: t.remarks,
+      status: `${t.approvalStatus || "APPROVED"}${t.isReversed ? " · Reversed" : ""}${t.reversalOf ? " · Reversal" : ""}`,
+      createdBy: t.createdBy?.name, id: t._id,
+    }));
+  }
+  for (const c of transfers) {
+    rows.push(shape({
+      type: "Contra", ts: c.createdAt, entryDate: c.date,
+      purpose: "Contra transfer", subType: CONTRA_KIND[c.transferKind] || c.transferKind || "Manual",
+      direction: `${c.fromAccount || "?"} → ${c.toAccount || "?"}`,
+      amount: c.amount, cash: "—", branch: c.branch,
+      account: `${c.fromAccount || ""} → ${c.toAccount || ""}`,
+      reference: c.reference, remarks: c.remarks,
+      status: c.isCancelled ? "Cancelled" : "Active",
+      createdBy: c.createdBy?.name, id: c._id,
+    }));
+  }
+  for (const s of suspense) {
+    const out = s.direction === "OUT";
+    rows.push(shape({
+      type: "Suspense", ts: s.createdAt, entryDate: s.date,
+      purpose: "Suspense", direction: out ? "Suspense debit (OUT)" : "Suspense credit (IN)",
+      amount: s.amount, cash: out ? "Outflow" : "Inflow", branch: s.branch,
+      account: s.account, reference: s.reference, remarks: s.remarks,
+      status: s.isCancelled ? "Cancelled" : s.isResolved ? "Resolved" : "Open",
+      createdBy: s.createdBy?.name, id: s._id,
+    }));
+  }
+
+  rows.sort((x, y) => x.ts - y.ts);
+  return rows.map((r) => r.row);
 }
 
 // Every staff incentive recorded on a patient, grouped by employee, with whether it has
@@ -2013,11 +2170,11 @@ async function generateEmployeesAllReport() {
     "Base Salary": e.salaryStructure?.baseSalary ?? "",
     "Salary Type": e.salaryStructure?.salaryType || "",
     "Salary Effective From": e.salaryStructure?.effectiveFrom
-      ? new Date(e.salaryStructure.effectiveFrom).toLocaleDateString()
+      ? new Date(e.salaryStructure.effectiveFrom).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })
       : "",
     "Incentive Rate": e.incentiveRate ?? "",
-    "Joined On": e.createdAt ? new Date(e.createdAt).toLocaleDateString() : "",
-    "Last Updated": e.updatedAt ? new Date(e.updatedAt).toLocaleDateString() : "",
+    "Joined On": e.createdAt ? new Date(e.createdAt).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" }) : "",
+    "Last Updated": e.updatedAt ? new Date(e.updatedAt).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" }) : "",
   }));
 }
 
@@ -2033,7 +2190,7 @@ async function generateStocksAllReport() {
     "Purchase Amount": s.purchaseAmt ?? "",
     "Sold Amount": s.soldAmt ?? "",
     "Stock Value": ((s.totalQuantity || 0) * (s.purchaseAmt || 0)).toFixed(2),
-    "Expiry Date": s.expiry ? new Date(s.expiry).toLocaleDateString() : "",
+    "Expiry Date": s.expiry ? new Date(s.expiry).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" }) : "",
     "GST No": s.gstNo || "",
     "Added By": s.createdBy?.name || "",
     "Added Branch": s.createdBy?.branch || "",

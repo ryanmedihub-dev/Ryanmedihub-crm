@@ -67,9 +67,14 @@ import SearchableMultiSelect from "@/components/SearchableMultiSelect";
 /* Helpers                                                                    */
 /* -------------------------------------------------------------------------- */
 
-const getTodayDate = () => new Date().toISOString().split("T")[0];
+// Local calendar day as YYYY-MM-DD. toISOString() would be UTC — between IST midnight and
+// 05:30 that reads as *yesterday*, so "Today" / presets would query the wrong day.
+const isoDate = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+    d.getDate(),
+  ).padStart(2, "0")}`;
 
-const isoDate = (d) => d.toISOString().split("T")[0];
+const getTodayDate = () => isoDate(new Date());
 
 const DATE_PRESETS = [
   { key: "today", label: "Today" },
@@ -113,6 +118,7 @@ const formatDateForDisplay = (date) => {
   if (!date) return "—";
 
   return new Date(date).toLocaleDateString("en-IN", {
+    timeZone: "Asia/Kolkata",
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -123,6 +129,7 @@ const formatTime = (date) => {
   if (!date) return "";
 
   return new Date(date).toLocaleTimeString("en-IN", {
+    timeZone: "Asia/Kolkata",
     hour: "2-digit",
     minute: "2-digit",
     hour12: true,

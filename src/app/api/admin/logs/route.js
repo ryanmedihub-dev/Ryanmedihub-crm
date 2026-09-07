@@ -8,6 +8,7 @@ import Stock from "@/models/Stock";
 import DeleteLog from "@/models/DeleteLog";
 // Registers the Vendor schema so the transaction log's .populate("vendor") resolves.
 import "@/models/Vendor";
+import { getISTStartOfDay, getISTEndOfDay } from "@/lib/dateHelpers";
 
 function fmtDate(d) {
   if (!d) return "";
@@ -25,7 +26,7 @@ function inRange(date, dateFrom, dateTo) {
 // pulled rather than the rows emitted — the caller is told when this bites.
 const TX_LOG_DOC_LIMIT = 5000;
 
-const fmtDay = (d) => (d ? new Date(d).toLocaleDateString("en-IN") : "");
+const fmtDay = (d) => (d ? new Date(d).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" }) : "");
 const id = (v) => (v ? String(v?._id ?? v) : "");
 
 /**
@@ -114,8 +115,10 @@ export async function GET(request) {
     const branch = sessionLocked ? sessionBranch : requestedBranch;
     const hasBranch = !!branch && branch !== "All" && branch !== "all";
 
-    const dateFrom = from ? new Date(from) : null;
-    const dateTo = to ? new Date(to) : null;
+    // Bracket the plain YYYY-MM-DD to the IST calendar day (Vercel runs in UTC, so a raw
+    // new Date("YYYY-MM-DD") is IST 05:30, and the `to` side never reached end-of-day).
+    const dateFrom = from ? getISTStartOfDay(from) : null;
+    const dateTo = to ? getISTEndOfDay(to) : null;
 
     let data = [];
     let truncated = false;

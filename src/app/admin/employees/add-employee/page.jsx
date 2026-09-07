@@ -133,6 +133,7 @@ export default function EmployeeRegistration() {
     name: "",
     phone: "",
     email: "",
+    employeeId: "",
     role: "",
     isactive: true,
     salaryStructure: {
@@ -228,6 +229,7 @@ export default function EmployeeRegistration() {
           name: "",
           phone: "",
           email: "",
+          employeeId: "",
           role: "",
           isactive: true,
           salaryStructure: {
@@ -314,13 +316,20 @@ export default function EmployeeRegistration() {
                   />
 
                   <InputField
-                    label="Role"
-                    type="select"
+                    label="Employee ID"
+                    value={formData.employeeId}
+                    onChange={createChangeHandler("employeeId")}
+                    placeholder="e.g. RYN-014 (optional)"
+                  />
+
+                  <InputField
+                    label="Designation / Role"
+                    type="combobox"
                     required
                     value={formData.role}
                     onChange={createChangeHandler("role")}
                     options={roleOptions}
-                    className="md:col-span-2"
+                    placeholder="Type any post, or pick a common one"
                   />
 
                   {formData.role && (

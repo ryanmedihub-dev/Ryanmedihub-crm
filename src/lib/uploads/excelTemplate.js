@@ -94,7 +94,7 @@ const FIELD_GUIDE = [
   ["gstAmount", "Absolute ₹. Wins over gstRate."],
   ["includeTDS", "Optional. YES / NO. If YES, fill tdsCategory AND (tdsRate OR tdsAmount)."],
   ["tdsCategory", "One of Lists→TDS Categories (exact text). Only used when includeTDS = YES."],
-  ["tdsRate", "0-30. Percent of the base."],
+  ["tdsRate", "Percent of the base."],
   ["tdsAmount", "Absolute ₹. Wins over tdsRate. Must be > 0 and less than the invoice total."],
 ];
 

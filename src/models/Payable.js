@@ -111,23 +111,22 @@ payableSchema.index({ purpose: 1, "period.year": 1, "period.month": 1 });
 payableSchema.index({ branch: 1, isCancelled: 1 });
 payableSchema.index({ dueDate: 1 });
 
-payableSchema.index(
-  {
-    "payee.kind": 1,
-    "payee.refId": 1,
-    "payee.label": 1,
-    purpose: 1,
-    "period.month": 1,
-    "period.year": 1,
-  },
-  {
-    unique: true,
-    partialFilterExpression: {
-      "period.year": { $exists: true },
-      purpose: { $in: MONTHLY_PURPOSES },
-    },
-  },
-);
+// Monthly payables are NOT uniqueness-constrained at the DB level — the same payee can hold
+// as many payables for a purpose/month as the business actually has (different heads,
+// re-issued invoices, corrections, re-uploads after a cancellation). Accidental double-entry
+// is surfaced as a non-blocking warning by the bulk-upload validator instead. This index is
+// kept only to serve queries/aggregations keyed by payee + purpose + period.
+// NOTE: earlier versions made this `unique: true`. Drop the stale unique index once per
+// environment with `node scripts/drop-payable-monthly-unique-index.mjs`.
+payableSchema.index({
+  "payee.kind": 1,
+  "payee.refId": 1,
+  "payee.label": 1,
+  purpose: 1,
+  expenseSubType: 1,
+  "period.month": 1,
+  "period.year": 1,
+});
 
 export const PAYABLE_KIND_VALUES = PAYABLE_KINDS;
 export const PAYABLE_PURPOSE_VALUES = PAYABLE_PURPOSES;

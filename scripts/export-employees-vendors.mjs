@@ -33,7 +33,7 @@ async function main() {
 
   const employees = await mongoose.connection
     .collection("employees")
-    .find({}, { projection: { name: 1, role: 1, branch: 1, phone: 1, email: 1, isactive: 1 } })
+    .find({}, { projection: { name: 1, employeeId: 1, role: 1, branch: 1, phone: 1, email: 1, isactive: 1 } })
     .sort({ name: 1 })
     .toArray();
 
@@ -46,6 +46,7 @@ async function main() {
   const employeeRows = employees.map((e) => ({
     Name: e.name || "",
     "Object ID": String(e._id),
+    "Employee ID": e.employeeId || "",
     Post: e.role || "",
     Branch: e.branch || "",
     Phone: e.phone || "",

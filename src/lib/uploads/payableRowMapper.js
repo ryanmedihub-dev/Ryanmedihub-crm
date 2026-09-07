@@ -310,9 +310,12 @@ function enumErr(field, value, allowed, extra = "") {
 }
 
 // The monthly unique key — mirrors payableSchema's partial unique index
-// (payee.kind + payee.refId + payee.label + purpose + period.month + period.year).
-export function monthlyDupKey({ kind, refId, label, purpose, period }) {
-  return [kind, refId || "", label, purpose, period?.month, period?.year].join("|");
+// (payee.kind + payee.refId + payee.label + purpose + expenseSubType + period.month + period.year).
+// expenseSubType is part of the key so one vendor can hold several monthly payables that
+// differ only by head (e.g. two RENT units, or Rent vs a different sub-type) without
+// colliding.
+export function monthlyDupKey({ kind, refId, label, purpose, expenseSubType, period }) {
+  return [kind, refId || "", label, purpose, expenseSubType || "", period?.month, period?.year].join("|");
 }
 
 /* ------------------------------------------------------------------ */
@@ -477,7 +480,7 @@ export function parsePayableRowFormat(raw, rowNumber, ctx) {
     if (!t) errors.push(enumErr("tdsCategory", tdsCat, ctx.tdsTypes, "— see the Lists sheet"));
     out.tdsCategory = t || tdsCat;
   }
-  out.tdsRate = field("tdsRate", () => parseOptionalNumber(raw.tdsRate, { min: 0, max: 30 }));
+  out.tdsRate = field("tdsRate", () => parseOptionalNumber(raw.tdsRate, { min: 0 }));
   out.tdsAmount = field("tdsAmount", () => parseOptionalNumber(raw.tdsAmount, { gtZero: true }));
   if (out.includeTDS) {
     if (!out.tdsCategory) errors.push("includeTDS is TRUE but tdsCategory is blank");

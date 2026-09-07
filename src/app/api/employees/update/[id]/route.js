@@ -23,20 +23,13 @@ export async function PUT(request, { params }) {
       );
     }
 
-    if (!data.role) {
+    if (!data.role || !String(data.role).trim()) {
       return NextResponse.json(
         { success: false, message: "Employee role is required" },
         { status: 400 }
       );
     }
-
-    const allowedRoles = ["Agent", "Counsellor", "Doctor", "Technician", "Implanter", "Others"];
-    if (!allowedRoles.includes(data.role)) {
-      return NextResponse.json(
-        { success: false, message: "Invalid role specified. Must be one of: " + allowedRoles.join(", ") },
-        { status: 400 }
-      );
-    }
+    // Designation is free-form — any post can be entered, not just a fixed list.
 
     if (data.email && data.email.trim()) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -62,7 +55,8 @@ export async function PUT(request, { params }) {
       name: data.name.trim(),
       phone: data.phone?.trim() || undefined,
       email: data.email?.trim() || undefined,
-      role: data.role,
+      employeeId: (data.employeeId ?? "").trim(),
+      role: String(data.role).trim(),
       isactive: data.isactive !== undefined ? data.isactive : true,
       salaryStructure: data.salaryStructure || undefined,
       incentiveRate: data.incentiveRate !== undefined ? data.incentiveRate : undefined,

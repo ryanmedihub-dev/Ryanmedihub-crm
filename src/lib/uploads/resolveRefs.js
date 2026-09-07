@@ -70,7 +70,7 @@ export async function resolveRefs(parsedRows) {
           isCancelled: { $ne: true },
           "period.year": { $in: [...yearsInFile] },
         })
-          .select("payee purpose period totalAmount createdAt")
+          .select("payee purpose expenseSubType period totalAmount createdAt")
           .lean()
       : Promise.resolve([]),
   ]);
@@ -104,10 +104,31 @@ export function resolvePayeeForRow(parsed, refs, { defaultKindForPurpose, derive
   const purpose = parsed.purpose;
   const isGeneric = deriveRequirements(purpose, null).needsSubType; // GENERIC_SUBTYPE_PURPOSES
 
-  // --- kinds that never carry a refId: fixed-label purposes ---
-  const NON_REF_PURPOSES = { RENT: "RENT_UNIT", ELECTRICITY: "UTILITY_UNIT", COLLAB_CLINIC: "COLLAB_CLINIC", TAX: "OTHER", OTHER: "OTHER" };
-  if (NON_REF_PURPOSES[purpose] && !isGeneric) {
-    const kind = NON_REF_PURPOSES[purpose];
+  // --- RENT / ELECTRICITY: default to the unit kind, but honour an explicit
+  //     VENDOR / EMPLOYEE / PATIENT so a landlord/vendor-billed rent connects to that
+  //     record (a rent payable can legitimately be owed to a vendor).
+  const UNIT_PURPOSES = { RENT: "RENT_UNIT", ELECTRICITY: "UTILITY_UNIT" };
+  if (UNIT_PURPOSES[purpose] && !isGeneric) {
+    const unitKind = UNIT_PURPOSES[purpose];
+    const override = parsed.declaredKind;
+    if (override === "VENDOR") {
+      return resolveAgainst("VENDOR", "Vendor", refs.vendors, parsed, errors, warnings);
+    }
+    if (override === "EMPLOYEE") {
+      return resolveAgainst("EMPLOYEE", "Employee", refs.employees, parsed, errors, warnings);
+    }
+    if (override === "PATIENT") {
+      // patients aren't name-indexed here — needs an explicit id (pipeline flags a missing one).
+      return { kind: "PATIENT", refId: parsed.payeeRefId || null, label: parsed.payeeLabel, errors, warnings };
+    }
+    checkDeclaredKind(parsed, unitKind, warnings, errors); // errors only if a *wrong* kind was forced
+    return { kind: unitKind, refId: null, label: parsed.payeeLabel, errors, warnings };
+  }
+
+  // --- fixed-label purposes: the label IS an enum, so no ref and no override ---
+  const FIXED_LABEL_PURPOSES = { COLLAB_CLINIC: "COLLAB_CLINIC", TAX: "OTHER", OTHER: "OTHER" };
+  if (FIXED_LABEL_PURPOSES[purpose] && !isGeneric) {
+    const kind = FIXED_LABEL_PURPOSES[purpose];
     checkDeclaredKind(parsed, kind, warnings, errors);
     return { kind, refId: null, label: parsed.payeeLabel, errors, warnings };
   }

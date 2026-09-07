@@ -250,6 +250,13 @@ const REPORTS = [
     filters: ["branch"],
   },
   {
+    id: 31, type: "finance-daybook", category: "Financial Reports",
+    name: "All Finance Entries (Day Book)",
+    description: "Every finance entry CREATED in the selected date range — payables, receivables, advances, borrowings, revenue, expenses, contra transfers and suspense — one flat sheet with an Entry Type column. Set the date range above to Today for today's entries; filter by branch too.",
+    icon: ClipboardList, color: "teal",
+    filters: ["branch"],
+  },
+  {
     id: 20, type: "stocks-all", category: "Inventory Reports",
     name: "Stock Inventory Report",
     description: "Full stock list — quantity, MRP, purchase price, expiry, and total stock value",
@@ -1030,7 +1037,7 @@ export default function AdminReportsPage() {
                 {[
                   { label: "Patient Reports",   count: 7, color: "bg-blue-50 text-blue-700 border-blue-200",     icon: HeartPulse,  cat: "Patient Reports" },
                   { label: "Staff Reports",     count: 6, color: "bg-purple-50 text-purple-700 border-purple-200", icon: Users,       cat: "Staff Reports" },
-                  { label: "Financial Reports", count: 11, color: "bg-emerald-50 text-emerald-700 border-emerald-200", icon: IndianRupee, cat: "Financial Reports" },
+                  { label: "Financial Reports", count: 12, color: "bg-emerald-50 text-emerald-700 border-emerald-200", icon: IndianRupee, cat: "Financial Reports" },
                   { label: "Inventory Reports", count: 2, color: "bg-orange-50 text-orange-700 border-orange-200",  icon: Package,     cat: "Inventory Reports" },
                   { label: "Audit Logs",        count: 4, color: "bg-red-50 text-red-700 border-red-200",           icon: ShieldAlert, cat: "Audit Logs" },
                 ].map((item) => (

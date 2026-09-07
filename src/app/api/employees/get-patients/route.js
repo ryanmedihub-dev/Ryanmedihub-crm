@@ -78,6 +78,7 @@ const handler = async (req) => {
 
         employeesByRole[role].push({
           _id: employee._id,
+          employeeId: employee.employeeId || "",
           name: employee.name,
           isactive: employee.isactive,
           totalCandidates: stats.total,
@@ -102,6 +103,7 @@ const handler = async (req) => {
           ).length;
           employeesByRole[role].push({
             _id: employee._id,
+            employeeId: employee.employeeId || "",
             isactive: employee.isactive,
             name: employee.name,
             totalPatient: patientCount,
@@ -115,6 +117,7 @@ const handler = async (req) => {
           );
           employeesByRole[role].push({
             _id: employee._id,
+            employeeId: employee.employeeId || "",
             isactive: employee.isactive,
             name: employee.name,
             totalPatient: patientCount,

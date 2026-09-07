@@ -93,6 +93,7 @@ export async function runValidatePipeline(rows) {
         refId: p.payee?.refId ? String(p.payee.refId) : "",
         label: p.payee?.label,
         purpose: p.purpose,
+        expenseSubType: p.expenseSubType,
         period: p.period,
       }),
       p,
@@ -205,18 +206,25 @@ export async function runValidatePipeline(rows) {
     result.payload = payload;
     result.rowHash = canonicalHash(payload);
 
-    // 3f. duplicate checks (monthly purposes only — mirrors the partial unique index)
+    // 3f. duplicate checks (monthly purposes only — mirrors the partial unique index).
+    // The key now includes the sub-type/head, so different heads for the same vendor/month
+    // are NOT duplicates. An identical row twice in one file is still an error (a paste
+    // mistake); a match against an ALREADY-EXISTING payable is only a warning — it imports
+    // anyway (the user asked for this: old payables must not block new uploads).
     if (MONTHLY_PAYABLE_PURPOSES.includes(row.purpose) && row.period) {
       const key = monthlyDupKey({
         kind: payee.kind,
         refId: payee.refId,
         label: payee.label,
         purpose: row.purpose,
+        expenseSubType: row.expenseSubType,
         period: row.period,
       });
       const firstRow = seenInFile.get(key);
       if (firstRow) {
-        result.errors.push(`Duplicate of row ${firstRow} — same payee, purpose and month.`);
+        result.errors.push(
+          `Duplicate of row ${firstRow} — same payee, purpose, head and month.`,
+        );
       } else {
         seenInFile.set(key, row.rowNumber);
       }
@@ -225,10 +233,11 @@ export async function runValidatePipeline(rows) {
         const when = existing.createdAt
           ? new Date(existing.createdAt).toLocaleDateString("en-GB")
           : "earlier";
-        result.errors.push(
-          `A ${row.purpose} payable for ${payee.label} (${row.period.month}/${row.period.year}) already exists — ₹${(
+        const head = row.expenseSubType ? ` — ${row.expenseSubType}` : "";
+        result.warnings.push(
+          `A matching ${row.purpose}${head} payable for ${payee.label} (${row.period.month}/${row.period.year}) already exists (₹${(
             existing.totalAmount || 0
-          ).toLocaleString("en-IN")}, created ${when}.`,
+          ).toLocaleString("en-IN")}, created ${when}). Importing anyway.`,
         );
       }
     }

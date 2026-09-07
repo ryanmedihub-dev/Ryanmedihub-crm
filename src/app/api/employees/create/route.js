@@ -4,7 +4,7 @@ import Employee from "@/models/Employee";
 
 const handler = async (req) => {
 
-    const { name, phone, email, role, patient, salaryStructure, incentiveRate } = await req.json();
+    const { name, phone, email, employeeId, role, patient, salaryStructure, incentiveRate } = await req.json();
 
     if (!name || !phone || !role) {
       return NextResponse.json(
@@ -17,7 +17,8 @@ const handler = async (req) => {
       name,
       phone,
       email,
-      role,
+      employeeId: (employeeId || "").trim(),
+      role: (role || "").trim(),
       patient,
       salaryStructure,
       incentiveRate,

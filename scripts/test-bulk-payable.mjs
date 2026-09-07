@@ -93,6 +93,19 @@ test("identical SALARY/employee/period -> same monthly dup key (2nd row is a dup
   assert.equal(dupHits[0].firstRow, 2);
 });
 
+/* 3b — same vendor/month but different head (expenseSubType) -> NOT a duplicate */
+test("RENT for one vendor, two different units, same month -> distinct keys", () => {
+  const k1 = monthlyDupKey({
+    kind: "VENDOR", refId: "v1", label: "Abdul Razzak", purpose: "RENT",
+    expenseSubType: "Rent-CD Clinic", period: { month: 9, year: 2026 },
+  });
+  const k2 = monthlyDupKey({
+    kind: "VENDOR", refId: "v1", label: "Abdul Razzak", purpose: "RENT",
+    expenseSubType: "Rent-GD clinic", period: { month: 9, year: 2026 },
+  });
+  assert.notEqual(k1, k2);
+});
+
 /* 4 — VENDOR name matching two vendors -> error listing both ids, no auto-pick */
 test("ambiguous vendor name -> error names both ObjectIds", () => {
   const byName = new Map([["apex surgicals", [
@@ -117,6 +130,50 @@ test("ambiguous vendor name -> error names both ObjectIds", () => {
   const msg = res.errors.join(" | ");
   assert.ok(/id_one/.test(msg) && /id_two/.test(msg), msg);
   assert.notEqual(res.refId, "id_one"); // never auto-pick
+});
+
+/* 4b — RENT with explicit payeeKind VENDOR connects to the vendor */
+test("RENT row with payeeKind=VENDOR resolves to that vendor (no RENT_UNIT override)", () => {
+  const byName = new Map([["manjeet lodha", [{ _id: "vend_ml", name: "Manjeet Lodha", DealsIn: "Property" }]]]);
+  const refs = {
+    vendors: { byName, byPhone: new Map(), byEmail: new Map(), byId: new Map([["vend_ml", { _id: "vend_ml", name: "Manjeet Lodha" }]]) },
+    employees: { byName: new Map(), byPhone: new Map(), byEmail: new Map(), byId: new Map() },
+    patients: { byPhone: new Map() },
+    existingPayables: [],
+  };
+  const parsed = {
+    purpose: "RENT",
+    payeeLabel: "Manjeet Lodha",
+    payeeRefId: "",
+    payeeLookup: "",
+    declaredKind: "VENDOR",
+    expenseSubType: "Rent-Backend Basement",
+  };
+  const res = resolvePayeeForRow(parsed, refs, { defaultKindForPurpose, deriveRequirements });
+  assert.equal(res.kind, "VENDOR");
+  assert.equal(res.refId, "vend_ml");
+  assert.equal(res.errors.length, 0, res.errors.join(" | "));
+});
+
+/* 4c — RENT with no payeeKind still defaults to RENT_UNIT, no ref */
+test("RENT row with blank payeeKind -> RENT_UNIT, no refId", () => {
+  const refs = {
+    vendors: { byName: new Map(), byPhone: new Map(), byEmail: new Map(), byId: new Map() },
+    employees: { byName: new Map(), byPhone: new Map(), byEmail: new Map(), byId: new Map() },
+    patients: { byPhone: new Map() },
+    existingPayables: [],
+  };
+  const parsed = {
+    purpose: "RENT",
+    payeeLabel: "Rent-Backend Basement",
+    payeeRefId: "",
+    payeeLookup: "",
+    declaredKind: null,
+    expenseSubType: "Rent-Backend Basement",
+  };
+  const res = resolvePayeeForRow(parsed, refs, { defaultKindForPurpose, deriveRequirements });
+  assert.equal(res.kind, "RENT_UNIT");
+  assert.equal(res.refId, null);
 });
 
 /* 5 — day-first date parsing */
