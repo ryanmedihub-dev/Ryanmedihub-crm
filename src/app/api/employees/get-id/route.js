@@ -1,26 +1,31 @@
 import Employee from "@/models/Employee";
 import { withDB } from "@/lib/withDB";
 import { NAME_COLLATION } from "@/lib/sortOptions";
+import {
+  canonicalEmployeeRole,
+  EMPLOYEE_ROLE_OPTIONS,
+  OTHER_EMPLOYEE_ROLE,
+} from "@/constants/employeeRoles";
 import { NextResponse } from "next/server";
 
 const handler = async (req) => {
   try {
     const data = await Employee.find({}).sort({ name: 1 }).collation(NAME_COLLATION);
 
-    const employeesByRole = data.reduce((acc, employee) => {
-      const role = employee.role || "Other";
+    // Seed every canonical bucket so consumers can safely read e.g. `employees.Counsellor`
+    // even when no employee currently holds that role.
+    const employeesByRole = {};
+    for (const r of [...EMPLOYEE_ROLE_OPTIONS, OTHER_EMPLOYEE_ROLE]) employeesByRole[r] = [];
 
-      if (!acc[role]) {
-        acc[role] = [];
-      }
-
-      acc[role].push({
+    for (const employee of data) {
+      // Role is free-form text — fold "counsellor" / "Counsellor" / "COUNSELLOR" etc. into
+      // one bucket; anything unrecognised goes to "Others".
+      const role = canonicalEmployeeRole(employee.role);
+      employeesByRole[role].push({
         name: employee.name,
         _id: employee._id,
       });
-
-      return acc;
-    }, {});
+    }
 
     return NextResponse.json({
       success: true,

@@ -2,6 +2,7 @@ import Employee from "@/models/Employee";
 import Patient from "@/models/Patient";
 import Interviewer from "@/models/Interviewer";
 import { withDB } from "@/lib/withDB";
+import { canonicalEmployeeRole, employeeRoleBucket } from "@/constants/employeeRoles";
 import { NextResponse } from "next/server";
 
 const handler = async (req) => {
@@ -40,7 +41,7 @@ const handler = async (req) => {
       .lean();
 
     const hrEmployeeIds = data
-      .filter((e) => (e.role || "").toLowerCase() === "hr")
+      .filter((e) => canonicalEmployeeRole(e.role) === "Hr")
       .map((e) => e._id);
 
     const interviewerCounts = hrEmployeeIds.length
@@ -65,7 +66,9 @@ const handler = async (req) => {
     const employeesByRole = {};
 
     for (const employee of data) {
-      const role = employee.role || "Other";
+      // Free-form role text folded into a canonical bucket ("counsellor"/"COUNSELLOR" -> one
+      // tab); a real but non-standard designation keeps its own Title-cased bucket.
+      const role = employeeRoleBucket(employee.role);
       if (!employeesByRole[role]) employeesByRole[role] = [];
 
       const normalizedRole = role.toLowerCase();

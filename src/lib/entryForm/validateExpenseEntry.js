@@ -10,9 +10,10 @@ export function validateExpenseSection({ expenseData, payableAction, selectedPay
 
   if (expenseData.expenseSection === "agent") {
     if (!expenseData.employeeId) return "Please select an employee";
-    if (expenseData.agentSubTab === "incentive") {
-      if (!expenseData.expenseType) return "Please select an incentive type";
-      if (!expenseData.patientId) return "Please select the related patient";
+    // The incentive sub-tab is pay-only against an existing incentive payable — no incentive
+    // type / related patient here (those payables are raised from the Incentive tab).
+    if (expenseData.agentSubTab === "incentive" && !selectedPayableId) {
+      return "Select which open incentive payable this payment is against";
     }
     if (!expenseData.amount) return "Please enter amount";
     return null;

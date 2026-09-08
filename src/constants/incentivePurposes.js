@@ -9,6 +9,8 @@ export const INCENTIVE_PURPOSES = [
   "Other",
 ];
 
+import { canonicalEmployeeRole } from "@/constants/employeeRoles";
+
 const ROLE_TO_PURPOSE = {
   Agent: "Agent",
   Counsellor: "Counsellor",
@@ -17,6 +19,7 @@ const ROLE_TO_PURPOSE = {
   Implanter: "Implanter",
 };
 
+// role is free-form text — fold casing/spelling variants before mapping to a purpose.
 export function purposeForRole(role) {
-  return ROLE_TO_PURPOSE[role] || "Other";
+  return ROLE_TO_PURPOSE[canonicalEmployeeRole(role)] || "Other";
 }

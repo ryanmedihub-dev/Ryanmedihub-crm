@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { withDB } from "@/lib/withDB";
 import Employee from "@/models/Employee";
+import { normalizeEmployeeRoleForSave } from "@/constants/employeeRoles";
 
 const handler = async (req) => {
 
@@ -18,7 +19,7 @@ const handler = async (req) => {
       phone,
       email,
       employeeId: (employeeId || "").trim(),
-      role: (role || "").trim(),
+      role: normalizeEmployeeRoleForSave(role),
       patient,
       salaryStructure,
       incentiveRate,

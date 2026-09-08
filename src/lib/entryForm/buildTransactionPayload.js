@@ -42,8 +42,10 @@ export function buildExpensePayload({
     return {
       ...common,
       expenseCategory: isSalary ? "Salary" : "Incentive",
-      expenseType: isSalary ? "Salary" : expenseData.expenseType,
-      patientId: !isSalary ? expenseData.patientId : undefined,
+      // The incentive sub-tab is pay-only against an existing payable and no longer collects
+      // an incentive type / related patient, so fall back to a generic label.
+      expenseType: isSalary ? "Salary" : expenseData.expenseType || "Incentive",
+      patientId: !isSalary && expenseData.patientId ? expenseData.patientId : undefined,
       expenseGiver: {
         type: "EMPLOYEE",
         refId: expenseData.employeeId,

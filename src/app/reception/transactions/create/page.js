@@ -5,7 +5,7 @@ import Sidebar from "@/components/Sidebars/ReceptionSidebar";
 import usePatientPicker from "@/lib/usePatientPicker";
 import RevenueSection from "@/components/RevenueSection";
 import DirectExpenseSection from "@/components/DirectExpenseSection";
-import IncentiveEntryForm from "@/components/IncentiveEntryForm";
+import IncentiveTabSwitcher from "@/components/IncentiveTabSwitcher";
 import { MAIN_BRANCHES } from "@/lib/branches";
 import { useSession } from "next-auth/react";
 import { getExpenseTypes } from "@/constants/expenseCategories";
@@ -682,7 +682,7 @@ export default function AllTransactionsPage() {
               />
             )}
 
-            {activeTab === "incentive" && <IncentiveEntryForm picker={picker} />}
+            {activeTab === "incentive" && <IncentiveTabSwitcher picker={picker} />}
           </div>
         </div>
       </main>

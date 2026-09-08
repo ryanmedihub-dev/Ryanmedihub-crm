@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import Employee from "@/models/Employee";
 import dbConnect from "@/lib/db";
+import { normalizeEmployeeRoleForSave } from "@/constants/employeeRoles";
 
 export async function PUT(request, { params }) {
   try {
@@ -56,7 +57,7 @@ export async function PUT(request, { params }) {
       phone: data.phone?.trim() || undefined,
       email: data.email?.trim() || undefined,
       employeeId: (data.employeeId ?? "").trim(),
-      role: String(data.role).trim(),
+      role: normalizeEmployeeRoleForSave(data.role),
       isactive: data.isactive !== undefined ? data.isactive : true,
       salaryStructure: data.salaryStructure || undefined,
       incentiveRate: data.incentiveRate !== undefined ? data.incentiveRate : undefined,

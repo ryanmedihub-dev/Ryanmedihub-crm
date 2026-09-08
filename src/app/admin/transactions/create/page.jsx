@@ -10,7 +10,7 @@ import ReceiptUpload from "@/components/ReceiptUpload";
 import RevenueSection from "@/components/RevenueSection";
 import ContraEntryForm from "@/components/ContraEntryForm";
 import SuspenseEntryForm from "@/components/SuspenseEntryForm";
-import IncentiveEntryForm from "@/components/IncentiveEntryForm";
+import IncentiveTabSwitcher from "@/components/IncentiveTabSwitcher";
 import { useSession } from "next-auth/react";
 import { maskPhone } from "@/utils/phoneUtils";
 import { PAYABLE_EXPENSE_DROPDOWN_CATEGORIES } from "@/constants/expenseCategories";
@@ -86,7 +86,7 @@ function AdminCreateTransactionPageInner() {
     directPaymentCategories: mdDirect,
   } = useMasterData();
   const OTHER_EXPENSE_CATEGORIES_DYN = mdDirect.filter(
-    (cat) => cat !== "Patient Related Expenses",
+    (cat) => cat !== "Patient Related Expenses" && cat !== "Incentive",
   );
 
   const [activeTab, setActiveTab] = useState("transplant");
@@ -457,7 +457,11 @@ function AdminCreateTransactionPageInner() {
   ]);
 
   useEffect(() => {
-    setPayableAction("none");
+    // The incentive sub-tab is pay-only — there's no "create payable" path here, so default
+    // straight to recording a payment against an existing open incentive payable.
+    const incentivePayOnly =
+      expenseData.expenseSection === "agent" && expenseData.agentSubTab === "incentive";
+    setPayableAction(incentivePayOnly ? "pay" : "none");
     setSelectedPayableId("");
     setAllowOverpayment(false);
     setExpandedPayableId(null);
@@ -670,12 +674,16 @@ function AdminCreateTransactionPageInner() {
     const selectedPayable = openPayables.find((p) => p._id === selectedPayableId);
     const overBalance =
       selectedPayable && parseFloat(expenseData.amount || 0) > selectedPayable.pending;
+    // Incentive sub-tab: pay-only against an existing open incentive payable. No create path.
+    const payOnly =
+      expenseData.expenseSection === "agent" && expenseData.agentSubTab === "incentive";
 
     const payableLabel = (p) =>
       `${p.expenseSubType || p.expenseCategory}${p.period ? ` (${p.period.month}/${p.period.year})` : ""} — Pending ${formatCurrency(p.pending)}`;
 
     return (
       <div className="mt-4 pt-4 border-t border-gray-100">
+        {!payOnly && (
         <div className="flex gap-2 mb-3">
           <button
             type="button"
@@ -700,8 +708,15 @@ function AdminCreateTransactionPageInner() {
             Record Payment
           </button>
         </div>
+        )}
 
-        {payableAction === "create" && (
+        {payOnly && (
+          <p className="text-xs font-semibold text-indigo-700 mb-3">
+            Select an open incentive payable to pay
+          </p>
+        )}
+
+        {payableAction === "create" && !payOnly && (
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-3 mb-4">
             <p className="text-xs text-amber-800">
               Records that this amount is now due — no money moves yet. The Amount field above is
@@ -781,6 +796,14 @@ function AdminCreateTransactionPageInner() {
                   </option>
                 ))}
             </select>
+            {payOnly &&
+              !payablesLoading &&
+              openPayables.filter((p) => p.status !== "Paid").length === 0 && (
+                <p className="text-xs text-indigo-700">
+                  No open incentive payables for this employee — raise one from the Incentive
+                  tab first.
+                </p>
+              )}
             {overBalance && (
               <label className="flex items-center gap-2 text-xs text-amber-700">
                 <input
@@ -1297,7 +1320,7 @@ function AdminCreateTransactionPageInner() {
             )}
 
             {activeTab === "incentive" && (
-              <IncentiveEntryForm picker={patientPicker} />
+              <IncentiveTabSwitcher picker={patientPicker} />
             )}
 
             {activeTab === "contra" && <ContraEntryForm />}
@@ -1452,50 +1475,12 @@ function AdminCreateTransactionPageInner() {
                         )}
 
                         {expenseData.agentSubTab === "incentive" && (
-                          <>
-                            <div className="mt-4">
-                              <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Incentive Type{" "}
-                                <span className="text-red-500">*</span>
-                              </label>
-                              <select
-                                value={expenseData.expenseType}
-                                onChange={(e) =>
-                                  setExpenseData({
-                                    ...expenseData,
-                                    expenseType: e.target.value,
-                                  })
-                                }
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                              >
-                                <option value="">Select Type</option>
-                                {getExpenseTypes("Incentive").map((t) => (
-                                  <option key={t} value={t}>
-                                    {t}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                            <div className="mt-4">
-                              <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Related Patient{" "}
-                                <span className="text-red-500">*</span>
-                              </label>
-                              <SearchableSelect
-                                options={patientOptions}
-                                value={expenseData.patientId}
-                                onChange={(v, obj) => {
-                                  addToPatientCache(obj);
-                                  setExpenseData({ ...expenseData, patientId: v });
-                                }}
-                                placeholder="Search and select a patient..."
-                                valueKey="_id"
-                                formatOption={formatPatientOption}
-                                onSearch={handlePatientSearch}
-                                searching={patientSearching}
-                              />
-                            </div>
-                          </>
+                          <div className="mt-4 rounded-lg bg-indigo-50 border border-indigo-200 p-3 text-xs text-indigo-800">
+                            Records a payment against one of this employee&apos;s open incentive
+                            payables. Incentive payables are raised from the{" "}
+                            <span className="font-semibold">Incentive</span> tab (patient-based
+                            or target-based) — not here.
+                          </div>
                         )}
 
                         {expenseData.agentSubTab === "salary" && (
@@ -1830,7 +1815,7 @@ function AdminCreateTransactionPageInner() {
                           }
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-4"
                         >
-                          {mdPayableDropdown.map((cat) => (
+                          {mdPayableDropdown.filter((cat) => cat !== "Incentive").map((cat) => (
                             <option key={cat} value={cat}>
                               {cat}
                             </option>

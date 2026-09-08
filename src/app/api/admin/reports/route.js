@@ -21,6 +21,7 @@ import { SETTLEMENT_EXCLUSION } from "@/constants/bankRouting";
 import { unsettledMethodsSync } from "@/lib/masterData";
 import { settlementLinesFor } from "@/lib/advanceSettlements";
 import { getISTStartOfDay, getISTEndOfDay } from "@/lib/dateHelpers";
+import { canonicalEmployeeRole } from "@/constants/employeeRoles";
 
 function branchAllowed(branchFilter, branchName) {
   if (!branchFilter) return true;
@@ -71,12 +72,14 @@ export async function GET(request) {
       { isactive: true },
       { name: 1, role: 1, email: 1, phone: 1, _id: 1 }
     ).lean();
+    const byRole = (canonical) =>
+      allEmployees.filter((e) => canonicalEmployeeRole(e.role) === canonical);
     const employeesByRole = {
-      counsellors: allEmployees.filter(e => e.role === "Counsellor"),
-      agents:      allEmployees.filter(e => e.role === "Agent"),
-      doctors:     allEmployees.filter(e => e.role === "Doctor"),
-      implanters:  allEmployees.filter(e => e.role === "Implanter"),
-      technicians: allEmployees.filter(e => e.role === "Technician"),
+      counsellors: byRole("Counsellor"),
+      agents:      byRole("Agent"),
+      doctors:     byRole("Doctor"),
+      implanters:  byRole("Implanter"),
+      technicians: byRole("Technician"),
     };
 
     const patientDateFilter = {};
