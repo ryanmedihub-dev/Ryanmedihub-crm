@@ -13,6 +13,7 @@ import { ALL_BRANCHES } from "@/lib/branches";
 import { getISTStartOfDay, getISTEndOfDay } from "@/lib/dateHelpers";
 import { SETTLEMENT_EXCLUSION } from "@/constants/bankRouting";
 import { unsettledMethodsSync } from "@/lib/masterData";
+import { canonicalEmployeeRole } from "@/constants/employeeRoles";
 export async function GET(request) {
   try {
     const session = await getServerSession(authOptions);
@@ -603,10 +604,12 @@ async function generateEmployeesReport({ branch }) {
   const employees = await Employee.find(query).lean();
 
   return employees.map((e) => ({
+    "Employee ID": e.employeeId || "",
     Name: e.name || "",
     Phone: e.phone || "",
     Email: e.email || "",
     Role: e.role || "",
+    Profile: canonicalEmployeeRole(e.role),
     Branch: e.branch || "",
     "Is Active": e.isactive ? "Yes" : "No",
     "Total Patients": (e.patient || []).length,
@@ -621,7 +624,7 @@ async function generateCounsellorReport({ visitDateFilter, branch, staffFilter }
   if (branch && branch !== "All") query["personal.branch"] = branch;
 
   let patients = await Patient.find(query)
-    .populate("counselling.counsellor", "name email phone")
+    .populate("counselling.counsellor", "name email phone employeeId role")
     .lean();
 
   const counsellorStats = {};
@@ -633,7 +636,9 @@ async function generateCounsellorReport({ visitDateFilter, branch, staffFilter }
     if (!id) return;
     if (!counsellorStats[id]) {
       counsellorStats[id] = {
+        "Employee ID": c.employeeId || "",
         "Counsellor Name": c.name,
+        Role: canonicalEmployeeRole(c.role),
         Email: c.email || "",
         Phone: c.phone || "",
         "Total Patients": 0,
@@ -677,7 +682,7 @@ async function generateAgentReport({ visitDateFilter, branch, staffFilter }) {
   if (branch && branch !== "All") query["personal.branch"] = branch;
 
   const patients = await Patient.find(query)
-    .populate("personal.reference", "name email phone")
+    .populate("personal.reference", "name email phone employeeId role")
     .lean();
 
   const agentStats = {};
@@ -689,7 +694,9 @@ async function generateAgentReport({ visitDateFilter, branch, staffFilter }) {
     if (!id) return;
     if (!agentStats[id]) {
       agentStats[id] = {
+        "Employee ID": a.employeeId || "",
         "Agent Name": a.name,
+        Role: canonicalEmployeeRole(a.role),
         Email: a.email || "",
         Phone: a.phone || "",
         "Total Referrals": 0,
@@ -728,7 +735,7 @@ async function generateDoctorReport({
   if (techniqueFilter) query["surgery.technique"] = techniqueFilter;
 
   const patients = await Patient.find(query)
-    .populate("surgery.doctor", "name email phone")
+    .populate("surgery.doctor", "name email phone employeeId role")
     .lean();
 
   const doctorStats = {};
@@ -746,7 +753,9 @@ async function generateDoctorReport({
       if (!id) return;
       if (!doctorStats[id]) {
         doctorStats[id] = {
+          "Employee ID": d.employeeId || "",
           "Doctor Name": d.name,
+          Role: canonicalEmployeeRole(d.role),
           Email: d.email || "",
           Phone: d.phone || "",
           "Total Surgeries": 0,
@@ -789,8 +798,8 @@ async function generateImplanterReport({ visitDateFilter, branch, staffFilter })
   if (branch && branch !== "All") query["personal.branch"] = branch;
 
   const patients = await Patient.find(query)
-    .populate("surgery.implanterRight", "name email phone")
-    .populate("surgery.implanterLeft", "name email phone")
+    .populate("surgery.implanterRight", "name email phone employeeId role")
+    .populate("surgery.implanterLeft", "name email phone employeeId role")
     .lean();
 
   const stats = {};
@@ -803,7 +812,9 @@ async function generateImplanterReport({ visitDateFilter, branch, staffFilter })
       if (!id) return;
       if (!stats[id]) {
         stats[id] = {
+          "Employee ID": imp.employeeId || "",
           "Implanter Name": imp.name,
+          Role: canonicalEmployeeRole(imp.role),
           Email: imp.email || "",
           Phone: imp.phone || "",
           "Total Procedures": 0,
@@ -834,9 +845,9 @@ async function generateTechnicianReport({ visitDateFilter, branch, staffFilter }
   if (branch && branch !== "All") query["personal.branch"] = branch;
 
   const patients = await Patient.find(query)
-    .populate("surgery.seniorTech", "name email phone")
-    .populate("surgery.graftingPerson", "name")
-    .populate("surgery.helper", "name")
+    .populate("surgery.seniorTech", "name email phone employeeId role")
+    .populate("surgery.graftingPerson", "name employeeId role")
+    .populate("surgery.helper", "name employeeId role")
     .lean();
 
   const stats = {};
@@ -846,7 +857,9 @@ async function generateTechnicianReport({ visitDateFilter, branch, staffFilter }
     if (seniorId) {
       if (!stats[seniorId]) {
         stats[seniorId] = {
+          "Employee ID": p.surgery.seniorTech.employeeId || "",
           "Technician Name": p.surgery.seniorTech.name,
+          Role: canonicalEmployeeRole(p.surgery.seniorTech.role),
           "Total Procedures": 0,
           "As Senior Tech": 0,
           "As Grafting Person": 0,
@@ -861,7 +874,9 @@ async function generateTechnicianReport({ visitDateFilter, branch, staffFilter }
     if (graftingId) {
       if (!stats[graftingId]) {
         stats[graftingId] = {
+          "Employee ID": p.surgery.graftingPerson.employeeId || "",
           "Technician Name": p.surgery.graftingPerson.name,
+          Role: canonicalEmployeeRole(p.surgery.graftingPerson.role),
           "Total Procedures": 0,
           "As Senior Tech": 0,
           "As Grafting Person": 0,
@@ -879,7 +894,9 @@ async function generateTechnicianReport({ visitDateFilter, branch, staffFilter }
       if (!id) return;
       if (!stats[id]) {
         stats[id] = {
+          "Employee ID": h.employeeId || "",
           "Technician Name": h.name,
+          Role: canonicalEmployeeRole(h.role),
           "Total Procedures": 0,
           "As Senior Tech": 0,
           "As Grafting Person": 0,

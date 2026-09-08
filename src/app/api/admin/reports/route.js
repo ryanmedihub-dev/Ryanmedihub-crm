@@ -21,7 +21,7 @@ import { SETTLEMENT_EXCLUSION } from "@/constants/bankRouting";
 import { unsettledMethodsSync } from "@/lib/masterData";
 import { settlementLinesFor } from "@/lib/advanceSettlements";
 import { getISTStartOfDay, getISTEndOfDay } from "@/lib/dateHelpers";
-import { canonicalEmployeeRole } from "@/constants/employeeRoles";
+import { canonicalEmployeeRole, employeeRoleBucket } from "@/constants/employeeRoles";
 
 function branchAllowed(branchFilter, branchName) {
   if (!branchFilter) return true;
@@ -70,7 +70,7 @@ export async function GET(request) {
 
     const allEmployees = await Employee.find(
       { isactive: true },
-      { name: 1, role: 1, email: 1, phone: 1, _id: 1 }
+      { name: 1, role: 1, employeeId: 1, email: 1, phone: 1, _id: 1 }
     ).lean();
     const byRole = (canonical) =>
       allEmployees.filter((e) => canonicalEmployeeRole(e.role) === canonical);
@@ -530,7 +530,9 @@ async function generateCounsellorReport(filters) {
 
   counsellors.forEach((c) => {
     counsellorStats[c._id.toString()] = {
+      "Employee ID": c.employeeId || "",
       "Counsellor Name": c.name,
+      Role: canonicalEmployeeRole(c.role),
       Email: c.email || "",
       Phone: c.phone || "",
       "Total Patients": 0,
@@ -594,7 +596,9 @@ async function generateAgentReport(filters) {
 
   agents.forEach((a) => {
     agentStats[a._id.toString()] = {
+      "Employee ID": a.employeeId || "",
       "Agent Name": a.name,
+      Role: canonicalEmployeeRole(a.role),
       Email: a.email || "",
       Phone: a.phone || "",
       "Total Referrals": 0,
@@ -655,7 +659,9 @@ async function generateDoctorReport(filters) {
 
   doctors.forEach((d) => {
     doctorStats[d._id.toString()] = {
+      "Employee ID": d.employeeId || "",
       "Doctor Name": d.name,
+      Role: canonicalEmployeeRole(d.role),
       Email: d.email || "",
       Phone: d.phone || "",
       "Total Surgeries": 0,
@@ -722,7 +728,9 @@ async function generateImplanterReport(filters) {
 
   implanters.forEach((i) => {
     implanterStats[i._id.toString()] = {
+      "Employee ID": i.employeeId || "",
       "Implanter Name": i.name,
+      Role: canonicalEmployeeRole(i.role),
       Email: i.email || "",
       Phone: i.phone || "",
       "Total Procedures": 0,
@@ -781,7 +789,9 @@ async function generateTechnicianReport(filters) {
 
   technicians.forEach((t) => {
     techStats[t._id.toString()] = {
+      "Employee ID": t.employeeId || "",
       "Technician Name": t.name,
+      Role: canonicalEmployeeRole(t.role),
       Email: t.email || "",
       Phone: t.phone || "",
       "Total Procedures": 0,
@@ -2181,24 +2191,26 @@ async function generateIncentivesReport({ from, to, branch }) {
     payables.forEach((p) => payableById.set(String(p._id), p));
   }
 
-  // Resolve employee names for any incentive missing the denormalised name.
-  const missingName = [...new Set(rows.filter((r) => !r.employeeName && r.employeeId).map((r) => String(r.employeeId)))];
-  const empNameById = new Map();
-  if (missingName.length) {
+  // Resolve every referenced employee so each row can carry the staff code + a clean role,
+  // and so rows missing the denormalised name still get one.
+  const empIds = [...new Set(rows.map((r) => r.employeeId).filter(Boolean).map(String))];
+  const empById = new Map();
+  if (empIds.length) {
     const mongoose = (await import("mongoose")).default;
     const emps = await Employee.find(
-      { _id: { $in: missingName.map((id) => new mongoose.Types.ObjectId(id)) } },
-      { name: 1, role: 1 },
+      { _id: { $in: empIds.map((id) => new mongoose.Types.ObjectId(id)) } },
+      { name: 1, role: 1, employeeId: 1 },
     ).lean();
-    emps.forEach((e) => empNameById.set(String(e._id), e));
+    emps.forEach((e) => empById.set(String(e._id), e));
   }
 
   return rows.map((r) => {
     const p = r.payableId ? payableById.get(String(r.payableId)) : null;
-    const emp = !r.employeeName && r.employeeId ? empNameById.get(String(r.employeeId)) : null;
+    const emp = r.employeeId ? empById.get(String(r.employeeId)) : null;
     return {
+      "Employee ID": emp?.employeeId || "",
       Employee: r.employeeName || emp?.name || "",
-      Role: r.role || emp?.role || "",
+      Role: employeeRoleBucket(r.role || emp?.role || ""),
       Patient: r.patientName || "",
       "Patient Phone": r.patientPhone || "",
       Purpose: r.purpose || "",
@@ -2369,14 +2381,16 @@ async function generateBranchPatientsReport(filters) {
 
 async function generateEmployeesAllReport() {
   const employees = await Employee.find({})
-    .select("name role email phone isactive salaryStructure incentiveRate patient createdAt updatedAt")
+    .select("name role employeeId email phone isactive salaryStructure incentiveRate patient createdAt updatedAt")
     .sort({ name: 1 })
     .lean();
 
   return employees.map((e) => ({
-    "Employee ID": e._id.toString(),
+    "Employee ID": e.employeeId || "",
+    "Record ID": e._id.toString(),
     Name: e.name || "",
     Role: e.role || "",
+    Profile: canonicalEmployeeRole(e.role),
     Email: e.email || "",
     Phone: e.phone || "",
     Status: e.isactive ? "Active" : "Inactive",

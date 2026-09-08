@@ -105,7 +105,6 @@ export default function StaffTable({ config = {} }) {
   const [sort,     setSort]     = useState({ key: financeColumns ? "totalPayable" : "totalPatient", dir: "desc" });
   const [page,     setPage]     = useState(1);
   const [perPage,  setPerPage]  = useState(10);
-  const [selectedCategory, setSelectedCategory] = useState("Doctor");
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
@@ -149,12 +148,12 @@ export default function StaffTable({ config = {} }) {
     })();
   }, [filters.dateFrom, filters.dateTo, filters.technique, financeColumns]);
 
-  const currentCategory = filters.category || selectedCategory;
-  const hasGrafts          = ["Doctor", "Technician", "Implanter", "Others"].includes(currentCategory);
-  const hasReadyForSurgery = ["Agent", "Counsellor"].includes(currentCategory);
-  const isHr               = currentCategory === "Hr";
+  const currentProfile     = filters.category;                 // "" = every profile
+  const hasGrafts          = ["Doctor", "Technician", "Implanter", "Others"].includes(currentProfile);
+  const hasReadyForSurgery = ["Agent", "Counsellor"].includes(currentProfile);
+  const isHr               = currentProfile === "Hr";
 
-  // Standard tabs first, then any custom designation that actually has staff.
+  // Standard profiles first, then any custom designation that actually has staff.
   const categoryList = useMemo(() => {
     const custom = Object.keys(data)
       .filter((k) => !CATEGORY_OPTIONS.includes(k) && (data[k]?.length || 0) > 0)
@@ -162,7 +161,16 @@ export default function StaffTable({ config = {} }) {
     return [...CATEGORY_OPTIONS, ...custom];
   }, [data]);
 
-  const categoryData = useMemo(() => data[currentCategory] || [], [data, currentCategory]);
+  // One flat roster: every profile merged, each row tagged with its bucket, then narrowed by
+  // the Profile filter (blank = everyone).
+  const allRows = useMemo(
+    () => categoryList.flatMap((p) => (data[p] || []).map((e) => ({ ...e, profile: p }))),
+    [data, categoryList],
+  );
+  const categoryData = useMemo(
+    () => (currentProfile ? allRows.filter((r) => r.profile === currentProfile) : allRows),
+    [allRows, currentProfile],
+  );
 
   const filtered = useMemo(() => {
     let list = [...categoryData];
@@ -220,7 +228,7 @@ export default function StaffTable({ config = {} }) {
   const current = Math.min(page, pages);
   const start   = (current - 1) * perPage;
   const rows    = filtered.slice(start, Math.min(start + perPage, total));
-  useEffect(() => setPage(1), [filters, perPage, selectedCategory]);
+  useEffect(() => setPage(1), [filters, perPage]);
 
   const clearFilters = () => setFilters(EMPTY_FILTERS);
   const toggleSort   = (key) => setSort((s) => s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "desc" });
@@ -326,7 +334,7 @@ export default function StaffTable({ config = {} }) {
 
   const activeChips = useMemo(() => {
     const chips = [];
-    if (filters.category)    chips.push({ k: "category",    label: `Category: ${filters.category}` });
+    if (filters.category)    chips.push({ k: "category",    label: `Profile: ${filters.category}` });
     if (filters.status)      chips.push({ k: "status",      label: `Status: ${filters.status === "active" ? "Active" : "Inactive"}` });
     if (financeColumns) {
       if (filters.minAmount)   chips.push({ k: "minAmount",   label: `Min Payable: ${fmtCurrency(filters.minAmount)}` });
@@ -348,8 +356,8 @@ export default function StaffTable({ config = {} }) {
   }, [filters, financeColumns]);
 
   const columnCount =
-    3 +
-    (financeColumns ? 6 : isHr ? 5 : 3 + (hasGrafts ? 1 : 0) + (hasReadyForSurgery ? 1 : 0)) +
+    4 +
+    (financeColumns ? FINANCE_COLUMNS.length : isHr ? 5 : 3 + (hasGrafts ? 1 : 0) + (hasReadyForSurgery ? 1 : 0)) +
     1;
 
   return (
@@ -435,25 +443,25 @@ export default function StaffTable({ config = {} }) {
             )}
           </header>
 
-          {/* ===== Category tabs ===== */}
+          {/* ===== Profile quick-filter chips ===== */}
           <div className="-mx-1 overflow-x-auto pb-1">
             <div className="flex gap-2 px-1">
-              {categoryList.map((cat) => {
-                const s = catStyle(cat);
-                const active = currentCategory === cat;
-                const count = data[cat]?.length || 0;
+              {[{ key: "", label: "All Profiles" }, ...categoryList.map((c) => ({ key: c, label: c }))].map((opt) => {
+                const s = catStyle(opt.key || "Others");
+                const active = currentProfile === opt.key;
+                const count = opt.key ? (data[opt.key]?.length || 0) : allRows.length;
                 return (
                   <button
-                    key={cat}
-                    onClick={() => { setSelectedCategory(cat); setFilter("category", cat); }}
+                    key={opt.key || "__all"}
+                    onClick={() => setFilter("category", opt.key)}
                     className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold ring-1 transition ${
                       active
                         ? `${s.active} shadow-sm`
                         : "bg-white text-slate-500 ring-slate-200 hover:bg-slate-50 hover:text-slate-700"
                     }`}
                   >
-                    <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} />
-                    {cat}
+                    {opt.key && <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} />}
+                    {opt.label}
                     <span
                       className={`grid h-5 min-w-5 place-items-center rounded-md px-1 text-[11px] font-bold ${
                         active ? "bg-white/70 text-slate-700" : "bg-slate-100 text-slate-500"
@@ -495,22 +503,33 @@ export default function StaffTable({ config = {} }) {
 
           {/* ===== Table card ===== */}
           <section className="overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-sm">
-            <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-              <div className="relative w-full sm:max-w-xs">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Search by name…"
-                  value={filters.search}
-                  onChange={(e) => setFilter("search", e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50/60 py-2 pl-9 pr-3 text-sm outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
-                />
+            <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-3.5 lg:flex-row lg:items-center lg:justify-between sm:px-5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <div className="relative w-full sm:w-64">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Search by name…"
+                    value={filters.search}
+                    onChange={(e) => setFilter("search", e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/60 py-2 pl-9 pr-3 text-sm outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+                  />
+                </div>
+                <select
+                  value={filters.status}
+                  onChange={(e) => setFilter("status", e.target.value)}
+                  className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 outline-none transition focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10"
+                >
+                  <option value="">Any status</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
               </div>
               <p className="text-xs font-medium text-slate-500">
                 {loading ? "Loading…" : (
                   <>
-                    <span className="font-bold text-slate-700">{total}</span> {currentCategory}
-                    {total === 1 ? "" : "s"} shown
+                    <span className="font-bold text-slate-700">{total}</span>{" "}
+                    {currentProfile ? `${currentProfile}${total === 1 ? "" : "s"}` : `employee${total === 1 ? "" : "s"}`} shown
                   </>
                 )}
               </p>
@@ -521,7 +540,8 @@ export default function StaffTable({ config = {} }) {
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50/70 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
                     <th className="px-5 py-3">Employee</th>
-                    <th className="px-5 py-3">Emp ID</th>
+                    <th className="px-5 py-3">Employee ID</th>
+                    <th className="px-5 py-3">Profile</th>
                     <th className="px-5 py-3">Status</th>
                     {financeColumns ? (
                       FINANCE_COLUMNS.map((c) => (
@@ -599,11 +619,16 @@ export default function StaffTable({ config = {} }) {
                                     </span>
                                   )}
                                 </div>
-                                <span className="text-xs text-slate-400">{currentCategory}</span>
                               </div>
                             </div>
                           </td>
                           <td className="px-5 py-3.5 tabular-nums text-slate-500">{item.employeeId || "—"}</td>
+                          <td className="px-5 py-3.5">
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-2 py-0.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
+                              <span className={`h-1.5 w-1.5 rounded-full ${catStyle(item.profile).dot}`} />
+                              {item.profile || "—"}
+                            </span>
+                          </td>
                           <td className="px-5 py-3.5"><StatusBadge status={item.status} /></td>
 
                           {financeColumns ? (
@@ -679,7 +704,7 @@ export default function StaffTable({ config = {} }) {
                 {!loading && rows.length > 0 && (
                   <tfoot className="border-t-2 border-slate-100 bg-slate-50/70 text-sm font-semibold text-slate-900">
                     <tr>
-                      <td className="px-5 py-3.5" colSpan={3}>Total</td>
+                      <td className="px-5 py-3.5" colSpan={4}>Total</td>
                       {financeColumns ? (
                         FINANCE_COLUMNS.map((c) => (
                           <td key={c.key} className="px-5 py-3.5 text-right tabular-nums">
@@ -767,11 +792,11 @@ export default function StaffTable({ config = {} }) {
             </div>
 
             <div className="flex-1 space-y-5 overflow-y-auto p-6">
-              <FilterSection title="Category" icon={<Filter className="h-4 w-4" />}>
+              <FilterSection title="Profile" icon={<Filter className="h-4 w-4" />}>
                 <FilterSelect
                   value={filters.category}
-                  onChange={(v) => { setFilter("category", v); setSelectedCategory(v || "Doctor"); }}
-                  options={[{ label: "All Categories", value: "" }, ...categoryList.map((c) => ({ label: c, value: c }))]}
+                  onChange={(v) => setFilter("category", v)}
+                  options={[{ label: "All Profiles", value: "" }, ...categoryList.map((c) => ({ label: c, value: c }))]}
                 />
               </FilterSection>
 
