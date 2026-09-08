@@ -103,7 +103,7 @@ export default function NewPayableModal({ onClose, onSuccess, toast }) {
     clearTimeout(employeeDebounce.current);
     employeeDebounce.current = setTimeout(() => fetchEmployees(term), 350);
   };
-  const formatEmployeeOption = (e) => `${e.name} — ${e.role}`;
+  const formatEmployeeOption = (e) => `${e.name}${e.employeeId ? ` (${e.employeeId})` : ""} — ${e.role}`;
 
   const fetchVendors = async () => {
     try {

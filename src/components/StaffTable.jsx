@@ -58,7 +58,7 @@ const fmtCurrency = (n) =>
 const fmtNumber = (n) => new Intl.NumberFormat("en-IN").format(n || 0);
 
 const EMPTY_FILTERS = {
-  search: "", category: "", status: "",
+  search: "", empId: "", category: "", status: "",
   minPatients: "", maxPatients: "",
   minAmount: "", maxAmount: "",
   minGrafts: "", maxGrafts: "",
@@ -175,6 +175,7 @@ export default function StaffTable({ config = {} }) {
   const filtered = useMemo(() => {
     let list = [...categoryData];
     if (filters.search)      list = list.filter((i) => i.name.toLowerCase().includes(filters.search.toLowerCase()));
+    if (filters.empId)       list = list.filter((i) => String(i.employeeId || "").toLowerCase().includes(filters.empId.toLowerCase()));
     if (filters.status)      list = list.filter((i) => i.status === filters.status);
     if (financeColumns) {
       if (filters.minAmount)  list = list.filter((i) => (i.totalPayable || 0) >= +filters.minAmount);
@@ -335,6 +336,7 @@ export default function StaffTable({ config = {} }) {
   const activeChips = useMemo(() => {
     const chips = [];
     if (filters.category)    chips.push({ k: "category",    label: `Profile: ${filters.category}` });
+    if (filters.empId)       chips.push({ k: "empId",       label: `Employee ID: ${filters.empId}` });
     if (filters.status)      chips.push({ k: "status",      label: `Status: ${filters.status === "active" ? "Active" : "Inactive"}` });
     if (financeColumns) {
       if (filters.minAmount)   chips.push({ k: "minAmount",   label: `Min Payable: ${fmtCurrency(filters.minAmount)}` });
@@ -505,7 +507,7 @@ export default function StaffTable({ config = {} }) {
           <section className="overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-sm">
             <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-3.5 lg:flex-row lg:items-center lg:justify-between sm:px-5">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <div className="relative w-full sm:w-64">
+                <div className="relative w-full sm:w-56">
                   <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                   <input
                     type="text"
@@ -515,6 +517,13 @@ export default function StaffTable({ config = {} }) {
                     className="w-full rounded-xl border border-slate-200 bg-slate-50/60 py-2 pl-9 pr-3 text-sm outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
                   />
                 </div>
+                <input
+                  type="text"
+                  placeholder="Employee ID…"
+                  value={filters.empId}
+                  onChange={(e) => setFilter("empId", e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 text-sm outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 sm:w-40"
+                />
                 <select
                   value={filters.status}
                   onChange={(e) => setFilter("status", e.target.value)}

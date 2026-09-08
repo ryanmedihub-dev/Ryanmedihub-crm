@@ -346,7 +346,7 @@ function AdminCreateTransactionPageInner() {
   }, [employees, employeeCache]);
 
   const formatEmployeeOption = (emp) =>
-    `${emp.name} — ${emp.role}${emp.phone ? " · " + emp.phone : ""}`;
+    `${emp.name}${emp.employeeId ? ` (${emp.employeeId})` : ""} — ${emp.role}${emp.phone ? " · " + emp.phone : ""}`;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -384,6 +384,12 @@ function AdminCreateTransactionPageInner() {
 
   const payableContext = getPayableContext({ expenseData, employees, employeeCache, patients, patientCache, vendors });
   const advanceContext = getAdvanceContext({ expenseData, employees, employeeCache, patients, patientCache, vendors });
+
+  const selectedAgentEmployee = expenseData.employeeId
+    ? employeeCache[expenseData.employeeId] ||
+      employeeOptions.find((e) => e._id === expenseData.employeeId) ||
+      null
+    : null;
 
   useEffect(() => {
     if (activeTab !== "expense" || !payableContext) {
@@ -1416,6 +1422,21 @@ function AdminCreateTransactionPageInner() {
                           onSearch={handleEmployeeSearch}
                           searching={employeeSearching}
                         />
+
+                        {selectedAgentEmployee && (
+                          <p className="mt-2 text-xs text-gray-500">
+                            {selectedAgentEmployee.employeeId ? (
+                              <>
+                                Employee ID{" "}
+                                <span className="font-semibold text-gray-700">
+                                  {selectedAgentEmployee.employeeId}
+                                </span>
+                                {selectedAgentEmployee.role ? " · " : ""}
+                              </>
+                            ) : null}
+                            {selectedAgentEmployee.role}
+                          </p>
+                        )}
 
                         {expenseData.employeeId && (
                           <div className="mt-4 grid grid-cols-2 gap-3">

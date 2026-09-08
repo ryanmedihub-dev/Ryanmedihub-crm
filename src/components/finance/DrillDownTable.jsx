@@ -540,6 +540,9 @@ export default function DrillDownTable({
             <span className="font-medium text-gray-800">{(isPayableSection ? r.payee?.label : r.payer?.label) || "—"}</span>
             {(r.paid > 0 || r.received > 0) && <ChevronRight className="w-3.5 h-3.5 text-gray-300" />}
           </div>
+          {r.payeeCode && (
+            <p className="mt-0.5 text-[11px] text-gray-400">ID {r.payeeCode}</p>
+          )}
           {/* On a collab document the party is the partner clinic; the patient the case is
               actually about lives on the CollabCase, so surface them here too. */}
           {r.collabPatient?.name && (

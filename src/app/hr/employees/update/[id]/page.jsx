@@ -188,9 +188,9 @@ export default function HRUpdateEmployee() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 gap-x-12">
                   <InputField label="Full Name" required value={formData.name} onChange={createChangeHandler("name")} placeholder="Enter employee's full name" className="md:col-span-2" />
+                  <InputField label="Employee ID" value={formData.employeeId} onChange={createChangeHandler("employeeId")} placeholder="e.g. RYN-014 (optional staff code)" className="md:col-span-2" />
                   <InputField label="Phone Number" type="tel" value={formData.phone} onChange={createChangeHandler("phone")} placeholder="10-digit mobile number" />
                   <InputField label="Email Address" type="email" value={formData.email} onChange={createChangeHandler("email")} placeholder="employee@example.com" />
-                  <InputField label="Employee ID" value={formData.employeeId} onChange={createChangeHandler("employeeId")} placeholder="e.g. RYN-014 (optional)" />
                   <InputField label="Designation / Role" type="combobox" required value={formData.role} onChange={createChangeHandler("role")} options={roleOptions} placeholder="Type any post, or pick a common one" />
                   {formData.role && <div className="md:col-span-2"><RoleDescriptionCard role={formData.role} /></div>}
                   <InputField label="Active Status" type="checkbox" value={formData.isactive} onChange={createChangeHandler("isactive")} className="md:col-span-2" />
@@ -225,7 +225,7 @@ export default function HRUpdateEmployee() {
             </form>
 
             <div className="px-8 py-4 bg-gray-50 border-t border-gray-200">
-              <p className="text-xs text-gray-600 text-center">Employee ID: {employeeId} • Changes will be reflected immediately</p>
+              <p className="text-xs text-gray-600 text-center">Record ID: {employeeId} • Changes will be reflected immediately</p>
             </div>
           </div>
         </div>

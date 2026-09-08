@@ -4,6 +4,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import mongoose from "mongoose";
 import connectDB from "@/lib/db";
 import Payable from "@/models/Payable";
+import Employee from "@/models/Employee";
 import Transactions from "@/models/Transactions";
 import { buildPayableGroupedStages, buildPayableAggregationStages } from "@/lib/payableAggregation";
 import { unsettledMethodsSync } from "@/lib/masterData";
@@ -154,6 +155,25 @@ export async function GET(request) {
       ...r,
       lockReason: blockReasonFromSnapshot(closedPeriods, null, r.dueDate || r.createdAt || new Date()),
     }));
+
+    // Human staff code alongside the name for EMPLOYEE payees (salary / incentive / etc.).
+    const empRefIds = [
+      ...new Set(
+        rows
+          .filter((r) => r.payee?.kind === "EMPLOYEE" && r.payee?.refId)
+          .map((r) => String(r.payee.refId)),
+      ),
+    ];
+    if (empRefIds.length) {
+      const emps = await Employee.find(
+        { _id: { $in: empRefIds.map((id) => new mongoose.Types.ObjectId(id)) } },
+        { employeeId: 1 },
+      ).lean();
+      const codeById = new Map(emps.map((e) => [String(e._id), e.employeeId || ""]));
+      rows.forEach((r) => {
+        if (r.payee?.kind === "EMPLOYEE") r.payeeCode = codeById.get(String(r.payee.refId)) || "";
+      });
+    }
 
     return NextResponse.json({ success: true, rows, total, page, limit });
   } catch (error) {

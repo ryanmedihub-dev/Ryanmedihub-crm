@@ -124,7 +124,7 @@ export default function TargetIncentiveForm() {
             placeholder="Search and select an employee..."
             valueKey="_id"
             formatOption={(e) =>
-              `${e.name} — ${e.role}${e.phone ? " · " + e.phone : ""}`
+              `${e.name}${e.employeeId ? ` (${e.employeeId})` : ""} — ${e.role}${e.phone ? " · " + e.phone : ""}`
             }
             onSearch={searchEmployees}
             searching={employeeSearching}

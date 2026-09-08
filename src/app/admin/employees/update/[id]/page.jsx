@@ -270,7 +270,7 @@ export default function EmployeeUpdate() {
 
       const result = await response.json();
 
-                toast.success("Employee data loaded successfully");
+      toast.success("Employee updated successfully");
 
       setTimeout(() => {
         router.push("/admin/employees");
@@ -382,6 +382,14 @@ export default function EmployeeUpdate() {
                   />
 
                   <InputField
+                    label="Employee ID"
+                    value={formData.employeeId}
+                    onChange={createChangeHandler("employeeId")}
+                    placeholder="e.g. RYN-014 (optional staff code)"
+                    className="md:col-span-2"
+                  />
+
+                  <InputField
                     label="Phone Number"
                     type="tel"
                     value={formData.phone}
@@ -395,13 +403,6 @@ export default function EmployeeUpdate() {
                     value={formData.email}
                     onChange={createChangeHandler("email")}
                     placeholder="employee@example.com"
-                  />
-
-                  <InputField
-                    label="Employee ID"
-                    value={formData.employeeId}
-                    onChange={createChangeHandler("employeeId")}
-                    placeholder="e.g. RYN-014 (optional)"
                   />
 
                   <InputField
@@ -517,7 +518,7 @@ export default function EmployeeUpdate() {
 
             <div className="px-8 py-4 bg-gray-50 border-t border-gray-200">
               <p className="text-xs text-gray-600 text-center">
-                Employee ID: {employeeId} • Last updated information will be reflected immediately
+                Record ID: {employeeId} • Last updated information will be reflected immediately
               </p>
             </div>
           </div>
