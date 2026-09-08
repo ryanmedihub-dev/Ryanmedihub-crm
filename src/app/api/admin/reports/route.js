@@ -1039,9 +1039,16 @@ async function generateExpensesReport(filters) {
 
   const transactions = await Transactions.find(query).sort({ date: -1 }).limit(5000).lean();
 
+  const empCodes = await employeeCodeMap(
+    transactions.filter((t) => t.expenseGiver?.type === "EMPLOYEE").map((t) => t.expenseGiver?.refId),
+  );
+
   return transactions.map((t) => ({
     Date: t.date ? new Date(t.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" }) : "",
     Branch: t.branch || "",
+    Payee: t.expenseGiver?.name || "",
+    "Employee ID":
+      t.expenseGiver?.type === "EMPLOYEE" ? empCodes.get(String(t.expenseGiver?.refId)) || "" : "",
     "Expense Category": t.expense || "",
     "Expense Type": t.expenseType || "",
     "Payment Method": t.method || "",
@@ -1307,6 +1314,9 @@ async function generatePayablesAllReport(filters) {
 
   const ids = payables.map((p) => p._id);
   const idStrSet = new Set(ids.map(String));
+  const empCodes = await employeeCodeMap(
+    payables.filter((p) => p.payee?.kind === "EMPLOYEE").map((p) => p.payee?.refId),
+  );
 
   const [txPayments, borrowingPayments, advancePayments] = await Promise.all([
     Transactions.find({
@@ -1388,6 +1398,7 @@ async function generatePayablesAllReport(filters) {
     const context = {
       Payee: p.payee?.label || "",
       "Payee Type": p.payee?.kind || "",
+      "Employee ID": p.payee?.kind === "EMPLOYEE" ? empCodes.get(String(p.payee?.refId)) || "" : "",
       Purpose: p.purpose || "",
       "Expense Category": p.expenseCategory || "",
       "Expense Sub-Type": p.expenseSubType || "",
@@ -1492,6 +1503,9 @@ async function generateReceivablesAllReport(filters) {
 
   const ids = receivables.map((r) => r._id);
   const idStrSet = new Set(ids.map(String));
+  const empCodes = await employeeCodeMap(
+    receivables.filter((r) => r.payer?.kind === "EMPLOYEE").map((r) => r.payer?.refId),
+  );
 
   const [directTx, splitTx, advanceIn, borrowingIn, advancePayableOut] = await Promise.all([
     Transactions.find({
@@ -1607,6 +1621,7 @@ async function generateReceivablesAllReport(filters) {
     const context = {
       Payer: r.payer?.label || "",
       "Payer Type": r.payer?.kind || "",
+      "Employee ID": r.payer?.kind === "EMPLOYEE" ? empCodes.get(String(r.payer?.refId)) || "" : "",
       "Revenue Category": r.revenueCategory || "",
       Purpose: r.purpose || "",
       Period: r.period?.month && r.period?.year ? `${r.period.month}/${r.period.year}` : "",
@@ -1687,6 +1702,21 @@ async function generateReceivablesAllReport(filters) {
 const fmtDay = (v) => (v ? new Date(v).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" }) : "");
 const fmtDateTime = (v) =>
   v ? new Date(v).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }) : "";
+
+// Human staff codes (Employee.employeeId) keyed by _id string, for the given ids. Lets the
+// payable / finance reports show an employee's code next to their name.
+async function employeeCodeMap(ids) {
+  const uniq = [...new Set((ids || []).filter(Boolean).map(String))];
+  if (!uniq.length) return new Map();
+  const mongoose = (await import("mongoose")).default;
+  const oids = uniq
+    .filter((id) => mongoose.Types.ObjectId.isValid(id))
+    .map((id) => new mongoose.Types.ObjectId(id));
+  const emps = await Employee.find({ _id: { $in: oids } }, { employeeId: 1 }).lean();
+  const m = new Map();
+  emps.forEach((e) => m.set(String(e._id), e.employeeId || ""));
+  return m;
+}
 
 /**
  * Net balance per party (EMPLOYEE + VENDOR) — Payable Pending − Receivable Pending — with a
@@ -1797,7 +1827,7 @@ async function generatePartyNetBalanceReport({ dateFilter, branch }) {
   const parties = new Map();
   const getParty = (kind, refId, label) => {
     const k = String(refId);
-    if (!parties.has(k)) parties.set(k, { kind, label, payables: [], receivables: [], pT: 0, pPaid: 0, pPend: 0, rT: 0, rR: 0, rPend: 0 });
+    if (!parties.has(k)) parties.set(k, { refId: k, kind, label, payables: [], receivables: [], pT: 0, pPaid: 0, pPend: 0, rT: 0, rR: 0, rPend: 0 });
     const p = parties.get(k);
     if (label && !p.label) p.label = label;
     return p;
@@ -1821,6 +1851,10 @@ async function generatePartyNetBalanceReport({ dateFilter, branch }) {
     .map((p) => ({ ...p, net: round2(p.pPend - p.rPend) }))
     .sort((a, b) => Math.abs(b.net) - Math.abs(a.net) || (a.label || "").localeCompare(b.label || ""));
 
+  const empCodes = await employeeCodeMap(
+    list.filter((p) => p.kind === "EMPLOYEE").map((p) => p.refId),
+  );
+
   const BLANK = {
     "Net Balance ₹": "", "Payable Pending": "", "Receivable Pending": "",
     "Payable Total": "", "Paid / Received": "", "Receivable Total": "", Received: "",
@@ -1831,7 +1865,11 @@ async function generatePartyNetBalanceReport({ dateFilter, branch }) {
 
   const out = [];
   for (const party of list) {
-    const ctx = { Party: party.label || "", "Party Type": party.kind || "" };
+    const ctx = {
+      Party: party.label || "",
+      "Party Type": party.kind || "",
+      "Employee ID": party.kind === "EMPLOYEE" ? empCodes.get(String(party.refId)) || "" : "",
+    };
 
     out.push({
       Row: "Party", ...ctx, ...BLANK,
@@ -2022,8 +2060,16 @@ async function generateFinanceDaybookReport({ from, to, branch }) {
     LOAN_CANCELLATION: "Loan cancellation",
   };
 
+  const empCodes = await employeeCodeMap([
+    ...payables.filter((p) => p.payee?.kind === "EMPLOYEE").map((p) => p.payee?.refId),
+    ...receivables.filter((r) => r.payer?.kind === "EMPLOYEE").map((r) => r.payer?.refId),
+    ...advances.filter((a) => a.party?.kind === "EMPLOYEE").map((a) => a.party?.refId),
+    ...borrowings.filter((b) => b.party?.kind === "EMPLOYEE").map((b) => b.party?.refId),
+    ...txns.filter((t) => t.expenseGiver?.type === "EMPLOYEE").map((t) => t.expenseGiver?.refId),
+  ]);
+
   const shape = ({
-    type, ts, entryDate, party = "", purpose = "", subType = "", direction = "",
+    type, ts, entryDate, party = "", partyId = "", purpose = "", subType = "", direction = "",
     amount = 0, cash = "—", branch: br = "", account = "", method = "", reference = "",
     status = "", remarks = "", createdBy = "", id,
   }) => ({
@@ -2032,6 +2078,7 @@ async function generateFinanceDaybookReport({ from, to, branch }) {
       "Created On": fmtDateTime(ts),
       "Entry Date": fmtDay(entryDate),
       "Party": party || "",
+      "Employee ID": partyId ? empCodes.get(String(partyId)) || "" : "",
       "Purpose / Category": purpose || "",
       "Sub-type": subType || "",
       "Direction": direction || "",
@@ -2054,7 +2101,8 @@ async function generateFinanceDaybookReport({ from, to, branch }) {
   for (const p of payables) {
     rows.push(shape({
       type: "Payable", ts: p.createdAt, entryDate: p.dueDate || p.createdAt,
-      party: p.payee?.label, purpose: (p.purpose || "").replace(/_/g, " "),
+      party: p.payee?.label, partyId: p.payee?.kind === "EMPLOYEE" ? p.payee?.refId : "",
+      purpose: (p.purpose || "").replace(/_/g, " "),
       subType: p.expenseSubType || p.expenseCategory || "", direction: "Payable raised",
       amount: p.totalAmount, cash: "—", branch: p.branch, remarks: p.remarks,
       status: p.isCancelled ? "Cancelled" : "Open",
@@ -2064,7 +2112,8 @@ async function generateFinanceDaybookReport({ from, to, branch }) {
   for (const r of receivables) {
     rows.push(shape({
       type: "Receivable", ts: r.createdAt, entryDate: r.dueDate || r.createdAt,
-      party: r.payer?.label, purpose: (r.purpose || "").replace(/_/g, " "),
+      party: r.payer?.label, partyId: r.payer?.kind === "EMPLOYEE" ? r.payer?.refId : "",
+      purpose: (r.purpose || "").replace(/_/g, " "),
       subType: r.revenueSubType || r.revenueCategory || "", direction: "Receivable raised",
       amount: r.totalAmount, cash: "—", branch: r.branch, remarks: r.remarks,
       status: r.isCancelled ? "Cancelled" : "Open",
@@ -2075,7 +2124,8 @@ async function generateFinanceDaybookReport({ from, to, branch }) {
     const out = a.direction === "OUT";
     rows.push(shape({
       type: "Advance", ts: a.createdAt, entryDate: a.date,
-      party: a.party?.label, purpose: "Advance",
+      party: a.party?.label, partyId: a.party?.kind === "EMPLOYEE" ? a.party?.refId : "",
+      purpose: "Advance",
       direction: out ? "Advance paid out" : "Advance recovered",
       amount: a.amount, cash: out ? "Outflow" : "Inflow", branch: a.branch,
       account: a.account, reference: a.reference, remarks: a.remarks,
@@ -2087,7 +2137,8 @@ async function generateFinanceDaybookReport({ from, to, branch }) {
     const inbound = b.direction === "IN";
     rows.push(shape({
       type: "Borrowing", ts: b.createdAt, entryDate: b.date,
-      party: b.party?.label, purpose: "Borrowing",
+      party: b.party?.label, partyId: b.party?.kind === "EMPLOYEE" ? b.party?.refId : "",
+      purpose: "Borrowing",
       direction: inbound ? "Borrowing received" : "Borrowing repaid",
       amount: b.amount, cash: inbound ? "Inflow" : "Outflow", branch: b.branch,
       account: b.account, reference: b.reference, remarks: b.remarks,
@@ -2100,6 +2151,7 @@ async function generateFinanceDaybookReport({ from, to, branch }) {
     rows.push(shape({
       type: isExpense ? "Expense" : "Revenue", ts: t.createdAt, entryDate: t.date,
       party: isExpense ? (t.expenseGiver?.name || "") : (t.patientName || ""),
+      partyId: isExpense && t.expenseGiver?.type === "EMPLOYEE" ? t.expenseGiver?.refId : "",
       purpose: isExpense
         ? (t.expenseType || t.expense || "Expense")
         : (t.transactionCategory || "Revenue"),
