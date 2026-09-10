@@ -1,212 +1,254 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { X, Link2, Unlink, Loader2, Plus, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { X, Link2, Unlink, Loader2, Plus, Trash2, Search, AlertTriangle } from "lucide-react";
 import { formatCurrency } from "@/lib/financeUI";
 import { settlementLinesFor } from "@/lib/advanceSettlements";
 
+const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
+const uniqById = (arr) => {
+  const seen = new Set();
+  return arr.filter((o) => {
+    const id = String(o?._id ?? "");
+    if (!id || seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+};
+
+/**
+ * Settle a non-cash contra between an advance (OUT) and one or more open payables — or a
+ * borrowing (IN) and one receivable. Each linked line nets BOTH sides live and never touches
+ * the target document's own amount.
+ */
 export default function SettleAgainstModal({ kind, row, onClose, onSuccess, toast }) {
   const isAdvance = kind === "advance";
-  const endpoint = isAdvance ? `/api/advances/${row._id}` : `/api/borrowings/${row._id}`;
-  const listEndpoint = isAdvance ? "/api/payables/list" : "/api/receivables/list";
-  const settledField = isAdvance ? "settlesPayableId" : "settlesReceivableId";
-  const targetLabel = isAdvance ? "payable" : "receivable";
+  return isAdvance ? (
+    <AdvanceSettle row={row} onClose={onClose} onSuccess={onSuccess} toast={toast} />
+  ) : (
+    <BorrowingSettle row={row} onClose={onClose} onSuccess={onSuccess} toast={toast} />
+  );
+}
 
-  const [options, setOptions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+/* ==================================================================== */
+/* Advance  →  many payables                                             */
+/* ==================================================================== */
 
-  // Borrowing side is unchanged: one settlement, single select + amount.
-  const [selectedId, setSelectedId] = useState(row[settledField] ? String(row[settledField]) : "");
-  const [amount, setAmount] = useState("");
+function AdvanceSettle({ row, onClose, onSuccess, toast }) {
+  const endpoint = `/api/advances/${row._id}`;
 
-  // Advance side: this advance can now settle several payables at once — lines already
-  // saved on the document (refreshed locally after each partial submit, without needing the
-  // parent to re-fetch), plus lines staged in this session but not yet submitted.
   const [advanceDoc, setAdvanceDoc] = useState(row);
-  const [stagedLines, setStagedLines] = useState([]);
-  const [lineMeta, setLineMeta] = useState({});
+  const [options, setOptions] = useState([]);
+  const [optionsLoading, setOptionsLoading] = useState(true);
+  const [metaById, setMetaById] = useState({}); // payableId -> { label, purpose, pending }
+  const [search, setSearch] = useState("");
+  const [staged, setStaged] = useState({}); // payableId -> { label, purpose, pending, amount }
+  const [busyLine, setBusyLine] = useState(null); // payableId being unlinked
+  const [submitting, setSubmitting] = useState(false);
+  // An advance can settle ANY standing payable (salary, incentive, rent, vendor bill …) — the
+  // PATCH `settle` nets both the payable's pending AND this advance's own receivable. So the
+  // list is unfiltered by default; the party toggle is only an optional convenience.
+  const canScopeToParty = !!(row.party?.refId && ["EMPLOYEE", "VENDOR", "PATIENT"].includes(row.party?.kind));
+  const [scopeToParty, setScopeToParty] = useState(false);
 
-  const advanceCap = isAdvance ? Number(advanceDoc.amount) || 0 : 0;
+  const amount = round2(advanceDoc.amount);
+  // Cash recovered (IN advances against this advance's receivable) can't change from settling
+  // payables — pin it to the value we opened with so a mid-session doc refresh (which comes
+  // from /api/advances/[id] and lacks the computed field) doesn't drop it.
+  const cashRecovered = useMemo(() => round2(row.cashRecovered || 0), [row._id]); // eslint-disable-line react-hooks/exhaustive-deps
+  const existingLines = useMemo(() => settlementLinesFor(advanceDoc), [advanceDoc]);
+  const settledTotal = round2(existingLines.reduce((s, l) => s + (l.amount || 0), 0));
+  const stagedList = Object.values(staged);
+  const stagedTotal = round2(stagedList.reduce((s, l) => s + (Number(l.amount) || 0), 0));
+  const remaining = round2(amount - settledTotal - cashRecovered - stagedTotal);
+  const consumed = round2(amount - Math.max(remaining, 0));
+  const pct = amount > 0 ? Math.min(100, Math.max(0, (consumed / amount) * 100)) : 0;
 
+  const partyKind = advanceDoc.party?.kind || "";
+  const partyRefId = advanceDoc.party?.refId ? String(advanceDoc.party.refId) : "";
+  const partyLabel = advanceDoc.party?.label || "the party";
+
+  /* --- load this party's open payables (deduped, paged) --- */
   useEffect(() => {
-    let cancelled = false;
-    const key = isAdvance ? "payables" : "receivables";
-
+    const ctrl = new AbortController();
+    setOptionsLoading(true);
     (async () => {
       try {
+        const base = new URLSearchParams({ outstanding: "true", limit: "200" });
+        if (scopeToParty && partyRefId && ["EMPLOYEE", "VENDOR", "PATIENT"].includes(partyKind)) {
+          base.set("payeeKind", partyKind);
+          base.set("payeeRefId", partyRefId);
+        }
         const all = [];
-        let page = 1;
-        // Page through every open document so nothing (e.g. a current-month salary or
-        // incentive payable) is dropped by the server's 200-row page cap.
-        for (;;) {
-          const res = await fetch(`${listEndpoint}?outstanding=true&limit=200&page=${page}`);
+        for (let page = 1; page <= 25; page += 1) {
+          const res = await fetch(`/api/payables/list?${base}&page=${page}`, { signal: ctrl.signal });
           const data = await res.json();
-          const batch = data[key] || [];
+          const batch = data.payables || [];
           all.push(...batch);
           const total = data.total || all.length;
-          if (batch.length === 0 || all.length >= total || page >= 25) break;
-          page += 1;
+          if (batch.length === 0 || all.length >= total) break;
         }
-        if (!cancelled) {
-          setOptions(all.filter((o) => o.pending > 0 && !o.isCancelled));
-        }
-      } catch {
-        if (!cancelled) setOptions([]);
+        setOptions(uniqById(all).filter((o) => (o.pending || 0) > 0 && !o.isCancelled));
+      } catch (e) {
+        if (e.name !== "AbortError") setOptions([]);
       } finally {
-        if (!cancelled) setLoading(false);
+        setOptionsLoading(false);
       }
     })();
+    return () => ctrl.abort();
+  }, [partyKind, partyRefId, scopeToParty]);
 
-    return () => {
-      cancelled = true;
-    };
-  }, [listEndpoint, isAdvance]);
+  // "Salary · 9/2026 · #RYN-014" — the line users map the settlement to.
+  const subtitle = (m) => {
+    if (!m) return "";
+    const bits = [];
+    if (m.purpose) bits.push(String(m.purpose).replace(/_/g, " "));
+    if (m.period?.month && m.period?.year) bits.push(`${m.period.month}/${m.period.year}`);
+    if (m.payeeCode) bits.push(`#${m.payeeCode}`);
+    return bits.join(" · ");
+  };
 
-  const partyLabel = (opt) => (isAdvance ? opt.payee?.label : opt.payer?.label) || "—";
-
-  const filteredOptions = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return options;
-    return options.filter((opt) =>
-      [partyLabel(opt), opt.purpose, opt.expenseSubType, opt.revenueSubType]
-        .filter(Boolean)
-        .some((v) => String(v).toLowerCase().includes(q)),
-    );
-  }, [options, search]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  /* ---------------------------------------------------------------------- */
-  /* Advance → multiple payables                                            */
-  /* ---------------------------------------------------------------------- */
-
-  const existingLines = useMemo(() => (isAdvance ? settlementLinesFor(advanceDoc) : []), [isAdvance, advanceDoc]);
-  const existingTotal = existingLines.reduce((sum, l) => sum + (l.amount || 0), 0);
-  const stagedTotal = stagedLines.reduce((sum, l) => sum + (l.amount || 0), 0);
-  const remainingCap = Math.max(0, Math.round((advanceCap - existingTotal - stagedTotal) * 100) / 100);
-
-  // Fill in party label / purpose for existing lines — from the open-payables list when
-  // possible, or a one-off fetch when the payable is already fully settled (and so dropped
-  // out of that "outstanding only" list).
+  /* --- resolve names for existing settlement lines --- */
+  const metaFromOpt = (o) => ({
+    label: o.payee?.label || "—",
+    purpose: o.purpose || "",
+    period: o.period,
+    payeeCode: o.payeeCode || "",
+    pending: o.pending ?? 0,
+  });
   useEffect(() => {
-    if (!isAdvance || existingLines.length === 0) return;
+    // 1) anything resolvable from the already-loaded payables list — take it straight away.
+    const fromOptions = {};
+    options.forEach((o) => {
+      fromOptions[String(o._id)] = metaFromOpt(o);
+    });
+    if (Object.keys(fromOptions).length) {
+      setMetaById((prev) => ({ ...fromOptions, ...prev }));
+    }
+
+    // 2) the rest (usually a fully-paid payable, absent from the outstanding-only list) —
+    //    one direct fetch each. No abort: these must not be cancelled by a later options load.
     const need = existingLines
       .map((l) => String(l.payableId))
-      .filter((id) => !lineMeta[id] && !options.some((o) => String(o._id) === id));
-    if (need.length === 0) {
-      // Everything resolvable from `options` — copy those over.
-      setLineMeta((prev) => {
-        const next = { ...prev };
-        let changed = false;
-        existingLines.forEach((l) => {
-          const id = String(l.payableId);
-          if (next[id]) return;
-          const opt = options.find((o) => String(o._id) === id);
-          if (opt) {
-            next[id] = { label: partyLabel(opt), purpose: opt.purpose, pending: opt.pending };
-            changed = true;
-          }
-        });
-        return changed ? next : prev;
-      });
-      return;
-    }
+      .filter((id) => !fromOptions[id] && !metaById[id]);
+    if (need.length === 0) return;
+
     let cancelled = false;
-    (async () => {
-      const fetched = await Promise.all(
-        need.map(async (id) => {
-          try {
-            const res = await fetch(`/api/payables/${id}`);
-            const data = await res.json();
-            if (res.ok && data.payable) {
-              return [id, { label: data.payable.payee?.label || "—", purpose: data.payable.purpose, pending: data.payable.pending }];
-            }
-          } catch {
-            /* ignore */
+    Promise.all(
+      need.map(async (id) => {
+        try {
+          const res = await fetch(`/api/payables/${id}`);
+          if (res.status === 404) {
+            return [id, { label: "Payable no longer exists", purpose: "", missing: true }];
           }
-          return [id, { label: "—", purpose: "", pending: 0 }];
-        }),
-      );
+          const data = await res.json();
+          if (res.ok && data.payable) {
+            const p = data.payable;
+            return [
+              id,
+              {
+                label: p.payee?.label || "—",
+                purpose: p.purpose || "",
+                period: p.period,
+                payeeCode: p.payeeCode || "",
+                pending: p.pending ?? 0,
+              },
+            ];
+          }
+        } catch {
+          /* leave unresolved — modal shows "Resolving…" until reopened */
+        }
+        return null;
+      }),
+    ).then((pairs) => {
       if (cancelled) return;
-      setLineMeta((prev) => {
+      setMetaById((prev) => {
         const next = { ...prev };
-        existingLines.forEach((l) => {
-          const id = String(l.payableId);
-          const opt = options.find((o) => String(o._id) === id);
-          if (opt && !next[id]) next[id] = { label: partyLabel(opt), purpose: opt.purpose, pending: opt.pending };
-        });
-        fetched.forEach(([id, meta]) => {
-          if (!next[id]) next[id] = meta;
+        pairs.forEach((pair) => {
+          if (pair && !next[pair[0]]) next[pair[0]] = pair[1];
         });
         return next;
       });
-    })();
+    });
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAdvance, existingLines, options]);
+  }, [existingLines, options]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Payables still pickable to add — not already an existing or staged line.
-  const addableOptions = useMemo(() => {
-    if (!isAdvance) return filteredOptions;
-    const taken = new Set([
-      ...existingLines.map((l) => String(l.payableId)),
-      ...stagedLines.map((l) => String(l.payableId)),
-    ]);
-    return filteredOptions.filter((o) => !taken.has(String(o._id)));
-  }, [isAdvance, filteredOptions, existingLines, stagedLines]);
+  const takenIds = useMemo(
+    () => new Set([...existingLines.map((l) => String(l.payableId)), ...Object.keys(staged)]),
+    [existingLines, staged],
+  );
 
-  const addStagedLine = (opt) => {
-    if (remainingCap <= 0) {
-      toast.error(`The full advance (${formatCurrency(advanceCap)}) is already settled or staged`);
+  const addable = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return options
+      .filter((o) => !takenIds.has(String(o._id)))
+      .filter((o) =>
+        !q
+          ? true
+          : [o.payee?.label, o.purpose, o.expenseSubType, o.expenseCategory]
+              .filter(Boolean)
+              .some((v) => String(v).toLowerCase().includes(q)),
+      );
+  }, [options, takenIds, search]);
+
+  const addLine = (opt) => {
+    if (remaining <= 0.005) {
+      toast.error(`Nothing left of this advance to settle (${formatCurrency(remaining)} remaining)`);
       return;
     }
-    const amt = Math.round(Math.min(remainingCap, Number(opt.pending) || 0) * 100) / 100;
-    setStagedLines((prev) => [
+    const amt = round2(Math.min(remaining, opt.pending || 0));
+    setStaged((prev) => ({
       ...prev,
-      { payableId: opt._id, label: partyLabel(opt), purpose: opt.purpose, pending: Number(opt.pending) || 0, amount: amt },
-    ]);
+      [String(opt._id)]: {
+        payableId: String(opt._id),
+        label: opt.payee?.label || "—",
+        purpose: opt.purpose || "",
+        period: opt.period,
+        payeeCode: opt.payeeCode || "",
+        pending: round2(opt.pending || 0),
+        amount: amt,
+      },
+    }));
   };
 
-  const updateStagedAmount = (payableId, value) => {
-    setStagedLines((prev) =>
-      prev.map((l) => (l.payableId === payableId ? { ...l, amount: value } : l)),
-    );
+  const setLineAmount = (payableId, value) =>
+    setStaged((prev) => ({ ...prev, [payableId]: { ...prev[payableId], amount: value } }));
+
+  const removeLine = (payableId) =>
+    setStaged((prev) => {
+      const next = { ...prev };
+      delete next[payableId];
+      return next;
+    });
+
+  const lineError = (line) => {
+    const amt = Number(line.amount);
+    if (!Number.isFinite(amt) || amt <= 0) return "Enter an amount";
+    if (amt > line.pending + 0.005) return `Over this payable's ${formatCurrency(line.pending)} outstanding`;
+    return null;
   };
+  const overAdvance = round2(settledTotal + stagedTotal) > amount - cashRecovered + 0.005;
+  const anyLineError = stagedList.some((l) => lineError(l));
+  const canSubmit = stagedList.length > 0 && !anyLineError && !overAdvance && !submitting;
 
-  const removeStagedLine = (payableId) => {
-    setStagedLines((prev) => prev.filter((l) => l.payableId !== payableId));
-  };
-
-  const stagedLinesValid =
-    stagedLines.length > 0 &&
-    stagedLines.every((l) => {
-      const amt = Number(l.amount) || 0;
-      return amt > 0 && amt <= l.pending + 1e-6;
-    }) &&
-    stagedTotal <= advanceCap - existingTotal + 1e-6;
-
-  const refreshAdvanceDoc = async () => {
+  const refreshAdvance = useCallback(async () => {
     try {
       const res = await fetch(endpoint);
       const data = await res.json();
-      if (res.ok && data.advance) setAdvanceDoc(data.advance);
+      if (res.ok && data.advance) setAdvanceDoc((cur) => ({ ...cur, ...data.advance }));
     } catch {
-      /* keep showing the last-known state */
+      /* keep last-known */
     }
-  };
+  }, [endpoint]);
 
-  const handleSettleAll = async () => {
-    if (stagedLines.length === 0) {
-      toast.error("Add at least one payable to settle against");
-      return;
-    }
-    const attempting = stagedLines;
+  const submit = async () => {
     setSubmitting(true);
-    const succeeded = [];
+    const lines = stagedList;
+    const done = [];
     let firstError = null;
-    for (const line of attempting) {
+    for (const line of lines) {
       try {
         const res = await fetch(endpoint, {
           method: "PATCH",
@@ -214,7 +256,7 @@ export default function SettleAgainstModal({ kind, row, onClose, onSuccess, toas
           body: JSON.stringify({
             action: "settle",
             settlesPayableId: line.payableId,
-            amount: Math.round((Number(line.amount) || 0) * 100) / 100,
+            amount: round2(line.amount),
           }),
         });
         const data = await res.json();
@@ -222,38 +264,41 @@ export default function SettleAgainstModal({ kind, row, onClose, onSuccess, toas
           firstError = data.error || "Failed to link settlement";
           break;
         }
-        succeeded.push(line.payableId);
+        done.push(line.payableId);
       } catch {
         firstError = "Failed to link settlement";
         break;
       }
     }
-    if (succeeded.length > 0) {
-      setStagedLines((prev) => prev.filter((l) => !succeeded.includes(l.payableId)));
-      await refreshAdvanceDoc();
+    if (done.length) {
+      setStaged((prev) => {
+        const next = { ...prev };
+        done.forEach((id) => delete next[id]);
+        return next;
+      });
+      await refreshAdvance();
     }
     setSubmitting(false);
     if (firstError) {
-      toast.error(
-        succeeded.length > 0 ? `${succeeded.length} settled, then failed: ${firstError}` : firstError,
-      );
+      toast.error(done.length ? `${done.length} settled, then failed: ${firstError}` : firstError);
       return;
     }
-    toast.success(attempting.length > 1 ? `Settled against ${attempting.length} payables` : "Settlement linked");
+    toast.success(lines.length > 1 ? `Settled against ${lines.length} payables` : "Settlement linked");
     onSuccess();
   };
 
-  const handleUnlinkLine = async (line) => {
-    setSubmitting(true);
+  const unlink = async (line) => {
+    setBusyLine(String(line.payableId));
     try {
       const res = await fetch(endpoint, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "unsettle", ...(line._id ? { settlementId: line._id } : {}) }),
+        body: JSON.stringify({ action: "unsettle", ...(line._id ? { settlementId: String(line._id) } : {}) }),
       });
       const data = await res.json();
       if (res.ok) {
         toast.success("Settlement unlinked");
+        await refreshAdvance();
         onSuccess();
       } else {
         toast.error(data.error || "Failed to unlink settlement");
@@ -261,357 +306,392 @@ export default function SettleAgainstModal({ kind, row, onClose, onSuccess, toas
     } catch {
       toast.error("Failed to unlink settlement");
     } finally {
-      setSubmitting(false);
+      setBusyLine(null);
     }
   };
 
-  /* ---------------------------------------------------------------------- */
-  /* Borrowing → single receivable (unchanged behaviour)                    */
-  /* ---------------------------------------------------------------------- */
-
-  const alreadySettling = !isAdvance && !!row[settledField];
-
-  const handleSettle = async () => {
-    if (!selectedId) {
-      toast.error(`Select a ${targetLabel} to settle against`);
-      return;
-    }
-    setSubmitting(true);
-    try {
-      const res = await fetch(endpoint, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "settle", [settledField]: selectedId }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        toast.success("Settlement linked");
-        onSuccess();
-      } else {
-        toast.error(data.error || "Failed to link settlement");
-      }
-    } catch {
-      toast.error("Failed to link settlement");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleUnsettle = async () => {
-    setSubmitting(true);
-    try {
-      const res = await fetch(endpoint, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "unsettle" }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        toast.success("Settlement unlinked");
-        onSuccess();
-      } else {
-        toast.error(data.error || "Failed to unlink settlement");
-      }
-    } catch {
-      toast.error("Failed to unlink settlement");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  /* ---------------------------------------------------------------------- */
-  /* Render                                                                  */
-  /* ---------------------------------------------------------------------- */
-
-  if (!isAdvance) {
-    return (
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
-          <div className="flex items-center justify-between p-5 border-b border-gray-100">
-            <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-              <Link2 className="w-5 h-5 text-indigo-600" /> Settle Against…
-            </h3>
-            <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg">
-              <X className="w-5 h-5 text-gray-500" />
-            </button>
-          </div>
-
-          <div className="p-5 space-y-4">
-            <p className="text-sm text-gray-600">
-              Links this {formatCurrency(row.amount)} borrowing — <strong>{row.party?.label}</strong> — against
-              any open receivable. Nets against what you&apos;re owed live — never changes the target
-              document&apos;s own amount.
-            </p>
-
-            {alreadySettling && (
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800 flex items-center justify-between gap-3">
-                <span>Already settling a {targetLabel} — unlink first to pick a different one.</span>
-                <button
-                  onClick={handleUnsettle}
-                  disabled={submitting}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-amber-300 rounded-lg text-xs font-semibold text-amber-800 hover:bg-amber-100 disabled:opacity-50 shrink-0"
-                >
-                  <Unlink className="w-3.5 h-3.5" /> Unlink
-                </button>
-              </div>
-            )}
-
-            {!alreadySettling && (
-              <>
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder={`Search ${targetLabel}s by party, purpose…`}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
-                />
-
-                {loading ? (
-                  <p className="text-sm text-gray-400">Loading open {targetLabel}s…</p>
-                ) : filteredOptions.length === 0 ? (
-                  <p className="text-sm text-gray-400">
-                    {options.length === 0 ? `No open ${targetLabel}s.` : `No open ${targetLabel}s match "${search}".`}
-                  </p>
-                ) : (
-                  <div className="space-y-2 max-h-72 overflow-y-auto">
-                    {filteredOptions.map((opt) => (
-                      <label
-                        key={opt._id}
-                        className={`flex items-center justify-between gap-3 p-3 rounded-lg border cursor-pointer ${
-                          selectedId === opt._id ? "border-indigo-400 bg-indigo-50" : "border-gray-200 hover:bg-gray-50"
-                        }`}
-                      >
-                        <span className="flex items-center gap-2 min-w-0">
-                          <input
-                            type="radio"
-                            name="settleTarget"
-                            checked={selectedId === opt._id}
-                            onChange={() => setSelectedId(opt._id)}
-                          />
-                          <span className="min-w-0">
-                            <span className="block text-sm font-medium text-gray-800 truncate">{partyLabel(opt)}</span>
-                            <span className="block text-xs text-gray-500 truncate">
-                              {(opt.purpose || "").replace(/_/g, " ")}
-                              {(opt.expenseSubType || opt.revenueSubType) ? ` — ${opt.expenseSubType || opt.revenueSubType}` : ""}
-                            </span>
-                          </span>
-                        </span>
-                        <span className="text-sm font-semibold text-amber-700 shrink-0">
-                          {formatCurrency(opt.pending)} outstanding
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-
-          {!alreadySettling && (
-            <div className="flex gap-3 p-5 border-t border-gray-100">
-              <button
-                onClick={onClose}
-                className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl font-semibold text-gray-700 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSettle}
-                disabled={submitting || !selectedId}
-                className="flex-1 px-4 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Link Settlement"}
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
+  const footer = (
+    <Footer onClose={onClose}>
+      <button
+        onClick={submit}
+        disabled={!canSubmit}
+        className="flex-1 rounded-xl bg-indigo-600 px-4 py-2.5 font-semibold text-white hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2"
+      >
+        {submitting ? (
+          <Loader2 className="w-4 h-4 animate-spin" />
+        ) : stagedList.length > 1 ? (
+          `Settle ${stagedList.length} lines · ${formatCurrency(stagedTotal)}`
+        ) : (
+          `Settle ${formatCurrency(stagedTotal || 0)}`
+        )}
+      </button>
+    </Footer>
+  );
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] flex flex-col">
-        <div className="flex items-center justify-between p-5 border-b border-gray-100 shrink-0">
-          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-            <Link2 className="w-5 h-5 text-indigo-600" /> Settle Against…
-          </h3>
-          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg">
-            <X className="w-5 h-5 text-gray-500" />
-          </button>
+    <Shell onClose={onClose} title="Settle advance against payables" wide footer={footer}>
+      {/* context + balance */}
+      <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+        <div className="flex items-baseline justify-between gap-3">
+          <p className="text-sm font-semibold text-gray-800 truncate">{partyLabel}</p>
+          <p className="text-xs text-gray-400 shrink-0">Advance {formatCurrency(amount)}</p>
         </div>
-
-        <div className="p-5 space-y-4 overflow-y-auto">
-          <p className="text-sm text-gray-600">
-            Splits this {formatCurrency(advanceCap)} advance — <strong>{advanceDoc.party?.label}</strong> — across
-            one or more open payables. Each line nets against both that payable&apos;s outstanding and what{" "}
-            {advanceDoc.party?.label || "the party"} owes back — the rest stays recoverable.
-          </p>
-
-          {existingLines.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Already settling</p>
-              {existingLines.map((line, i) => {
-                const meta = lineMeta[String(line.payableId)];
-                return (
-                  <div
-                    key={line._id || `legacy-${i}`}
-                    className="flex items-center justify-between gap-3 p-3 rounded-lg border border-teal-200 bg-teal-50"
-                  >
-                    <span className="min-w-0">
-                      <span className="block text-sm font-medium text-gray-800 truncate">
-                        {meta?.label || "Loading…"}
-                      </span>
-                      <span className="block text-xs text-gray-500 truncate">
-                        {(meta?.purpose || "").replace(/_/g, " ")}
-                      </span>
-                    </span>
-                    <span className="flex items-center gap-2 shrink-0">
-                      <span className="text-sm font-semibold text-teal-700">{formatCurrency(line.amount)}</span>
-                      <button
-                        onClick={() => handleUnlinkLine(line)}
-                        disabled={submitting}
-                        title="Unlink"
-                        className="p-1.5 rounded-lg bg-white border border-teal-300 text-teal-700 hover:bg-teal-100 disabled:opacity-50"
-                      >
-                        <Unlink className="w-3.5 h-3.5" />
-                      </button>
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
+        <div className="mt-2.5 h-2 rounded-full bg-gray-200 overflow-hidden">
+          <div className="h-full rounded-full bg-teal-500 transition-all" style={{ width: `${pct}%` }} />
+        </div>
+        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-gray-500">
+          <span>Settled <strong className="text-gray-800">{formatCurrency(settledTotal)}</strong></span>
+          {cashRecovered > 0 && (
+            <span>Cash recovered <strong className="text-gray-800">{formatCurrency(cashRecovered)}</strong></span>
           )}
+          {stagedTotal > 0 && (
+            <span>Staging <strong className="text-indigo-700">{formatCurrency(stagedTotal)}</strong></span>
+          )}
+          <span>Remaining <strong className={remaining < -0.005 ? "text-rose-600" : "text-emerald-700"}>{formatCurrency(remaining)}</strong></span>
+        </div>
+      </div>
 
-          {stagedLines.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Staged (not saved yet)</p>
-              {stagedLines.map((line) => (
-                <div
-                  key={line.payableId}
-                  className="flex items-center justify-between gap-3 p-3 rounded-lg border border-indigo-200 bg-indigo-50"
-                >
-                  <span className="min-w-0">
-                    <span className="block text-sm font-medium text-gray-800 truncate">{line.label}</span>
-                    <span className="block text-xs text-gray-500 truncate">
-                      {(line.purpose || "").replace(/_/g, " ")} · {formatCurrency(line.pending)} outstanding
-                    </span>
-                  </span>
-                  <span className="flex items-center gap-2 shrink-0">
+      {/* existing lines */}
+      {existingLines.length > 0 && (
+        <section className="space-y-2">
+          <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">Currently settled against</p>
+          {existingLines.map((line, i) => {
+            const meta = metaById[String(line.payableId)];
+            const id = String(line.payableId);
+            return (
+              <div key={line._id || `legacy-${i}`} className="flex items-center justify-between gap-3 rounded-lg border border-teal-200 bg-teal-50/70 p-3">
+                <div className="min-w-0">
+                  <p className={`text-sm font-medium truncate ${meta?.missing ? "text-rose-600" : "text-gray-800"}`}>
+                    {meta ? meta.label : "Resolving…"}
+                  </p>
+                  <p className="text-xs text-gray-500 truncate">{subtitle(meta) || (meta?.missing ? "linked payable was deleted" : " ")}</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-sm font-semibold text-teal-700">{formatCurrency(line.amount)}</span>
+                  <button
+                    onClick={() => unlink(line)}
+                    disabled={busyLine === id}
+                    title="Unlink this settlement"
+                    className="grid h-8 w-8 place-items-center rounded-lg border border-teal-300 bg-white text-teal-700 hover:bg-teal-100 disabled:opacity-50"
+                  >
+                    {busyLine === id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Unlink className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </section>
+      )}
+
+      {/* staged lines */}
+      {stagedList.length > 0 && (
+        <section className="space-y-2">
+          <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">To settle now</p>
+          {stagedList.map((line) => {
+            const err = lineError(line);
+            return (
+              <div key={line.payableId} className="rounded-lg border border-indigo-200 bg-indigo-50/60 p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-800 truncate">{line.label}</p>
+                    <p className="text-xs text-gray-500 truncate">
+                      {[subtitle(line), `${formatCurrency(line.pending)} outstanding`].filter(Boolean).join(" · ")}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
                     <div className="relative">
                       <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">₹</span>
                       <input
                         type="number"
                         min="0"
                         step="0.01"
-                        max={line.pending}
                         value={line.amount}
-                        onChange={(e) => updateStagedAmount(line.payableId, e.target.value)}
-                        className="w-24 pl-5 pr-2 py-1.5 border border-gray-200 rounded-lg text-sm"
+                        onChange={(e) => setLineAmount(line.payableId, e.target.value)}
+                        className={`w-28 rounded-lg border py-1.5 pl-5 pr-2 text-sm ${err ? "border-rose-300 bg-rose-50" : "border-gray-200"}`}
                       />
                     </div>
                     <button
-                      onClick={() => removeStagedLine(line.payableId)}
+                      onClick={() => removeLine(line.payableId)}
                       title="Remove"
-                      className="p-1.5 rounded-lg bg-white border border-gray-200 text-gray-500 hover:bg-gray-100"
+                      className="grid h-8 w-8 place-items-center rounded-lg border border-gray-200 bg-white text-gray-500 hover:bg-gray-100"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
-                  </span>
+                  </div>
                 </div>
-              ))}
-            </div>
+                {err && <p className="mt-1.5 text-[11px] font-medium text-rose-600">{err}</p>}
+              </div>
+            );
+          })}
+          {overAdvance && (
+            <p className="text-[11px] font-medium text-rose-600 flex items-center gap-1">
+              <AlertTriangle className="w-3.5 h-3.5" /> These lines exceed what&apos;s left of the advance.
+            </p>
           )}
+        </section>
+      )}
 
-          <div className="rounded-lg bg-gray-50 border border-gray-200 p-3 text-xs text-gray-600 flex flex-wrap gap-x-4 gap-y-1">
-            <span>
-              Advance <strong>{formatCurrency(advanceCap)}</strong>
-            </span>
-            <span>
-              Settled <strong>{formatCurrency(existingTotal)}</strong>
-            </span>
-            {stagedLines.length > 0 && (
-              <span>
-                Staging <strong>{formatCurrency(stagedTotal)}</strong>
-              </span>
-            )}
-            <span>
-              Remaining <strong>{formatCurrency(remainingCap)}</strong>
-            </span>
+      {/* add payables */}
+      <section className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">
+            Add a payable {scopeToParty && canScopeToParty ? `for ${partyLabel}` : ""}
+          </p>
+          {canScopeToParty && (
+            <button
+              onClick={() => setScopeToParty((v) => !v)}
+              className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800"
+            >
+              {scopeToParty ? "Show all parties" : `Only ${partyLabel}`}
+            </button>
+          )}
+        </div>
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by party or purpose…"
+            className="w-full rounded-lg border border-gray-200 py-2 pl-9 pr-3 text-sm"
+            disabled={remaining <= 0.005}
+          />
+        </div>
+
+        {remaining <= 0.005 ? (
+          <p className="rounded-lg bg-gray-50 border border-gray-200 p-3 text-sm text-gray-400">
+            The full advance is settled or staged — unlink a line to free some up.
+          </p>
+        ) : optionsLoading ? (
+          <div className="space-y-2">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="h-14 rounded-lg bg-gray-100 animate-pulse" />
+            ))}
           </div>
+        ) : addable.length === 0 ? (
+          <p className="rounded-lg bg-gray-50 border border-gray-200 p-3 text-sm text-gray-400">
+            {options.length === 0
+              ? scopeToParty
+                ? `No open payables for ${partyLabel}.`
+                : "No open payables."
+              : search
+                ? `No open payables match "${search}".`
+                : "Every open payable is already staged or settled."}
+          </p>
+        ) : (
+          <div className="max-h-56 space-y-2 overflow-y-auto">
+            {addable.map((opt) => (
+              <button
+                key={opt._id}
+                onClick={() => addLine(opt)}
+                className="flex w-full items-center justify-between gap-3 rounded-lg border border-gray-200 p-3 text-left hover:border-indigo-300 hover:bg-indigo-50/40"
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-800 truncate">
+                    {opt.payee?.label || "—"}
+                    {opt.payeeRole ? <span className="text-gray-400 font-normal"> · {opt.payeeRole}</span> : null}
+                  </p>
+                  <p className="text-xs text-gray-500 truncate">
+                    {[subtitle(opt), opt.expenseSubType || opt.expenseCategory].filter(Boolean).join(" · ") ||
+                      (opt.purpose || "").replace(/_/g, " ")}
+                  </p>
+                </div>
+                <span className="flex items-center gap-2 shrink-0">
+                  <span className="text-sm font-semibold text-amber-700">{formatCurrency(opt.pending)}</span>
+                  <span className="grid h-7 w-7 place-items-center rounded-lg bg-indigo-100 text-indigo-700">
+                    <Plus className="w-3.5 h-3.5" />
+                  </span>
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
+    </Shell>
+  );
+}
 
-          <div className="space-y-2 pt-1">
-            <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Add a payable</p>
+/* ==================================================================== */
+/* Borrowing  →  one receivable (single-settle, unchanged logic)         */
+/* ==================================================================== */
+
+function BorrowingSettle({ row, onClose, onSuccess, toast }) {
+  const endpoint = `/api/borrowings/${row._id}`;
+  const [options, setOptions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [selectedId, setSelectedId] = useState(row.settlesReceivableId ? String(row.settlesReceivableId) : "");
+  const [submitting, setSubmitting] = useState(false);
+  const alreadySettling = !!row.settlesReceivableId;
+
+  useEffect(() => {
+    const ctrl = new AbortController();
+    setLoading(true);
+    (async () => {
+      try {
+        const all = [];
+        for (let page = 1; page <= 25; page += 1) {
+          const res = await fetch(`/api/receivables/list?outstanding=true&limit=200&page=${page}`, { signal: ctrl.signal });
+          const data = await res.json();
+          const batch = data.receivables || [];
+          all.push(...batch);
+          const total = data.total || all.length;
+          if (batch.length === 0 || all.length >= total) break;
+        }
+        setOptions(uniqById(all).filter((o) => (o.pending || 0) > 0 && !o.isCancelled));
+      } catch (e) {
+        if (e.name !== "AbortError") setOptions([]);
+      } finally {
+        setLoading(false);
+      }
+    })();
+    return () => ctrl.abort();
+  }, []);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return options;
+    return options.filter((o) =>
+      [o.payer?.label, o.purpose, o.revenueSubType].filter(Boolean).some((v) => String(v).toLowerCase().includes(q)),
+    );
+  }, [options, search]);
+
+  const act = async (body, okMsg) => {
+    setSubmitting(true);
+    try {
+      const res = await fetch(endpoint, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(okMsg);
+        onSuccess();
+      } else {
+        toast.error(data.error || "Failed");
+      }
+    } catch {
+      toast.error("Failed");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const footer = alreadySettling ? null : (
+    <Footer onClose={onClose}>
+      <button
+        onClick={() => act({ action: "settle", settlesReceivableId: selectedId }, "Settlement linked")}
+        disabled={submitting || !selectedId}
+        className="flex-1 rounded-xl bg-indigo-600 px-4 py-2.5 font-semibold text-white hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2"
+      >
+        {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Link settlement"}
+      </button>
+    </Footer>
+  );
+
+  return (
+    <Shell onClose={onClose} title="Settle borrowing against a receivable" footer={footer}>
+      <p className="text-sm text-gray-600">
+        Links this {formatCurrency(row.amount)} borrowing — <strong>{row.party?.label}</strong> — against an
+        open receivable. Nets live against what you&apos;re owed; never changes the receivable&apos;s amount.
+      </p>
+
+      {alreadySettling ? (
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+          <span>Already settling a receivable — unlink first to pick a different one.</span>
+          <button
+            onClick={() => act({ action: "unsettle" }, "Settlement unlinked")}
+            disabled={submitting}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-100 disabled:opacity-50 shrink-0"
+          >
+            <Unlink className="w-3.5 h-3.5" /> Unlink
+          </button>
+        </div>
+      ) : (
+        <>
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search payables by party, purpose…"
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
-              disabled={remainingCap <= 0}
+              placeholder="Search receivables by party or purpose…"
+              className="w-full rounded-lg border border-gray-200 py-2 pl-9 pr-3 text-sm"
             />
-
-            {remainingCap <= 0 ? (
-              <p className="text-sm text-gray-400">The full advance is settled or staged.</p>
-            ) : loading ? (
-              <p className="text-sm text-gray-400">Loading open payables…</p>
-            ) : addableOptions.length === 0 ? (
-              <p className="text-sm text-gray-400">
-                {options.length === 0 ? "No open payables." : `No more open payables match "${search}".`}
-              </p>
-            ) : (
-              <div className="space-y-2 max-h-52 overflow-y-auto">
-                {addableOptions.map((opt) => (
-                  <div
-                    key={opt._id}
-                    className="flex items-center justify-between gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50"
-                  >
+          </div>
+          {loading ? (
+            <div className="space-y-2">{[0, 1, 2].map((i) => <div key={i} className="h-14 rounded-lg bg-gray-100 animate-pulse" />)}</div>
+          ) : filtered.length === 0 ? (
+            <p className="text-sm text-gray-400">{options.length === 0 ? "No open receivables." : `No matches for "${search}".`}</p>
+          ) : (
+            <div className="max-h-72 space-y-2 overflow-y-auto">
+              {filtered.map((opt) => (
+                <label
+                  key={opt._id}
+                  className={`flex cursor-pointer items-center justify-between gap-3 rounded-lg border p-3 ${
+                    selectedId === String(opt._id) ? "border-indigo-400 bg-indigo-50" : "border-gray-200 hover:bg-gray-50"
+                  }`}
+                >
+                  <span className="flex min-w-0 items-center gap-2">
+                    <input
+                      type="radio"
+                      name="settleTarget"
+                      checked={selectedId === String(opt._id)}
+                      onChange={() => setSelectedId(String(opt._id))}
+                    />
                     <span className="min-w-0">
-                      <span className="block text-sm font-medium text-gray-800 truncate">{partyLabel(opt)}</span>
-                      <span className="block text-xs text-gray-500 truncate">
+                      <span className="block truncate text-sm font-medium text-gray-800">{opt.payer?.label || "—"}</span>
+                      <span className="block truncate text-xs text-gray-500">
                         {(opt.purpose || "").replace(/_/g, " ")}
-                        {(opt.expenseSubType || opt.revenueSubType) ? ` — ${opt.expenseSubType || opt.revenueSubType}` : ""}
+                        {opt.revenueSubType ? ` — ${opt.revenueSubType}` : ""}
                       </span>
                     </span>
-                    <span className="flex items-center gap-2 shrink-0">
-                      <span className="text-sm font-semibold text-amber-700">{formatCurrency(opt.pending)} outstanding</span>
-                      <button
-                        onClick={() => addStagedLine(opt)}
-                        title="Add"
-                        className="p-1.5 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                      </button>
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+                  </span>
+                  <span className="shrink-0 text-sm font-semibold text-amber-700">{formatCurrency(opt.pending)}</span>
+                </label>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </Shell>
+  );
+}
 
-        <div className="flex gap-3 p-5 border-t border-gray-100 shrink-0">
-          <button
-            onClick={onClose}
-            className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl font-semibold text-gray-700 hover:bg-gray-50"
-          >
-            Close
-          </button>
-          <button
-            onClick={handleSettleAll}
-            disabled={submitting || !stagedLinesValid}
-            className="flex-1 px-4 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {submitting ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : stagedLines.length > 1 ? (
-              `Settle ${stagedLines.length} Lines`
-            ) : (
-              "Link Settlement"
-            )}
+/* ==================================================================== */
+/* Shared shell                                                          */
+/* ==================================================================== */
+
+function Shell({ title, wide = false, onClose, footer = null, children }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+      <div className={`flex max-h-[90vh] w-full flex-col rounded-2xl bg-white shadow-2xl ${wide ? "max-w-lg" : "max-w-md"}`}>
+        <div className="flex shrink-0 items-center justify-between border-b border-gray-100 p-5">
+          <h3 className="flex items-center gap-2 text-lg font-bold text-gray-900">
+            <Link2 className="w-5 h-5 text-indigo-600" /> {title}
+          </h3>
+          <button onClick={onClose} className="rounded-lg p-1.5 hover:bg-gray-100">
+            <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
+        <div className="flex-1 space-y-4 overflow-y-auto p-5">{children}</div>
+        {footer}
       </div>
+    </div>
+  );
+}
+
+function Footer({ onClose, children }) {
+  return (
+    <div className="flex shrink-0 gap-3 border-t border-gray-100 p-5">
+      <button
+        onClick={onClose}
+        className="flex-1 rounded-xl border border-gray-200 px-4 py-2.5 font-semibold text-gray-700 hover:bg-gray-50"
+      >
+        Close
+      </button>
+      {children}
     </div>
   );
 }

@@ -5,10 +5,11 @@ import Link from "next/link";
 import {
   Filter, X, Plus, ChevronRight, ChevronLeft, ChevronUp, ChevronDown, ChevronsUpDown,
   Search, TrendingUp, Edit, Users, IndianRupee, Activity, Trash2, Calendar, Stethoscope, Eye,
-  Download, Loader2,
+  Download, Loader2, GitMerge,
 } from "lucide-react";
 import { exportWorkbook, filterProvenanceRows } from "@/lib/exportToExcel";
 import { fetchInterleavedRows } from "@/lib/finance/headedExport";
+import { useToast } from "@/components/Toast";
 
 // Common designations — always shown as tabs. Any other free-form role that has employees
 // is appended dynamically (see `categoryList` below) so custom posts aren't hidden.
@@ -97,6 +98,7 @@ export default function StaffTable({ config = {} }) {
     financeColumns  = false,
   } = config;
 
+  const toast = useToast();
   const [data,     setData]     = useState({});
   const [filters,  setFilters]  = useState(EMPTY_FILTERS);
   const [drawerOpen, setDrawer] = useState(false);
@@ -236,18 +238,38 @@ export default function StaffTable({ config = {} }) {
   const setFilter    = (k, v) => setFilters((f) => ({ ...f, [k]: v }));
 
   const handleDelete = async (id, name) => {
-    if (!confirm(`Delete employee "${name}"? This cannot be undone.`)) return;
+    if (!confirm(`Delete "${name}"?\n\nOnly possible when nothing references them. This cannot be undone.`)) return;
+
     setDeleting(id);
     try {
-      const res  = await fetch(`/api/employees/delete/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/employees/delete/${id}`, { method: "DELETE" });
       const json = await res.json();
+
+      if (res.status === 409 && json.blocked) {
+        if (
+          confirm(
+            `${json.message}\n\nOpen the merge tool for this employee now?`,
+          )
+        ) {
+          window.location.href = `/admin/employees/merge?duplicate=${id}`;
+        }
+        return;
+      }
+
       if (json.success) {
         setData((prev) => {
           const next = {};
-          Object.keys(prev).forEach((cat) => { next[cat] = prev[cat].filter((e) => e._id !== id); });
+          Object.keys(prev).forEach((cat) => {
+            next[cat] = prev[cat].filter((e) => e._id !== id);
+          });
           return next;
         });
+        toast.success(`${name} deleted`);
+      } else {
+        toast.error(json.message || "Failed to delete employee");
       }
+    } catch {
+      toast.error("Failed to delete employee");
     } finally {
       setDeleting(null);
     }
@@ -690,6 +712,15 @@ export default function StaffTable({ config = {} }) {
                               >
                                 <Edit className="h-4 w-4" />
                               </Link>
+                              {canDelete && (
+                                <Link
+                                  href={`/admin/employees/merge?duplicate=${item._id}`}
+                                  className="grid h-8 w-8 place-items-center rounded-lg text-amber-600 transition hover:bg-amber-50"
+                                  title="Merge this record into another (duplicate)"
+                                >
+                                  <GitMerge className="h-4 w-4" />
+                                </Link>
+                              )}
                               {canDelete && (
                                 <button
                                   onClick={() => handleDelete(item._id, item.name)}

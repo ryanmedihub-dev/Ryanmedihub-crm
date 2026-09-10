@@ -57,6 +57,21 @@ function NavItem({ label, href, icon: Icon, active, onClick }) {
   );
 }
 
+function NavSubItem({ label, href, active, onClick }) {
+  return (
+    <Link href={href} onClick={onClick} className="block">
+      <span
+        className={`flex items-center gap-2 pl-10 pr-3 py-1.5 rounded-lg text-[13px] font-medium transition-colors ${
+          active ? "text-indigo-700 bg-indigo-50/70" : "text-gray-500 hover:text-indigo-600 hover:bg-gray-50"
+        }`}
+      >
+        <span className={`w-1 h-1 rounded-full ${active ? "bg-indigo-500" : "bg-gray-300"}`} />
+        {label}
+      </span>
+    </Link>
+  );
+}
+
 function NavSection({ title, children }) {
   return (
     <div className="mb-1">
@@ -178,6 +193,14 @@ export default function AdminSidebar() {
               active={isActive("/admin/assets")}
               onClick={close}
             />
+            {isActive("/admin/assets") && (
+              <div className="space-y-0.5 mb-1">
+                <NavSubItem label="Cash Book" href="/admin/assets/cash-book" active={isActive("/admin/assets/cash-book")} onClick={close} />
+                <NavSubItem label="Receivables" href="/admin/assets/receivables" active={isActive("/admin/assets/receivables")} onClick={close} />
+                <NavSubItem label="Advances" href="/admin/assets/advances" active={isActive("/admin/assets/advances")} onClick={close} />
+                <NavSubItem label="Loan Accounts" href="/admin/assets/loan-accounts" active={isActive("/admin/assets/loan-accounts")} onClick={close} />
+              </div>
+            )}
             <NavItem
               label="Liabilities"
               href="/admin/liabilities"
@@ -185,6 +208,15 @@ export default function AdminSidebar() {
               active={isActive("/admin/liabilities")}
               onClick={close}
             />
+            {isActive("/admin/liabilities") && (
+              <div className="space-y-0.5 mb-1">
+                <NavSubItem label="Rent & Utilities" href="/admin/liabilities/payables/rent" active={isActive("/admin/liabilities/payables/rent")} onClick={close} />
+                <NavSubItem label="Employee Payables" href="/admin/liabilities/payables/employees" active={isActive("/admin/liabilities/payables/employees")} onClick={close} />
+                <NavSubItem label="Other Payables" href="/admin/liabilities/payables/other" active={isActive("/admin/liabilities/payables/other")} onClick={close} />
+                <NavSubItem label="Suspense" href="/admin/liabilities/suspense" active={isActive("/admin/liabilities/suspense")} onClick={close} />
+                <NavSubItem label="Borrowings" href="/admin/liabilities/borrowings" active={isActive("/admin/liabilities/borrowings")} onClick={close} />
+              </div>
+            )}
             <NavItem
               label="Financing"
               href="/admin/financing"

@@ -86,7 +86,7 @@ export default function RecordBorrowingModal({ open, onClose, onSuccess, mode, p
         ? `${o.name} — ${o.DealsIn}`
         : o.name
       : partyKind === "EMPLOYEE"
-        ? `${o.name} — ${o.role}`
+        ? `${o.name}${o.employeeId ? ` (${o.employeeId})` : ""} — ${o.role}`
         : `${o.personal?.name || "N/A"} — ${o.personal?.phone || "N/A"}`;
 
   const title = isRepayment ? "Record Repayment" : isTranche ? "Add Tranche" : "Record Borrowing";

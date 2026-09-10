@@ -7,6 +7,7 @@ import DirectExpenseSection from "@/components/DirectExpenseSection";
 import { useSession } from "next-auth/react";
 import { getExpenseTypes } from "@/constants/expenseCategories";
 import { fetchWithLinkedConfirm } from "@/lib/fetchWithLinkedConfirm";
+import { payableGroupForPurpose } from "@/constants/payableGroups";
 import {
   ArrowLeft,
   Scissors,
@@ -840,8 +841,8 @@ export default function EditTransactionPage() {
                       onClick={() =>
                         router.push(
                           linkedInfo.type === "payable"
-                            ? `/admin/liabilities?section=payables&doc=${linkedInfo.data._id}`
-                            : `/admin/assets?section=receivables&doc=${linkedInfo.data._id}`,
+                            ? `/admin/liabilities/payables/${payableGroupForPurpose(linkedInfo.data.purpose)}?doc=${linkedInfo.data._id}`
+                            : `/admin/assets/receivables?doc=${linkedInfo.data._id}`,
                         )
                       }
                       className="mt-1 text-indigo-600 hover:underline text-xs font-medium"

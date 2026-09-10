@@ -10,7 +10,7 @@ import { NextResponse } from "next/server";
 
 const handler = async (req) => {
   try {
-    const data = await Employee.find({}).sort({ name: 1 }).collation(NAME_COLLATION);
+    const data = await Employee.find({ mergedInto: null }).sort({ name: 1 }).collation(NAME_COLLATION);
 
     // Seed every canonical bucket so consumers can safely read e.g. `employees.Counsellor`
     // even when no employee currently holds that role.

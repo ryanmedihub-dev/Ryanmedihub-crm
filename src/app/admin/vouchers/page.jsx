@@ -342,9 +342,9 @@ function VouchersPageInner() {
                   options={employeeOptions}
                   value={partyId}
                   onChange={(v, obj) => { setPartyId(v); setPartyLabel(obj?.name || ""); }}
-                  placeholder="Search employees…"
+                  placeholder="Search employees by name, phone or ID…"
                   valueKey="_id"
-                  formatOption={(e) => e.name}
+                  formatOption={(e) => `${e.name}${e.employeeId ? ` (${e.employeeId})` : ""}${e.role ? ` — ${e.role}` : ""}`}
                   onSearch={searchEmployees}
                   searching={searching}
                 />

@@ -89,7 +89,7 @@ export default function AddIncentiveModal({ patientId, onClose, onSuccess }) {
               }}
               placeholder="Search and select an employee..."
               valueKey="_id"
-              formatOption={(e) => `${e.name} — ${e.role}${e.phone ? " · " + e.phone : ""}`}
+              formatOption={(e) => `${e.name}${e.employeeId ? ` (${e.employeeId})` : ""} — ${e.role}${e.phone ? " · " + e.phone : ""}`}
               onSearch={searchEmployees}
               searching={employeeSearching}
             />

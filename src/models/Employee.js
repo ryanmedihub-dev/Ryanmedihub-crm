@@ -43,7 +43,14 @@ const employeeSchema = new mongoose.Schema({
     salaryType: { type: String, enum: ["Monthly", "Daily", "Hourly"], default: "Monthly" },
     effectiveFrom: { type: Date, default: Date.now }
   },
-  incentiveRate: { type: Number, default: 0, min: 0 }
+  incentiveRate: { type: Number, default: 0, min: 0 },
+
+  // Set when this record was merged into another as a duplicate. It is soft-retired, not
+  // deleted: name gets a "[MERGED]" prefix, isactive: false, and every list/picker filters
+  // `mergedInto: null` so it can never be chosen again.
+  mergedInto: { type: mongoose.Schema.Types.ObjectId, ref: "Employee", default: null, index: true },
+  mergedAt:   { type: Date, default: null },
+  mergedBy:   { name: String, email: String },
 }, {
   timestamps: true
 });

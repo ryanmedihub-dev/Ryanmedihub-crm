@@ -4,6 +4,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
 import mongoose from "mongoose";
 import Payable from "@/models/Payable";
+import Employee from "@/models/Employee";
 import Transactions from "@/models/Transactions";
 import Advance from "@/models/Advance";
 import DeleteLog from "@/models/DeleteLog";
@@ -35,6 +36,15 @@ export async function GET(req, { params }) {
     ]);
     if (!payable) {
       return NextResponse.json({ error: "Payable not found" }, { status: 404 });
+    }
+
+    // Human staff code for an EMPLOYEE payee, so callers can show "Ashu · RYN-014".
+    if (payable.payee?.kind === "EMPLOYEE" && payable.payee?.refId) {
+      const emp = await Employee.findById(payable.payee.refId).select("employeeId role").lean();
+      if (emp) {
+        payable.payeeCode = emp.employeeId || "";
+        payable.payeeRole = emp.role || "";
+      }
     }
 
     return NextResponse.json({ payable });

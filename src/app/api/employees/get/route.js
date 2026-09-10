@@ -21,14 +21,19 @@ export async function GET(request) {
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "30")));
 
-    const query = {};
+    const query = { mergedInto: null }; // hide records merged away as duplicates
     // Role is free-form text stored in mixed case — match it case-insensitively.
     if (role) query.role = new RegExp(`^${role.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i");
     if (isactive === "true") query.isactive = true;
     if (isactive === "false") query.isactive = false;
     if (search) {
-      const searchRegex = { $regex: search, $options: "i" };
-      query.$or = [{ name: searchRegex }, { phone: searchRegex }, { email: searchRegex }];
+      const searchRegex = { $regex: search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" };
+      query.$or = [
+        { name: searchRegex },
+        { phone: searchRegex },
+        { email: searchRegex },
+        { employeeId: searchRegex },
+      ];
     }
 
     const [employees, total] = await Promise.all([

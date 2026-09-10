@@ -29,7 +29,7 @@ const handler = async (req) => {
       ];
     }
 
-    const data = await Employee.find({})
+    const data = await Employee.find({ mergedInto: null })
       .populate({
         path: "patient",
         match: Object.keys(patientMatch).length ? patientMatch : undefined,

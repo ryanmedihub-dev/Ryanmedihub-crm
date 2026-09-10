@@ -45,6 +45,7 @@ import { useToast } from "@/components/Toast";
 import BillGenerator from "@/components/BillGenerator";
 import { ALL_BRANCHES } from "@/lib/branches";
 import { formatCurrency, StatusBadge } from "@/lib/financeUI";
+import { payableGroupForPurpose } from "@/constants/payableGroups";
 import { METHOD_LABELS } from "@/constants/paymentMethods";
 import { UNSETTLED_METHODS, FURTHER_MODES } from "@/constants/bankRouting";
 import {
@@ -1454,8 +1455,8 @@ function TransactionDetails({
                   onClick={() =>
                     router.push(
                       linkedInfo.type === "payable"
-                        ? `/admin/liabilities?section=payables&doc=${linkedInfo.data._id}`
-                        : `/admin/assets?section=receivables&doc=${linkedInfo.data._id}`
+                        ? `/admin/liabilities/payables/${payableGroupForPurpose(linkedInfo.data.purpose)}?doc=${linkedInfo.data._id}`
+                        : `/admin/assets/receivables?doc=${linkedInfo.data._id}`
                     )
                   }
                   className="mt-2 text-xs font-semibold text-indigo-600 hover:text-indigo-800"

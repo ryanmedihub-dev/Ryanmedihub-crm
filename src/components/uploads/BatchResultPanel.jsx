@@ -30,7 +30,7 @@ export default function BatchResultPanel({ result, reverting, onRevert, onStartO
 
           <div className="ml-auto flex items-center gap-2">
             <Link
-              href="/admin/liabilities?section=payables"
+              href="/admin/liabilities/payables/rent"
               className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
             >
               <ExternalLink className="h-4 w-4" /> View in Liabilities

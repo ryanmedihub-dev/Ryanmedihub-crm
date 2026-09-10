@@ -391,7 +391,7 @@ const MONGODB_URI = 'mongodb://sachindashzer:user8520@ac-pu86ixj-shard-00-00.hwj
 if (!MONGODB_URI) {
   console.error("MONGODB_URI is not set. Run with: node --env-file=.env.local scripts/import-salary-data.mjs");
   process.exit(1);
-}
+} 
 
 // ============================== HELPERS ====================================
 

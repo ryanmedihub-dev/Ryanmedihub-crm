@@ -110,6 +110,9 @@ payableSchema.index({ "payee.kind": 1, "payee.refId": 1 });
 payableSchema.index({ purpose: 1, "period.year": 1, "period.month": 1 });
 payableSchema.index({ branch: 1, isCancelled: 1 });
 payableSchema.index({ dueDate: 1 });
+// Serves the /admin/liabilities/payables/{rent,employees,other} split — the first $match on
+// every grouped/list pipeline is `{ isCancelled, purpose: {$in}, branch }` ordered by dueDate.
+payableSchema.index({ isCancelled: 1, purpose: 1, branch: 1, dueDate: -1 });
 
 // Monthly payables are NOT uniqueness-constrained at the DB level — the same payee can hold
 // as many payables for a purpose/month as the business actually has (different heads,

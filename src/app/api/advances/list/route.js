@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import mongoose from "mongoose";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
 import Advance from "@/models/Advance";
 import { resolveBranchFilter } from "@/lib/branches";
+import { settledTotalExpr } from "@/lib/advanceSettlements";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 
@@ -21,6 +23,8 @@ export async function GET(request) {
     const account = searchParams.get("account") || "";
     const direction = searchParams.get("direction") || "";
     const receivableId = searchParams.get("receivableId") || "";
+    const partyRefId = searchParams.get("partyRefId") || "";
+    const status = searchParams.get("status") || ""; // "open" | "settled" | ""(all)
     const branchFilterObj = resolveBranchFilter(session, searchParams.get("branch") || "");
     const branch = typeof branchFilterObj.branch === "string" ? branchFilterObj.branch : "";
     const from = searchParams.get("from") || "";
@@ -33,9 +37,12 @@ export async function GET(request) {
     const match = {};
     if (!includeCancelled) match.isCancelled = { $ne: true };
     if (party) match["party.label"] = { $regex: party, $options: "i" };
+    if (partyRefId && mongoose.Types.ObjectId.isValid(partyRefId)) {
+      match["party.refId"] = new mongoose.Types.ObjectId(partyRefId);
+    }
     if (account) match.account = account;
     if (direction && ["IN", "OUT"].includes(direction)) match.direction = direction;
-    if (receivableId) match.receivableId = receivableId;
+    if (receivableId) match.receivableId = new mongoose.Types.ObjectId(receivableId);
     if (branch) match.branch = branch;
     if (from || to) {
       match.date = {};
@@ -43,15 +50,75 @@ export async function GET(request) {
       if (to) match.date.$lte = new Date(`${to}T23:59:59.999Z`);
     }
 
-    const [rows, total] = await Promise.all([
-      Advance.find(match)
-        .sort({ date: -1, createdAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .populate("receivableId", "revenueSubType totalAmount")
-        .lean(),
-      Advance.countDocuments(match),
+    // settled = advance applied against a payable (both legacy pair + settlements[] array).
+    // cashRecovered = IN advances against this OUT advance's own receivable.
+    // remaining = amount − settled − cashRecovered  (floored at 0).
+    const computeStages = [
+      {
+        $lookup: {
+          from: Advance.collection.name,
+          let: { rid: "$receivableId" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$receivableId", "$$rid"] },
+                    { $eq: ["$direction", "IN"] },
+                    { $ne: ["$isCancelled", true] },
+                  ],
+                },
+              },
+            },
+            { $group: { _id: null, cash: { $sum: "$amount" } } },
+          ],
+          as: "_recovered",
+        },
+      },
+      {
+        $addFields: {
+          settledTotal: { $round: [settledTotalExpr, 2] },
+          cashRecovered: { $round: [{ $ifNull: [{ $arrayElemAt: ["$_recovered.cash", 0] }, 0] }, 2] },
+        },
+      },
+      {
+        $addFields: {
+          remaining: {
+            $round: [
+              { $max: [{ $subtract: ["$amount", { $add: ["$settledTotal", "$cashRecovered"] }] }, 0] },
+              2,
+            ],
+          },
+        },
+      },
+      { $project: { _recovered: 0 } },
+    ];
+
+    const statusMatch =
+      status === "open"
+        ? [{ $match: { remaining: { $gt: 0.005 } } }]
+        : status === "settled"
+          ? [{ $match: { remaining: { $lte: 0.005 } } }]
+          : [];
+
+    const [rows, totalAgg] = await Promise.all([
+      Advance.aggregate([
+        { $match: match },
+        ...computeStages,
+        ...statusMatch,
+        { $sort: { date: -1, createdAt: -1 } },
+        { $skip: (page - 1) * limit },
+        { $limit: limit },
+      ]),
+      Advance.aggregate([
+        { $match: match },
+        ...computeStages,
+        ...statusMatch,
+        { $count: "n" },
+      ]),
     ]);
+
+    const total = totalAgg?.[0]?.n || 0;
 
     return NextResponse.json({
       success: true,

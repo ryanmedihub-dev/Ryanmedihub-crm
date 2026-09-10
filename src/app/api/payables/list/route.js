@@ -3,7 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import mongoose from "mongoose";
 import connectDB from "@/lib/db";
-import Payable from "@/models/Payable";
+import Payable, { PAYABLE_PURPOSE_VALUES } from "@/models/Payable";
+import Employee from "@/models/Employee";
 import Transactions from "@/models/Transactions";
 import { buildPayableAggregationStages } from "@/lib/payableAggregation";
 import { AGEING_SORT } from "@/lib/ageing";
@@ -26,7 +27,15 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
     const limit = Math.min(200, Math.max(1, parseInt(searchParams.get("limit") || "20")));
-    const purpose = searchParams.get("purpose") || "";
+    // `purpose` accepts one value or a comma-separated list; an unknown value is a 400.
+    const purposeList = (searchParams.get("purpose") || "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const badPurpose = purposeList.find((p) => !PAYABLE_PURPOSE_VALUES.includes(p));
+    if (badPurpose) {
+      return NextResponse.json({ error: `Unknown payable purpose "${badPurpose}"` }, { status: 400 });
+    }
     const payeeKind = searchParams.get("payeeKind") || "";
     const payeeRefId = searchParams.get("payeeRefId") || "";
     const payeeLabel = searchParams.get("payeeLabel") || "";
@@ -43,7 +52,8 @@ export async function GET(request) {
 
     const match = {};
     if (!includeCancelled) match.isCancelled = false;
-    if (purpose) match.purpose = purpose;
+    if (purposeList.length === 1) match.purpose = purposeList[0];
+    else if (purposeList.length > 1) match.purpose = { $in: purposeList };
     if (payeeKind) match["payee.kind"] = payeeKind;
     if (payeeRefId) match["payee.refId"] = new mongoose.Types.ObjectId(payeeRefId);
     if (payeeLabel) match["payee.label"] = payeeLabel;
@@ -91,6 +101,29 @@ export async function GET(request) {
       ]),
       Payable.aggregate([...basePipeline, { $count: "total" }]),
     ]);
+
+    // Attach the human staff code + role for EMPLOYEE payees — one batched lookup for the page.
+    const empIds = [
+      ...new Set(
+        rows
+          .filter((r) => r.payee?.kind === "EMPLOYEE" && r.payee?.refId)
+          .map((r) => String(r.payee.refId)),
+      ),
+    ];
+    if (empIds.length) {
+      const emps = await Employee.find(
+        { _id: { $in: empIds.map((eid) => new mongoose.Types.ObjectId(eid)) } },
+        { employeeId: 1, role: 1 },
+      ).lean();
+      const byId = new Map(emps.map((e) => [String(e._id), e]));
+      rows.forEach((r) => {
+        if (r.payee?.kind === "EMPLOYEE") {
+          const e = byId.get(String(r.payee.refId));
+          r.payeeCode = e?.employeeId || "";
+          r.payeeRole = e?.role || "";
+        }
+      });
+    }
 
     return NextResponse.json({
       success: true,

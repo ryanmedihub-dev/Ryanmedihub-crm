@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import mongoose from "mongoose";
 import connectDB from "@/lib/db";
-import Payable from "@/models/Payable";
+import Payable, { PAYABLE_PURPOSE_VALUES, PAYABLE_KIND_VALUES } from "@/models/Payable";
 import Employee from "@/models/Employee";
 import Transactions from "@/models/Transactions";
 import { buildPayableGroupedStages, buildPayableAggregationStages } from "@/lib/payableAggregation";
@@ -41,6 +41,30 @@ export async function GET(request) {
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
     const limit = Math.min(200, Math.max(1, parseInt(searchParams.get("limit") || "50")));
 
+    // Optional purpose filter — a comma-separated list; reject unknown values loudly rather
+    // than silently ignoring one (which would make the page show everything and look fine).
+    const purposeList = (searchParams.get("purpose") || "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const badPurpose = purposeList.find((p) => !PAYABLE_PURPOSE_VALUES.includes(p));
+    if (badPurpose) {
+      return NextResponse.json(
+        { error: `Unknown payable purpose "${badPurpose}"` },
+        { status: 400 },
+      );
+    }
+    const purpose = purposeList.length ? purposeList : undefined;
+
+    const payeeKindParam = searchParams.get("payeeKind") || "";
+    if (payeeKindParam && !PAYABLE_KIND_VALUES.includes(payeeKindParam)) {
+      return NextResponse.json(
+        { error: `Unknown payee kind "${payeeKindParam}"` },
+        { status: 400 },
+      );
+    }
+    const payeeKind = payeeKindParam || undefined;
+
     if (level < 3) {
       const rows = await Payable.aggregate(
         buildPayableGroupedStages(Transactions.collection.name, {
@@ -51,6 +75,8 @@ export async function GET(request) {
           from,
           to,
           groupBy,
+          purpose,
+          payeeKind,
         }),
       );
       return NextResponse.json({ success: true, rows });
@@ -128,6 +154,13 @@ export async function GET(request) {
     match.isCancelled = status === "Cancelled" ? true : { $ne: true };
     if (branch) match.branch = branch;
     if (party) match["payee.label"] = { $regex: party, $options: "i" };
+    if (purpose) match.purpose = { $in: purpose };
+    if (payeeKind && groupBy !== "vendor") match["payee.kind"] = payeeKind;
+    // Period filter for the monthly payables (salary, rent, …) — narrows the document list only.
+    const periodMonth = parseInt(searchParams.get("periodMonth") || "", 10);
+    const periodYear = parseInt(searchParams.get("periodYear") || "", 10);
+    if (Number.isInteger(periodMonth)) match["period.month"] = periodMonth;
+    if (Number.isInteger(periodYear)) match["period.year"] = periodYear;
 
     const stages = [
       { $match: match },

@@ -32,7 +32,9 @@ const SEARCH_ENDPOINT = {
 const OPTIONS_KEY = { VENDOR: "vendors", EMPLOYEE: "employees", PATIENT: "patients" };
 
 const formatOptionFor = (kind, item) =>
-  kind === "PATIENT" ? item.personal?.name || "Unnamed patient" : item.name || "Unnamed";
+  kind === "PATIENT"
+    ? item.personal?.name || "Unnamed patient"
+    : `${item.name || "Unnamed"}${kind === "EMPLOYEE" && item.employeeId ? ` (${item.employeeId})` : ""}`;
 
 export default function ExternalPartyFields({ direction, value, onChange }) {
   const who = direction === "RECEIVED_BY" ? "Receiver" : "Sender";

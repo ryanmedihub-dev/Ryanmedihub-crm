@@ -140,10 +140,14 @@ export function buildPayableAggregationStages(
   ];
 }
 
-export function buildPayableGroupedStages(txCollectionName, { level, category, subType, branch, from, to, groupBy = "category", borrowingsCollectionName = "borrowings", advancesCollectionName = "advances" } = {}) {
+export function buildPayableGroupedStages(txCollectionName, { level, category, subType, branch, from, to, groupBy = "category", purpose, payeeKind, borrowingsCollectionName = "borrowings", advancesCollectionName = "advances" } = {}) {
   const isVendor = groupBy === "vendor";
+  // Every filter lands in this first $match so it runs before the $lookups — filtering after
+  // the joins would join every payable in the DB and then throw most of it away.
   const match = { isCancelled: { $ne: true } };
   if (isVendor) match["payee.kind"] = "VENDOR";
+  else if (payeeKind) match["payee.kind"] = payeeKind;
+  if (purpose) match.purpose = Array.isArray(purpose) ? { $in: purpose } : purpose;
   if (branch) match.branch = branch;
   if (!isVendor) {
     if (level !== 1 && category) match.expenseCategory = category;
