@@ -4,6 +4,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
 import Transactions from "@/models/Transactions";
 import Patient from "@/models/Patient";
+import DeleteLog from "@/models/DeleteLog";
 import { unsettledMethodsSync } from "@/lib/masterData";
 const PROCEDURES = ["PRP", "GFC", "Canacot", "Biotin"];
 
@@ -398,5 +399,70 @@ export async function PATCH(req) {
   } catch (error) {
     console.error("PRP/GFC PATCH error:", error);
     return NextResponse.json({ error: "Failed to mark as paid" }, { status: 500 });
+  }
+}
+
+// Deletes an UNPAID session — a Patient.afterSurgery.prp[] row with no money behind it yet.
+// A PAID row is a real Transactions document instead; the page deletes those through the
+// existing /api/transactions/service/delete route so it gets that route's backdate guard,
+// period-lock check, and patient-payment reversal instead of a second copy of that logic here.
+export async function DELETE(req) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    await connectDB();
+
+    const { patientId, sessionId } = await req.json();
+    if (!patientId || !sessionId) {
+      return NextResponse.json({ error: "patientId and sessionId are required" }, { status: 400 });
+    }
+
+    const patient = await Patient.findById(patientId);
+    if (!patient) {
+      return NextResponse.json({ error: "Patient not found" }, { status: 404 });
+    }
+
+    const entry = patient.afterSurgery?.prp?.id(sessionId);
+    if (!entry) {
+      return NextResponse.json({ error: "Session not found" }, { status: 404 });
+    }
+
+    await DeleteLog.create({
+      entityType: "PRPSession",
+      entityId: String(sessionId),
+      entityName: patient.personal?.name || "Walk-in",
+      entityDetails: {
+        patientId: String(patient._id),
+        procedure: entry.type || "PRP",
+        sessionNumber: entry.prpNumber,
+        date: entry.date,
+      },
+      deletedBy: {
+        name: session.user.name,
+        email: session.user.email,
+        branch: session.user.branch,
+      },
+      branch: patient.personal?.branch || session.user.branch,
+    });
+
+    patient.afterSurgery.prp.pull({ _id: sessionId });
+
+    patient.editors = patient.editors || [];
+    patient.editors.push({
+      name: session.user.name,
+      email: session.user.email,
+      branch: session.user.branch,
+      date: new Date(),
+    });
+
+    await patient.save();
+
+    return NextResponse.json({ success: true, message: "Session deleted" });
+  } catch (error) {
+    console.error("PRP/GFC DELETE error:", error);
+    return NextResponse.json({ error: "Failed to delete session" }, { status: 500 });
   }
 }

@@ -63,6 +63,19 @@ export async function PUT(request, { params }) {
       incentiveRate: data.incentiveRate !== undefined ? data.incentiveRate : undefined,
     };
 
+    // Optional identity fields (Owner Panel v2). Only touched when the caller
+    // sends them, so existing edit forms are unaffected. callbyUserId is owned
+    // by /api/owner/callby-links, not this route.
+    if (data.dateOfJoining !== undefined) {
+      updateData.dateOfJoining = data.dateOfJoining || null;
+    }
+    if (data.tlName !== undefined) {
+      updateData.tlName = String(data.tlName ?? "").trim();
+    }
+    if (data.managerName !== undefined) {
+      updateData.managerName = String(data.managerName ?? "").trim();
+    }
+
     const employee = await Employee.findByIdAndUpdate(
       id,
       updateData,

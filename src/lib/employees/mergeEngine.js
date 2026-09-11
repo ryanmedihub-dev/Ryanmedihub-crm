@@ -661,6 +661,48 @@ export async function findSuggestions() {
       }
     }
   }
+
+  // The exact-key pass above misses the everyday case of "Farheen" entered once, then
+  // "Farheen Ansari" entered again with a mistyped phone digit or two — neither the name nor
+  // the phone matches exactly, so it never lands in `byKey`. Employee headcount is small
+  // (low hundreds), so a second O(n²) pass comparing every pair directly is cheap and catches
+  // these near-misses without needing a real fuzzy-matching library.
+  const digits = (p) => String(p || "").replace(/\D/g, "");
+  const sortedDigits = (p) => digits(p).split("").sort().join("");
+  for (let i = 0; i < employees.length; i++) {
+    for (let j = i + 1; j < employees.length; j++) {
+      const a = employees[i];
+      const b = employees[j];
+      const pk = [String(a._id), String(b._id)].sort().join("|");
+      if (pairs.has(pk)) continue; // already caught by a stronger exact-match signal
+
+      const na = norm(a.name);
+      const nb = norm(b.name);
+      let matched = false;
+      if (na && nb && na !== nb) {
+        // One name is the other with extra words tacked on ("Farheen" / "Farheen Ansari") —
+        // word-boundary check so "Ash" doesn't falsely match "Ashutosh".
+        const [shorter, longer] = na.length <= nb.length ? [na, nb] : [nb, na];
+        if (shorter.length >= 3) {
+          const escaped = shorter.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          matched = new RegExp(`(^|\\s)${escaped}(\\s|$)`).test(longer);
+        }
+      }
+      if (!matched) {
+        // Same digits, different order/typo (e.g. 7056457004 vs 7065457004) — a transposed
+        // pair of digits is the single most common phone-entry mistake.
+        const da = digits(a.phone);
+        const db = digits(b.phone);
+        if (da && db && da !== db && da.length === db.length && da.length >= 10 && sortedDigits(a.phone) === sortedDigits(b.phone)) {
+          matched = true;
+        }
+      }
+      if (matched) {
+        pairs.set(pk, { confidence: 0.5, reason: "similar", a: card(a), b: card(b) });
+      }
+    }
+  }
+
   return [...pairs.values()].sort((x, y) => y.confidence - x.confidence);
 }
 const card = (e) => ({

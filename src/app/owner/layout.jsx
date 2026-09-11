@@ -1,5 +1,9 @@
+import { redirect } from "next/navigation";
+import { getServerSession } from "next-auth/next";
 import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./owner-theme.css";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { roleHome } from "@/lib/roleRoutes";
 import { ThemeProvider } from "@/components/owner/ThemeContext";
 import { ShellProvider } from "@/components/owner/ShellContext";
 
@@ -17,7 +21,14 @@ const plexMono = IBM_Plex_Mono({
   display: "swap",
 });
 
-export default function OwnerLayout({ children }) {
+const OWNER_ROLES = ["owner", "super-admin"];
+
+export default async function OwnerLayout({ children }) {
+  // Single, central gate for the whole /owner tree — the pages themselves don't check.
+  const session = await getServerSession(authOptions);
+  if (!session?.user) redirect("/login");
+  if (!OWNER_ROLES.includes(session.user.role)) redirect(roleHome(session.user.role));
+
   return (
     <ThemeProvider className={`${plexSans.variable} ${plexMono.variable}`}>
       <ShellProvider>{children}</ShellProvider>

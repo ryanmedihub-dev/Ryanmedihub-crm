@@ -1,37 +1,21 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
-import { OwnerTopbar, Card, KpiRow, DataTable, ErrorState, EmptyState } from "@/components/owner";
-import { ALL_BRANCHES } from "@/lib/branches";
+import { OwnerTopbar, Card, KpiRow, DataTable, ErrorState, EmptyState, TrendChart } from "@/components/owner";
+import { ownerFetch } from "@/lib/ownerFetch";
+import { rupee, num as fmt } from "@/lib/owner/format";
+import { OWNER_BRANCHES as BRANCHES, DATE_RANGES, buildDateRange } from "@/lib/owner/filters";
 
-const BRANCHES = ["All", ...ALL_BRANCHES];
-const DATE_RANGES = ["Today", "Yesterday", "Last 7 Days", "Last 30 Days", "Custom"];
-
-const rupee = (n) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n || 0);
-const fmt = (n) => new Intl.NumberFormat("en-IN").format(n || 0);
-
-function buildDateRange(range, custom) {
-  const now = new Date();
-  let from = new Date(), to = new Date();
-  to.setHours(23, 59, 59, 999);
-
-  if (range === "Today") {
-    from.setHours(0, 0, 0, 0);
-  } else if (range === "Yesterday") {
-    from = new Date(now); from.setDate(from.getDate() - 1); from.setHours(0, 0, 0, 0);
-    to   = new Date(from); to.setHours(23, 59, 59, 999);
-  } else if (range === "Last 7 Days") {
-    from = new Date(now); from.setDate(from.getDate() - 6); from.setHours(0, 0, 0, 0);
-  } else if (range === "Last 30 Days") {
-    from = new Date(now); from.setDate(from.getDate() - 29); from.setHours(0, 0, 0, 0);
-  } else if (range === "Custom" && custom.from) {
-    from = new Date(custom.from); from.setHours(0, 0, 0, 0);
-    to   = custom.to ? new Date(custom.to) : new Date(custom.from);
-    to.setHours(23, 59, 59, 999);
-  }
-  return { from: from.toISOString(), to: to.toISOString() };
-}
+const FINANCE_LINKS = [
+  { href: "/owner/finance/transactions", label: "All Transactions", note: "Full transaction report" },
+  { href: "/owner/finance/expenses", label: "Expenses", note: "By head/sub-type + marketing reconciliation" },
+  { href: "/owner/finance/assets", label: "Assets", note: "Receivables, aging" },
+  { href: "/owner/finance/liabilities", label: "Liabilities", note: "Payables by purpose, overdue" },
+  { href: "/owner/finance/salary-incentive", label: "Salary & Incentive", note: "Per employee, agrees with Part 1" },
+  { href: "/owner/finance/rent", label: "Rent", note: "Per property, overdue" },
+];
 
 export default function OwnerFinancePage() {
   const [branch, setBranch]       = useState("All");
@@ -44,52 +28,58 @@ export default function OwnerFinancePage() {
   const [receivable, setReceivable]   = useState(null);
   const [payable, setPayable]         = useState(null);
   const [branchRows, setBranchRows]   = useState([]);
+  const [daily, setDaily]             = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(null);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async ({ signal } = {}) => {
     if (dateRange === "Custom" && !custom.from) return;
     setLoading(true);
     setError(null);
-    try {
-      const { from, to } = buildDateRange(dateRange, custom);
-      const qs = new URLSearchParams({ from, to, ...(branch !== "All" ? { branch } : {}) }).toString();
-      const branchQs = branch !== "All" ? `?branch=${encodeURIComponent(branch)}` : "";
+    const { from, to } = buildDateRange(dateRange, custom);
+    const qs = new URLSearchParams({ from, to, ...(branch !== "All" ? { branch } : {}) }).toString();
+    const branchQs = branch !== "All" ? `?branch=${encodeURIComponent(branch)}` : "";
 
-      const [pnlRes, cashFlowRes, balanceSheetRes, recvRes, payRes, branchRes] = await Promise.all([
-        fetch(`/api/close-book/pnl?${qs}`),
-        fetch(`/api/close-book/cash-flow?${qs}`),
-        fetch(`/api/close-book/balance-sheet?${qs}`),
-        fetch(`/api/receivables/summary${branchQs}`),
-        fetch(`/api/payables/summary${branchQs}`),
-        fetch("/api/owner/finance/branch-profitability", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ from, to }),
-        }),
-      ]);
+    const [pnlR, cashFlowR, balanceSheetR, recvR, payR, branchR, trendR] = await Promise.all([
+      ownerFetch(`/api/close-book/pnl?${qs}`, { signal }),
+      ownerFetch(`/api/close-book/cash-flow?${qs}`, { signal }),
+      ownerFetch(`/api/close-book/balance-sheet?${qs}`, { signal }),
+      ownerFetch(`/api/receivables/summary${branchQs}`, { signal }),
+      ownerFetch(`/api/payables/summary${branchQs}`, { signal }),
+      ownerFetch("/api/owner/finance/branch-profitability", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ from, to }),
+        signal,
+      }),
+      ownerFetch(`/api/owner/finance/trend?${qs}`, { signal }),
+    ]);
 
-      const [pnlJson, cashFlowJson, balanceSheetJson, recvJson, payJson, branchJson] = await Promise.all([
-        pnlRes.json(), cashFlowRes.json(), balanceSheetRes.json(), recvRes.json(), payRes.json(), branchRes.json(),
-      ]);
+    if ([pnlR, cashFlowR, balanceSheetR, recvR, payR, branchR, trendR].some((r) => r.aborted)) return;
 
-      if (pnlJson.success === false || pnlJson.error) { setError(pnlJson.error || "Failed to load P&L"); return; }
-
-      setPnl(pnlJson);
-      setCashFlow(cashFlowJson);
-      setBalanceSheet(balanceSheetJson);
-      setReceivable(recvJson.success ? recvJson.overall : null);
-      setPayable(payJson.success ? payJson.overall : null);
-      setBranchRows(branchJson.success ? branchJson.rows || [] : []);
-    } catch {
-      setError("Network error — please try again");
-    } finally {
+    // P&L is the anchor — if it failed, the whole screen is meaningless.
+    if (!pnlR.ok || pnlR.data?.error) {
+      setError(pnlR.error || pnlR.data?.error || "Failed to load P&L");
       setLoading(false);
+      return;
     }
+
+    setPnl(pnlR.data);
+    setCashFlow(cashFlowR.ok ? cashFlowR.data : null);
+    setBalanceSheet(balanceSheetR.ok ? balanceSheetR.data : null);
+    setReceivable(recvR.ok ? recvR.data?.overall ?? null : null);
+    setPayable(payR.ok ? payR.data?.overall ?? null : null);
+    setBranchRows(branchR.ok ? branchR.data?.rows || [] : []);
+    setDaily(trendR.ok ? trendR.data?.daily || [] : []);
+    setLoading(false);
   }, [branch, dateRange, custom]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    const ctrl = new AbortController();
+    fetchData({ signal: ctrl.signal });
+    return () => ctrl.abort();
+  }, [fetchData]);
 
   const accountRows = balanceSheet?.accounts || [];
 
@@ -182,6 +172,25 @@ export default function OwnerFinancePage() {
                   ]}
                   rows={loading ? [] : branchRows.map((r) => ({ ...r, id: r.branch }))}
                 />
+              </Card>
+
+              <Card title="Daily Cash Activity" subtitle="Receipts vs payments, cash-basis — same definition as the Receipts/Payments KPIs above, just by day">
+                <TrendChart data={daily.map((d) => ({ date: d.date, value: d.receipts - d.payments }))} label="Net cash" />
+              </Card>
+
+              <Card title="Jump to a page">
+                <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}>
+                  {FINANCE_LINKS.map((it) => (
+                    <Link key={it.href} href={it.href} className="card" style={{ display: "block", textDecoration: "none" }}>
+                      <div className="card-title">
+                        <div>
+                          <h3>{it.label}</h3>
+                          <p>{it.note}</p>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
               </Card>
             </>
           )}

@@ -140,8 +140,16 @@ export function buildPayableAggregationStages(
   ];
 }
 
-export function buildPayableGroupedStages(txCollectionName, { level, category, subType, branch, from, to, groupBy = "category", purpose, payeeKind, borrowingsCollectionName = "borrowings", advancesCollectionName = "advances" } = {}) {
+export function buildPayableGroupedStages(txCollectionName, { level, category, subType, branch, from, to, groupBy = "category", subGroupBy, purpose, payeeKind, borrowingsCollectionName = "borrowings", advancesCollectionName = "advances" } = {}) {
   const isVendor = groupBy === "vendor";
+  // "party" groups every payable by its payee's label (employee, vendor, clinic — any kind)
+  // at every level — used where the whole page is one flat party list (e.g. Assets/Receivables).
+  const isParty = groupBy === "party";
+  // Employee Payables wants the opposite hybrid: level 1 stays the Salary/Incentive category
+  // (unchanged UI), but level 2 — normally the expense sub-type, which is always fixed
+  // ("Salary"/"Incentive") and useless as a breakdown — instead lists the employees who hold
+  // payables in that category.
+  const isSubParty = level === 2 && subGroupBy === "party";
   // Every filter lands in this first $match so it runs before the $lookups — filtering after
   // the joins would join every payable in the DB and then throw most of it away.
   const match = { isCancelled: { $ne: true } };
@@ -149,9 +157,9 @@ export function buildPayableGroupedStages(txCollectionName, { level, category, s
   else if (payeeKind) match["payee.kind"] = payeeKind;
   if (purpose) match.purpose = Array.isArray(purpose) ? { $in: purpose } : purpose;
   if (branch) match.branch = branch;
-  if (!isVendor) {
+  if (!isVendor && !isParty) {
     if (level !== 1 && category) match.expenseCategory = category;
-    if (level === 2 && subType) match.expenseSubType = subType;
+    if (level === 2 && subType && !isSubParty) match.expenseSubType = subType;
   }
 
   const fromDate = from ? new Date(from) : null;
@@ -166,9 +174,11 @@ export function buildPayableGroupedStages(txCollectionName, { level, category, s
 
   const groupId = isVendor
     ? { bucket: "$payee.refId" }
-    : level === 1
-      ? { bucket: { $ifNull: ["$expenseCategory", "Uncategorised"] } }
-      : { bucket: { $ifNull: ["$expenseSubType", "Uncategorised"] } };
+    : isParty || isSubParty
+      ? { bucket: { $ifNull: ["$payee.label", "Unknown"] } }
+      : level === 1
+        ? { bucket: { $ifNull: ["$expenseCategory", "Uncategorised"] } }
+        : { bucket: { $ifNull: ["$expenseSubType", "Uncategorised"] } };
 
   return [
     { $match: match },

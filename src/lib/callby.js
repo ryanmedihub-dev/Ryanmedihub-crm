@@ -10,7 +10,7 @@ export class CallbyError extends Error {
   }
 }
 
-export async function fetchCallby(path, { params } = {}) {
+export async function fetchCallby(path, { params, method = "GET", body } = {}) {
   if (!CALLBY_API_URL || !CALLBY_SERVICE_TOKEN) {
     throw new CallbyError("CALLBY_API_URL / CALLBY_SERVICE_TOKEN not configured", 500);
   }
@@ -27,7 +27,12 @@ export async function fetchCallby(path, { params } = {}) {
   let res;
   try {
     res = await fetch(`${CALLBY_API_URL}${path}${qs}`, {
-      headers: { Authorization: `Bearer ${CALLBY_SERVICE_TOKEN}` },
+      method,
+      headers: {
+        Authorization: `Bearer ${CALLBY_SERVICE_TOKEN}`,
+        ...(body ? { "Content-Type": "application/json" } : {}),
+      },
+      ...(body ? { body: JSON.stringify(body) } : {}),
       cache: "no-store",
       signal: controller.signal,
     });

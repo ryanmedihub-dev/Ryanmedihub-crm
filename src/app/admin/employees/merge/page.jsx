@@ -26,9 +26,16 @@ function Inner() {
   const [survivorId, setSurvivorId] = useState("");
   const [duplicateId, setDuplicateId] = useState(searchParams.get("duplicate") || "");
 
-  const [empOptions, setEmpOptions] = useState([]);
-  const [empSearching, setEmpSearching] = useState(false);
+  // Survivor and Duplicate each get their own result set — sharing one meant typing in
+  // either box silently overwrote what the other box's dropdown would show next time it opened.
+  const [survivorOptions, setSurvivorOptions] = useState([]);
+  const [survivorSearching, setSurvivorSearching] = useState(false);
+  const [duplicateOptions, setDuplicateOptions] = useState([]);
+  const [duplicateSearching, setDuplicateSearching] = useState(false);
+
   const [suggestions, setSuggestions] = useState([]);
+  const [dupSearch, setDupSearch] = useState("");
+  const [dupVisible, setDupVisible] = useState(20);
 
   const [preview, setPreview] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -38,25 +45,54 @@ function Inner() {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
 
-  const searchEmployees = useCallback(async (term) => {
-    setEmpSearching(true);
+  const searchSurvivor = useCallback(async (term) => {
+    setSurvivorSearching(true);
     try {
       const json = await fetch(`/api/employees/get?search=${encodeURIComponent(term || "")}&limit=30`).then((r) => r.json());
-      setEmpOptions(json.employees || []);
+      setSurvivorOptions(json.employees || []);
     } catch {
-      setEmpOptions([]);
+      setSurvivorOptions([]);
     } finally {
-      setEmpSearching(false);
+      setSurvivorSearching(false);
+    }
+  }, []);
+
+  const searchDuplicate = useCallback(async (term) => {
+    setDuplicateSearching(true);
+    try {
+      const json = await fetch(`/api/employees/get?search=${encodeURIComponent(term || "")}&limit=30`).then((r) => r.json());
+      setDuplicateOptions(json.employees || []);
+    } catch {
+      setDuplicateOptions([]);
+    } finally {
+      setDuplicateSearching(false);
     }
   }, []);
 
   useEffect(() => {
-    searchEmployees("");
+    searchSurvivor("");
+    searchDuplicate("");
     fetch("/api/employees/merge/suggestions")
       .then((r) => r.json())
       .then((j) => setSuggestions(j.pairs || []))
       .catch(() => setSuggestions([]));
-  }, [searchEmployees]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const filteredSuggestions = useMemo(() => {
+    const q = dupSearch.trim().toLowerCase();
+    if (!q) return suggestions;
+    return suggestions.filter(
+      (p) =>
+        p.a.name?.toLowerCase().includes(q) ||
+        p.b.name?.toLowerCase().includes(q) ||
+        p.a.employeeId?.toLowerCase().includes(q) ||
+        p.b.employeeId?.toLowerCase().includes(q) ||
+        p.a.phone?.includes(q) ||
+        p.b.phone?.includes(q),
+    );
+  }, [suggestions, dupSearch]);
+
+  useEffect(() => setDupVisible(20), [dupSearch]);
 
   const loadPreview = useCallback(async () => {
     if (!survivorId || !duplicateId) return;
@@ -191,59 +227,84 @@ function Inner() {
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Survivor (kept)">
                 <SearchableSelect
-                  options={empOptions}
+                  options={survivorOptions}
                   value={survivorId}
                   onChange={(v) => setSurvivorId(v)}
                   placeholder="Search employee…"
                   valueKey="_id"
                   formatOption={fmtOpt}
-                  onSearch={searchEmployees}
-                  searching={empSearching}
+                  onSearch={searchSurvivor}
+                  searching={survivorSearching}
                 />
               </Field>
               <Field label="Duplicate (retired)">
                 <SearchableSelect
-                  options={empOptions}
+                  options={duplicateOptions}
                   value={duplicateId}
                   onChange={(v) => setDuplicateId(v)}
                   placeholder="Search employee…"
                   valueKey="_id"
                   formatOption={fmtOpt}
-                  onSearch={searchEmployees}
-                  searching={empSearching}
+                  onSearch={searchDuplicate}
+                  searching={duplicateSearching}
                 />
               </Field>
             </div>
 
             {suggestions.length > 0 && (
               <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-                <p className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Likely duplicates</p>
-                <ul className="divide-y divide-gray-50">
-                  {suggestions.slice(0, 12).map((p) => (
-                    <li key={`${p.a._id}-${p.b._id}`} className="flex items-center justify-between gap-3 py-2 text-sm">
-                      <span className="min-w-0">
-                        <span className="font-medium text-gray-800">{p.a.name}</span>
-                        <span className="text-gray-400"> ↔ </span>
-                        <span className="font-medium text-gray-800">{p.b.name}</span>
-                        <span className="ml-2 text-[11px] text-gray-400">
-                          {p.reason} · {p.a.patientCount + p.b.patientCount} patients
-                        </span>
-                      </span>
+                <div className="flex items-center justify-between gap-3 mb-2">
+                  <p className="text-xs font-bold uppercase tracking-wide text-gray-500">
+                    Likely duplicates ({filteredSuggestions.length})
+                  </p>
+                  <input
+                    type="text"
+                    value={dupSearch}
+                    onChange={(e) => setDupSearch(e.target.value)}
+                    placeholder="Filter by name, ID or phone…"
+                    className="w-56 max-w-full px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs"
+                  />
+                </div>
+                {filteredSuggestions.length === 0 ? (
+                  <p className="py-4 text-center text-sm text-gray-400">No matches for &ldquo;{dupSearch}&rdquo;</p>
+                ) : (
+                  <>
+                    <ul className="divide-y divide-gray-50">
+                      {filteredSuggestions.slice(0, dupVisible).map((p) => (
+                        <li key={`${p.a._id}-${p.b._id}`} className="flex items-center justify-between gap-3 py-2 text-sm">
+                          <span className="min-w-0">
+                            <span className="font-medium text-gray-800">{p.a.name}</span>
+                            <span className="text-gray-400"> ↔ </span>
+                            <span className="font-medium text-gray-800">{p.b.name}</span>
+                            <span className="ml-2 text-[11px] text-gray-400">
+                              {p.reason} · {p.a.patientCount + p.b.patientCount} patients
+                            </span>
+                          </span>
+                          <button
+                            onClick={() => {
+                              const survivor = p.a.patientCount >= p.b.patientCount ? p.a : p.b;
+                              const dup = survivor === p.a ? p.b : p.a;
+                              setSurvivorId(survivor._id);
+                              setDuplicateId(dup._id);
+                              setStep(2);
+                            }}
+                            className="shrink-0 rounded-lg bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
+                          >
+                            Review
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                    {filteredSuggestions.length > dupVisible && (
                       <button
-                        onClick={() => {
-                          const survivor = p.a.patientCount >= p.b.patientCount ? p.a : p.b;
-                          const dup = survivor === p.a ? p.b : p.a;
-                          setSurvivorId(survivor._id);
-                          setDuplicateId(dup._id);
-                          setStep(2);
-                        }}
-                        className="shrink-0 rounded-lg bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
+                        onClick={() => setDupVisible((n) => n + 20)}
+                        className="mt-2 w-full rounded-lg border border-gray-200 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50"
                       >
-                        Review
+                        Show more ({filteredSuggestions.length - dupVisible} remaining)
                       </button>
-                    </li>
-                  ))}
-                </ul>
+                    )}
+                  </>
+                )}
               </div>
             )}
 

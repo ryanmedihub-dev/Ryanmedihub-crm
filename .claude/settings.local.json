@@ -68,7 +68,25 @@
       "Bash(node --input-type=module -e ' *)",
       "Bash(echo \"exit=$?\")",
       "PowerShell(Get-CimInstance Win32_Process -Filter \"Name = 'node.exe'\" | Where-Object { $_.CommandLine -match 'PORT=3133|3133' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }; \"checked - user's own dev server on its own port is untouched\")",
-      "Bash(node -e \"require\\('@babel/core'\\)\")"
+      "Bash(node -e \"require\\('@babel/core'\\)\")",
+      "Bash(set -e)",
+      "Bash(git mv *)",
+      "Bash(mkdir -p src/app/owner/calls src/app/owner/leads src/app/owner/patients src/app/owner/ai src/app/owner/hr)",
+      "Bash(mkdir -p src/app/owner/marketing/platforms)",
+      "Bash(node -e \"const p=require\\('./package.json'\\);console.log\\(JSON.stringify\\(p.scripts,null,2\\)\\);console.log\\('next',p.dependencies.next\\)\")",
+      "Bash(git add *)",
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\('recharts:', p.dependencies.recharts\\)\")",
+      "Read(//c/dashzer/**)",
+      "Read(//c//**)",
+      "Bash(find /c -maxdepth 4 -iname \"*callby*\")",
+      "Bash(find /c -maxdepth 4 -iname \"*learcrm*\")",
+      "Bash(cd \"C:/dashzer/callby/backend\" && find . -maxdepth 3 -type d | grep -v node_modules | sort)",
+      "Read(//c/dashzer/callby/backend/**)",
+      "Bash(cd \"C:/dashzer/callby/backend\" && echo \"=== models ===\" && ls models && echo \"=== routes ===\" && ls routes && echo \"=== middleware ===\" && ls middleware && echo \"=== lib ===\" && ls lib)",
+      "Read(//c/dashzer/callby/backend/models/**)",
+      "Read(//c/dashzer/callby/backend/routes/**)",
+      "Read(//c/dashzer/callby/backend/middleware/**)",
+      "Read(//c/dashzer/callby/backend/lib/**)"
     ]
   }
 }

@@ -1,211 +1,131 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
-import { OwnerTopbar, Card, KpiRow, DataTable, Badge, ErrorState, EmptyState, InlineNotice } from "@/components/owner";
-import { ALL_BRANCHES } from "@/lib/branches";
+import { OwnerTopbar, Card, FilterBar, KpiRow, TrendChart, ErrorState, ManualDataNotice } from "@/components/owner";
+import { ownerFetch } from "@/lib/ownerFetch";
+import { rupee, num, roasFmt } from "@/lib/owner/format";
 
-const BRANCHES = ["All", ...ALL_BRANCHES];
-const DATE_RANGES = ["Today", "Yesterday", "Last 7 Days", "Last 30 Days", "Custom"];
+const LINKS = [
+  { href: "/owner/marketing/campaigns", label: "Active Ads", note: "Campaign CRUD, targeting, budgets" },
+  { href: "/owner/marketing/ad-spend", label: "Ad Spend Entry", note: "Hand-enter daily spend + return picture" },
+  { href: "/owner/marketing/platforms", label: "Meta & Google", note: "CPL, CAC, ROAS by platform and campaign" },
+  { href: "/owner/marketing/comparison", label: "Meta vs Google", note: "Side-by-side comparison + trend" },
+];
 
-const rupee = (n) =>
-  n == null ? "—" : new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
-
-const fmt = (n) => (n == null ? "—" : new Intl.NumberFormat("en-IN").format(n));
-
-const roasFmt = (n) => (n == null ? "—" : `${n.toFixed(2)}×`);
-
-function buildDateRange(range, custom) {
-  const now = new Date();
-  let from = new Date(), to = new Date();
-  to.setHours(23, 59, 59, 999);
-
-  if (range === "Today") {
-    from.setHours(0, 0, 0, 0);
-  } else if (range === "Yesterday") {
-    from = new Date(now); from.setDate(from.getDate() - 1); from.setHours(0, 0, 0, 0);
-    to   = new Date(from); to.setHours(23, 59, 59, 999);
-  } else if (range === "Last 7 Days") {
-    from = new Date(now); from.setDate(from.getDate() - 6); from.setHours(0, 0, 0, 0);
-  } else if (range === "Last 30 Days") {
-    from = new Date(now); from.setDate(from.getDate() - 29); from.setHours(0, 0, 0, 0);
-  } else if (range === "Custom" && custom.from) {
-    from = new Date(custom.from); from.setHours(0, 0, 0, 0);
-    to   = custom.to ? new Date(custom.to) : new Date(custom.from);
-    to.setHours(23, 59, 59, 999);
-  }
-  return { from: from.toISOString(), to: to.toISOString() };
-}
-
-function summarize(rows) {
-  const byPlatform = {};
-  rows.forEach((r) => {
-    (byPlatform[r.platform] ||= []).push(r);
-  });
-
-  let totalSpend = 0, totalLeads = 0, totalConverted = 0, totalRevenue = 0;
-  Object.values(byPlatform).forEach((platformRows) => {
-    const totalRow = platformRows.find((r) => r.isPlatformTotal) || (platformRows.length === 1 ? platformRows[0] : null);
-    if (!totalRow) return;
-    totalSpend += totalRow.spend || 0;
-    totalLeads += totalRow.leads || 0;
-    totalConverted += totalRow.converted || 0;
-    totalRevenue += totalRow.revenue || 0;
-  });
-
-  return {
-    totalSpend,
-    totalLeads,
-    totalConverted,
-    totalRevenue,
-    blendedCPL: totalLeads > 0 ? totalSpend / totalLeads : null,
-    blendedCAC: totalConverted > 0 ? totalSpend / totalConverted : null,
-    blendedROAS: totalSpend > 0 ? totalRevenue / totalSpend : null,
-  };
-}
-
-export default function MarketingProfitabilityPage() {
-  const [branch, setBranch]       = useState("All");
-  const [dateRange, setDateRange] = useState("Last 30 Days");
-  const [custom, setCustom]       = useState({ from: "", to: "" });
-
-  const [rows, setRows]     = useState([]);
-  const [note, setNote]     = useState(null);
+export default function MarketingLanding() {
+  const [filterState, setFilterState] = useState(null);
+  const [summary, setSummary] = useState(null);
+  const [daily, setDaily] = useState([]);
+  const [notice, setNotice] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState(null);
+  const [error, setError] = useState(null);
 
-  const fetchSummary = useCallback(async () => {
-    if (dateRange === "Custom" && !custom.from) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const { from, to } = buildDateRange(dateRange, custom);
-      const res = await fetch("/api/owner/marketing-summary", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ branch, from, to }),
-      });
-      const json = await res.json();
-      if (json.success) {
-        setRows(json.rows || []);
-        setNote(json.note);
+  const load = useCallback(
+    async ({ signal } = {}) => {
+      if (!filterState) return;
+      setLoading(true);
+      setError(null);
+      const { from, to } = filterState.range;
+      const branch = filterState.filters.branch || "All";
+
+      const [summaryResult, comparisonResult] = await Promise.all([
+        ownerFetch("/api/owner/marketing-summary", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ branch, from, to }), signal,
+        }),
+        ownerFetch(`/api/owner/marketing/comparison?dateFrom=${encodeURIComponent(from)}&dateTo=${encodeURIComponent(to)}&branch=${encodeURIComponent(branch)}`, { signal }),
+      ]);
+      if (summaryResult.aborted) return;
+      if (summaryResult.ok) {
+        setSummary(summaryResult.data);
+        setNotice({ lastUpdatedAt: summaryResult.data?.lastUpdatedAt, lastUpdatedBy: summaryResult.data?.lastUpdatedBy });
       } else {
-        setError(json.message || "Failed to load");
+        setError(summaryResult.error);
       }
-    } catch {
-      setError("Network error — please try again");
-    } finally {
+      if (comparisonResult.ok) setDaily(comparisonResult.data?.daily || []);
       setLoading(false);
-    }
-  }, [branch, dateRange, custom]);
+    },
+    [filterState],
+  );
 
-  useEffect(() => { fetchSummary(); }, [fetchSummary]);
+  useEffect(() => {
+    const ctrl = new AbortController();
+    load({ signal: ctrl.signal });
+    return () => ctrl.abort();
+  }, [load]);
 
-  const summary = summarize(rows);
-
-  const kpiItems = [
-    { label: "Total Spend",   value: rupee(summary.totalSpend), sub: dateRange, kind: "info" },
-    { label: "Total Leads",   value: fmt(summary.totalLeads),   sub: "Meta + Google", kind: "info" },
-    { label: "Blended CPL",   value: rupee(summary.blendedCPL), sub: "Cost per lead", kind: "good" },
-    { label: "Converted",     value: fmt(summary.totalConverted), sub: "Booked or closed", kind: "good" },
-    { label: "Blended CAC",   value: rupee(summary.blendedCAC), sub: "Cost per conversion", kind: summary.blendedCAC != null ? "warn" : "info" },
-    { label: "Blended ROAS",  value: roasFmt(summary.blendedROAS), sub: "Revenue ÷ spend", kind: summary.blendedROAS != null && summary.blendedROAS >= 1 ? "good" : "bad" },
-  ];
+  const totals = (summary?.rows || []).reduce(
+    (acc, r) => {
+      const isTotal = r.isPlatformTotal || (summary.rows.filter((x) => x.platform === r.platform).length === 1);
+      if (!isTotal) return acc;
+      return {
+        spend: acc.spend + (r.spend || 0),
+        leads: acc.leads + (r.leads || 0),
+        converted: acc.converted + (r.converted || 0),
+        revenue: acc.revenue + (r.revenue || 0),
+      };
+    },
+    { spend: 0, leads: 0, converted: 0, revenue: 0 },
+  );
 
   return (
     <div className="app">
       <OwnerSidebar />
-
       <div className="main">
         <OwnerTopbar
-          title="Meta & Google"
-          subtitle="What the ad spend bought — CPL, CAC, ROAS by platform and campaign"
+          title="Marketing"
+          subtitle="Spend, leads, CPL, CAC and ROAS by platform — links into every marketing page"
           controls={
-            <>
-              <select className="control" value={branch} onChange={(e) => setBranch(e.target.value)}>
-                {BRANCHES.map((b) => <option key={b}>{b}</option>)}
-              </select>
-              <select className="control" value={dateRange} onChange={(e) => setDateRange(e.target.value)}>
-                {DATE_RANGES.map((r) => <option key={r}>{r}</option>)}
-              </select>
-              {dateRange === "Custom" && (
-                <>
-                  <input
-                    type="date"
-                    className="control"
-                    value={custom.from}
-                    onChange={(e) => setCustom((p) => ({ ...p, from: e.target.value }))}
-                  />
-                  <input
-                    type="date"
-                    className="control"
-                    value={custom.to}
-                    onChange={(e) => setCustom((p) => ({ ...p, to: e.target.value }))}
-                  />
-                </>
-              )}
-              <button className="icon-btn" onClick={fetchSummary} disabled={loading} title="Refresh">
-                {loading ? "…" : "⟳"}
-              </button>
-            </>
+            <button className="icon-btn" onClick={() => load()} disabled={loading} title="Refresh">
+              {loading ? "…" : "⟳"}
+            </button>
           }
         />
 
         <div className="content">
+          <ManualDataNotice lastUpdatedAt={notice?.lastUpdatedAt} lastUpdatedBy={notice?.lastUpdatedBy} />
+
+          <FilterBar show={["date", "branch"]} onChange={({ filters, range }) => setFilterState({ filters, range })} />
+
           {error ? (
-            <ErrorState message={error} onRetry={fetchSummary} />
+            <ErrorState message={error} onRetry={load} />
           ) : (
             <>
-              {note && (
-                <InlineNotice kind="info" title="Branch scope note">{note}</InlineNotice>
-              )}
+              <KpiRow
+                loading={loading || !summary}
+                primaryIndex={0}
+                items={[
+                  { label: "Total Spend", value: rupee(totals.spend), sub: "This period", kind: "info" },
+                  { label: "Total Leads", value: num(totals.leads), sub: "Meta + Google", kind: "info" },
+                  { label: "Blended CPL", value: rupee(totals.leads ? totals.spend / totals.leads : null), sub: "Cost per lead", kind: "good" },
+                  { label: "Converted", value: num(totals.converted), sub: "So far", kind: "good" },
+                  { label: "Blended CAC", value: rupee(totals.converted ? totals.spend / totals.converted : null), sub: "Cost per conversion", kind: "warn" },
+                  { label: "Blended ROAS", value: roasFmt(totals.spend ? totals.revenue / totals.spend : null), sub: "Revenue ÷ spend", kind: "good" },
+                ]}
+              />
 
-              <KpiRow items={kpiItems} primaryIndex={5} loading={loading} />
-
-              <Card
-                title="Platform / campaign breakdown"
-                subtitle={`${dateRange} · ${branch === "All" ? "All branches (spend only)" : `Spend scoped to ${branch}`}`}
-              >
-                <DataTable
-                  tall
-                  loading={loading}
-                  emptyMessage={<EmptyState icon="◈" title="No ad spend for this filter" hint="Log spend on the Ad Spend Entry screen, or widen the date range." />}
-                  columns={[
-                    {
-                      key: "platform",
-                      label: "Platform",
-                      render: (row) => <Badge kind={row.platform === "Meta" ? "purple" : "info"}>{row.platform}</Badge>,
-                    },
-                    {
-                      key: "campaignName",
-                      label: "Campaign",
-                      render: (row) =>
-                        row.isPlatformTotal ? (
-                          <strong>Platform total</strong>
-                        ) : (
-                          row.campaignName || <span className="muted">(unnamed)</span>
-                        ),
-                    },
-                    { key: "branch", label: "Branch", render: () => branch },
-                    { key: "spend", label: "Spend", align: "right", render: (row) => rupee(row.spend) },
-                    { key: "leads", label: "Leads", align: "right", render: (row) => fmt(row.leads) },
-                    { key: "cpl", label: "CPL", align: "right", render: (row) => rupee(row.cpl) },
-                    { key: "converted", label: "Converted", align: "right", render: (row) => fmt(row.converted) },
-                    { key: "cac", label: "CAC", align: "right", render: (row) => rupee(row.cac) },
-                    { key: "revenue", label: "Revenue", align: "right", render: (row) => rupee(row.revenue) },
-                    {
-                      key: "roas",
-                      label: "ROAS",
-                      align: "right",
-                      render: (row) => (
-                        <span style={row.roas != null ? { color: row.roas >= 1 ? "var(--pos)" : "var(--crit)", fontWeight: 700 } : undefined}>
-                          {roasFmt(row.roas)}
-                        </span>
-                      ),
-                    },
-                  ]}
-                  rows={loading ? [] : rows.map((r, i) => ({ ...r, id: `${r.platform}-${r.campaignName || "total"}-${i}`, _isTotal: r.isPlatformTotal }))}
+              <Card title="Spend Per Day" subtitle="Meta + Google, this period">
+                <TrendChart
+                  data={daily.map((d) => ({ date: d.date, value: (d.Meta || 0) + (d.Google || 0) }))}
+                  label="Spend"
                 />
+              </Card>
+
+              <Card title="Jump to a page">
+                <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}>
+                  {LINKS.map((it) => (
+                    <Link key={it.href} href={it.href} className="card" style={{ display: "block", textDecoration: "none" }}>
+                      <div className="card-title">
+                        <div>
+                          <h3>{it.label}</h3>
+                          <p>{it.note}</p>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
               </Card>
             </>
           )}

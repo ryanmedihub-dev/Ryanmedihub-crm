@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import dbConnect from "@/lib/db";
 import Patient from "@/models/Patient";
 import Transactions from "@/models/Transactions";
@@ -7,8 +9,23 @@ import Stock from "@/models/Stock";
 import Employee from "@/models/Employee";
 import { SETTLEMENT_EXCLUSION } from "@/constants/bankRouting";
 import { unsettledMethodsSync } from "@/lib/masterData";
+
+// Security fix (Owner Panel v2, Part 6): this route had NO auth check at all
+// — reachable by anyone with the URL, not even a login required — and it was
+// sending patient names/phones/payments, lead names/phones, and employee
+// names/phones/roles straight into the OpenAI prompt. Both are fixed here:
+// owner-only gate (matches src/proxy.js's edge guard on /saniya), and the
+// per-record PII arrays below are removed from what's sent to OpenAI —
+// aggregate breakdowns only.
+const ALLOWED_ROLES = ["owner", "super-admin"];
+
 export async function POST(req) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user || !ALLOWED_ROLES.includes(session.user.role)) {
+      return NextResponse.json({ answer: "Unauthorized." }, { status: 403 });
+    }
+
     const { question, history = [] } = await req.json();
     if (!question?.trim())
       return NextResponse.json({ answer: "Please ask something." });
@@ -442,23 +459,9 @@ export async function POST(req) {
 
     const totalPatientsPromise = Patient.countDocuments();
 
-
-    const recentPatientsPromise = Patient.find()
-      .sort({ createdAt: -1 })
-      .limit(10)
-      .select(
-        "personal.name personal.phone personal.branch personal.visitDate personal.purpose ops.status payments.amountReceived payments.pendingAmount counselling.finlpackage",
-      )
-      .lean();
-
-
-    const recentTxPromise = Transactions.find({ costType: "Revenue" })
-      .sort({ date: -1 })
-      .limit(10)
-      .select(
-        "patientName patientPhone amount branch transactionCategory procedure method date",
-      )
-      .lean();
+    // Per-record recent-patients / recent-transactions queries were removed
+    // along with the PII they carried (see the ctx.patients / ctx.recentTransactions
+    // comments below) — nothing left that needs them.
 
 
     const counsellorQuery = (visitDateFilter) =>
@@ -598,8 +601,10 @@ export async function POST(req) {
       .lean();
 
 
+    // Only `role` is needed now — name/phone were dropped from ctx.team, so
+    // there's no reason to pull them out of the database at all.
     const employeesPromise = Employee.find({ isactive: true })
-      .select("name role phone")
+      .select("role")
       .lean();
 
 
@@ -618,8 +623,6 @@ export async function POST(req) {
       doctorMonth,
       patientFacet,
       totalPatients,
-      recentPatients,
-      recentTx,
       leadsFacet,
       allStock,
       allEmployees,
@@ -644,8 +647,6 @@ export async function POST(req) {
       doctorMonthPromise,
       patientFacetPromise,
       totalPatientsPromise,
-      recentPatientsPromise,
-      recentTxPromise,
       leadsFacetPromise,
       stockPromise,
       employeesPromise,
@@ -777,17 +778,10 @@ export async function POST(req) {
           surgeries: pt.monthSurgeries?.[0]?.count || 0,
         },
 
-        recent10: recentPatients.map((p) => ({
-          name: p.personal?.name,
-          phone: p.personal?.phone,
-          branch: p.personal?.branch,
-          visit: ist(p.personal?.visitDate),
-          purpose: p.personal?.purpose,
-          status: p.ops?.status,
-          package: fmt(p.counselling?.finlpackage),
-          received: fmt(p.payments?.amountReceived),
-          pending: fmt(p.payments?.pendingAmount),
-        })),
+        // recent10 (patient name/phone/package/payments) removed — never
+        // sent to the model. Aggregate breakdowns above are enough to answer
+        // "how many / how much" questions without exposing an individual
+        // patient's identity or financial detail to OpenAI.
       },
 
 
@@ -853,14 +847,8 @@ export async function POST(req) {
           source: x._id || "Untagged",
           count: x.count,
         })),
-        recent15: (ld.recent || []).map((l) => ({
-          name: l.name,
-          phone: l.phone,
-          location: l.location || "—",
-          source: l.tag || "Untagged",
-          remarks: l.remarks || "—",
-          date: ist(l.createdAt),
-        })),
+        // recent15 (lead name/phone/remarks) removed — never sent to the
+        // model, same reasoning as patients.recent10 above.
       },
 
 
@@ -885,24 +873,13 @@ export async function POST(req) {
           acc[e.role] = (acc[e.role] || 0) + 1;
           return acc;
         }, {}),
-        all: allEmployees.map((e) => ({
-          name: e.name,
-          role: e.role,
-          phone: e.phone || "—",
-        })),
+        // Per-employee name/phone list removed — never sent to the model;
+        // byRole counts above answer headcount questions without it.
       },
 
-
-      recentTransactions: recentTx.map((t) => ({
-        patient: t.patientName,
-        phone: t.patientPhone,
-        amount: fmt(t.amount),
-        branch: t.branch,
-        category: t.transactionCategory,
-        procedure: t.procedure,
-        method: t.method,
-        date: ist(t.date),
-      })),
+      // recentTransactions (patient name/phone per transaction) removed —
+      // never sent to the model; the revenue breakdowns above cover
+      // "how much / by branch / by category" without exposing who paid.
     };
 
 
@@ -922,7 +899,7 @@ export async function POST(req) {
               role: "system",
               content: `You are Saniya — the AI assistant for Ryan Clinic (Ryan MediHub), a premium hair transplant clinic in Delhi, Mumbai, Hyderabad, and Noida.
 
-You have COMPLETE real-time CRM data in the context. ALWAYS answer directly from the data. NEVER say "data not available".
+You have real-time CRM aggregates in the context — answer directly from them when they cover the question. If the context genuinely doesn't have what's being asked (e.g. a specific patient's name/phone, an individual employee's personal details, or a figure outside the periods provided), say so plainly instead of guessing or estimating — a wrong number is worse than saying you don't have it. Never invent names, phone numbers, or amounts that aren't in the context.
 
 Data structure guide:
 - revenue.today / revenue.yesterday / revenue.thisMonth / revenue.lastMonth — each has total, byBranch, byCategory

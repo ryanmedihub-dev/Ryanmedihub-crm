@@ -12,7 +12,10 @@ import { loadClosedPeriodSnapshot, blockReasonFromSnapshot } from "@/lib/periodL
 import { resolveBranchFilter } from "@/lib/branches";
 import { attachCollabPatients } from "@/lib/collabPatientLookup";
 
-const ALLOWED_ROLES = ["admin", "super-admin"];
+// "owner" added (Owner Panel v2, Part 5) — this route is GET-only (read-only
+// grouped payables view); /owner/finance/liabilities and /owner/finance/rent
+// reuse it directly rather than a parallel query.
+const ALLOWED_ROLES = ["admin", "super-admin", "owner"];
 
 export async function GET(request) {
   try {
@@ -28,7 +31,14 @@ export async function GET(request) {
     const level = Math.min(4, Math.max(1, parseInt(searchParams.get("level") || "1")));
     const category = searchParams.get("category") || "";
     const subType = searchParams.get("subType") || "";
-    const groupBy = searchParams.get("groupBy") === "vendor" ? "vendor" : "category";
+    const groupByParam = searchParams.get("groupBy");
+    const groupBy = groupByParam === "vendor" ? "vendor" : groupByParam === "party" ? "party" : "category";
+    const isParty = groupBy === "party";
+    // Employee Payables' hybrid mode: level 1 stays the Salary/Incentive category, level 2
+    // lists the employees within it instead of the (fixed, useless) expense sub-type, and
+    // level 3's "subType" param then carries an employee label instead of a real sub-type.
+    const subGroupBy = searchParams.get("subGroupBy") === "party" ? "party" : undefined;
+    const subGroupByParty = subGroupBy === "party";
     const vendorId = searchParams.get("vendorId") || "";
     const branchFilterObj = resolveBranchFilter(session, searchParams.get("branch") || "");
     const branch = typeof branchFilterObj.branch === "string" ? branchFilterObj.branch : "";
@@ -75,6 +85,7 @@ export async function GET(request) {
           from,
           to,
           groupBy,
+          subGroupBy,
           purpose,
           payeeKind,
         }),
@@ -144,18 +155,27 @@ export async function GET(request) {
         return NextResponse.json({ error: "A valid vendorId is required at level 3 in vendor mode" }, { status: 400 });
       }
       match = { "payee.kind": "VENDOR", "payee.refId": new mongoose.Types.ObjectId(vendorId) };
+    } else if (isParty) {
+      if (!category) {
+        return NextResponse.json({ error: "party is required at level 3" }, { status: 400 });
+      }
+      // `category` carries the exact payee label when grouping by party.
+      match = { "payee.label": category };
     } else {
       if (!category) {
         return NextResponse.json({ error: "category is required at level 3" }, { status: 400 });
       }
       match = { expenseCategory: category };
-      if (subType) match.expenseSubType = subType;
+      if (subType) {
+        if (subGroupByParty) match["payee.label"] = subType;
+        else match.expenseSubType = subType;
+      }
     }
     match.isCancelled = status === "Cancelled" ? true : { $ne: true };
     if (branch) match.branch = branch;
-    if (party) match["payee.label"] = { $regex: party, $options: "i" };
+    if (party && !isParty && !subGroupByParty) match["payee.label"] = { $regex: party, $options: "i" };
     if (purpose) match.purpose = { $in: purpose };
-    if (payeeKind && groupBy !== "vendor") match["payee.kind"] = payeeKind;
+    if (payeeKind && groupBy !== "vendor" && !isParty) match["payee.kind"] = payeeKind;
     // Period filter for the monthly payables (salary, rent, …) — narrows the document list only.
     const periodMonth = parseInt(searchParams.get("periodMonth") || "", 10);
     const periodYear = parseInt(searchParams.get("periodYear") || "", 10);

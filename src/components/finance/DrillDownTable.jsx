@@ -69,6 +69,9 @@ export default function DrillDownTable({
   // "party" grouping collapses the category/sub-type levels: level 1 lists parties, then
   // straight to that party's documents (level 3), then their transactions (level 4).
   const groupByParty = sectionConfig.groupBy === "party";
+  // Employee Payables' hybrid mode: level 1 stays the expense category, but level 2 lists
+  // the employees within it instead of the (fixed, useless) expense sub-type.
+  const subGroupByParty = sectionConfig.subGroupBy === "party";
 
   const [internalScope, setInternalScope] = useState({ branch: "", dateFrom: "", dateTo: "", party: "", status: "", ageing: "" });
   const isControlled = !!controlledScope;
@@ -141,13 +144,15 @@ export default function DrillDownTable({
           setMeta({ total: (json.rows || []).length, page: 1, limit: 9999 });
         } else if (drill.level === 2) {
           const json = await fetch(
-            `${apiBase}/grouped?level=2&category=${encodeURIComponent(drill.headKey)}&${qs()}`,
+            `${apiBase}/grouped?level=2&${subGroupByParty ? "subGroupBy=party&" : ""}category=${encodeURIComponent(drill.headKey)}&${qs()}`,
           ).then((r) => r.json());
           setRows(json.rows || []);
           setMeta({ total: (json.rows || []).length, page: 1, limit: 9999 });
         } else if (drill.level === 3 && isDocuments) {
           const json = await fetch(
-            `${apiBase}/grouped?level=3&${groupByParty ? "groupBy=party&" : ""}category=${encodeURIComponent(
+            `${apiBase}/grouped?level=3&${groupByParty ? "groupBy=party&" : ""}${
+              subGroupByParty ? "subGroupBy=party&" : ""
+            }category=${encodeURIComponent(
               drill.headKey,
             )}&subType=${encodeURIComponent(
               drill.subKey || "",
@@ -284,8 +289,19 @@ export default function DrillDownTable({
         subLabel: row.label,
       });
     } else if (drill.level === 3 && isDocuments) {
+      // A per-patient incentive document is a running total with no single "the" payment to
+      // drill into — its real content is the incentive-entry breakdown the detail modal shows.
+      if (isPayableSection && row.purpose === "INCENTIVE" && row.expenseSubType === "Incentive") {
+        setViewDoc(row);
+        return;
+      }
       const settled = isPayableSection ? row.paid : row.received;
-      if (!(settled > 0)) return;
+      if (!(settled > 0)) {
+        // Nothing paid yet means level 4 (payment transactions) would be empty — open the
+        // document's own details instead of leaving the click looking like it did nothing.
+        setViewDoc(row);
+        return;
+      }
       setDrill({
         level: 4,
         headKey: drill.headKey,
@@ -520,8 +536,15 @@ export default function DrillDownTable({
     );
   };
 
+  const groupColumnLabel =
+    groupByParty || (subGroupByParty && drill.level === 2)
+      ? sectionConfig.partyLabel || "Party"
+      : drill.level === 1
+        ? "Category"
+        : "Sub-type";
+
   const groupColumns = [
-    { key: "label", label: groupByParty ? "Party" : "Category" },
+    { key: "label", label: groupColumnLabel },
     { key: "opening", label: columnLabels.opening, numeric: true },
     { key: "movement", label: columnLabels.movement, numeric: true },
     { key: "settled", label: columnLabels.settled, numeric: true },
@@ -680,7 +703,7 @@ export default function DrillDownTable({
         <div className="flex items-center gap-2 flex-wrap">
           {atDocuments && (
             <>
-              {!groupByParty && (
+              {!groupByParty && !subGroupByParty && (
                 <input
                   type="text"
                   value={scope.party}
@@ -846,6 +869,7 @@ export default function DrillDownTable({
           documentId={viewDoc._id}
           kind={isPayableSection ? "payable" : "receivable"}
           onClose={() => setViewDoc(null)}
+          onChanged={load}
         />
       )}
 

@@ -12,7 +12,6 @@
   "dependencies": {
     "bcryptjs": "^3.0.2",
     "browser-image-compression": "^2.0.2",
-    "chart.js": "^4.5.1",
     "cloudinary": "^2.8.0",
     "framer-motion": "^12.23.24",
     "html2pdf.js": "^0.12.1",
@@ -23,7 +22,6 @@
     "next-auth": "^4.24.13",
     "next-cloudinary": "^6.17.5",
     "react": "19.1.0",
-    "react-chartjs-2": "^5.3.0",
     "react-dom": "19.1.0",
     "recharts": "^3.3.0",
     "swr": "^2.3.6",

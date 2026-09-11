@@ -5,6 +5,7 @@ import connectDB from "@/lib/db";
 import mongoose from "mongoose";
 import Payable from "@/models/Payable";
 import Employee from "@/models/Employee";
+import Patient from "@/models/Patient";
 import Transactions from "@/models/Transactions";
 import Advance from "@/models/Advance";
 import DeleteLog from "@/models/DeleteLog";
@@ -45,6 +46,32 @@ export async function GET(req, { params }) {
         payable.payeeCode = emp.employeeId || "";
         payable.payeeRole = emp.role || "";
       }
+    }
+
+    // A per-patient incentive payable (findOrCreateIncentivePayable) is a running total —
+    // the actual amounts live as rows on Patient.incentives[], each linked back here via
+    // payableId. Surface that breakdown so the payable's own total isn't a black box.
+    if (payable.purpose === "INCENTIVE" && payable.expenseSubType === "Incentive") {
+      payable.incentiveEntries = await Patient.aggregate([
+        { $match: { "incentives.payableId": payable._id } },
+        { $unwind: "$incentives" },
+        { $match: { "incentives.payableId": payable._id } },
+        {
+          $project: {
+            _id: 0,
+            incentiveId: "$incentives._id",
+            patientId: "$_id",
+            patientName: "$personal.name",
+            patientPhone: "$personal.phone",
+            date: "$incentives.date",
+            purpose: "$incentives.purpose",
+            amount: "$incentives.amount",
+            remarks: "$incentives.remarks",
+            isCancelled: "$incentives.isCancelled",
+          },
+        },
+        { $sort: { date: -1 } },
+      ]);
     }
 
     return NextResponse.json({ payable });

@@ -1879,3 +1879,163 @@
     transition-duration: 0.001ms !important;
   }
 }
+
+/* =============================================================================
+   Owner Panel v2 — collapsible nav groups (F8)
+   ========================================================================== */
+.owner-app .nav-group {
+  margin: 1px 0;
+}
+.owner-app .nav-group-head {
+  display: flex;
+  align-items: center;
+  border-radius: var(--r-sm);
+}
+.owner-app .nav-group-head.active {
+  background: var(--accent-bg);
+}
+.owner-app .nav-group-link {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: var(--sp-3);
+  align-items: center;
+  padding: 10px var(--sp-3);
+  border-radius: var(--r-sm);
+  color: var(--ink);
+  font-size: var(--fs-14);
+  font-weight: 500;
+  text-decoration: none;
+  line-height: 1.3;
+}
+.owner-app .nav-group-head.active .nav-group-link {
+  font-weight: 600;
+}
+.owner-app .nav-group-link:hover {
+  background: var(--surface-2);
+}
+.owner-app .nav-group-toggle {
+  flex: none;
+  border: 0;
+  background: transparent;
+  color: var(--ink-muted);
+  width: 30px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-sm);
+  font-size: var(--fs-12);
+}
+.owner-app .nav-group-toggle:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+.owner-app .nav-sub {
+  margin: 2px 0 4px;
+  padding-left: calc(20px + var(--sp-3));
+  border-left: 1px solid var(--line);
+  margin-left: calc(var(--sp-3) + 10px);
+}
+.owner-app .nav-sub-btn {
+  padding: 8px var(--sp-3);
+  font-size: var(--fs-13);
+  color: var(--ink-muted);
+}
+.owner-app .nav-sub-btn.active {
+  color: var(--ink);
+}
+.owner-app .nav-sub-btn.active::before {
+  top: 4px;
+  bottom: 4px;
+}
+
+/* =============================================================================
+   Owner Panel v2 — FilterBar (F3) + ReportTable (F4)
+   ========================================================================== */
+.owner-app .filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  align-items: center;
+}
+
+.owner-app .report-table {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+.owner-app .report-table-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  align-items: center;
+  justify-content: space-between;
+}
+.owner-app .report-table-toolbar-right {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  align-items: center;
+}
+.owner-app .col-menu-wrap {
+  position: relative;
+}
+.owner-app .col-menu-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+}
+.owner-app .col-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 31;
+  min-width: 200px;
+  max-height: 320px;
+  overflow: auto;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  box-shadow: var(--shadow-2);
+  padding: var(--sp-2);
+}
+.owner-app .col-menu-item {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: center;
+  padding: 6px var(--sp-2);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-13);
+  cursor: pointer;
+}
+.owner-app .col-menu-item:hover {
+  background: var(--surface-2);
+}
+.owner-app .report-table-pager {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  align-items: center;
+  justify-content: space-between;
+}
+.owner-app .report-table-pager-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  align-items: center;
+}
+/* wide report tables: pin the first column at every width, not just on phones */
+.owner-app .report-table .table-wrap {
+  overflow-x: auto;
+}
+.owner-app .report-table .table-wrap table th:first-child,
+.owner-app .report-table .table-wrap table td:first-child {
+  position: sticky;
+  left: 0;
+  background: var(--surface);
+  z-index: 1;
+}
+.owner-app .report-table .table-wrap table th:first-child {
+  z-index: 3;
+  background: var(--surface-2);
+}

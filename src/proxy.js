@@ -1,20 +1,17 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
+import { ROLE_ROUTES } from "@/lib/roleRoutes";
 
-const ROLE_HOME = {
-  "super-admin": "/super-admin/dashboard",
-  admin:         "/admin/dashboard",
-  sales:         "/sales/dashboard",
-  reception:     "/reception/dashboard",
-  collab:        "/collab/dashboard",
-  surgery:       "/surgery/dashboard",
-  counsellor:    "/counsellor/patients",
-  stock:         "/stocks/dashboard",
-  hr:            "/hr/dashboard",
-};
+// Post-bounce home per role — shared with the login redirect (src/lib/roleRoutes.js).
+const ROLE_HOME = ROLE_ROUTES;
 
 const ROLE_ALLOWED_PREFIXES = {
-  "super-admin": ["/super-admin", "/admin", "/sales", "/reception", "/collab", "/surgery", "/counsellor", "/stocks", "/hr"],
+  "super-admin": ["/super-admin", "/admin", "/sales", "/reception", "/collab", "/surgery", "/counsellor", "/stocks", "/hr", "/owner", "/saniya"],
+  // /saniya (the Saniya AI assistant) was reachable by anyone with the URL —
+  // no role check on the page, no auth check on its API route, and it wasn't
+  // even in this matcher. Locked to owner/super-admin, same bar as the rest
+  // of the owner-facing surface (Owner Panel v2, Part 6).
+  owner:         ["/owner", "/saniya"],
   admin:         ["/admin", "/stocks"],
   sales:         ["/sales"],
   reception:     ["/reception"],
@@ -54,6 +51,7 @@ export const config = {
   matcher: [
     "/admin/:path*",
     "/super-admin/:path*",
+    "/owner/:path*",
     "/sales/:path*",
     "/reception/:path*",
     "/collab/:path*",
@@ -61,5 +59,6 @@ export const config = {
     "/counsellor/:path*",
     "/stocks/:path*",
     "/hr/:path*",
+    "/saniya/:path*",
   ],
 };

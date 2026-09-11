@@ -1,0 +1,167 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
+import { OwnerTopbar, Card, FilterBar, KpiRow, DataTable, ErrorState, InlineNotice } from "@/components/owner";
+import { ownerFetch } from "@/lib/ownerFetch";
+import { rupee, num } from "@/lib/owner/format";
+import { SECTION_LABELS } from "@/lib/owner/employeeSections";
+
+const SECTION_LINKS = {
+  Agent: "/owner/employees/agents",
+  Counsellor: "/owner/employees/counsellors",
+  Surgery: "/owner/employees/surgery-staff",
+  HR: "/owner/employees/hr",
+  Other: "/owner/employees/other-staff",
+};
+
+export default function EmployeesLanding() {
+  const router = useRouter();
+  const [filterState, setFilterState] = useState(null);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const load = useCallback(
+    async ({ signal } = {}) => {
+      if (!filterState) return;
+      setLoading(true);
+      setError(null);
+      const params = new URLSearchParams();
+      params.set("dateFrom", filterState.range.from);
+      params.set("dateTo", filterState.range.to);
+      if (filterState.filters.branch && filterState.filters.branch !== "All") params.set("branch", filterState.filters.branch);
+      const r = await ownerFetch(`/api/owner/employees/overview?${params.toString()}`, { signal });
+      if (r.aborted) return;
+      if (r.ok) setData(r.data);
+      else setError(r.error);
+      setLoading(false);
+    },
+    [filterState],
+  );
+
+  useEffect(() => {
+    const ctrl = new AbortController();
+    load({ signal: ctrl.signal });
+    return () => ctrl.abort();
+  }, [load]);
+
+  const headcount = data?.headcount || [];
+  const totalHeadcount = headcount.reduce((s, h) => s + h.total, 0);
+  const totalActive = headcount.reduce((s, h) => s + h.active, 0);
+
+  return (
+    <div className="app">
+      <OwnerSidebar />
+      <div className="main">
+        <OwnerTopbar
+          title="Employees"
+          subtitle="Headcount, pay and performance across every role — links to each sub-page below"
+          controls={
+            <button className="icon-btn" onClick={() => load()} disabled={loading} title="Refresh">
+              {loading ? "…" : "⟳"}
+            </button>
+          }
+        />
+
+        <div className="content">
+          <FilterBar show={["date", "branch"]} onChange={({ filters, range }) => setFilterState({ filters, range })} />
+
+          {error ? (
+            <ErrorState message={error} onRetry={load} />
+          ) : (
+            <>
+              <KpiRow
+                loading={loading || !data}
+                primaryIndex={0}
+                items={[
+                  { label: "Total Headcount", value: num(totalHeadcount), sub: `${totalHeadcount - totalActive} inactive`, kind: "info" },
+                  { label: "Active", value: num(totalActive), sub: "Across every role", kind: "good" },
+                  { label: "Salary Paid", value: rupee(data?.totalSalaryPaid), sub: "This period", kind: "info" },
+                  { label: "Incentive Paid", value: rupee(data?.totalIncentivePaid), sub: "This period", kind: "info" },
+                ]}
+              />
+
+              {data?.callbyError && (
+                <InlineNotice kind="error" title="callby data may be incomplete">{data.callbyError}</InlineNotice>
+              )}
+
+              <div className="grid cols-equal">
+                <Card title="Headcount by Role">
+                  <DataTable
+                    loading={loading}
+                    columns={[
+                      { key: "label", label: "Role" },
+                      { key: "total", label: "Headcount", align: "right", render: (r) => num(r.total) },
+                      { key: "active", label: "Active", align: "right", render: (r) => num(r.active) },
+                    ]}
+                    rows={headcount.map((h) => ({ ...h, id: h.section }))}
+                    onRowClick={(row) => router.push(SECTION_LINKS[row.section])}
+                  />
+                </Card>
+
+                <Card title="Headcount by Branch">
+                  <DataTable
+                    loading={loading}
+                    columns={[
+                      { key: "branch", label: "Branch" },
+                      { key: "total", label: "Headcount", align: "right", render: (r) => num(r.total) },
+                      { key: "active", label: "Active", align: "right", render: (r) => num(r.active) },
+                    ]}
+                    rows={(data?.byBranch || []).map((b) => ({ ...b, id: b.branch }))}
+                  />
+                </Card>
+              </div>
+
+              <div className="grid cols-equal">
+                {["Agent", "Counsellor", "Surgery", "HR"].map((section) => {
+                  const p = data?.performers?.[section];
+                  return (
+                    <Card key={section} title={`${SECTION_LABELS[section]} — Top / Bottom`} subtitle="By performance score, this period">
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                        <div>
+                          <p className="muted" style={{ margin: "0 0 6px", fontSize: "var(--fs-12)" }}>Top</p>
+                          {(p?.top || []).map((r) => (
+                            <div key={r.id} className="metric-row"><span>{r.name}</span><div /><strong>{r.performance.score}</strong></div>
+                          ))}
+                          {!loading && (!p?.top || p.top.length === 0) && <p className="muted">Not enough data</p>}
+                        </div>
+                        <div>
+                          <p className="muted" style={{ margin: "0 0 6px", fontSize: "var(--fs-12)" }}>Bottom</p>
+                          {(p?.bottom || []).map((r) => (
+                            <div key={r.id} className="metric-row"><span>{r.name}</span><div /><strong>{r.performance.score}</strong></div>
+                          ))}
+                          {!loading && (!p?.bottom || p.bottom.length === 0) && <p className="muted">Not enough data</p>}
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+
+              <Card title="Jump to a page">
+                <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}>
+                  {[
+                    { href: "/owner/employees/agents", label: "Agents" },
+                    { href: "/owner/employees/counsellors", label: "Counsellors" },
+                    { href: "/owner/employees/surgery-staff", label: "Surgery Staff" },
+                    { href: "/owner/employees/hr", label: "HR" },
+                    { href: "/owner/employees/other-staff", label: "Other Staff" },
+                    { href: "/owner/employees/leadership", label: "TL & Manager" },
+                    { href: "/owner/employees/links", label: "callby Links" },
+                  ].map((it) => (
+                    <Link key={it.href} href={it.href} className="btn" style={{ textAlign: "center", textDecoration: "none" }}>
+                      {it.label}
+                    </Link>
+                  ))}
+                </div>
+              </Card>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

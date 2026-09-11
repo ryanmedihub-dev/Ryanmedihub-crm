@@ -4,7 +4,7 @@ const deleteLogSchema = new mongoose.Schema(
   {
     entityType: {
       type: String,
-      enum: ["Patient", "Transaction", "Stock", "Receivable", "Payable", "CollabSettlement", "Employee"],
+      enum: ["Patient", "Transaction", "Stock", "Receivable", "Payable", "CollabSettlement", "Employee", "PRPSession"],
       required: true,
     },
     entityId: {

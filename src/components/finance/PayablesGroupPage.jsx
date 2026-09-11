@@ -16,10 +16,16 @@ const YEARS = Array.from({ length: 6 }, (_, i) => new Date().getFullYear() - 3 +
 // SALARY / RENT / ELECTRICITY are monthly — offer a period picker on those groups.
 const MONTHLY_GROUPS = new Set(["rent", "employees"]);
 
+// Employees keeps its original Salary/Incentive-category-first layout, but its level-2 list
+// (normally the expense sub-type, which is always the fixed "Salary"/"Incentive" value and
+// tells you nothing) instead breaks down into the employees who hold payables in that category.
+const SUB_PARTY_GROUPED = new Set(["employees"]);
+
 export default function PayablesGroupPage({ group }) {
   const purposes = PAYABLE_GROUP_PURPOSES[group];
   const label = PAYABLE_GROUP_LABELS[group];
   const purposeCSV = purposes.join(",");
+  const subGroupByParty = SUB_PARTY_GROUPED.has(group);
 
   const { scope, setScope, scopeQS } = useLedgerScope();
   const searchParams = useSearchParams();
@@ -40,17 +46,15 @@ export default function PayablesGroupPage({ group }) {
         .then((r) => r.json())
         .then((json) => {
           const p = json.payable;
-          setInitialDrill(
-            p
-              ? {
-                  level: 3,
-                  headKey: p.expenseCategory,
-                  headLabel: p.expenseCategory,
-                  subKey: p.expenseSubType || "",
-                  subLabel: p.expenseSubType || "",
-                }
-              : null,
-          );
+          if (!p) return setInitialDrill(null);
+          const subKey = subGroupByParty ? p.payee?.label || "" : p.expenseSubType || "";
+          setInitialDrill({
+            level: 3,
+            headKey: p.expenseCategory,
+            headLabel: p.expenseCategory,
+            subKey,
+            subLabel: subKey,
+          });
         })
         .catch(() => setInitialDrill(null));
     } else if (sub) {
@@ -150,6 +154,8 @@ export default function PayablesGroupPage({ group }) {
           sectionConfig={{
             key: "payables",
             mode: "documents",
+            subGroupBy: subGroupByParty ? "party" : undefined,
+            partyLabel: subGroupByParty ? "Employee" : undefined,
             apiBase: "/api/payables",
             title: label,
             columnLabels: {

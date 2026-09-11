@@ -5,6 +5,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { withDB } from "@/lib/withDB";
 import AdSpend from "@/models/AdSpend";
 import { ALL_BRANCHES } from "@/lib/branches";
+import { attributeSpendToOutcomes } from "@/lib/owner/marketingAttribution";
 
 const ALLOWED_ROLES = ["owner", "super-admin"];
 const PLATFORMS = ["Meta", "Google"];
@@ -20,11 +21,12 @@ async function requireSession() {
   return { session };
 }
 
-function validatePayload({ date, branch, platform, amount }) {
+function validatePayload({ date, branch, platform, amount, clicks }) {
   if (!date || isNaN(new Date(date).getTime())) return "A valid date is required";
   if (!branch || !ALL_BRANCHES.includes(branch)) return `branch must be one of: ${ALL_BRANCHES.join(", ")}`;
   if (!platform || !PLATFORMS.includes(platform)) return `platform must be one of: ${PLATFORMS.join(", ")}`;
   if (amount == null || isNaN(amount) || Number(amount) < 0) return "amount must be a non-negative number";
+  if (clicks != null && clicks !== "" && (isNaN(clicks) || Number(clicks) < 0)) return "clicks must be a non-negative number";
   return null;
 }
 
@@ -37,6 +39,7 @@ const getHandler = async (req) => {
   const platform = searchParams.get("platform");
   const from = searchParams.get("from");
   const to = searchParams.get("to");
+  const withReturn = searchParams.get("withReturn") === "true";
 
   const query = {};
   if (branch && branch !== "All") query.branch = branch;
@@ -47,9 +50,27 @@ const getHandler = async (req) => {
     if (to) query.date.$lte = new Date(to);
   }
 
-  const entries = await AdSpend.find(query).sort({ date: -1, createdAt: -1 }).lean();
+  const entries = await AdSpend.find(query)
+    .populate("campaignId", "name status")
+    .sort({ date: -1, createdAt: -1 })
+    .lean();
 
-  return NextResponse.json({ success: true, entries });
+  const response = { success: true, entries };
+
+  // The "return" picture — spend/leads/CPL/CPC/converted/revenue/CAC/ROAS for
+  // the same filter, via the shared attribution module (marketingAttribution.js).
+  if (withReturn && from && to) {
+    const platforms = platform && PLATFORMS.includes(platform) ? [platform] : PLATFORMS;
+    const { byPlatform } = await attributeSpendToOutcomes({
+      platforms,
+      branch,
+      from: new Date(from),
+      to: new Date(to),
+    });
+    response.returnByPlatform = byPlatform;
+  }
+
+  return NextResponse.json(response);
 };
 
 const postHandler = async (req) => {
@@ -57,9 +78,9 @@ const postHandler = async (req) => {
   if (error) return error;
 
   const body = await req.json();
-  const { date, branch, platform, campaignName = "", amount } = body;
+  const { date, branch, platform, campaignName = "", campaignId = null, amount, clicks } = body;
 
-  const validationError = validatePayload({ date, branch, platform, amount });
+  const validationError = validatePayload({ date, branch, platform, amount, clicks });
   if (validationError) {
     return NextResponse.json({ success: false, message: validationError }, { status: 400 });
   }
@@ -69,7 +90,9 @@ const postHandler = async (req) => {
     branch,
     platform,
     campaignName: campaignName?.trim() || "",
+    campaignId: campaignId || null,
     amount: Number(amount),
+    clicks: clicks === "" || clicks == null ? null : Number(clicks),
     enteredBy: { name: session.user.name, email: session.user.email },
   });
 
@@ -87,9 +110,9 @@ const putHandler = async (req) => {
   }
 
   const body = await req.json();
-  const { date, branch, platform, campaignName = "", amount } = body;
+  const { date, branch, platform, campaignName = "", campaignId = null, amount, clicks } = body;
 
-  const validationError = validatePayload({ date, branch, platform, amount });
+  const validationError = validatePayload({ date, branch, platform, amount, clicks });
   if (validationError) {
     return NextResponse.json({ success: false, message: validationError }, { status: 400 });
   }
@@ -101,7 +124,9 @@ const putHandler = async (req) => {
       branch,
       platform,
       campaignName: campaignName?.trim() || "",
+      campaignId: campaignId || null,
       amount: Number(amount),
+      clicks: clicks === "" || clicks == null ? null : Number(clicks),
     },
     { new: true, runValidators: true }
   );

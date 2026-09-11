@@ -1,0 +1,191 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
+import { OwnerTopbar, Card, FilterBar, DataTable, KpiRow, ErrorState, TrendChart, InlineNotice, Badge } from "@/components/owner";
+import { ownerFetch } from "@/lib/ownerFetch";
+import { num } from "@/lib/owner/format";
+
+const STAGE_LINKS = {
+  leadsCreated: "/owner/leads/report",
+  contacted: "/owner/leads/report?status=contacted",
+  interested: "/owner/leads/interested",
+  followUp: "/owner/leads/follow-ups",
+  converted: "/owner/leads/report?status=converted",
+  bookingDone: "/owner/patients/booking-done",
+  surgeryBooked: "/owner/patients/converted",
+  surgeryDone: "/owner/patients/surgery-done",
+};
+
+const BREAKDOWN_OPTIONS = [
+  { value: "none", label: "No breakdown" },
+  { value: "source", label: "By source" },
+  { value: "agent", label: "By agent" },
+  { value: "team", label: "By team" },
+];
+
+export default function StatisticsPage() {
+  const router = useRouter();
+  const [filterState, setFilterState] = useState(null);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const load = useCallback(
+    async ({ signal } = {}) => {
+      if (!filterState) return;
+      setLoading(true);
+      setError(null);
+      const params = new URLSearchParams();
+      params.set("dateFrom", filterState.range.from);
+      params.set("dateTo", filterState.range.to);
+      if (filterState.filters.breakdownBy && filterState.filters.breakdownBy !== "none") {
+        params.set("breakdownBy", filterState.filters.breakdownBy);
+      }
+      const r = await ownerFetch(`/api/owner/statistics?${params.toString()}`, { signal });
+      if (r.aborted) return;
+      if (r.ok) setData(r.data);
+      else setError(r.error);
+      setLoading(false);
+    },
+    [filterState],
+  );
+
+  useEffect(() => {
+    const ctrl = new AbortController();
+    load({ signal: ctrl.signal });
+    return () => ctrl.abort();
+  }, [load]);
+
+  const goToStage = (key) => {
+    const base = STAGE_LINKS[key];
+    if (!base) return;
+    const from = (filterState?.range?.from || "").slice(0, 10);
+    const to = (filterState?.range?.to || "").slice(0, 10);
+    const sep = base.includes("?") ? "&" : "?";
+    router.push(from && to ? `${base}${sep}range=Custom&from=${from}&to=${to}` : base);
+  };
+
+  const stages = data?.stages || [];
+
+  return (
+    <div className="app">
+      <OwnerSidebar />
+      <div className="main">
+        <OwnerTopbar
+          title="Statistics"
+          subtitle="Leads created → surgery done — the full conversion story, click a stage to drill in"
+          controls={
+            <button className="icon-btn" onClick={() => load()} disabled={loading} title="Refresh">
+              {loading ? "…" : "⟳"}
+            </button>
+          }
+        />
+
+        <div className="content">
+          <FilterBar
+            show={["date"]}
+            extras={[{ key: "breakdownBy", label: "Breakdown", options: BREAKDOWN_OPTIONS }]}
+            defaults={{ breakdownBy: "none" }}
+            onChange={({ filters, range }) => setFilterState({ filters, range })}
+          />
+
+          {error ? (
+            <ErrorState message={error} onRetry={load} />
+          ) : (
+            <>
+              <KpiRow
+                loading={loading || !data}
+                primaryIndex={0}
+                items={[
+                  { label: "Leads Created", value: num(data?.totalLeadsInPeriod), sub: "This period", kind: "info" },
+                  {
+                    label: "Overall Conversion",
+                    value: stages.length ? `${stages[4]?.overallRate ?? 0}%` : "—",
+                    sub: "Leads → callby-converted",
+                    kind: "good",
+                  },
+                  {
+                    label: "Surgery Done Rate",
+                    value: stages.length ? `${stages[7]?.overallRate ?? 0}%` : "—",
+                    sub: "Leads → surgery done",
+                    kind: "good",
+                  },
+                ]}
+              />
+
+              {data?.truncated && (
+                <InlineNotice kind="info" title="Sample capped">
+                  More than {num(data.sampleSize)} leads matched this period — the funnel below is computed
+                  from the first {num(data.sampleSize)} (by creation date), not the full {num(data.totalLeadsInPeriod)}.
+                  Narrow the date range for an exact count.
+                </InlineNotice>
+              )}
+
+              <Card title="Funnel" subtitle="Absolute count, stage-to-stage conversion, and drop-off — click a row to see the underlying list">
+                <DataTable
+                  tall
+                  loading={loading}
+                  columns={[
+                    {
+                      key: "label", label: "Stage",
+                      render: (s) => (
+                        <span>
+                          {s.label}
+                          <span className="muted" style={{ marginLeft: 6, fontSize: "var(--fs-12)" }}>{s.source}</span>
+                        </span>
+                      ),
+                    },
+                    { key: "value", label: "Count", align: "right", render: (s) => num(s.value) },
+                    { key: "stageConversionRate", label: "Stage → Stage", align: "right", render: (s) => (s.stageConversionRate == null ? "—" : `${s.stageConversionRate}%`) },
+                    { key: "dropOff", label: "Drop-off", align: "right", render: (s) => (s.dropOff == null ? "—" : <Badge kind={s.dropOff > 0 ? "bad" : "good"}>{num(s.dropOff)}</Badge>) },
+                    { key: "overallRate", label: "% of Leads Created", align: "right", render: (s) => (s.overallRate == null ? "—" : `${s.overallRate}%`) },
+                  ]}
+                  rows={stages.map((s, i) => {
+                    const def = data?.stageDefinitions?.[i];
+                    return { ...s, id: s.key, label: def?.label || s.key, source: def?.source || "", rule: def?.rule || "" };
+                  })}
+                  onRowClick={(row) => goToStage(row.key)}
+                />
+              </Card>
+
+              <Card title="Stage Definitions" subtitle="So everyone agrees what each stage means">
+                <DataTable
+                  columns={[
+                    { key: "label", label: "Stage" },
+                    { key: "source", label: "Source" },
+                    { key: "rule", label: "Definition" },
+                  ]}
+                  rows={(data?.stageDefinitions || []).map((d, i) => ({ ...d, id: i }))}
+                />
+              </Card>
+
+              <Card title="Leads Per Day" subtitle="Created vs. reached callby-converted">
+                <TrendChart data={(data?.daily || []).map((d) => ({ date: d.date, value: d.leadsCreated }))} label="Leads Created" />
+              </Card>
+
+              {data?.breakdown && (
+                <Card title={`Funnel by ${filterState?.filters?.breakdownBy || "dimension"}`} subtitle="Same stages, split out">
+                  <DataTable
+                    tall
+                    loading={loading}
+                    columns={[
+                      { key: "key", label: filterState?.filters?.breakdownBy === "source" ? "Source" : filterState?.filters?.breakdownBy === "team" ? "Team" : "Agent" },
+                      { key: "leadsCreated", label: "Created", align: "right", render: (r) => num(r.leadsCreated) },
+                      { key: "interested", label: "Interested", align: "right", render: (r) => num(r.interested) },
+                      { key: "converted", label: "Converted", align: "right", render: (r) => num(r.converted) },
+                      { key: "bookingDone", label: "Booking Done", align: "right", render: (r) => num(r.bookingDone) },
+                      { key: "surgeryDone", label: "Surgery Done", align: "right", render: (r) => num(r.surgeryDone) },
+                    ]}
+                    rows={data.breakdown.map((r, i) => ({ ...r, id: i }))}
+                  />
+                </Card>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

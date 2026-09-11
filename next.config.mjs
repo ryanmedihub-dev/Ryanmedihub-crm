@@ -1,6 +1,33 @@
+// Old /owner/* routes -> their new home in the v2 section tree (Owner Panel v2, F8).
+// Kept as server redirects so bookmarks and shared links keep working.
+const OWNER_V2_REDIRECTS = {
+  "/owner/agent-360": "/owner/employees/agents",
+  "/owner/staff-360": "/owner/employees/other",
+  "/owner/leadership": "/owner/employees/leadership",
+  "/owner/live-workforce": "/owner/calls/live",
+  "/owner/forecast": "/owner/calls/forecast",
+  "/owner/sim-health": "/owner/calls/sim-health",
+  "/owner/retry": "/owner/leads/retry",
+  "/owner/leaks": "/owner/ai/attention",
+  "/owner/leads/leaks": "/owner/ai/attention",
+  // Part 3: the standalone search-a-patient tool is superseded by the All
+  // page's ReportTable search box + click-through to /owner/patients/[id].
+  "/owner/patient-journey": "/owner/patients/all",
+  "/owner/patients/journey": "/owner/patients/all",
+  "/owner/counsellor-conversion": "/owner/patients/counsellor-conversion",
+  "/owner/surgery-planner": "/owner/patients/surgery-planner",
+  "/owner/ad-spend": "/owner/marketing/ad-spend",
+  "/owner/conversion": "/owner/statistics",
+  "/owner/attendance": "/owner/ai/attendance",
+  "/owner/ai-health": "/owner/ai/health",
+  "/owner/clinical-ai-quality": "/owner/ai/clinical-quality",
+  "/owner/payroll": "/owner/hr/payroll",
+  "/owner/hr-actions": "/owner/hr/actions",
+};
+
 const nextConfig = {
   experimental: {
-    optimizePackageImports: ["lucide-react", "recharts", "chart.js", "react-chartjs-2"],
+    optimizePackageImports: ["lucide-react", "recharts"],
   },
 
   async redirects() {
@@ -25,6 +52,11 @@ const nextConfig = {
         destination: "/admin/financing?tab=advances",
         permanent: false,
       },
+      ...Object.entries(OWNER_V2_REDIRECTS).map(([source, destination]) => ({
+        source,
+        destination,
+        permanent: false,
+      })),
     ];
   },
 };

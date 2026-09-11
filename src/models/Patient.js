@@ -300,6 +300,11 @@ patientSchema.pre("save", async function () {
 });
 
 patientSchema.index({ "personal.branch": 1, "ops.status": 1 });
+// Owner Panel v2 Part 3: every one of the six Patients report pages filters
+// branch + status and sorts/ranges on createdAt — the index above has no sort
+// key, so it can't serve the sort without an in-memory step once the match set
+// is more than a handful of rows.
+patientSchema.index({ "personal.branch": 1, "ops.status": 1, createdAt: -1 });
 patientSchema.index({ "personal.branch": 1, "personal.visitDate": -1 });
 patientSchema.index({ "surgery.surgeryDate": -1 });
 patientSchema.index({ "counselling.counsellor": 1 });

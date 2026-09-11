@@ -4,14 +4,14 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
 import AdSpend from "@/models/AdSpend";
-import Leads from "@/models/Leads";
-import Patient from "@/models/Patient";
-import { normalizePhone } from "@/lib/phone";
+import { attributeSpendToOutcomes } from "@/lib/owner/marketingAttribution";
 
 const PLATFORMS = ["Meta", "Google"];
-const TAG_BY_PLATFORM = { Meta: "Meta Leads", Google: "Google Leads" };
-const CONVERTED_STATUSES = ["SURGERY_BOOKED", "BOOKING_DONE", "CLOSED"];
 
+// Rebuilt on the shared src/lib/owner/marketingAttribution.js (Owner Panel v2,
+// Part 4) — same output shape as before (this route's callers are unchanged),
+// but the attribution logic itself now lives in one place, reused by the Ad
+// Spend return picture and the Comparison page too.
 export async function POST(req) {
   try {
     const session = await getServerSession(authOptions);
@@ -28,98 +28,26 @@ export async function POST(req) {
     const fromDate = new Date(from);
     const toDate = new Date(to);
 
-    const branchFilter = branch === "All" ? {} : { branch };
-    const spendRows = await AdSpend.aggregate([
-      {
-        $match: {
-          ...branchFilter,
-          platform: { $in: PLATFORMS },
-          date: { $gte: fromDate, $lte: toDate },
-        },
-      },
-      {
-        $group: {
-          _id: { platform: "$platform", campaignName: "$campaignName" },
-          spend: { $sum: "$amount" },
-        },
-      },
-    ]);
-
-    const spendByPlatform = { Meta: [], Google: [] };
-    spendRows.forEach((r) => {
-      spendByPlatform[r._id.platform].push({ campaignName: r._id.campaignName || "", spend: r.spend });
-    });
-
-    const leadsInRange = await Leads.find({
-      tag: { $in: Object.values(TAG_BY_PLATFORM) },
-      createdAt: { $gte: fromDate, $lte: toDate },
-    })
-      .select("phone tag")
-      .lean();
-
-    const platformPhones = { Meta: new Set(), Google: new Set() };
-    const platformLeadCount = { Meta: 0, Google: 0 };
-
-    for (const lead of leadsInRange) {
-      const platform = lead.tag === TAG_BY_PLATFORM.Meta ? "Meta" : lead.tag === TAG_BY_PLATFORM.Google ? "Google" : null;
-      if (!platform) continue;
-      platformLeadCount[platform] += 1;
-      const norm = normalizePhone(lead.phone);
-      if (norm) platformPhones[platform].add(norm);
-    }
-
-    const allPhones = [...new Set([...platformPhones.Meta, ...platformPhones.Google])];
-    const patients = allPhones.length
-      ? await Patient.find({ "personal.phoneNormalized": { $in: allPhones } })
-          .select("personal.phoneNormalized ops.status payments.totalAmount")
-          .lean()
-      : [];
-
-    const patientByPhone = new Map();
-    patients.forEach((p) => {
-      if (p.personal?.phoneNormalized) patientByPhone.set(p.personal.phoneNormalized, p);
-    });
-
-    function conversionFor(platform) {
-      const countedPatientIds = new Set();
-      let converted = 0;
-      let revenue = 0;
-      for (const phone of platformPhones[platform]) {
-        const patient = patientByPhone.get(phone);
-        if (!patient || !CONVERTED_STATUSES.includes(patient.ops?.status)) continue;
-        const pid = String(patient._id);
-        if (countedPatientIds.has(pid)) continue;
-        countedPatientIds.add(pid);
-        converted += 1;
-        revenue += patient.payments?.totalAmount || 0;
-      }
-      return { converted, revenue };
-    }
+    const { byPlatform } = await attributeSpendToOutcomes({ platforms: PLATFORMS, branch, from: fromDate, to: toDate });
 
     const rows = [];
     for (const platform of PLATFORMS) {
-      const campaigns = spendByPlatform[platform];
+      const outcome = byPlatform[platform];
+      const campaigns = outcome.campaigns;
       if (campaigns.length === 0) continue;
-
-      const leadsCount = platformLeadCount[platform];
-      const { converted, revenue } = conversionFor(platform);
-      const totalSpend = campaigns.reduce((s, c) => s + c.spend, 0);
-      const cpl = leadsCount > 0 ? totalSpend / leadsCount : null;
-      const cac = converted > 0 ? totalSpend / converted : null;
-      const roas = totalSpend > 0 ? revenue / totalSpend : null;
 
       if (campaigns.length === 1) {
         rows.push({
           platform,
           campaignName: campaigns[0].campaignName || null,
           isPlatformTotal: false,
-          spend: totalSpend,
-          leads: leadsCount,
-          cpl,
-          converted,
-          cac,
-          revenue,
-          roas,
+          spend: outcome.spend,
+          leads: outcome.leads,
+          cpl: outcome.cpl,
+          converted: outcome.converted,
+          cac: outcome.cac,
+          revenue: outcome.revenue,
+          roas: outcome.roas,
         });
       } else {
         campaigns.forEach((c) => {
@@ -140,16 +68,22 @@ export async function POST(req) {
           platform,
           campaignName: null,
           isPlatformTotal: true,
-          spend: totalSpend,
-          leads: leadsCount,
-          cpl,
-          converted,
-          cac,
-          revenue,
-          roas,
+          spend: outcome.spend,
+          leads: outcome.leads,
+          cpl: outcome.cpl,
+          converted: outcome.converted,
+          cac: outcome.cac,
+          revenue: outcome.revenue,
+          roas: outcome.roas,
         });
       }
     }
+
+    // Last-entry attribution for the manual-data notice.
+    const lastEntry = await AdSpend.findOne(branch !== "All" ? { branch } : {})
+      .sort({ createdAt: -1 })
+      .select("createdAt enteredBy")
+      .lean();
 
     return NextResponse.json({
       success: true,
@@ -159,6 +93,8 @@ export async function POST(req) {
           ? `Spend is scoped to ${branch}. Leads/CPL/Converted/Revenue/CAC/ROAS reflect all branches — the Leads collection has no branch field to scope them by.`
           : null,
       rows,
+      lastUpdatedAt: lastEntry?.createdAt || null,
+      lastUpdatedBy: lastEntry?.enteredBy?.name || null,
     });
   } catch (err) {
     console.error("owner marketing-summary error:", err);

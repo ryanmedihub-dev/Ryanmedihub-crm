@@ -25,6 +25,7 @@ import {
   Download,
   Pill,
   Leaf,
+  Trash2,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 
@@ -167,6 +168,7 @@ export default function PRPGFCPage() {
     amount: "", discount: "", method: "cash", paymentId: "", remarks: "",
   });
   const [paying, setPaying] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
 
   const fetchData = useCallback(
     async (silent = false) => {
@@ -326,6 +328,41 @@ export default function PRPGFCPage() {
       fetchData(true);
     } catch (err) { toast.error(err.message); }
     finally      { setPaying(false); }
+  };
+
+  const handleDelete = async (row) => {
+    const label = row.patientName || "this session";
+    const ok = window.confirm(
+      row.status === "paid"
+        ? `Delete this ${row.procedure || "PRP"} session for ${label}? This will delete the ₹${row.amount || 0} payment too. This cannot be undone.`
+        : `Delete this ${row.procedure || "PRP"} session for ${label}? This cannot be undone.`,
+    );
+    if (!ok) return;
+
+    const rowKey = row.transactionId || row.sessionId;
+    setDeletingId(rowKey);
+    try {
+      const res =
+        row.status === "paid"
+          ? await fetch("/api/transactions/service/delete", {
+              method: "DELETE",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ transactionId: row.transactionId }),
+            })
+          : await fetch("/api/reception/prp", {
+              method: "DELETE",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ patientId: row.patientId, sessionId: row.sessionId }),
+            });
+      const data = await res.json();
+      if (!res.ok || data.success === false) throw new Error(data.error || "Failed to delete");
+      toast.success("Session deleted");
+      fetchData(true);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const handleExport = async () => {
@@ -569,7 +606,7 @@ export default function PRPGFCPage() {
                     <th className="px-5 py-3.5 font-semibold text-gray-600">Method</th>
                     <th className="px-5 py-3.5 font-semibold text-gray-600">Time</th>
                     <th className="px-5 py-3.5 font-semibold text-gray-600">Status</th>
-                    <th className="px-5 py-3.5 w-28"></th>
+                    <th className="px-5 py-3.5 w-36"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
@@ -635,14 +672,28 @@ export default function PRPGFCPage() {
                         </td>
 
                         <td className="px-5 py-3.5">
-                          {row.status === "unpaid" && (
+                          <div className="flex items-center justify-end gap-1.5">
+                            {row.status === "unpaid" && (
+                              <button
+                                onClick={() => openPayModal(row)}
+                                className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-semibold hover:bg-indigo-700 transition whitespace-nowrap"
+                              >
+                                Mark Paid
+                              </button>
+                            )}
                             <button
-                              onClick={() => openPayModal(row)}
-                              className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-semibold hover:bg-indigo-700 transition whitespace-nowrap"
+                              onClick={() => handleDelete(row)}
+                              disabled={deletingId === (row.transactionId || row.sessionId)}
+                              title="Delete session"
+                              className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 transition disabled:opacity-50"
                             >
-                              Mark Paid
+                              {deletingId === (row.transactionId || row.sessionId) ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="w-4 h-4" />
+                              )}
                             </button>
-                          )}
+                          </div>
                         </td>
                       </tr>
                     );
