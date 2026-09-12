@@ -91,7 +91,6 @@ const SECTIONS = [
       { label: "Rejected", href: "/owner/hr/rejected" },
       { label: "By Position", href: "/owner/hr/by-position" },
       { label: "Incentives & Payroll", href: "/owner/hr/payroll", soon: true },
-      { label: "HR Action Center", href: "/owner/hr/actions", soon: true },
     ],
   },
   {

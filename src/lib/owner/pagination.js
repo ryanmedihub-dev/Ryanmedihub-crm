@@ -64,3 +64,49 @@ export function parseEmployeeFilters(searchParams) {
 
   return { dateFrom, dateTo, branch, tlName, isactive, search, sortBy, sortDir };
 }
+
+/**
+ * Parse + whitelist sort params. `allowed` maps the public sortBy key to the
+ * Mongo field path to sort on (often identical). Unknown keys fall back to
+ * `defaultKey`, so a crafted URL can never sort on an arbitrary path.
+ * Returns { sortBy, sortDir, sort } where `sort` is ready for $sort and always
+ * carries `tiebreak` as a secondary key — without a total order, rows can
+ * repeat or vanish between pages whenever many share a value.
+ */
+export function parseSortParams(searchParams, { allowed, defaultKey, defaultDir = "asc", tiebreak = "_id" }) {
+  const get = typeof searchParams?.get === "function"
+    ? (k) => searchParams.get(k)
+    : (k) => searchParams?.[k];
+  const requested = get("sortBy");
+  const sortBy = requested && Object.prototype.hasOwnProperty.call(allowed, requested) ? requested : defaultKey;
+  const sortDir = (get("sortDir") || defaultDir) === "desc" ? "desc" : "asc";
+  const dir = sortDir === "desc" ? -1 : 1;
+  const sort = { [allowed[sortBy]]: dir };
+  if (tiebreak && allowed[sortBy] !== tiebreak) sort[tiebreak] = 1;
+  return { sortBy, sortDir, sort };
+}
+
+/**
+ * The standard $facet for a paginated list: one page of rows, the KPI totals
+ * over the WHOLE filtered set, and the total row count — one round trip.
+ *   pagedFacet({ sort, skip, limit, rowStages: [...after the slice], totals: [{ $group: ... }] })
+ * Unpack with unpackFacet().
+ */
+export function pagedFacet({ sort, skip, limit, rowStages = [], totals = [] }) {
+  return {
+    $facet: {
+      rows: [{ $sort: sort }, { $skip: skip }, { $limit: limit }, ...rowStages],
+      totals: totals.length ? totals : [{ $group: { _id: null, n: { $sum: 1 } } }],
+      count: [{ $count: "n" }],
+    },
+  };
+}
+
+export function unpackFacet(aggregateResult) {
+  const r = Array.isArray(aggregateResult) ? aggregateResult[0] : aggregateResult;
+  return {
+    rows: r?.rows || [],
+    totals: r?.totals?.[0] || null,
+    total: r?.count?.[0]?.n || 0,
+  };
+}

@@ -32,7 +32,9 @@ export async function GET(request) {
     const accountsParam = searchParams.get("accounts") || "";
 
     if (groupBy === "account") {
-      const groupMatch = { isCancelled: { $ne: true }, isResolved: { $ne: true } };
+      const groupMatch = { isCancelled: { $ne: true } };
+      if (status === "open") groupMatch.isResolved = { $ne: true };
+      else if (status === "resolved") groupMatch.isResolved = true;
       if (branch) groupMatch.branch = branch;
       if (accountsParam) groupMatch.account = { $in: accountsParam.split(",") };
       if (from || to) {

@@ -182,7 +182,7 @@ export default function DrillDownTable({
           setMeta({ total: (json.rows || []).length, page: 1, limit: 9999 });
         } else {
           const json = await fetch(
-            `/api/suspense?account=${encodeURIComponent(drill.headKey)}&status=all&page=${page}&limit=50&${qs()}`,
+            `/api/suspense?account=${encodeURIComponent(drill.headKey)}&page=${page}&limit=50&${qs()}`,
           ).then((r) => r.json());
           setRows(
             (json.entries || []).map((e) => ({

@@ -78,7 +78,9 @@ export async function POST(req) {
       period: period?.month && period?.year ? period : undefined,
       relatedPatient: relatedPatient || undefined,
       totalAmount: parseFloat(totalAmount),
-      dueDate: dueDate ? new Date(dueDate) : undefined,
+      // Every receivable needs a dueDate for the ledger pages' date-range filter to ever see
+      // it — a missing one never matches a from/to range, so it silently falls out of every filter.
+      dueDate: dueDate ? new Date(dueDate) : new Date(),
       branch: branch || session.user.branch,
       remarks: remarks || "",
       costAlreadyRecognised: costAlreadyRecognised === true,

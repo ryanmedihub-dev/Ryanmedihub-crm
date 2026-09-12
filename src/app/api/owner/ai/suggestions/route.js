@@ -5,7 +5,7 @@ import { fetchCallby } from "@/lib/callby";
 import { withCallbyRoute, toLeadDateParams } from "@/lib/owner/callbyRoute";
 import { computeStagesForLeads, stageRate } from "@/app/api/owner/statistics/route";
 import { attributeSpendToOutcomes } from "@/lib/owner/marketingAttribution";
-import { overdueFollowUps, interestedNoRecentCall, stalePatients } from "@/app/api/owner/ai/attention/route";
+import { overdueFollowUps, interestedNoRecentCall, stalePatients } from "@/lib/owner/metrics/attention";
 import { ATTENTION_THRESHOLDS } from "@/lib/owner/attentionThresholds";
 import { employeeSection } from "@/lib/owner/employeeSections";
 import { SECTION_METRIC_BUILDERS, derivePerfMetrics, sampleValue, daysInPeriod } from "@/lib/owner/employeeReportQuery";

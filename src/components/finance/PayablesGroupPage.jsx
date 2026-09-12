@@ -21,6 +21,15 @@ const MONTHLY_GROUPS = new Set(["rent", "employees"]);
 // tells you nothing) instead breaks down into the employees who hold payables in that category.
 const SUB_PARTY_GROUPED = new Set(["employees"]);
 
+const useDebounced = (value, delay = 300) => {
+  const [v, setV] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setV(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return v;
+};
+
 export default function PayablesGroupPage({ group }) {
   const purposes = PAYABLE_GROUP_PURPOSES[group];
   const label = PAYABLE_GROUP_LABELS[group];
@@ -35,6 +44,8 @@ export default function PayablesGroupPage({ group }) {
   const [ageing, setAgeing] = useState(searchParams.get("ageing") || "");
   const [month, setMonth] = useState("");
   const [year, setYear] = useState("");
+  const [employeeSearch, setEmployeeSearch] = useState("");
+  const debouncedEmployeeSearch = useDebounced(employeeSearch);
   const [initialDrill, setInitialDrill] = useState(undefined);
 
   useEffect(() => {
@@ -66,10 +77,15 @@ export default function PayablesGroupPage({ group }) {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const employeeParty = subGroupByParty ? debouncedEmployeeSearch : "";
+
   useEffect(() => {
     const ctrl = new AbortController();
     setLoading(true);
-    fetch(`/api/payables/grouped?level=1&purpose=${purposeCSV}&${scopeQS()}`, { signal: ctrl.signal })
+    fetch(
+      `/api/payables/grouped?level=1&purpose=${purposeCSV}&${scopeQS(employeeParty ? { party: employeeParty } : {})}`,
+      { signal: ctrl.signal },
+    )
       .then((r) => r.json())
       .then((json) => {
         const rows = json.rows || [];
@@ -84,15 +100,16 @@ export default function PayablesGroupPage({ group }) {
       .catch((e) => e.name !== "AbortError" && console.error(e))
       .finally(() => setLoading(false));
     return () => ctrl.abort();
-  }, [purposeCSV, scopeQS]);
+  }, [purposeCSV, scopeQS, employeeParty]);
 
   const extraParams = useMemo(() => {
     const p = { purpose: purposeCSV };
     if (ageing) p.ageing = ageing;
     if (month) p.periodMonth = month;
     if (year) p.periodYear = year;
+    if (employeeParty) p.party = employeeParty;
     return p;
-  }, [purposeCSV, ageing, month, year]);
+  }, [purposeCSV, ageing, month, year, employeeParty]);
 
   return (
     <div className="space-y-4">
@@ -109,6 +126,15 @@ export default function PayablesGroupPage({ group }) {
       />
 
       <div className="flex flex-wrap items-center gap-2">
+        {subGroupByParty && (
+          <input
+            type="text"
+            value={employeeSearch}
+            onChange={(e) => setEmployeeSearch(e.target.value)}
+            placeholder="Search employee (name or ID)…"
+            className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs bg-white shadow-sm w-52"
+          />
+        )}
         {AGEING_BUCKETS.map((b) => (
           <button
             key={b.value}

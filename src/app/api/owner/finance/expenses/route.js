@@ -4,7 +4,9 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import dbConnect from "@/lib/db";
 import Transactions from "@/models/Transactions";
 import AdSpend from "@/models/AdSpend";
-import { parseEmployeeFilters } from "@/lib/owner/pagination";
+import {
+  parseEmployeeFilters, parsePageParams, parseSortParams, pagedFacet, unpackFacet, pageMeta,
+} from "@/lib/owner/pagination";
 
 const ALLOWED_ROLES = ["owner", "super-admin"];
 
@@ -13,6 +15,13 @@ const ALLOWED_ROLES = ["owner", "super-admin"];
 // These are entered in two different places and will drift — surfaced as a
 // line, never hidden (Owner Panel v2, Part 5 brief).
 const EXPENSE_TYPE_TO_PLATFORM = { "Meta ads": "Meta", "Google ads": "Google" };
+
+// Rows are one per (category, sub-type) — bounded by the category tree today,
+// but sorted/sliced in the database like every other list so the contract is
+// uniform: page / pageSize (default 25, max 200) / sortBy / sortDir.
+const SORTABLE = { total: "total", count: "count", category: "category", subType: "subType" };
+
+const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 export async function GET(req) {
   try {
@@ -23,7 +32,11 @@ export async function GET(req) {
     }
 
     const { searchParams } = new URL(req.url);
-    const { dateFrom, dateTo, branch } = parseEmployeeFilters(searchParams);
+    const { dateFrom, dateTo, branch, search } = parseEmployeeFilters(searchParams);
+    const { page, pageSize, skip, limit } = parsePageParams(searchParams);
+    const { sortBy, sortDir, sort } = parseSortParams(searchParams, {
+      allowed: SORTABLE, defaultKey: "total", defaultDir: "desc", tiebreak: "subType",
+    });
 
     const match = { transactionCategory: "EXPENSE" };
     if (branch && branch !== "All") match.branch = branch;
@@ -33,7 +46,8 @@ export async function GET(req) {
       if (dateTo) match.date.$lte = new Date(dateTo);
     }
 
-    const rows = await Transactions.aggregate([
+    const marketingTypes = Object.keys(EXPENSE_TYPE_TO_PLATFORM);
+    const groupStages = [
       { $match: match },
       {
         $group: {
@@ -42,17 +56,13 @@ export async function GET(req) {
           count: { $sum: 1 },
         },
       },
-      { $sort: { total: -1 } },
-    ]);
+      { $project: { _id: 0, category: "$_id.category", subType: "$_id.subType", total: 1, count: 1 } },
+    ];
+    if (search) {
+      const re = new RegExp(escapeRegex(search), "i");
+      groupStages.push({ $match: { $or: [{ category: re }, { subType: re }] } });
+    }
 
-    const marketingTypes = Object.keys(EXPENSE_TYPE_TO_PLATFORM);
-    const marketingTxTotal = rows
-      .filter((r) => marketingTypes.includes(r._id.subType))
-      .reduce((s, r) => s + r.total, 0);
-
-    // Same window, same branch scope, AdSpend side — no budget data exists
-    // anywhere so this route never invents one; it only reconciles the two
-    // numbers that already exist.
     const adSpendMatch = { platform: { $in: ["Meta", "Google"] } };
     if (branch && branch !== "All") adSpendMatch.branch = branch;
     if (dateFrom || dateTo) {
@@ -60,16 +70,43 @@ export async function GET(req) {
       if (dateFrom) adSpendMatch.date.$gte = new Date(dateFrom);
       if (dateTo) adSpendMatch.date.$lte = new Date(dateTo);
     }
-    const [adSpendAgg] = await AdSpend.aggregate([
-      { $match: adSpendMatch },
-      { $group: { _id: null, total: { $sum: "$amount" } } },
+
+    const [result, adSpendAgg] = await Promise.all([
+      Transactions.aggregate([
+        ...groupStages,
+        pagedFacet({
+          sort, skip, limit,
+          totals: [
+            {
+              $group: {
+                _id: null,
+                totalExpense: { $sum: "$total" },
+                entries: { $sum: "$count" },
+                marketingTxTotal: { $sum: { $cond: [{ $in: ["$subType", marketingTypes] }, "$total", 0] } },
+              },
+            },
+          ],
+        }),
+      ]).collation({ locale: "en", strength: 2 }),
+      // Same window, same branch scope, AdSpend side — no budget data exists
+      // anywhere so this route never invents one; it only reconciles the two
+      // numbers that already exist.
+      AdSpend.aggregate([{ $match: adSpendMatch }, { $group: { _id: null, total: { $sum: "$amount" } } }]),
     ]);
-    const adSpendTotal = adSpendAgg?.total || 0;
+
+    const { rows, totals, total } = unpackFacet(result);
+    const adSpendTotal = adSpendAgg?.[0]?.total || 0;
+    const marketingTxTotal = totals?.marketingTxTotal || 0;
 
     return NextResponse.json({
       success: true,
-      rows: rows.map((r) => ({ category: r._id.category, subType: r._id.subType, total: r.total, count: r.count })),
-      totalExpense: rows.reduce((s, r) => s + r.total, 0),
+      rows,
+      total,
+      ...pageMeta({ page, pageSize, total }),
+      sortBy,
+      sortDir,
+      totalExpense: totals?.totalExpense || 0,
+      entries: totals?.entries || 0,
       marketingReconciliation: {
         transactionsTotal: marketingTxTotal,
         adSpendTotal,

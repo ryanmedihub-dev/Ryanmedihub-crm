@@ -6,12 +6,10 @@ import { ROLE_ROUTES } from "@/lib/roleRoutes";
 const ROLE_HOME = ROLE_ROUTES;
 
 const ROLE_ALLOWED_PREFIXES = {
-  "super-admin": ["/super-admin", "/admin", "/sales", "/reception", "/collab", "/surgery", "/counsellor", "/stocks", "/hr", "/owner", "/saniya"],
-  // /saniya (the Saniya AI assistant) was reachable by anyone with the URL —
-  // no role check on the page, no auth check on its API route, and it wasn't
-  // even in this matcher. Locked to owner/super-admin, same bar as the rest
-  // of the owner-facing surface (Owner Panel v2, Part 6).
-  owner:         ["/owner", "/saniya"],
+  "super-admin": ["/super-admin", "/admin", "/sales", "/reception", "/collab", "/surgery", "/counsellor", "/stocks", "/hr", "/owner"],
+  // The old standalone /saniya assistant now redirects to /owner/ai/sanya
+  // (next.config.mjs), which sits under the /owner guard like everything else.
+  owner:         ["/owner"],
   admin:         ["/admin", "/stocks"],
   sales:         ["/sales"],
   reception:     ["/reception"],
@@ -59,6 +57,5 @@ export const config = {
     "/counsellor/:path*",
     "/stocks/:path*",
     "/hr/:path*",
-    "/saniya/:path*",
   ],
 };

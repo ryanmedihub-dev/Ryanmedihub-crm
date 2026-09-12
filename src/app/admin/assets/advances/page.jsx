@@ -106,7 +106,7 @@ export default function AssetsAdvancesPage() {
         <input
           value={party}
           onChange={(e) => setParty(e.target.value)}
-          placeholder="Search party…"
+          placeholder="Search party (name or employee ID)…"
           className="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white shadow-sm w-44"
         />
         <input

@@ -7,24 +7,32 @@ import Interviewer from "@/models/Interviewer";
 import Payable from "@/models/Payable";
 import Transactions from "@/models/Transactions";
 import { buildPayableAggregationStages } from "@/lib/payableAggregation";
-import { fetchCallby, CallbyError } from "@/lib/callby";
+import { fetchCallbyCached, CallbyError } from "@/lib/callby";
 import { employeeSection, SECTION_LABELS } from "@/lib/owner/employeeSections";
-import { scoreCohort, ROLE_PERFORMANCE_CONFIG } from "@/lib/owner/performance";
-import { parsePageParams, parseEmployeeFilters } from "@/lib/owner/pagination";
+import { scoreCohort, ROLE_PERFORMANCE_CONFIG, PERFORMANCE_BANDS } from "@/lib/owner/performance";
+import { parsePageParams, parseEmployeeFilters, pageMeta } from "@/lib/owner/pagination";
 
 // One query builder behind all five Employees list pages (Owner Panel v2, Part 1).
 // Each role route is a one-line wrapper: `runEmployeeReportQuery(req, "Agent")`.
-// See the Part 1 plan for the full reasoning; short version:
-//   - Employee.role is free text — section bucketing (employeeSection()) is a JS
-//     classifier that can't be expressed as a Mongo $match, so the Mongo-filterable
-//     subset (branch/isactive/search) is fetched once, then bucketed + paginated
-//     in Node. This is bounded by employee count (a few hundred, see Part 0's
-//     326-employee reconciliation), never by the underlying Patient/CallLog scale.
-//   - Performance is peer-relative, so it's computed over the WHOLE filtered
-//     cohort, then sorted/paginated — the one deliberate exception to
-//     paginate-in-Mongo, and still bounded by employee count.
-//   - Every heavier join (Patient/Payable/Interviewer/callby) is grouped down to
-//     one row per employee before it leaves the database/callby.
+//
+// How a request runs (see runEmployeeReportQuery):
+//   1. Section → Mongo $match. Employee.role is free text and employeeSection()
+//      is a JS classifier, so the DISTINCT role strings (a few dozen) are
+//      classified once and the section becomes `role: { $in: [...] }` — an exact
+//      DB filter, one classifier implementation.
+//   2. Metrics per employee come from the SECTION_METRIC_BUILDERS below — each
+//      is one grouped aggregation (Patient/Payable/Interviewer) or one cached
+//      callby call, returning ≤ one row per employee. These builders are the
+//      single implementation of every metric: dashboard, overview, attention,
+//      suggestions, the detail page and Sanya's tools all call the same ones.
+//      Performance is peer-relative (scoreCohort), so it needs the whole cohort.
+//   3. One Employee.aggregate() with $facet does the rest IN THE DATABASE:
+//      attach the per-employee metrics, $sort on any column (employee field,
+//      metric, or performance score) with an _id tiebreak so pages never
+//      overlap, $skip/$limit the page, and $group the KPI totals — page rows +
+//      KPIs in one round trip. Nothing is sliced in Node.
+//   Cost is bounded by employee count (a few hundred), never by Patient/CallLog
+//   scale. Default page 25, hard max 200 (src/lib/owner/pagination.js).
 
 const ALLOWED_ROLES = ["owner", "super-admin"];
 
@@ -60,7 +68,7 @@ export async function buildAgentMetrics(employees, { from, to }) {
     const params = {};
     if (from) params.from = from;
     if (to) params.to = to;
-    const result = await fetchCallby("/api/leads/workforce-summary", { params });
+    const result = await fetchCallbyCached("/api/leads/workforce-summary", { params });
     const agents = result?.data?.agents || result?.agents || [];
     const byCallbyId = new Map(
       agents.map((a) => [String(a?.employeeId ?? a?.userId ?? a?.id ?? a?._id ?? ""), a]),
@@ -181,9 +189,13 @@ async function buildSurgeryMetrics(employees, { from, to }) {
   if (from) dateMatch["surgery.surgeryDate"].$gte = new Date(from);
   if (to) dateMatch["surgery.surgeryDate"].$lte = new Date(to);
 
+  // $facet output names may not contain "." (Mongo Location16412 — this page
+  // 500'd on every load until the keys were flattened), so the field path is
+  // stored under a dot-free key and mapped back below.
+  const facetKey = (field) => field.replace(/\./g, "_");
   const facet = {};
   for (const field of SURGERY_ROLE_FIELDS) {
-    facet[field] = [
+    facet[facetKey(field)] = [
       { $match: { ...dateMatch, [field]: { $in: ids } } },
       { $unwind: `$${field}` },
       { $match: { [field]: { $in: ids } } },
@@ -196,7 +208,7 @@ async function buildSurgeryMetrics(employees, { from, to }) {
   // surgery (rare, but possible) is counted once per array here — flagged in
   // the end-of-part report rather than engineered around, given how rare it is.
   for (const field of SURGERY_ROLE_FIELDS) {
-    for (const row of result[field] || []) {
+    for (const row of result[facetKey(field)] || []) {
       const m = metricsById.get(String(row._id));
       if (!m) continue;
       m.patientsOperated += row.patientsOperated;
@@ -346,38 +358,105 @@ export function sampleValue(section, m) {
   return m[config.sampleField] || 0;
 }
 
-function buildKpis(section, enriched) {
-  const headcount = enriched.length;
-  const active = enriched.filter((e) => e.isactive).length;
-  const linked = enriched.filter((e) => e.callbyLinked).length;
-  const totalSalaryPaid = enriched.reduce((s, e) => s + (e.salaryPaid || 0), 0);
-  const totalIncentivePaid = enriched.reduce((s, e) => s + (e.incentivePaid || 0), 0);
-  const scored = enriched.filter((e) => e.performance && e.performance.insufficientData === false);
-  const avgScore = scored.length ? Math.round(scored.reduce((s, e) => s + e.performance.score, 0) / scored.length) : null;
+// KPI tiles from the $facet totals (one $group over the whole filtered cohort —
+// the same rows the table pages through, never a second query).
+function buildKpis(section, t) {
+  const headcount = t?.headcount || 0;
+  const active = t?.active || 0;
+  const linked = t?.linked || 0;
+  const scoredCount = t?.scoredCount || 0;
+  const avgScore = scoredCount ? Math.round((t.scoreSum || 0) / scoredCount) : null;
 
   const base = [
     { label: "Headcount", value: headcount, sub: `${SECTION_LABELS[section]} in view`, kind: "info" },
     { label: "Active", value: active, sub: `${headcount - active} inactive`, kind: "good" },
     { label: "Linked to callby", value: linked, sub: `${headcount - linked} not linked`, kind: linked === headcount ? "good" : "warn" },
-    { label: "Salary Paid", value: totalSalaryPaid, sub: "This period", kind: "info", format: "currency" },
-    { label: "Incentive Paid", value: totalIncentivePaid, sub: "This period", kind: "info", format: "currency" },
-    { label: "Avg. Performance", value: avgScore == null ? "—" : `${avgScore}`, sub: `${scored.length} scored`, kind: "good" },
+    { label: "Salary Paid", value: round(t?.salaryPaid), sub: "This period", kind: "info", format: "currency" },
+    { label: "Incentive Paid", value: round(t?.incentivePaid), sub: "This period", kind: "info", format: "currency" },
+    { label: "Avg. Performance", value: avgScore == null ? "—" : `${avgScore}`, sub: `${scoredCount} scored`, kind: "good" },
   ];
 
   if (section === "Agent") {
-    base.push({ label: "Total Calls", value: enriched.reduce((s, e) => s + (e.totalCalls || 0), 0), sub: "This period", kind: "info" });
-    base.push({ label: "Total Leads", value: enriched.reduce((s, e) => s + (e.totalLeads || 0), 0), sub: "Assigned", kind: "info" });
+    base.push({ label: "Total Calls", value: t?.totalCalls || 0, sub: "This period", kind: "info" });
+    base.push({ label: "Total Leads", value: t?.totalLeads || 0, sub: "Assigned", kind: "info" });
   } else if (section === "Counsellor") {
-    base.push({ label: "Patients Consulted", value: enriched.reduce((s, e) => s + (e.patientsConsulted || 0), 0), sub: "This period", kind: "info" });
+    base.push({ label: "Patients Consulted", value: t?.patientsConsulted || 0, sub: "This period", kind: "info" });
   } else if (section === "Surgery") {
-    base.push({ label: "Patients Operated", value: enriched.reduce((s, e) => s + (e.patientsOperated || 0), 0), sub: "This period", kind: "info" });
-    base.push({ label: "Grafts Implanted", value: enriched.reduce((s, e) => s + (e.graftsImplanted || 0), 0), sub: "This period", kind: "info" });
+    base.push({ label: "Patients Operated", value: t?.patientsOperated || 0, sub: "This period", kind: "info" });
+    base.push({ label: "Grafts Implanted", value: t?.graftsImplanted || 0, sub: "This period", kind: "info" });
   } else if (section === "HR") {
-    base.push({ label: "Interviews", value: enriched.reduce((s, e) => s + (e.totalInterviews || 0), 0), sub: "This period", kind: "info" });
-    base.push({ label: "Selected", value: enriched.reduce((s, e) => s + (e.selected || 0), 0), sub: "This period", kind: "good" });
+    base.push({ label: "Interviews", value: t?.totalInterviews || 0, sub: "This period", kind: "info" });
+    base.push({ label: "Selected", value: t?.selected || 0, sub: "This period", kind: "good" });
   }
 
   return base;
+}
+
+// Columns the table may sort on. Employee-document fields sort on the document
+// itself; everything else lives under the attached `_m` metrics object. Anything
+// not listed falls back to name so a crafted sortBy can't probe arbitrary paths.
+const EMPLOYEE_SORT_FIELDS = new Set([
+  "name", "phone", "employeeId", "branch", "tlName", "managerName", "dateOfJoining", "isactive",
+]);
+const EMPLOYEE_SORT_ALIASES = { salary: "salaryStructure.baseSalary", incentiveRate: "incentiveRate" };
+const COMP_KEYS = ["salaryPayable", "salaryPaid", "incentivePayable", "incentivePaid"];
+
+function resolveSortPath(section, sortBy) {
+  if (EMPLOYEE_SORT_FIELDS.has(sortBy)) return sortBy;
+  if (EMPLOYEE_SORT_ALIASES[sortBy]) return EMPLOYEE_SORT_ALIASES[sortBy];
+  if (sortBy === "performance") return "_m.performance.score";
+  if (sortBy === "callbyLinked") return "callbyLinked";
+  if (COMP_KEYS.includes(sortBy) || SECTION_METRIC_KEYS[section]?.has(sortBy)) return `_m.${sortBy}`;
+  return "name";
+}
+
+// Metric keys each section's builder emits — derived from the builders' own
+// zero-rows so the sort whitelist can't drift from what they actually return.
+const SECTION_METRIC_KEYS = {
+  Agent: new Set(["totalCalls", "connected", "dailyTarget", "totalLeads", "interested", "notInterested", "followUps", "unattemptedLeads", "totalPatients", "converted", "nonConverted", "amountReceived"]),
+  Counsellor: new Set(["patientsConsulted", "converted", "nonConverted", "amountReceived", "avgDiscount", "packageBeforeConsult", "packageAfterConsult"]),
+  Surgery: new Set(["patientsOperated", "graftsImplanted", "surgeriesAttempted"]),
+  HR: new Set(["totalInterviews", "selected", "rejected", "hold"]),
+  Other: new Set([]),
+};
+
+// Per-section KPI accumulators for the $facet totals branch.
+const SECTION_KPI_SUMS = {
+  Agent: { totalCalls: "$_m.totalCalls", totalLeads: "$_m.totalLeads" },
+  Counsellor: { patientsConsulted: "$_m.patientsConsulted" },
+  Surgery: { patientsOperated: "$_m.patientsOperated", graftsImplanted: "$_m.graftsImplanted" },
+  HR: { totalInterviews: "$_m.totalInterviews", selected: "$_m.selected" },
+  Other: {},
+};
+
+const ROW_FIELDS = [
+  "name", "phone", "employeeId", "dateOfJoining", "tlName", "managerName", "branch", "isactive",
+];
+
+/**
+ * Mongo $match for one section + the standard filters. Exported so any other
+ * owner query that needs "the employees on the Agents page" (Sanya's tools,
+ * overview) builds the identical filter instead of re-deriving it.
+ */
+export async function buildSectionMatch(section, filters = {}) {
+  const distinctRoles = await Employee.distinct("role", { mergedInto: null });
+  const sectionRoles = distinctRoles.filter((r) => employeeSection(r) === section);
+  // A missing/blank role classifies as "Other" — $in with null also matches
+  // documents without the field.
+  if (section === "Other") sectionRoles.push(null, "");
+
+  const match = { mergedInto: null, role: { $in: sectionRoles } };
+  if (filters.isactive === true || filters.isactive === false) match.isactive = filters.isactive;
+  if (filters.branch && filters.branch !== "All") match.branch = filters.branch;
+  if (filters.search) {
+    const re = new RegExp(escapeRegex(filters.search), "i");
+    match.$or = [{ name: re }, { phone: re }, { employeeId: re }, { tlName: re }];
+  }
+  if (filters.tlName) {
+    // Exact team, case/whitespace-insensitive — same rule the Leadership page uses.
+    match.tlName = new RegExp(`^\\s*${escapeRegex(filters.tlName.trim())}\\s*$`, "i");
+  }
+  return match;
 }
 
 // ---------------------------------------------------------------------------
@@ -392,92 +471,153 @@ export async function runEmployeeReportQuery(req, section) {
 
   const { searchParams } = new URL(req.url);
   const filters = parseEmployeeFilters(searchParams);
-  const { page, pageSize, skip, limit } = parsePageParams(searchParams);
+  const pageParams = parsePageParams(searchParams);
+  return NextResponse.json(await queryEmployeeSection({ section, filters, ...pageParams }));
+}
 
-  const match = { mergedInto: null };
-  if (filters.isactive !== null) match.isactive = filters.isactive;
-  if (filters.branch && filters.branch !== "All") match.branch = filters.branch;
-  if (filters.search) {
-    const re = new RegExp(escapeRegex(filters.search), "i");
-    match.$or = [{ name: re }, { phone: re }, { employeeId: re }, { tlName: re }];
-  }
+/**
+ * The Employees list query without the HTTP layer — the payload
+ * runEmployeeReportQuery returns. Exported so src/lib/owner/metrics/employees.js
+ * (Sanya) reads the same KPI totals the page shows for the same filters.
+ */
+export async function queryEmployeeSection({ section, filters, page, pageSize, skip, limit }) {
+  const sortPath = resolveSortPath(section, filters.sortBy);
+  const sortDir = filters.sortDir === "desc" ? -1 : 1;
 
-  // Employee documents are small and bounded — see the module comment above for
-  // why this reads the whole Mongo-filterable set instead of paginating here.
-  const allMatching = await Employee.find(match)
-    .select("name phone employeeId role branch isactive callbyUserId tlName dateOfJoining managerName salaryStructure incentiveRate")
-    .lean();
+  const match = await buildSectionMatch(section, filters);
 
-  let employees = allMatching.filter((e) => employeeSection(e.role) === section);
-  if (filters.tlName) {
-    const wanted = filters.tlName.trim().toLowerCase();
-    employees = employees.filter((e) => (e.tlName || "").trim().toLowerCase() === wanted);
-  }
+  // The cohort's ids (+ callby link) — the only thing the metric builders need.
+  // A projection of two fields over a few hundred docs; the full rows are read
+  // by the paginated aggregation below, one page at a time.
+  const cohort = await Employee.find(match).select("_id callbyUserId").lean();
 
-  if (employees.length === 0) {
-    return NextResponse.json({
-      success: true, rows: [], total: 0, page, pageSize,
-      kpis: buildKpis(section, []), callbyError: null,
-    });
-  }
-
+  const meta = pageMeta({ page, pageSize, total: 0 });
   const period = { from: filters.dateFrom || "", to: filters.dateTo || "" };
-  const periodDays = daysInPeriod(period.from, period.to);
 
+  if (cohort.length === 0) {
+    return {
+      success: true, rows: [], total: 0, ...meta,
+      sortBy: filters.sortBy, sortDir: filters.sortDir,
+      kpis: buildKpis(section, null), bands: emptyBands(), callbyError: null,
+    };
+  }
+
+  const periodDays = daysInPeriod(period.from, period.to);
   const [compensationById, sectionResult] = await Promise.all([
-    buildCompensationMetrics(employees, period),
-    (SECTION_METRIC_BUILDERS[section] || buildOtherMetrics)(employees, period),
+    buildCompensationMetrics(cohort, period),
+    (SECTION_METRIC_BUILDERS[section] || buildOtherMetrics)(cohort, period),
   ]);
   const { metricsById: sectionMetricsById, callbyError } = sectionResult;
 
-  const cohort = employees.map((e) => {
-    const id = String(e._id);
-    const sectionMetrics = sectionMetricsById.get(id) || {};
-    return {
-      id,
-      sample: sampleValue(section, sectionMetrics),
-      metrics: derivePerfMetrics(section, sectionMetrics, periodDays),
-    };
-  });
-  const performanceById = scoreCohort(section, cohort);
+  // Peer-relative scoring needs every member of the cohort — one scoreCohort
+  // call, the same implementation the detail page and dashboard use.
+  const performanceById = scoreCohort(
+    section,
+    cohort.map((e) => {
+      const id = String(e._id);
+      const m = sectionMetricsById.get(id) || {};
+      return { id, sample: sampleValue(section, m), metrics: derivePerfMetrics(section, m, periodDays) };
+    }),
+  );
 
-  const enriched = employees.map((e) => {
+  // One small object per employee: section metrics + compensation + performance.
+  // Attached to each Employee document inside the aggregation so the DB can
+  // sort/paginate/total on them exactly like on document fields.
+  const metricRows = cohort.map((e) => {
     const id = String(e._id);
-    const sectionMetrics = sectionMetricsById.get(id) || {};
-    const comp = compensationById.get(id) || {};
     return {
-      id,
-      name: e.name,
-      phone: e.phone,
-      employeeId: e.employeeId,
-      dateOfJoining: e.dateOfJoining,
-      tlName: e.tlName,
-      managerName: e.managerName,
-      branch: e.branch,
-      isactive: e.isactive,
-      callbyLinked: !!e.callbyUserId,
-      salary: e.salaryStructure?.baseSalary || 0,
-      incentiveRate: e.incentiveRate || 0,
-      ...comp,
-      ...sectionMetrics,
+      _id: e._id,
+      ...(compensationById.get(id) || {}),
+      ...(sectionMetricsById.get(id) || {}),
       performance: performanceById.get(id) || null,
     };
   });
 
-  const dir = filters.sortDir === "desc" ? -1 : 1;
-  const sortKey = filters.sortBy || "name";
-  enriched.sort((a, b) => {
-    const av = sortKey === "performance" ? (a.performance?.score ?? -1) : a[sortKey];
-    const bv = sortKey === "performance" ? (b.performance?.score ?? -1) : b[sortKey];
-    if (typeof av === "string" || typeof bv === "string") {
-      return dir * String(av || "").localeCompare(String(bv || ""));
-    }
-    return dir * ((av || 0) - (bv || 0));
+  const [result] = await Employee.aggregate([
+    { $match: match },
+    {
+      $addFields: {
+        _m: {
+          $arrayElemAt: [
+            { $filter: { input: { $literal: metricRows }, as: "m", cond: { $eq: ["$$m._id", "$_id"] } } },
+            0,
+          ],
+        },
+        callbyLinked: { $gt: [{ $strLenCP: { $ifNull: ["$callbyUserId", ""] } }, 0] },
+      },
+    },
+    {
+      $facet: {
+        rows: [
+          // _id tiebreak keeps the order total, so page N+1 can never repeat a
+          // row from page N when many employees share a sort value (very common
+          // for metrics — dozens of zeros).
+          { $sort: { [sortPath]: sortDir, _id: 1 } },
+          { $skip: skip },
+          { $limit: limit },
+          {
+            $project: {
+              ...Object.fromEntries(ROW_FIELDS.map((f) => [f, 1])),
+              callbyLinked: 1,
+              salary: { $ifNull: ["$salaryStructure.baseSalary", 0] },
+              incentiveRate: { $ifNull: ["$incentiveRate", 0] },
+              _m: 1,
+            },
+          },
+        ],
+        totals: [
+          {
+            $group: {
+              _id: null,
+              headcount: { $sum: 1 },
+              active: { $sum: { $cond: ["$isactive", 1, 0] } },
+              linked: { $sum: { $cond: ["$callbyLinked", 1, 0] } },
+              salaryPaid: { $sum: { $ifNull: ["$_m.salaryPaid", 0] } },
+              incentivePaid: { $sum: { $ifNull: ["$_m.incentivePaid", 0] } },
+              scoredCount: { $sum: { $cond: [{ $eq: ["$_m.performance.insufficientData", false] }, 1, 0] } },
+              scoreSum: { $sum: { $cond: [{ $eq: ["$_m.performance.insufficientData", false] }, "$_m.performance.score", 0] } },
+              ...Object.fromEntries(
+                PERFORMANCE_BANDS.map((b) => [`band_${b}`, { $sum: { $cond: [{ $eq: ["$_m.performance.band", b] }, 1, 0] } }]),
+              ),
+              insufficientData: { $sum: { $cond: [{ $eq: ["$_m.performance.insufficientData", true] }, 1, 0] } },
+              ...Object.fromEntries(
+                Object.entries(SECTION_KPI_SUMS[section] || {}).map(([k, expr]) => [k, { $sum: { $ifNull: [expr, 0] } }]),
+              ),
+            },
+          },
+        ],
+      },
+    },
+  ]).collation({ locale: "en", strength: 2 }); // case-insensitive name/branch ordering
+
+  const totals = result?.totals?.[0] || null;
+  const total = totals?.headcount || 0;
+
+  const rows = (result?.rows || []).map((r) => {
+    const { _id, _m, ...doc } = r;
+    const { _id: _ignored, ...metrics } = _m || {};
+    return { id: String(_id), ...doc, ...metrics, performance: metrics.performance ?? null };
   });
 
-  const total = enriched.length;
-  const rows = enriched.slice(skip, skip + limit);
-  const kpis = buildKpis(section, enriched);
+  return {
+    success: true,
+    rows,
+    total,
+    ...pageMeta({ page, pageSize, total }),
+    sortBy: filters.sortBy,
+    sortDir: filters.sortDir,
+    kpis: buildKpis(section, totals),
+    bands: bandsFromTotals(totals),
+    callbyError: callbyError || null,
+  };
+}
 
-  return NextResponse.json({ success: true, rows, total, page, pageSize, kpis, callbyError: callbyError || null });
+// Performance band distribution over the whole cohort (from the $facet totals).
+const emptyBands = () => ({ ...Object.fromEntries(PERFORMANCE_BANDS.map((b) => [b, 0])), insufficientData: 0 });
+function bandsFromTotals(t) {
+  const out = emptyBands();
+  if (!t) return out;
+  for (const b of PERFORMANCE_BANDS) out[b] = t[`band_${b}`] || 0;
+  out.insufficientData = t.insufficientData || 0;
+  return out;
 }

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, FilterBar, ReportTable, KpiRow, DataTable, ErrorState, InlineNotice } from "@/components/owner";
 import { ownerFetch } from "@/lib/ownerFetch";
+import { usePagedList } from "@/lib/owner/usePagedList";
 import { rupee, num } from "@/lib/owner/format";
 
 // Uses the exact same buildCompensationMetrics Part 1's Employees pages call
@@ -14,9 +15,7 @@ export default function FinanceSalaryIncentivePage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [search, setSearch] = useState("");
-  const [sortKey, setSortKey] = useState("baseSalaryDue");
-  const [sortDir, setSortDir] = useState("desc");
+  const list = usePagedList({ defaultSort: "name", defaultDir: "asc" });
 
   const load = useCallback(
     async ({ signal } = {}) => {
@@ -27,13 +26,13 @@ export default function FinanceSalaryIncentivePage() {
       params.set("dateFrom", filterState.range.from);
       params.set("dateTo", filterState.range.to);
       if (filterState.filters.branch && filterState.filters.branch !== "All") params.set("branch", filterState.filters.branch);
-      const r = await ownerFetch(`/api/owner/finance/salary-incentive?${params.toString()}`, { signal });
+      const r = await ownerFetch(`/api/owner/finance/salary-incentive?${params.toString()}&${list.query}`, { signal });
       if (r.aborted) return;
       if (r.ok) setData(r.data);
       else setError(r.error);
       setLoading(false);
     },
-    [filterState],
+    [filterState, list.query],
   );
 
   useEffect(() => {
@@ -42,29 +41,7 @@ export default function FinanceSalaryIncentivePage() {
     return () => ctrl.abort();
   }, [load]);
 
-  const rows = data?.rows || [];
-  const filtered = search
-    ? rows.filter((r) => r.name?.toLowerCase().includes(search.toLowerCase()) || r.role?.toLowerCase().includes(search.toLowerCase()))
-    : rows;
-  const sorted = [...filtered].sort((a, b) => {
-    const dir = sortDir === "asc" ? 1 : -1;
-    const av = a[sortKey], bv = b[sortKey];
-    if (typeof av === "string") return dir * av.localeCompare(bv || "");
-    return dir * ((av ?? -1) - (bv ?? -1));
-  });
-
-  const totalSalaryDue = rows.reduce((s, r) => s + r.baseSalaryDue, 0);
-  const totalSalaryPaid = rows.reduce((s, r) => s + r.salaryPaid, 0);
-  const totalIncentiveDue = rows.reduce((s, r) => s + r.incentiveDue, 0);
-  const totalIncentivePaid = rows.reduce((s, r) => s + r.incentivePaid, 0);
-
-  const handleSort = (key) => {
-    if (key === sortKey) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    else {
-      setSortKey(key);
-      setSortDir("asc");
-    }
-  };
+  const totals = data?.totals;
 
   return (
     <div className="app">
@@ -81,7 +58,7 @@ export default function FinanceSalaryIncentivePage() {
         />
 
         <div className="content">
-          <FilterBar show={["date", "branch"]} onChange={({ filters, range }) => setFilterState({ filters, range })} />
+          <FilterBar show={["date", "branch"]} onChange={({ filters, range }) => { list.resetPage(); setFilterState({ filters, range }); }} />
 
           {error ? (
             <ErrorState message={error} onRetry={load} />
@@ -91,10 +68,10 @@ export default function FinanceSalaryIncentivePage() {
                 loading={loading || !data}
                 primaryIndex={0}
                 items={[
-                  { label: "Salary Due", value: rupee(totalSalaryDue), sub: "This period", kind: "info" },
-                  { label: "Salary Paid", value: rupee(totalSalaryPaid), sub: "This period", kind: "good" },
-                  { label: "Incentive Due", value: rupee(totalIncentiveDue), sub: "This period", kind: "info" },
-                  { label: "Incentive Paid", value: rupee(totalIncentivePaid), sub: "This period", kind: "good" },
+                  { label: "Salary Due", value: rupee(totals?.salaryDue), sub: `${num(totals?.employees)} employees`, kind: "info" },
+                  { label: "Salary Paid", value: rupee(totals?.salaryPaid), sub: "This period", kind: "good" },
+                  { label: "Incentive Due", value: rupee(totals?.incentiveDue), sub: "This period", kind: "info" },
+                  { label: "Incentive Paid", value: rupee(totals?.incentivePaid), sub: "This period", kind: "good" },
                 ]}
               />
 
@@ -156,13 +133,13 @@ export default function FinanceSalaryIncentivePage() {
                 </Card>
               </div>
 
-              <Card title="Employees" subtitle={loading ? "Loading…" : `${sorted.length} employees with salary/incentive activity this period`}>
+              <Card title="Employees" subtitle={loading ? "Loading…" : `${data?.total || 0} employees with salary/incentive activity this period`}>
                 <ReportTable
                   tableId="finance-salary-incentive"
                   columns={[
                     { key: "name", label: "Name", sortable: true },
-                    { key: "role", label: "Role" },
-                    { key: "branch", label: "Branch" },
+                    { key: "role", label: "Role", sortable: true },
+                    { key: "branch", label: "Branch", sortable: true },
                     { key: "operatingUnit", label: "Operating Unit", defaultHidden: true, render: (r) => r.operatingUnit || "—" },
                     { key: "baseSalaryDue", label: "Salary Due", align: "right", sortable: true, render: (r) => rupee(r.baseSalaryDue) },
                     { key: "salaryPaid", label: "Salary Paid", align: "right", sortable: true, render: (r) => rupee(r.salaryPaid) },
@@ -171,13 +148,10 @@ export default function FinanceSalaryIncentivePage() {
                     { key: "incentivePaid", label: "Incentive Paid", align: "right", sortable: true, render: (r) => rupee(r.incentivePaid) },
                     { key: "incentivePending", label: "Incentive Pending", align: "right", sortable: true, defaultHidden: true, render: (r) => rupee(r.incentivePending) },
                   ]}
-                  rows={sorted.map((r) => ({ ...r, id: r.id }))}
+                  rows={(data?.rows || []).map((r) => ({ ...r, id: r.id }))}
                   loading={loading}
-                  sortKey={sortKey}
-                  sortDir={sortDir}
-                  onSort={handleSort}
-                  search={search}
-                  onSearchChange={setSearch}
+                  total={data?.total || 0}
+                  {...list.tableProps}
                   searchPlaceholder="Search name / role…"
                   csvFilename="salary-incentive.csv"
                 />

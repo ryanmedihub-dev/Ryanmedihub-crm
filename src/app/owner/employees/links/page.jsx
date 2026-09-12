@@ -20,6 +20,9 @@ export default function CallbyLinksPage() {
   const [selAgent, setSelAgent] = useState(null);
   const [empQuery, setEmpQuery] = useState("");
   const [agentQuery, setAgentQuery] = useState("");
+  // Default to caller-type roles: the ~200 OT/doctor/reception employees can
+  // never be in callby and would bury the real gaps.
+  const [callersOnly, setCallersOnly] = useState(true);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState(null);
 
@@ -46,17 +49,18 @@ export default function CallbyLinksPage() {
 
   const filteredEmployees = useMemo(() => {
     const q = empQuery.trim().toLowerCase();
-    if (!q) return unlinkedEmployees;
-    return unlinkedEmployees.filter((e) =>
+    const base = callersOnly ? unlinkedEmployees.filter((e) => e.isCaller) : unlinkedEmployees;
+    if (!q) return base;
+    return base.filter((e) =>
       [e.name, e.phone, e.employeeId, e.role, e.branch].some((v) => String(v || "").toLowerCase().includes(q)),
     );
-  }, [unlinkedEmployees, empQuery]);
+  }, [unlinkedEmployees, empQuery, callersOnly]);
 
   const filteredAgents = useMemo(() => {
     const q = agentQuery.trim().toLowerCase();
     if (!q) return unlinkedCallbyAgents;
     return unlinkedCallbyAgents.filter((a) =>
-      [a.name, a.tlName, a.phone, a.callbyUserId].some((v) => String(v || "").toLowerCase().includes(q)),
+      [a.name, a.tlName, a.ryanEmployeeCode, a.callbyUserId].some((v) => String(v || "").toLowerCase().includes(q)),
     );
   }, [unlinkedCallbyAgents, agentQuery]);
 
@@ -119,8 +123,12 @@ export default function CallbyLinksPage() {
                 <Card title="Reconciliation status">
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                     <Badge kind="info">{counts.linked} linked</Badge>
-                    <Badge kind={counts.unlinkedEmployees ? "warn" : "good"}>
-                      {counts.unlinkedEmployees} employees unlinked
+                    <Badge kind={counts.unlinkedCallers ? "warn" : "good"}>
+                      {counts.callersLinked}/{counts.callers} caller-type employees linked
+                      {counts.callers ? ` (${Math.round((counts.callersLinked / counts.callers) * 100)}%)` : ""}
+                    </Badge>
+                    <Badge kind="neutral">
+                      {counts.unlinkedEmployees - counts.unlinkedCallers} non-caller employees not in callby by design
                     </Badge>
                     <Badge kind={counts.unlinkedCallbyAgents ? "warn" : "good"}>
                       {counts.unlinkedCallbyAgents} callby users unclaimed
@@ -140,13 +148,19 @@ export default function CallbyLinksPage() {
                   title="Unlinked employees"
                   subtitle={loading ? "Loading…" : `${filteredEmployees.length} shown`}
                 >
-                  <input
-                    className="control"
-                    style={{ width: "100%", marginBottom: 10 }}
-                    placeholder="Search name / phone / ID…"
-                    value={empQuery}
-                    onChange={(e) => setEmpQuery(e.target.value)}
-                  />
+                  <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 10 }}>
+                    <input
+                      className="control"
+                      style={{ flex: 1 }}
+                      placeholder="Search name / phone / ID…"
+                      value={empQuery}
+                      onChange={(e) => setEmpQuery(e.target.value)}
+                    />
+                    <label style={{ display: "flex", gap: 6, alignItems: "center", whiteSpace: "nowrap", fontSize: 13 }}>
+                      <input type="checkbox" checked={callersOnly} onChange={(e) => setCallersOnly(e.target.checked)} />
+                      Caller roles only
+                    </label>
+                  </div>
                   <DataTable
                     tall
                     loading={loading}
@@ -162,6 +176,7 @@ export default function CallbyLinksPage() {
                           </span>
                         ),
                       },
+                      { key: "employeeId", label: "Code", render: (e) => e.employeeId ? <code>{e.employeeId}</code> : "—" },
                       { key: "role", label: "Role", render: (e) => e.role || "—" },
                       { key: "phone", label: "Phone", render: (e) => e.phone || "—" },
                       { key: "branch", label: "Branch", render: (e) => e.branch || "—" },
@@ -177,7 +192,7 @@ export default function CallbyLinksPage() {
                   <input
                     className="control"
                     style={{ width: "100%", marginBottom: 10 }}
-                    placeholder="Search name / TL…"
+                    placeholder="Search name / TL / code…"
                     value={agentQuery}
                     onChange={(e) => setAgentQuery(e.target.value)}
                   />
@@ -197,7 +212,8 @@ export default function CallbyLinksPage() {
                         ),
                       },
                       { key: "tlName", label: "TL", render: (a) => a.tlName || "—" },
-                      { key: "phone", label: "Phone", render: (a) => a.phone || "—" },
+                      { key: "ryanEmployeeCode", label: "Code", render: (a) => a.ryanEmployeeCode ? <code>{a.ryanEmployeeCode}</code> : "—" },
+                      { key: "isActive", label: "", render: (a) => (a.isActive === false ? <Badge kind="neutral">inactive</Badge> : null) },
                       { key: "callbyUserId", label: "callby ID", render: (a) => <code>{a.callbyUserId}</code> },
                     ]}
                     rows={filteredAgents.map((a) => ({ ...a, id: a.callbyUserId }))}

@@ -11,7 +11,7 @@ export default function PayrollPage() {
           <ComingSoon
             icon="₹"
             title="No payroll engine yet"
-            message="Base salary and incentive rate are stored per employee (see All Staff 360°), but there's no engine that runs a pay cycle, applies incentive rules and produces payslips. That's what this screen needs before it can show anything."
+            message="What exists today — per-employee salary and incentive due / paid / pending for a period, with branch, operating-unit, role and month rollups from the SALARY payables — is on Finance › Salary & Incentive (/owner/finance/salary-incentive). What does not exist is a pay-run engine: a pay cycle, incentive rules applied to targets, and payslips. Until that is built this screen stays a placeholder rather than a second copy of the salary page."
           />
         </div>
       </div>

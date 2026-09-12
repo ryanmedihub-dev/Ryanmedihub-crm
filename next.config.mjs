@@ -2,7 +2,7 @@
 // Kept as server redirects so bookmarks and shared links keep working.
 const OWNER_V2_REDIRECTS = {
   "/owner/agent-360": "/owner/employees/agents",
-  "/owner/staff-360": "/owner/employees/other",
+  "/owner/staff-360": "/owner/employees/other-staff",
   "/owner/leadership": "/owner/employees/leadership",
   "/owner/live-workforce": "/owner/calls/live",
   "/owner/forecast": "/owner/calls/forecast",
@@ -22,7 +22,13 @@ const OWNER_V2_REDIRECTS = {
   "/owner/ai-health": "/owner/ai/health",
   "/owner/clinical-ai-quality": "/owner/ai/clinical-quality",
   "/owner/payroll": "/owner/hr/payroll",
-  "/owner/hr-actions": "/owner/hr/actions",
+  // HR Action Center was dropped (no action-tracking system exists); both the
+  // pre-v2 URL and the v2 stub URL land on the HR section landing.
+  "/owner/hr-actions": "/owner/hr",
+  "/owner/hr/actions": "/owner/hr",
+  // The standalone Saniya assistant was replaced by the tool-calling Sanya at
+  // /owner/ai/sanya (one implementation, aggregate-only, PII-guarded).
+  "/saniya": "/owner/ai/sanya",
 };
 
 const nextConfig = {

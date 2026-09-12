@@ -76,6 +76,13 @@ export async function GET(request) {
     const payeeKind = payeeKindParam || undefined;
 
     if (level < 3) {
+      // "Search employee" boxes accept a name or a staff employeeId code — resolve a code
+      // to the matching employee's name so the label regex below still finds them.
+      let partySearch = party;
+      if (party) {
+        const emp = await Employee.findOne({ employeeId: party }).select("name").lean();
+        if (emp?.name) partySearch = emp.name;
+      }
       const rows = await Payable.aggregate(
         buildPayableGroupedStages(Transactions.collection.name, {
           level,
@@ -88,6 +95,7 @@ export async function GET(request) {
           subGroupBy,
           purpose,
           payeeKind,
+          party: partySearch,
         }),
       );
       return NextResponse.json({ success: true, rows });
@@ -181,6 +189,13 @@ export async function GET(request) {
     const periodYear = parseInt(searchParams.get("periodYear") || "", 10);
     if (Number.isInteger(periodMonth)) match["period.month"] = periodMonth;
     if (Number.isInteger(periodYear)) match["period.year"] = periodYear;
+    // The ledger scope bar's date range — until now this only shaped the level 1/2 opening vs
+    // movement rollup math, never which documents this level-3 list actually shows.
+    if (from || to) {
+      match.dueDate = {};
+      if (from) match.dueDate.$gte = new Date(from);
+      if (to) match.dueDate.$lte = new Date(`${to}T23:59:59.999Z`);
+    }
 
     const stages = [
       { $match: match },

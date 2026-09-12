@@ -508,6 +508,11 @@
 .owner-app .cols-3 {
   grid-template-columns: 1.25fr 1fr 1fr;
 }
+/* Sanya: conversation + a narrow "what it can do" rail; stacks on phones. */
+.owner-app .cols-chat {
+  grid-template-columns: minmax(0, 1fr) 280px;
+  align-items: start;
+}
 
 .owner-app .card {
   background: var(--surface);
@@ -1848,7 +1853,8 @@
   .owner-app .content {
     padding: var(--sp-4) var(--sp-3) var(--sp-6);
   }
-  .owner-app .cols-equal {
+  .owner-app .cols-equal,
+  .owner-app .cols-chat {
     grid-template-columns: 1fr;
   }
   .owner-app .queue-lane {

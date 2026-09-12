@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
-import { OwnerTopbar, Card, FilterBar, DataTable, KpiRow, ErrorState, InlineNotice, Badge } from "@/components/owner";
+import { OwnerTopbar, Card, FilterBar, ReportTable, KpiRow, ErrorState, InlineNotice, Badge } from "@/components/owner";
 import { ownerFetch } from "@/lib/ownerFetch";
+import { usePagedList } from "@/lib/owner/usePagedList";
 import { num, fmtTime } from "@/lib/owner/format";
 
 const STATUS_OPTIONS = ["Present", "Half-day", "Absent", "Leave", "Holiday"];
@@ -23,7 +24,7 @@ function todayIso() {
 export default function AttendancePage() {
   const [date, setDate] = useState(todayIso());
   const [filterState, setFilterState] = useState(null);
-  const [search, setSearch] = useState("");
+  const list = usePagedList({ defaultSort: "name" });
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -39,19 +40,18 @@ export default function AttendancePage() {
       if (filterState?.filters?.branch && filterState.filters.branch !== "All") {
         params.set("branch", filterState.filters.branch);
       }
-      if (search.trim()) params.set("search", search.trim());
-      const r = await ownerFetch(`/api/owner/ai/attendance?${params.toString()}`, { signal });
+      const r = await ownerFetch(`/api/owner/ai/attendance?${params.toString()}&${list.query}`, { signal });
       if (r.aborted) return;
       if (r.ok) setData(r.data);
       else setError(r.error);
       setLoading(false);
     },
-    [date, filterState, search],
+    [date, filterState, list.query],
   );
 
   useEffect(() => {
     const ctrl = new AbortController();
-    const t = setTimeout(() => load({ signal: ctrl.signal }), search ? 300 : 0);
+    const t = setTimeout(() => load({ signal: ctrl.signal }), list.search ? 300 : 0);
     return () => {
       clearTimeout(t);
       ctrl.abort();
@@ -107,17 +107,10 @@ export default function AttendancePage() {
               aria-label="Date"
               value={date}
               max={todayIso()}
-              onChange={(e) => setDate(e.target.value)}
-            />
-            <input
-              type="text"
-              className="control"
-              placeholder="Search employee…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { list.resetPage(); setDate(e.target.value); }}
             />
           </div>
-          <FilterBar show={["branch"]} onChange={(s) => setFilterState(s)} />
+          <FilterBar show={["branch"]} onChange={(s) => { list.resetPage(); setFilterState(s); }} />
 
           {error ? (
             <ErrorState message={error} onRetry={load} />
@@ -142,24 +135,29 @@ export default function AttendancePage() {
               />
 
               <Card title={`Register — ${date}`} subtitle="Suggested status is a starting point; confirm it or pick a different one">
-                <DataTable
-                  tall
+                <ReportTable
+                  tableId="ai-attendance"
                   loading={loading}
+                  total={data?.total || 0}
+                  {...list.tableProps}
+                  searchPlaceholder="Search employee…"
+                  csvFilename={`attendance-${date}.csv`}
                   columns={[
-                    { key: "name", label: "Employee", render: (r) => (
+                    { key: "name", label: "Employee", sortable: true, render: (r) => (
                       <span>
                         {r.name}
                         <span className="muted" style={{ marginLeft: 6, fontSize: "var(--fs-12)" }}>{r.role}</span>
                       </span>
                     ) },
-                    { key: "branch", label: "Branch" },
-                    { key: "calls", label: "Calls", align: "right", render: (r) => (r.callbyLinked ? `${num(r.totalCalls)} (${num(r.connectedCalls)} connected)` : "—") },
+                    { key: "branch", label: "Branch", sortable: true },
+                    { key: "totalCalls", label: "Calls", align: "right", sortable: true, render: (r) => (r.callbyLinked ? `${num(r.totalCalls)} (${num(r.connectedCalls)} connected)` : "—") },
                     { key: "window", label: "Active Window", render: (r) => (r.activeWindowStart ? `${fmtTime(r.activeWindowStart)} – ${fmtTime(r.activeWindowEnd)}` : "—") },
-                    { key: "target", label: "Target Attainment", align: "right", render: (r) => (r.targetAchievement == null ? "—" : `${r.targetAchievement}%`) },
-                    { key: "suggested", label: "Suggested", render: (r) => (r.suggestedStatus ? <Badge kind={STATUS_KIND[r.suggestedStatus] || "neutral"} dot>{r.suggestedStatus}</Badge> : <span className="muted">—</span>) },
+                    { key: "targetAchievement", label: "Target Attainment", align: "right", sortable: true, render: (r) => (r.targetAchievement == null ? "—" : `${r.targetAchievement}%`) },
+                    { key: "suggestedStatus", label: "Suggested", sortable: true, render: (r) => (r.suggestedStatus ? <Badge kind={STATUS_KIND[r.suggestedStatus] || "neutral"} dot>{r.suggestedStatus}</Badge> : <span className="muted">—</span>) },
                     {
-                      key: "status",
+                      key: "markedStatus",
                       label: "Confirmed Status",
+                      sortable: true,
                       render: (r) => {
                         const draft = drafts[r.employeeId];
                         const value = draft?.status ?? r.markedStatus ?? "";

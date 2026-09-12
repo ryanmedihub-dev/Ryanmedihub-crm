@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
 import Advance from "@/models/Advance";
+import Employee from "@/models/Employee";
 import { resolveBranchFilter } from "@/lib/branches";
 import { settledTotalExpr } from "@/lib/advanceSettlements";
 
@@ -30,9 +31,16 @@ export async function GET(request) {
     const from = searchParams.get("from") || "";
     const to = searchParams.get("to") || "";
     const includeCancelled = searchParams.get("includeCancelled") === "true";
-    const party = searchParams.get("party") || "";
+    let party = searchParams.get("party") || "";
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
     const limit = Math.min(200, Math.max(1, parseInt(searchParams.get("limit") || "50")));
+
+    // "Search employee" accepts a name or a staff employeeId code — resolve a code to the
+    // matching employee's name so the label regex below still finds them.
+    if (party) {
+      const emp = await Employee.findOne({ employeeId: party }).select("name").lean();
+      if (emp?.name) party = emp.name;
+    }
 
     const match = {};
     if (!includeCancelled) match.isCancelled = { $ne: true };

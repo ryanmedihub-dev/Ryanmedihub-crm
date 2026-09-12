@@ -8,7 +8,7 @@ import { unsettledMethodsSync } from "@/lib/masterData";
 import { fetchCallby } from "@/lib/callby";
 import { withCallbyRoute, toLeadDateParams } from "@/lib/owner/callbyRoute";
 import { computeStagesForLeads, stageRate, STAGE_DEFINITIONS } from "@/app/api/owner/statistics/route";
-import { overdueFollowUps, interestedNoRecentCall, stalePatients } from "@/app/api/owner/ai/attention/route";
+import { overdueFollowUps, interestedNoRecentCall, stalePatients } from "@/lib/owner/metrics/attention";
 import { ATTENTION_THRESHOLDS } from "@/lib/owner/attentionThresholds";
 import { employeeSection } from "@/lib/owner/employeeSections";
 import { SECTION_METRIC_BUILDERS, derivePerfMetrics, sampleValue, daysInPeriod } from "@/lib/owner/employeeReportQuery";

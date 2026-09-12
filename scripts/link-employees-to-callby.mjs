@@ -5,31 +5,46 @@
 // Employee.callbyUserId (+ Employee.tlName when empty) for every match it is
 // CONFIDENT about. It never guesses: anything ambiguous is reported, not linked.
 //
-// Match order:
-//   1. normalized phone, exact, unique on both sides
-//   2. else exact lower-cased name, unique on both sides
+// Match tiers, highest confidence first:
+//   1. CODE  — Employee.employeeId == callby agent.ryanEmployeeCode
+//              (trimmed, case-insensitive, unique on BOTH sides). Authoritative:
+//              a code match is taken even when the two names differ — those
+//              cases are listed separately so a human can fix the name (or the
+//              mis-assigned code) rather than the link being silently skipped.
+//   2. NAME  — exact normalized name, unique on both sides, only among records
+//              the code tier left open.
+// callby exposes no phone on workforce-summary, so there is no phone tier.
 //
-// It always prints four lists so the gap is visible, not silent:
-//   LINKED · UNMATCHED EMPLOYEES · UNMATCHED CALLBY USERS · AMBIGUOUS (skipped)
-// plus a final match rate.
+// Two identifiers on every callby agent — do NOT confuse them:
+//   agent.employeeId        callby's own User._id (ObjectId string). This is
+//                           what goes into Employee.callbyUserId — it's the key
+//                           /api/owner/agent-detail/:id and every callby query
+//                           expect. Guarded: anything that isn't a valid
+//                           ObjectId is rejected, never written.
+//   agent.ryanEmployeeCode  ryan-crm's Employee.employeeId code ("RC-014",
+//                           "290"). Used ONLY for tier-1 matching.
+//
+// Duplicate ryanEmployeeCode on the callby side (callby has known duplicate
+// user rows) is never auto-linked — it's listed for a human.
 //
 // Dry run:  node --env-file=.env scripts/link-employees-to-callby.mjs
 // Apply:    node --env-file=.env scripts/link-employees-to-callby.mjs --apply
+// Emit the reverse-link mapping for callby's addEmployeeIdField.js:
+//           node --env-file=.env scripts/link-employees-to-callby.mjs --emit-map=./callby-code-map.json
+//   (writes { callbyUserId, employeeId } for every confident link — including
+//    already-linked employees — so callby can stamp ryanEmployeeCode on its
+//    users and the NEXT run of this script matches them by code, not name.)
 //
 // Requires in .env:  MONGODB_URI, CALLBY_API_URL, CALLBY_SERVICE_TOKEN
 
+import fs from "node:fs";
+import path from "node:path";
 import mongoose from "mongoose";
-import { normalizePhone } from "../src/lib/phone.js";
+import { CALLER_ROLES, isCallerRole as isCallerRoleName } from "../src/lib/owner/callerRoles.js";
 
-// Env wins over the fallbacks below. The callby service token is a JWT that
-// expires ~weekly, so pass a fresh one without editing this file:
-//   CALLBY_SERVICE_TOKEN=<fresh token> node scripts/link-employees-to-callby.mjs
-// Grab the current token from the deployed app's env (Vercel) — that's the one
-// the live Owner panel uses.
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://sachindashzer:user8520@ac-pu86ixj-shard-00-00.hwjor1r.mongodb.net:27017,ac-pu86ixj-shard-00-01.hwjor1r.mongodb.net:27017,ac-pu86ixj-shard-00-02.hwjor1r.mongodb.net:27017/?ssl=true&replicaSet=atlas-ool7b4-shard-0&authSource=admin&appName=crm';
-const CALLBY_API_URL = process.env.CALLBY_API_URL || 'https://api.learcrm.com';
-const CALLBY_SERVICE_TOKEN = process.env.CALLBY_SERVICE_TOKEN || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMmY4ZWE3N2FlNGUzYTdjNGQ2N2ZhMCIsImlhdCI6MTc4OTA1NzM2MCwiZXhwIjoxNzg5NjYyMTYwfQ.jF51W7vJzGFV-O7EFRGR8d1cWVZ11FR9054QsaJKX-0";
-
+const MONGODB_URI = process.env.MONGODB_URI;
+const CALLBY_API_URL = process.env.CALLBY_API_URL;
+const CALLBY_SERVICE_TOKEN = process.env.CALLBY_SERVICE_TOKEN;
 
 const missing = [
   !MONGODB_URI && "MONGODB_URI",
@@ -39,12 +54,17 @@ const missing = [
 if (missing.length) {
   console.error(
     `Missing env: ${missing.join(", ")}\n` +
-      "Run with: node --env-file=.env scripts/link-employees-to-callby.mjs [--apply]",
+      "Run with: node --env-file=.env scripts/link-employees-to-callby.mjs [--apply] [--emit-map=<file>]",
   );
   process.exit(1);
 }
 
 const APPLY = process.argv.includes("--apply");
+const EMIT_MAP = process.argv.find((a) => a.startsWith("--emit-map="))?.split("=")[1] || null;
+
+// Caller-type roles (the match-rate denominator) live in src/lib/owner/callerRoles.js
+// so this script and /owner/employees/links judge coverage by the same list.
+const isCallerRole = (e) => isCallerRoleName(e.role);
 
 // --- callby fetch (inlined — the script can't import @/lib/callby) ------------
 async function fetchCallbyAgents() {
@@ -81,13 +101,32 @@ async function fetchCallbyAgents() {
   return agents;
 }
 
-// callby's agent id — the value /owner/agent-360 passes to
-// /api/owner/agent-detail/:employeeId. Field name confirmed from the samples the
-// script prints; fall back through the likely candidates.
-const callbyId = (a) =>
-  String(a?.employeeId ?? a?.userId ?? a?.id ?? a?._id ?? "") || null;
-const callbyPhone = (a) => a?.phone ?? a?.mobile ?? a?.contactNumber ?? null;
-const lc = (s) => String(s || "").trim().toLowerCase();
+// --- identifiers ---------------------------------------------------------------
+// callby's user id for Employee.callbyUserId. Reads `employeeId` ONLY — that is
+// callby's User._id (see the header). `ryanEmployeeCode` is deliberately not a
+// fallback here: it's ryan-crm's own code and would silently corrupt the link.
+// Returns null for anything that isn't a valid ObjectId so a malformed id can
+// never be written.
+function pickCallbyId(a) {
+  const raw = a?.employeeId;
+  if (raw == null) return null;
+  const s = String(raw).trim();
+  return mongoose.Types.ObjectId.isValid(s) && /^[0-9a-fA-F]{24}$/.test(s) ? s : null;
+}
+const pickCallbyCode = (a) => normCode(a?.ryanEmployeeCode);
+
+function lc(s) {
+  return String(s ?? "").trim().toLowerCase();
+}
+// Codes: trim + case-fold. "rc-014" and "RC-014 " are the same code.
+function normCode(s) {
+  return lc(s) || null;
+}
+// Names: case-fold, collapse whitespace. Deliberately NOT fuzzy — "Sheetal
+// Rathour" vs "Sheetal Rathor" stays unmatched and is a human's call.
+function normName(s) {
+  return lc(s).replace(/\s+/g, " ") || null;
+}
 
 // group an array into Map<key, item[]> dropping falsy keys
 function indexBy(arr, keyFn) {
@@ -101,15 +140,38 @@ function indexBy(arr, keyFn) {
   return m;
 }
 
-async function main() {
-  const agents = await fetchCallbyAgents();
+const pad = (s, n) => String(s ?? "").padEnd(n);
+const line = "-".repeat(78);
+const section = (title) => console.log(`\n${line}\n${title}\n${line}`);
 
-  console.log(`\ncallby returned ${agents.length} agent(s). Sample raw records:\n`);
-  for (const a of agents.slice(0, 3)) console.log(JSON.stringify(a, null, 2));
-  console.log(
-    "\n^ Confirm which field is the callby id and whether a phone is present " +
-      "before running with --apply.\n",
-  );
+async function main() {
+  const rawAgents = await fetchCallbyAgents();
+
+  // Reject any agent whose id isn't an ObjectId up front — they can't be linked.
+  const badIdAgents = rawAgents.filter((a) => !pickCallbyId(a));
+  const agents = rawAgents.filter((a) => pickCallbyId(a));
+
+  // If NO agent carries the ryanEmployeeCode key, the deployed callby predates
+  // the field and the code tier can't do anything — say so instead of quietly
+  // reporting "0 by code".
+  const codeFieldPresent = rawAgents.some((a) => Object.prototype.hasOwnProperty.call(a, "ryanEmployeeCode"));
+  const agentsWithCode = agents.filter((a) => pickCallbyCode(a));
+
+  console.log(`\ncallby returned ${rawAgents.length} agent(s); ${agents.length} with a valid ObjectId employeeId.`);
+  console.log(`ryanEmployeeCode field present in payload: ${codeFieldPresent ? "yes" : "NO"}; ` +
+    `agents carrying a code: ${agentsWithCode.length}`);
+  if (!codeFieldPresent) {
+    console.log(
+      "  !! The deployed callby does not expose ryanEmployeeCode yet — the CODE tier is inactive this run.\n" +
+        "     Deploy callby's workforceSummary.js change and stamp codes (backend/scripts/addEmployeeIdField.js).",
+    );
+  }
+  if (badIdAgents.length) {
+    console.log(`  !! ${badIdAgents.length} agent(s) skipped: employeeId is not a valid ObjectId:`);
+    for (const a of badIdAgents) console.log(`     ${JSON.stringify(a?.employeeId)}  ${a?.name || "?"}`);
+  }
+  console.log("\nSample raw record:");
+  console.log(JSON.stringify({ ...agents[0], calls: undefined, leads: undefined }, null, 2));
 
   await mongoose.connect(MONGODB_URI);
   const coll = mongoose.connection.collection("employees");
@@ -121,108 +183,197 @@ async function main() {
     )
     .toArray();
 
-  const alreadyLinked = employees.filter((e) => e.callbyUserId);
-  const openEmployees = employees.filter((e) => !e.callbyUserId);
-  const linkedCallbyIds = new Set(alreadyLinked.map((e) => String(e.callbyUserId)));
-  const openAgents = agents.filter((a) => !linkedCallbyIds.has(callbyId(a)));
+  // Existing links that are not valid ObjectIds are corrupt — surface them, and
+  // treat the employee as open so a fresh link can replace the bad value.
+  const corruptLinks = employees.filter(
+    (e) => e.callbyUserId && !/^[0-9a-fA-F]{24}$/.test(String(e.callbyUserId).trim()),
+  );
+  const alreadyLinked = employees.filter((e) => e.callbyUserId && !corruptLinks.includes(e));
+  const openEmployees = employees.filter((e) => !alreadyLinked.includes(e));
+  const linkedCallbyIds = new Set(alreadyLinked.map((e) => String(e.callbyUserId).trim()));
+  const openAgents = agents.filter((a) => !linkedCallbyIds.has(pickCallbyId(a)));
 
-  const empByPhone = indexBy(openEmployees, (e) => normalizePhone(e.phone));
-  const empByName = indexBy(openEmployees, (e) => lc(e.name));
-  const agentByPhone = indexBy(openAgents, (a) => normalizePhone(callbyPhone(a)));
-  const agentByName = indexBy(openAgents, (a) => lc(a.name));
-
-  const linked = []; // { employee, agent, method }
-  const ambiguous = []; // { reason, detail }
+  const linked = []; // { employee, agent, method, nameDiffers }
+  const ambiguous = []; // { tier, reason, detail }
+  const duplicateCodes = []; // { code, agents[] }
   const usedEmpIds = new Set();
   const usedAgentIds = new Set();
 
-  const tryMatch = (emp, agent, method) => {
-    if (usedEmpIds.has(String(emp._id)) || usedAgentIds.has(callbyId(agent))) return;
-    usedEmpIds.add(String(emp._id));
-    usedAgentIds.add(callbyId(agent));
-    linked.push({ employee: emp, agent, method });
+  const take = (emp, agent, method) => {
+    const eid = String(emp._id);
+    const aid = pickCallbyId(agent);
+    if (usedEmpIds.has(eid) || usedAgentIds.has(aid)) return false;
+    usedEmpIds.add(eid);
+    usedAgentIds.add(aid);
+    linked.push({
+      employee: emp,
+      agent,
+      method,
+      nameDiffers: normName(emp.name) !== normName(agent.name),
+    });
+    return true;
   };
 
-  // Pass 1 — phone, unique on both sides
-  for (const [phone, emps] of empByPhone) {
-    const ags = agentByPhone.get(phone) || [];
-    if (emps.length === 1 && ags.length === 1) {
-      tryMatch(emps[0], ags[0], "phone");
-    } else if (emps.length && ags.length) {
+  // --- Tier 1: CODE -----------------------------------------------------------
+  // Duplicate codes on the callby side are computed over ALL agents (not just
+  // open ones): a code shared by an already-linked user and an open user is
+  // still a data problem worth listing.
+  const allAgentsByCode = indexBy(agents, pickCallbyCode);
+  for (const [code, ags] of allAgentsByCode) {
+    if (ags.length > 1) duplicateCodes.push({ code, agents: ags });
+  }
+  const dupCodeSet = new Set(duplicateCodes.map((d) => d.code));
+
+  const empByCode = indexBy(openEmployees, (e) => normCode(e.employeeId));
+  const agentByCode = indexBy(openAgents, pickCallbyCode);
+
+  for (const [code, emps] of empByCode) {
+    const ags = agentByCode.get(code) || [];
+    if (!ags.length) continue;
+    if (dupCodeSet.has(code)) {
       ambiguous.push({
-        reason: "phone collision",
-        detail: `${phone}: ${emps.length} employee(s) / ${ags.length} callby agent(s)`,
+        tier: "code",
+        reason: "code on multiple callby users",
+        detail: `"${code}": ${emps.map((e) => e.name).join(", ")} ↔ ${ags.map((a) => `${a.name} (${pickCallbyId(a)})`).join(" | ")}`,
       });
+      continue;
     }
+    if (emps.length > 1) {
+      ambiguous.push({
+        tier: "code",
+        reason: "code on multiple ryan-crm employees",
+        detail: `"${code}": ${emps.map((e) => `${e.name} [${e.role}]`).join(", ")} ↔ callby ${ags[0].name}`,
+      });
+      continue;
+    }
+    take(emps[0], ags[0], "code");
   }
 
-  // Pass 2 — exact lower-cased name, unique on both sides, not already used
+  // --- Tier 2: NAME -----------------------------------------------------------
+  // Only records the code tier left open. An employee WITH a code that didn't
+  // code-match is still eligible here (callby may simply not carry the code yet).
+  const freeEmps = openEmployees.filter((e) => !usedEmpIds.has(String(e._id)));
+  const freeAgents = openAgents.filter((a) => !usedAgentIds.has(pickCallbyId(a)));
+  const empByName = indexBy(freeEmps, (e) => normName(e.name));
+  const agentByName = indexBy(freeAgents, (a) => normName(a.name));
+
   for (const [name, emps] of empByName) {
-    const freeEmps = emps.filter((e) => !usedEmpIds.has(String(e._id)));
-    const ags = (agentByName.get(name) || []).filter((a) => !usedAgentIds.has(callbyId(a)));
-    if (freeEmps.length === 1 && ags.length === 1) {
-      tryMatch(freeEmps[0], ags[0], "name");
-    } else if (freeEmps.length && ags.length) {
+    const ags = agentByName.get(name) || [];
+    if (!ags.length) continue;
+    if (emps.length === 1 && ags.length === 1) {
+      take(emps[0], ags[0], "name");
+    } else {
       ambiguous.push({
+        tier: "name",
         reason: "name collision",
-        detail: `"${name}": ${freeEmps.length} employee(s) / ${ags.length} callby agent(s)`,
+        detail:
+          `"${name}": ${emps.length} employee(s) [${emps.map((e) => e.employeeId || "no code").join(", ")}] / ` +
+          `${ags.length} callby user(s) [${ags.map((a) => `${pickCallbyId(a)}${a.isActive === false ? " inactive" : ""}`).join(", ")}]`,
       });
     }
   }
 
   const unmatchedEmployees = openEmployees.filter((e) => !usedEmpIds.has(String(e._id)));
-  const unmatchedAgents = openAgents.filter((a) => !usedAgentIds.has(callbyId(a)));
+  const unmatchedAgents = openAgents.filter((a) => !usedAgentIds.has(pickCallbyId(a)));
 
-  // --- report ---------------------------------------------------------------
-  const line = "-".repeat(72);
+  // --- report -------------------------------------------------------------------
+  const byCode = linked.filter((l) => l.method === "code");
+  const byName = linked.filter((l) => l.method === "name");
+  const codeNameDiffers = byCode.filter((l) => l.nameDiffers);
 
-  console.log(line);
-  console.log(`LINKED (${linked.length})   ${alreadyLinked.length} were already linked before this run`);
-  console.log(line);
-  for (const { employee, agent, method } of linked) {
+  section(`LINKED THIS RUN (${linked.length})   [code ${byCode.length} · name ${byName.length}]   ${alreadyLinked.length} already linked before`);
+  for (const { employee, agent, method, nameDiffers } of linked) {
     console.log(
-      `  [${method}] ${String(employee.name).padEnd(26)} ${(employee.employeeId || "-").padEnd(12)} ` +
-        `-> callby ${callbyId(agent)}  (${agent.name || "?"})`,
+      `  [${pad(method, 4)}] ${pad(employee.name, 26)} ${pad(employee.employeeId || "-", 10)} ` +
+        `-> ${pickCallbyId(agent)}  ${pad(agent.name || "?", 24)}${nameDiffers && method === "code" ? "  ⚠ name differs" : ""}`,
     );
   }
 
-  console.log(`\n${line}`);
-  console.log(`UNMATCHED EMPLOYEES (${unmatchedEmployees.length}) — no callby link after this run`);
-  console.log(line);
-  for (const e of unmatchedEmployees) {
-    console.log(
-      `  ${String(e.name).padEnd(26)} ${(e.phone || "-").padEnd(14)} ${(e.employeeId || "-").padEnd(12)} ` +
-        `${String(e.role || "-").padEnd(16)} ${e.branch || "-"}`,
-    );
+  section(`CODE MATCHED BUT NAME DIFFERS (${codeNameDiffers.length}) — linked; fix the name or the code by hand`);
+  for (const { employee, agent } of codeNameDiffers) {
+    console.log(`  code ${pad(employee.employeeId, 10)} ryan-crm "${employee.name}"  ↔  callby "${agent.name}" (${pickCallbyId(agent)})`);
   }
 
-  console.log(`\n${line}`);
-  console.log(`UNMATCHED CALLBY USERS (${unmatchedAgents.length}) — no ryan-crm Employee`);
-  console.log(line);
-  for (const a of unmatchedAgents) {
-    console.log(
-      `  id ${String(callbyId(a)).padEnd(26)} ${String(a.name || "?").padEnd(26)} ` +
-        `TL: ${a.tlName || "-"}`,
-    );
+  section(`DUPLICATE ryanEmployeeCode IN CALLBY (${duplicateCodes.length}) — NOT linked, needs a human`);
+  for (const { code, agents: ags } of duplicateCodes) {
+    console.log(`  "${code}":`);
+    for (const a of ags) {
+      console.log(`      ${pickCallbyId(a)}  ${pad(a.name, 24)} TL: ${pad(a.tlName || "-", 12)} ${a.isActive === false ? "inactive" : "active"}`);
+    }
   }
 
-  console.log(`\n${line}`);
-  console.log(`AMBIGUOUS — skipped, needs manual linking (${ambiguous.length})`);
-  console.log(line);
-  for (const x of ambiguous) console.log(`  ${x.reason}: ${x.detail}`);
+  section(`AMBIGUOUS — skipped, needs manual linking (${ambiguous.length})`);
+  for (const x of ambiguous) console.log(`  [${x.tier}] ${x.reason}: ${x.detail}`);
 
-  const denom = linked.length + alreadyLinked.length + unmatchedEmployees.length;
-  const rate = denom ? Math.round(((linked.length + alreadyLinked.length) / denom) * 100) : 0;
-  console.log(`\n${line}`);
-  console.log(
-    `MATCH RATE: ${rate}%  (${linked.length + alreadyLinked.length} linked / ${denom} employees; ` +
-      `${unmatchedEmployees.length} unmatched employees, ${unmatchedAgents.length} unmatched callby users)`,
-  );
+  const unmatchedCallers = unmatchedEmployees.filter(isCallerRole);
+  const unmatchedNonCallers = unmatchedEmployees.filter((e) => !isCallerRole(e));
+
+  section(`UNMATCHED CALLER-TYPE EMPLOYEES (${unmatchedCallers.length}) — real gaps, pair at /owner/employees/links`);
+  for (const e of unmatchedCallers) {
+    console.log(
+      `  ${pad(e.name, 26)} ${pad(e.employeeId || "-", 10)} ${pad(e.role || "-", 16)} ${pad(e.branch || "-", 10)} ${e.phone || ""}`,
+    );
+  }
+  console.log(`\n  (+ ${unmatchedNonCallers.length} non-caller employees not in callby by design — not counted as misses)`);
+
+  section(`UNMATCHED CALLBY USERS (${unmatchedAgents.length}) — no ryan-crm Employee`);
+  const byTl = indexBy(unmatchedAgents, (a) => a.tlName || "Unassigned");
+  for (const [tl, ags] of [...byTl].sort((a, b) => b[1].length - a[1].length)) {
+    console.log(`  TL: ${tl} (${ags.length})`);
+    for (const a of ags) {
+      console.log(`      ${pickCallbyId(a)}  ${pad(a.name || "?", 24)} ${a.isActive === false ? "inactive" : ""}${pickCallbyCode(a) ? `  code ${pickCallbyCode(a)}` : ""}`);
+    }
+  }
+
+  if (corruptLinks.length) {
+    section(`CORRUPT EXISTING callbyUserId (${corruptLinks.length}) — not a valid ObjectId; treated as unlinked`);
+    for (const e of corruptLinks) console.log(`  ${pad(e.name, 26)} callbyUserId=${JSON.stringify(e.callbyUserId)}`);
+  }
+
+  // --- match rate: caller-type denominator ---------------------------------------
+  const callers = employees.filter(isCallerRole);
+  const callersLinked = callers.filter((e) => usedEmpIds.has(String(e._id)) || alreadyLinked.includes(e));
+  const callersByCode = callers.filter((e) => byCode.some((l) => l.employee === e)).length;
+  const callersByName = callers.filter((e) => byName.some((l) => l.employee === e)).length;
+  const callersPrior = callers.filter((e) => alreadyLinked.includes(e)).length;
+  const callerRate = callers.length ? Math.round((callersLinked.length / callers.length) * 100) : 0;
+  const allLinked = linked.length + alreadyLinked.length;
+  const allRate = employees.length ? Math.round((allLinked / employees.length) * 100) : 0;
+
+  section("MATCH RATE");
+  console.log(`  Caller-type roles counted: ${CALLER_ROLES.join(", ")}`);
+  console.log(`  Caller-type employees: ${callers.length}`);
+  console.log(`    linked by code (this run):   ${callersByCode}`);
+  console.log(`    linked by name (this run):   ${callersByName}`);
+  console.log(`    already linked before:       ${callersPrior}`);
+  console.log(`    ambiguous (skipped):         ${ambiguous.length}`);
+  console.log(`    unmatched:                   ${unmatchedCallers.length}`);
+  console.log(`  => CALLER MATCH RATE: ${callerRate}%  (${callersLinked.length}/${callers.length})`);
+  console.log(`  (all active employees, for reference only: ${allRate}% = ${allLinked}/${employees.length})`);
+  console.log(`  callby users without an Employee: ${unmatchedAgents.length} of ${agents.length}`);
   console.log(line);
 
+  // --- emit reverse-link mapping for callby ---------------------------------------
+  if (EMIT_MAP) {
+    const entries = [];
+    for (const { employee, agent } of linked) {
+      if (employee.employeeId) entries.push({ callbyUserId: pickCallbyId(agent), employeeId: String(employee.employeeId).trim(), name: employee.name });
+    }
+    for (const e of alreadyLinked) {
+      if (e.employeeId) entries.push({ callbyUserId: String(e.callbyUserId).trim(), employeeId: String(e.employeeId).trim(), name: e.name });
+    }
+    const out = path.resolve(process.cwd(), EMIT_MAP);
+    fs.writeFileSync(out, JSON.stringify(entries, null, 2));
+    console.log(`\nWrote ${entries.length} reverse-link entries to ${out}`);
+    console.log("  Apply in callby: node backend/scripts/addEmployeeIdField.js --map=<that file> [--confirm]");
+    const noCode = linked.filter((l) => !l.employee.employeeId).length + alreadyLinked.filter((e) => !e.employeeId).length;
+    if (noCode) console.log(`  (${noCode} linked employee(s) have no Employee.employeeId code — give them one in /admin/employees first)`);
+  }
+
+  // --- apply --------------------------------------------------------------------
   if (APPLY && linked.length) {
     const ops = linked.map(({ employee, agent }) => {
-      const set = { callbyUserId: callbyId(agent) };
+      const set = { callbyUserId: pickCallbyId(agent) };
       // seed tlName only when the Employee doesn't already have one
       if (!employee.tlName && agent.tlName) set.tlName = String(agent.tlName).trim();
       return { updateOne: { filter: { _id: employee._id }, update: { $set: set } } };

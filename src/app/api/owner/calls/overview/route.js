@@ -1,27 +1,14 @@
 import { NextResponse } from "next/server";
-import { fetchCallby } from "@/lib/callby";
 import { withCallbyRoute } from "@/lib/owner/callbyRoute";
+import { getCallStats } from "@/lib/owner/metrics/leadsCalls";
 import { parseEmployeeFilters } from "@/lib/owner/pagination";
 
 // /owner/calls section landing — total calls, connected, connect rate, unique
-// numbers, trend. Backed entirely by callby's own GET /api/calls/stats (no new
-// callby endpoint needed — see the Part 2 plan's audit).
+// numbers, trend. Numbers come from src/lib/owner/metrics/leadsCalls.js
+// (shared with Sanya's get_call_stats tool).
 export const GET = withCallbyRoute(async (req) => {
   const { searchParams } = new URL(req.url);
   const { dateFrom, dateTo } = parseEmployeeFilters(searchParams);
-
-  const params = dateFrom || dateTo
-    ? { range: "custom", startDate: (dateFrom || dateTo).slice(0, 10), endDate: (dateTo || dateFrom).slice(0, 10) }
-    : { range: "today" };
-
-  const result = await fetchCallby("/api/calls/stats", { params });
-  const d = result?.data || {};
-
-  return NextResponse.json({
-    success: true,
-    selected: d.selected || null,
-    today: d.today || null,
-    callsPerHour: d.callsPerHour || d.selected?.callsPerHour || [],
-    topDialers: d.topDialers || [],
-  });
+  const data = await getCallStats({ dateFrom, dateTo });
+  return NextResponse.json({ success: true, ...data });
 });

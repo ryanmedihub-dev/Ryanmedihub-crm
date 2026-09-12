@@ -5,6 +5,7 @@ import DrillDownTable from "@/components/finance/DrillDownTable";
 import LoanRowActions from "@/components/finance/LoanRowActions";
 import LoanSettlementModal from "@/components/finance/LoanSettlementModal";
 import CancelLoanModal from "@/components/finance/CancelLoanModal";
+import AccountMultiSelect from "@/components/finance/AccountMultiSelect";
 import LedgerScopeBar from "@/components/finance/LedgerScopeBar";
 import LedgerExportButton from "@/components/finance/LedgerExportButton";
 import LedgerMetrics from "@/components/finance/LedgerMetrics";
@@ -12,19 +13,25 @@ import { useLedgerScope } from "@/components/finance/LedgerScopeProvider";
 
 export default function LoanAccountsPage() {
   const { scope, setScope, scopeQS } = useLedgerScope();
+  const [accounts, setAccounts] = useState([]);
+  const [picked, setPicked] = useState([]);
   const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const [settleTx, setSettleTx] = useState(null);
   const [cancelTx, setCancelTx] = useState(null);
 
+  const accountsParam = picked.length && picked.length !== accounts.length ? picked.join(",") : "";
+  const extraParams = accountsParam ? { accounts: accountsParam } : undefined;
+
   useEffect(() => {
     const ctrl = new AbortController();
     setLoading(true);
-    fetch(`/api/close-book/accounts?filter=loans&${scopeQS()}`, { signal: ctrl.signal })
+    fetch(`/api/close-book/accounts?filter=loans&${scopeQS(extraParams || {})}`, { signal: ctrl.signal })
       .then((r) => r.json())
       .then((json) => {
         const rows = json.rows || [];
+        if (!accounts.length) setAccounts(rows.map((r) => r.label));
         setMetrics({
           opening: rows.reduce((s, r) => s + (r.opening || 0), 0),
           movement: rows.reduce((s, r) => s + (r.movement || 0), 0),
@@ -35,13 +42,13 @@ export default function LoanAccountsPage() {
       .catch((e) => e.name !== "AbortError" && console.error(e))
       .finally(() => setLoading(false));
     return () => ctrl.abort();
-  }, [scopeQS, refreshKey]);
+  }, [scopeQS, accountsParam, refreshKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const bump = () => setRefreshKey((k) => k + 1);
 
   return (
     <div className="space-y-4">
-      <LedgerScopeBar actions={<LedgerExportButton pageKey="loan-accounts" />} />
+      <LedgerScopeBar actions={<LedgerExportButton pageKey="loan-accounts" extraParams={extraParams} />} />
       <LedgerMetrics
         loading={loading}
         items={[
@@ -51,6 +58,11 @@ export default function LoanAccountsPage() {
           { label: "Balance", value: metrics?.closing ?? 0 },
         ]}
       />
+      {accounts.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <AccountMultiSelect options={accounts} selected={picked} onChange={setPicked} label="Lenders" />
+        </div>
+      )}
       <DrillDownTable
         key={refreshKey}
         levels={2}
@@ -67,6 +79,7 @@ export default function LoanAccountsPage() {
         }}
         scope={scope}
         onScopeChange={setScope}
+        extraParams={extraParams}
         renderLeafRowActions={(row) => (
           <LoanRowActions
             row={row}

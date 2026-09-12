@@ -1,28 +1,14 @@
 import { NextResponse } from "next/server";
-import { fetchCallby } from "@/lib/callby";
-import { withCallbyRoute, toCallDateParams } from "@/lib/owner/callbyRoute";
+import { withCallbyRoute } from "@/lib/owner/callbyRoute";
+import { getLeadFunnel } from "@/lib/owner/metrics/leadsCalls";
 import { parseEmployeeFilters } from "@/lib/owner/pagination";
 
 // /owner/leads section landing — total leads, by status, by source, funnel,
-// unattempted count, trend. Backed by callby's GET /api/reports/leads-periodic
-// (summary/sources/dayWise tabs) — no new callby endpoint needed.
+// unattempted count, trend. Numbers come from src/lib/owner/metrics/leadsCalls.js
+// (shared with Sanya's get_lead_funnel tool).
 export const GET = withCallbyRoute(async (req) => {
   const { searchParams } = new URL(req.url);
   const { dateFrom, dateTo } = parseEmployeeFilters(searchParams);
-  const dateParams = toCallDateParams(dateFrom, dateTo);
-
-  const [summaryResult, sourcesResult, dayWiseResult] = await Promise.all([
-    fetchCallby("/api/reports/leads-periodic", { params: { ...dateParams, tab: "summary" } }),
-    fetchCallby("/api/reports/leads-periodic", { params: { ...dateParams, tab: "sources" } }),
-    fetchCallby("/api/reports/leads-periodic", { params: { ...dateParams, tab: "dayWise" } }),
-  ]);
-
-  return NextResponse.json({
-    success: true,
-    summary: summaryResult?.data?.summary || {},
-    pieData: summaryResult?.data?.pieData || [],
-    sidebarStats: summaryResult?.data?.sidebarStats || {},
-    sources: sourcesResult?.data?.records || [],
-    daywise: dayWiseResult?.data?.daywise || [],
-  });
+  const data = await getLeadFunnel({ dateFrom, dateTo });
+  return NextResponse.json({ success: true, ...data });
 });

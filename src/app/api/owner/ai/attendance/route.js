@@ -3,7 +3,8 @@ import dbConnect from "@/lib/db";
 import Employee from "@/models/Employee";
 import Attendance from "@/models/Attendance";
 import { withCallbyRoute } from "@/lib/owner/callbyRoute";
-import { fetchCallby, CallbyError } from "@/lib/callby";
+import { fetchCallbyCached, CallbyError } from "@/lib/callby";
+import { parsePageParams, parseSortParams, pagedFacet, unpackFacet, pageMeta } from "@/lib/owner/pagination";
 
 // /owner/ai/attendance — call ACTIVITY per employee per day, plus whatever
 // manual Attendance records already exist for that day, plus a SUGGESTED
@@ -13,16 +14,41 @@ import { fetchCallby, CallbyError } from "@/lib/callby";
 // thing an owner actually does with this page is "confirm today's status per
 // employee," and a day-by-employee combination is small enough to render
 // honestly, where a wide date range would invite treating gaps as absences.
+//
+// One Employee.aggregate(): $lookup the day's Attendance rows, attach the
+// day's callby activity (one cached call, keyed by callbyUserId), derive the
+// suggestion in the pipeline, then $facet the sorted page + the summary counts
+// over the whole register. page/pageSize/sortBy/sortDir per
+// src/lib/owner/pagination.js (default 25, max 200).
 
 // Suggestion rule — a starting point for a human, never final. Falls back to
 // a plain present/absent split when an employee has no dailyTarget set,
 // since attainment-based half-day math is meaningless without one.
-function suggestStatus(totalCalls, targetAchievement) {
-  if (totalCalls === 0) return "Absent";
-  if (targetAchievement == null) return "Present";
-  if (targetAchievement >= 50) return "Present";
-  return "Half-day";
-}
+// (Mongo expression; the rule is documented here and nowhere else.)
+const SUGGESTED_STATUS_EXPR = {
+  $cond: [
+    { $eq: ["$callbyLinked", false] },
+    null,
+    {
+      $switch: {
+        branches: [
+          { case: { $eq: ["$totalCalls", 0] }, then: "Absent" },
+          { case: { $eq: ["$targetAchievement", null] }, then: "Present" },
+          { case: { $gte: ["$targetAchievement", 50] }, then: "Present" },
+        ],
+        default: "Half-day",
+      },
+    },
+  ],
+};
+
+const SORTABLE = {
+  name: "name", branch: "branch", role: "role", totalCalls: "totalCalls", connectedCalls: "connectedCalls",
+  targetAchievement: "targetAchievement", suggestedStatus: "suggestedStatus", markedStatus: "markedStatus",
+  activeWindowStart: "activeWindowStart",
+};
+
+const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 export const GET = withCallbyRoute(async (req) => {
   await dbConnect();
@@ -30,74 +56,121 @@ export const GET = withCallbyRoute(async (req) => {
   const date = (searchParams.get("date") || new Date().toISOString().slice(0, 10)).slice(0, 10);
   const branch = searchParams.get("branch") || "All";
   const search = (searchParams.get("search") || "").trim();
+  const { page, pageSize, skip, limit } = parsePageParams(searchParams);
+  const { sortBy, sortDir, sort } = parseSortParams(searchParams, { allowed: SORTABLE, defaultKey: "name" });
 
-  const empMatch = { isactive: true };
+  const empMatch = { isactive: true, mergedInto: null };
   if (branch !== "All") empMatch.branch = branch;
-  if (search) empMatch.name = { $regex: search, $options: "i" };
+  if (search) empMatch.name = { $regex: escapeRegex(search), $options: "i" };
 
-  const employees = await Employee.find(empMatch)
-    .select("name role branch tlName callbyUserId dailyTarget")
-    .sort({ name: 1 })
-    .lean();
-
-  let activityByCallbyId = new Map();
+  // The day's call activity from callby — one call for the whole register,
+  // cached briefly so paging through it doesn't re-fetch.
+  let activity = [];
   let callbyError = null;
   try {
-    const result = await fetchCallby("/api/calls/daily-by-employee", {
+    const result = await fetchCallbyCached("/api/calls/daily-by-employee", {
       params: { startDate: date, endDate: date },
     });
-    const records = result?.data?.records || [];
-    activityByCallbyId = new Map(records.map((r) => [String(r.employeeId), r]));
+    activity = (result?.data?.records || []).map((r) => ({
+      id: String(r.employeeId),
+      totalCalls: r.totalCalls || 0,
+      connectedCalls: r.connectedCalls || 0,
+      targetAchievement: r.targetAchievement ?? null,
+      firstCallAt: r.firstCallAt || null,
+      lastCallAt: r.lastCallAt || null,
+      dailyTarget: r.dailyTarget || 0,
+    }));
   } catch (err) {
     callbyError = err instanceof CallbyError ? err.message : "Failed to load call activity";
   }
 
   const dayStart = new Date(`${date}T00:00:00.000Z`);
-  const existing = await Attendance.find({ date: dayStart, employeeId: { $in: employees.map((e) => e._id) } }).lean();
-  const existingByEmp = new Map(existing.map((a) => [String(a.employeeId), a]));
 
-  const rows = employees.map((e) => {
-    const activity = e.callbyUserId ? activityByCallbyId.get(String(e.callbyUserId)) : null;
-    const totalCalls = activity?.totalCalls || 0;
-    const connectedCalls = activity?.connectedCalls || 0;
-    const targetAchievement = activity?.targetAchievement ?? null;
-    const suggested = e.callbyUserId ? suggestStatus(totalCalls, targetAchievement) : null;
-    const marked = existingByEmp.get(String(e._id)) || null;
+  const result = await Employee.aggregate([
+    { $match: empMatch },
+    {
+      $lookup: {
+        from: Attendance.collection.name,
+        let: { eid: "$_id" },
+        pipeline: [
+          { $match: { date: dayStart, $expr: { $eq: ["$employeeId", "$$eid"] } } },
+          { $limit: 1 },
+          { $project: { status: 1, source: 1, note: 1, markedAt: 1, "markedBy.name": 1 } },
+        ],
+        as: "_marked",
+      },
+    },
+    {
+      $addFields: {
+        _marked: { $arrayElemAt: ["$_marked", 0] },
+        callbyLinked: { $gt: [{ $strLenCP: { $ifNull: ["$callbyUserId", ""] } }, 0] },
+        _act: {
+          $arrayElemAt: [
+            { $filter: { input: { $literal: activity }, as: "a", cond: { $eq: ["$$a.id", { $ifNull: ["$callbyUserId", ""] }] } } },
+            0,
+          ],
+        },
+      },
+    },
+    {
+      $addFields: {
+        totalCalls: { $ifNull: ["$_act.totalCalls", 0] },
+        connectedCalls: { $ifNull: ["$_act.connectedCalls", 0] },
+        targetAchievement: { $ifNull: ["$_act.targetAchievement", null] },
+        activeWindowStart: { $ifNull: ["$_act.firstCallAt", null] },
+        activeWindowEnd: { $ifNull: ["$_act.lastCallAt", null] },
+        dailyTarget: { $ifNull: ["$_act.dailyTarget", 0] },
+        markedStatus: { $ifNull: ["$_marked.status", null] },
+        markedSource: { $ifNull: ["$_marked.source", null] },
+        markedBy: { $ifNull: ["$_marked.markedBy.name", null] },
+        markedAt: { $ifNull: ["$_marked.markedAt", null] },
+        note: { $ifNull: ["$_marked.note", ""] },
+      },
+    },
+    { $addFields: { suggestedStatus: SUGGESTED_STATUS_EXPR } },
+    pagedFacet({
+      sort, skip, limit,
+      rowStages: [
+        {
+          $project: {
+            name: 1, role: 1, branch: 1, tlName: { $ifNull: ["$tlName", ""] }, callbyLinked: 1,
+            totalCalls: 1, connectedCalls: 1, activeWindowStart: 1, activeWindowEnd: 1, dailyTarget: 1,
+            targetAchievement: 1, suggestedStatus: 1, markedStatus: 1, markedSource: 1, markedBy: 1, markedAt: 1, note: 1,
+          },
+        },
+      ],
+      totals: [
+        {
+          $group: {
+            _id: null,
+            total: { $sum: 1 },
+            marked: { $sum: { $cond: [{ $ne: ["$markedStatus", null] }, 1, 0] } },
+            noActivity: { $sum: { $cond: [{ $and: ["$callbyLinked", { $eq: ["$totalCalls", 0] }] }, 1, 0] } },
+            unlinked: { $sum: { $cond: ["$callbyLinked", 0, 1] } },
+          },
+        },
+      ],
+    }),
+  ]).collation({ locale: "en", strength: 2 });
 
-    return {
-      id: String(e._id),
-      employeeId: String(e._id),
-      name: e.name,
-      role: e.role,
-      branch: e.branch,
-      tlName: e.tlName || "",
-      callbyLinked: !!e.callbyUserId,
-      totalCalls,
-      connectedCalls,
-      activeWindowStart: activity?.firstCallAt || null,
-      activeWindowEnd: activity?.lastCallAt || null,
-      dailyTarget: activity?.dailyTarget || 0,
-      targetAchievement,
-      suggestedStatus: suggested,
-      markedStatus: marked?.status || null,
-      markedSource: marked?.source || null,
-      markedBy: marked?.markedBy?.name || null,
-      markedAt: marked?.markedAt || null,
-      note: marked?.note || "",
-    };
-  });
+  const { rows: pageRows, totals, total } = unpackFacet(result);
+  const rows = pageRows.map(({ _id, ...r }) => ({ id: String(_id), employeeId: String(_id), ...r }));
 
   return NextResponse.json({
     success: true,
     date,
     rows,
+    total,
+    ...pageMeta({ page, pageSize, total }),
+    sortBy,
+    sortDir,
     callbyError,
     summary: {
-      total: rows.length,
-      marked: rows.filter((r) => r.markedStatus).length,
-      unmarked: rows.filter((r) => !r.markedStatus).length,
-      noActivity: rows.filter((r) => r.callbyLinked && r.totalCalls === 0).length,
-      unlinked: rows.filter((r) => !r.callbyLinked).length,
+      total: totals?.total || 0,
+      marked: totals?.marked || 0,
+      unmarked: (totals?.total || 0) - (totals?.marked || 0),
+      noActivity: totals?.noActivity || 0,
+      unlinked: totals?.unlinked || 0,
     },
   });
 });

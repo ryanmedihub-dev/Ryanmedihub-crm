@@ -64,7 +64,9 @@ export async function createPayable({ payload, session: authSession }) {
   const commonFields = {
     period: period?.month && period?.year ? period : undefined,
     relatedPatient: relatedPatient || undefined,
-    dueDate: dueDate ? new Date(dueDate) : undefined,
+    // Every payable needs a dueDate for the ledger pages' date-range filter to ever see it —
+    // a missing one never matches a from/to range, so it silently falls out of every filter.
+    dueDate: dueDate ? new Date(dueDate) : new Date(),
     branch: branch || authSession.user.branch,
     remarks: remarks || "",
     costAlreadyRecognised: costAlreadyRecognised === true,

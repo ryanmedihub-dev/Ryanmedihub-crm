@@ -4,6 +4,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { withDB } from "@/lib/withDB";
 import Employee from "@/models/Employee";
 import { fetchCallby, CallbyError } from "@/lib/callby";
+import { isCallerRole } from "@/lib/owner/callerRoles";
 
 // Backs the /owner/employees/links UI — the manual pairing screen for the
 // employees the reconciliation script (scripts/link-employees-to-callby.mjs)
@@ -22,8 +23,15 @@ async function requireSession() {
   return { session };
 }
 
-// callby's agent id — same field /owner/agent-360 hands to /api/owner/agent-detail/:id
-const callbyId = (a) => String(a?.employeeId ?? a?.userId ?? a?.id ?? a?._id ?? "") || null;
+// callby's agent id — callby's own User._id, the same value /owner/agent-360
+// hands to /api/owner/agent-detail/:id. Read `employeeId` only; `ryanEmployeeCode`
+// is ryan-crm's code and must never end up in callbyUserId. Anything that isn't
+// a 24-hex ObjectId is dropped rather than offered for linking.
+const OBJECT_ID = /^[0-9a-fA-F]{24}$/;
+const callbyId = (a) => {
+  const s = String(a?.employeeId ?? "").trim();
+  return OBJECT_ID.test(s) ? s : null;
+};
 
 async function loadCallbyAgents() {
   const result = await fetchCallby("/api/leads/workforce-summary");
@@ -33,7 +41,9 @@ async function loadCallbyAgents() {
       callbyUserId: callbyId(a),
       name: a?.name || "",
       tlName: a?.tlName || "",
-      phone: a?.phone ?? a?.mobile ?? a?.contactNumber ?? "",
+      // callby's copy of Employee.employeeId — shown so a human can spot a
+      // code the script couldn't auto-link (duplicate on callby's side, etc.)
+      ryanEmployeeCode: a?.ryanEmployeeCode || "",
       isActive: a?.isActive ?? true,
     }))
     .filter((a) => a.callbyUserId);
@@ -76,8 +86,15 @@ const getHandler = async () => {
       callbyAgent: agentById.get(String(e.callbyUserId)) || { callbyUserId: String(e.callbyUserId), name: "(not in callby roster)", tlName: "", stale: true },
     }));
 
-  const unlinkedEmployees = employees.filter((e) => !e.callbyUserId);
+  // isCaller rides along so the screen can default to the employees that can
+  // actually be in callby (same list the reconciliation script reports against).
+  const unlinkedEmployees = employees
+    .filter((e) => !e.callbyUserId)
+    .map((e) => ({ ...e, isCaller: isCallerRole(e.role) }));
   const unlinkedCallbyAgents = agents.filter((a) => !linkedEmpByCallbyId.has(a.callbyUserId));
+
+  const callers = employees.filter((e) => isCallerRole(e.role));
+  const callersLinked = callers.filter((e) => e.callbyUserId).length;
 
   return NextResponse.json({
     success: true,
@@ -88,6 +105,9 @@ const getHandler = async () => {
       employees: employees.length,
       linked: linked.length,
       unlinkedEmployees: unlinkedEmployees.length,
+      unlinkedCallers: unlinkedEmployees.filter((e) => e.isCaller).length,
+      callers: callers.length,
+      callersLinked,
       unlinkedCallbyAgents: unlinkedCallbyAgents.length,
     },
   });
@@ -103,7 +123,10 @@ const postHandler = async (req) => {
     return NextResponse.json({ success: false, message: "employeeId and callbyUserId are required" }, { status: 400 });
   }
 
-  const cid = String(callbyUserId);
+  const cid = String(callbyUserId).trim();
+  if (!OBJECT_ID.test(cid)) {
+    return NextResponse.json({ success: false, message: "callbyUserId must be a callby user ObjectId" }, { status: 400 });
+  }
 
   const taken = await Employee.findOne({ callbyUserId: cid, _id: { $ne: employeeId } })
     .select("name")

@@ -178,13 +178,15 @@ export async function exportLedgerPage({ pageKey, scope, extraParams = {}, toast
 
   // ---- suspense ----
   if (pageKey === "suspense") {
-    const grp = await fetch(`/api/suspense?groupBy=account&${qs}`).then((r) => r.json());
+    const suspenseExtraQS = new URLSearchParams(extraParams).toString();
+    const grp = await fetch(`/api/suspense?groupBy=account&${qs}${suspenseExtraQS ? `&${suspenseExtraQS}` : ""}`).then((r) => r.json());
     const flowQS = new URLSearchParams();
     if (scope.branch) flowQS.set("branch", scope.branch);
     if (scope.dateFrom) flowQS.set("from", scope.dateFrom);
     if (scope.dateTo) flowQS.set("to", scope.dateTo);
+    if (!extraParams.status) flowQS.set("status", "all");
     const detail = await fetchAllPages(
-      (page, limit) => `/api/suspense?status=all&${flowQS}&page=${page}&limit=${limit}`,
+      (page, limit) => `/api/suspense?${flowQS}${suspenseExtraQS ? `&${suspenseExtraQS}` : ""}&page=${page}&limit=${limit}`,
       "entries",
       { limit: 200, maxPages: 50 },
     );
@@ -244,7 +246,8 @@ export async function exportLedgerPage({ pageKey, scope, extraParams = {}, toast
   const purposes = PAGE_PURPOSES[pageKey];
   if (purposes) {
     const purposeCSV = purposes.join(",");
-    const grp = await fetch(`/api/payables/grouped?level=1&purpose=${purposeCSV}&${qs}`).then((r) => r.json());
+    const grpExtraQS = extraParams.party ? `&party=${encodeURIComponent(extraParams.party)}` : "";
+    const grp = await fetch(`/api/payables/grouped?level=1&purpose=${purposeCSV}&${qs}${grpExtraQS}`).then((r) => r.json());
     const listParams = new URLSearchParams({ purpose: purposeCSV, ...extraParams });
     if (scope.branch) listParams.set("branch", scope.branch);
     if (scope.dateFrom) listParams.set("dateFrom", scope.dateFrom);

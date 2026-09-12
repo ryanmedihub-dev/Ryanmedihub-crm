@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
-import { OwnerTopbar, Card, FilterBar, KpiRow, DataTable, ErrorState, InlineNotice } from "@/components/owner";
+import { OwnerTopbar, Card, FilterBar, KpiRow, ReportTable, ErrorState, InlineNotice } from "@/components/owner";
 import { ownerFetch } from "@/lib/ownerFetch";
+import { usePagedList } from "@/lib/owner/usePagedList";
 import { rupee, num } from "@/lib/owner/format";
 
 export default function FinanceExpensesPage() {
@@ -11,6 +12,7 @@ export default function FinanceExpensesPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const list = usePagedList({ defaultSort: "total", defaultDir: "desc" });
 
   const load = useCallback(
     async ({ signal } = {}) => {
@@ -21,13 +23,13 @@ export default function FinanceExpensesPage() {
       params.set("dateFrom", filterState.range.from);
       params.set("dateTo", filterState.range.to);
       if (filterState.filters.branch && filterState.filters.branch !== "All") params.set("branch", filterState.filters.branch);
-      const r = await ownerFetch(`/api/owner/finance/expenses?${params.toString()}`, { signal });
+      const r = await ownerFetch(`/api/owner/finance/expenses?${params.toString()}&${list.query}`, { signal });
       if (r.aborted) return;
       if (r.ok) setData(r.data);
       else setError(r.error);
       setLoading(false);
     },
-    [filterState],
+    [filterState, list.query],
   );
 
   useEffect(() => {
@@ -54,7 +56,7 @@ export default function FinanceExpensesPage() {
         />
 
         <div className="content">
-          <FilterBar show={["date", "branch"]} onChange={({ filters, range }) => setFilterState({ filters, range })} />
+          <FilterBar show={["date", "branch"]} onChange={({ filters, range }) => { list.resetPage(); setFilterState({ filters, range }); }} />
 
           {error ? (
             <ErrorState message={error} onRetry={load} />
@@ -63,7 +65,10 @@ export default function FinanceExpensesPage() {
               <KpiRow
                 loading={loading || !data}
                 primaryIndex={0}
-                items={[{ label: "Total Expense", value: rupee(data?.totalExpense), sub: "This period", kind: "bad" }]}
+                items={[
+                  { label: "Total Expense", value: rupee(data?.totalExpense), sub: "This period", kind: "bad" },
+                  { label: "Entries", value: num(data?.entries), sub: "Expense transactions", kind: "info" },
+                ]}
               />
 
               {recon && (
@@ -75,17 +80,21 @@ export default function FinanceExpensesPage() {
                 </InlineNotice>
               )}
 
-              <Card title="By Head / Sub-type" subtitle={loading ? "Loading…" : `${(data?.rows || []).length} rows`}>
-                <DataTable
-                  tall
+              <Card title="By Head / Sub-type" subtitle={loading ? "Loading…" : `${data?.total || 0} rows`}>
+                <ReportTable
+                  tableId="finance-expenses"
                   loading={loading}
                   columns={[
-                    { key: "category", label: "Category" },
-                    { key: "subType", label: "Sub-type" },
-                    { key: "count", label: "Count", align: "right", render: (r) => num(r.count) },
-                    { key: "total", label: "Total", align: "right", render: (r) => rupee(r.total) },
+                    { key: "category", label: "Category", sortable: true },
+                    { key: "subType", label: "Sub-type", sortable: true },
+                    { key: "count", label: "Count", align: "right", sortable: true, render: (r) => num(r.count) },
+                    { key: "total", label: "Total", align: "right", sortable: true, render: (r) => rupee(r.total) },
                   ]}
-                  rows={(data?.rows || []).map((r, i) => ({ ...r, id: i }))}
+                  rows={(data?.rows || []).map((r) => ({ ...r, id: `${r.category}::${r.subType}` }))}
+                  total={data?.total || 0}
+                  {...list.tableProps}
+                  searchPlaceholder="Search category / sub-type…"
+                  csvFilename="expenses.csv"
                 />
               </Card>
             </>

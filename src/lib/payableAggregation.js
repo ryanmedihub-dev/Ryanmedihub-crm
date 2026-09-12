@@ -140,7 +140,7 @@ export function buildPayableAggregationStages(
   ];
 }
 
-export function buildPayableGroupedStages(txCollectionName, { level, category, subType, branch, from, to, groupBy = "category", subGroupBy, purpose, payeeKind, borrowingsCollectionName = "borrowings", advancesCollectionName = "advances" } = {}) {
+export function buildPayableGroupedStages(txCollectionName, { level, category, subType, branch, from, to, groupBy = "category", subGroupBy, purpose, payeeKind, party, borrowingsCollectionName = "borrowings", advancesCollectionName = "advances" } = {}) {
   const isVendor = groupBy === "vendor";
   // "party" groups every payable by its payee's label (employee, vendor, clinic — any kind)
   // at every level — used where the whole page is one flat party list (e.g. Assets/Receivables).
@@ -157,6 +157,10 @@ export function buildPayableGroupedStages(txCollectionName, { level, category, s
   else if (payeeKind) match["payee.kind"] = payeeKind;
   if (purpose) match.purpose = Array.isArray(purpose) ? { $in: purpose } : purpose;
   if (branch) match.branch = branch;
+  // Lets a category/sub-type breakdown be pre-narrowed to one payee (e.g. "search employee"
+  // on the Employee Payables page) before it's even grouped — isParty already groups BY this
+  // exact field, so a regex on top of it there would be redundant/wrong.
+  if (party && !isVendor && !isParty) match["payee.label"] = { $regex: party, $options: "i" };
   if (!isVendor && !isParty) {
     if (level !== 1 && category) match.expenseCategory = category;
     if (level === 2 && subType && !isSubParty) match.expenseSubType = subType;
