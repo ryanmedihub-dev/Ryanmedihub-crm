@@ -48,10 +48,7 @@ import { formatCurrency, StatusBadge } from "@/lib/financeUI";
 import { payableGroupForPurpose } from "@/constants/payableGroups";
 import { METHOD_LABELS } from "@/constants/paymentMethods";
 import { UNSETTLED_METHODS, FURTHER_MODES } from "@/constants/bankRouting";
-import {
-  EXPENSE_CATEGORIES,
-  getExpenseTypes,
-} from "@/constants/expenseCategories";
+import useMasterData from "@/lib/useMasterData";
 import {
   ENTRY_TYPES,
   ENTRY_TYPE_TONE_CLASSES,
@@ -783,6 +780,7 @@ function FilterPanel({
   removeFilter,
   onReset,
 }) {
+  const { expenseCategories, getExpenseTypes } = useMasterData();
   const hasAppliedFilters =
     MULTI_FILTER_KEYS.some(
       (key) => appliedFilters[key]?.length
@@ -1018,7 +1016,7 @@ function FilterPanel({
                         expenseType: [],
                       }))
                     }
-                    options={EXPENSE_CATEGORIES.map((c) => ({
+                    options={expenseCategories.map((c) => ({
                       value: c,
                       label: c,
                     }))}
@@ -1046,7 +1044,7 @@ function FilterPanel({
                           ]
                         : [
                             ...new Set(
-                              EXPENSE_CATEGORIES.flatMap((c) =>
+                              expenseCategories.flatMap((c) =>
                                 getExpenseTypes(c)
                               )
                             ),
