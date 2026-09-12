@@ -16,6 +16,10 @@ export const COLLAB_BRANCHES = [
   "Prayagraj",
   "Chandigarh",
   "Jalandhar",
+  "Indore",
+  "Bhopal",
+  "Nagpur",
+  "Dehradun",
 ];
 
 export const ALL_BRANCHES = [...MAIN_BRANCHES, ...COLLAB_BRANCHES];

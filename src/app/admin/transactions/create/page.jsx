@@ -2235,6 +2235,10 @@ function AdminCreateTransactionPageInner() {
                               <option value="Prayagraj">Prayagraj</option>
                               <option value="Chandigarh">Chandigarh</option>
                               <option value="Jalandhar">Jalandhar</option>
+                              <option value="Indore">Indore</option>
+                              <option value="Bhopal">Bhopal</option>
+                              <option value="Nagpur">Nagpur</option>
+                              <option value="Dehradun">Dehradun</option>
                             </select>
                           </div>
                         )}

@@ -413,6 +413,10 @@ export default function BookAppointment() {
                         { value: "Prayagraj", label: "Prayagraj" },
                         { value: "Chandigarh", label: "Chandigarh" },
                         { value: "Jalandhar", label: "Jalandhar" },
+                        { value: "Indore", label: "Indore" },
+                        { value: "Bhopal", label: "Bhopal" },
+                        { value: "Nagpur", label: "Nagpur" },
+                        { value: "Dehradun", label: "Dehradun" },
                       ]}
                     />
 
