@@ -54,9 +54,22 @@ export function validateExpenseEntry({
   selectedPayableId,
   advanceAllocations = [],
   selectedPayable = null,
+  nonCashMethods = [],
 }) {
   const sectionError = validateExpenseSection({ expenseData, payableAction, selectedPayableId });
   if (sectionError) return sectionError;
+
+  // Mirrors expense/create/route.js's server-side guard: paying against a payable always
+  // records which account the money left from, unless the method itself carries no cash
+  // movement (offset settlement, paid-by-other, etc).
+  if (
+    payableAction === "pay" &&
+    selectedPayableId &&
+    !expenseData.furtherMode &&
+    !nonCashMethods.includes(expenseData.method)
+  ) {
+    return "Select which account this payment left from";
+  }
 
   const allocs = advanceAllocations.filter((a) => a && a.advanceId);
   if (allocs.length > 0) {

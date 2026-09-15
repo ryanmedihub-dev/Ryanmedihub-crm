@@ -82,6 +82,7 @@ function AdminCreateTransactionPageInner() {
     getExpenseTypes,
     getMethodOptions,
     withLegacyMethod,
+    nonCashMethods,
     payableExpenseDropdownCategories: mdPayableDropdown,
     directPaymentCategories: mdDirect,
   } = useMasterData();
@@ -1163,6 +1164,7 @@ function AdminCreateTransactionPageInner() {
       selectedPayableId,
       advanceAllocations: advanceAllocList,
       selectedPayable: selectedPayableForSettle,
+      nonCashMethods,
     });
     if (error) {
       alert(error);

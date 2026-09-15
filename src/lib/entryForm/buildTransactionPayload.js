@@ -1,4 +1,5 @@
 import { computeTaxBreakdown, toTaxDetails } from "@/lib/taxMath";
+import { expenseNeedsGiver } from "@/lib/entryEngine/derive";
 
 export function buildExpensePayload({
   expenseData,
@@ -117,11 +118,24 @@ export function buildExpensePayload({
   }
 
   if (expenseData.expenseSection === "rent") {
+    const rentVendor = expenseData.payableVendorId
+      ? vendors.find((v) => v._id === expenseData.payableVendorId)
+      : null;
+    // Categories outside the server's NO_GIVER list (e.g. Professional Expenses, Medical
+    // Consumables) require a giver — fall back to a MANUAL payee named after the sub-type
+    // ("the shared bucket") when no specific vendor was picked. Rent/Electricity/Collab Clinic
+    // Payment stay giver-less, matching how they've always been recorded.
+    const rentGiver = rentVendor
+      ? { type: "VENDOR", vendorId: rentVendor._id, name: rentVendor.name }
+      : expenseNeedsGiver(expenseData.payableCategory)
+        ? { type: "MANUAL", name: expenseData.rentSubType || expenseData.payableCategory }
+        : undefined;
     return {
       ...common,
       expenseCategory: expenseData.payableCategory,
       expenseType: expenseData.rentSubType,
       amount: expenseData.amount,
+      expenseGiver: rentGiver,
     };
   }
 
