@@ -5,6 +5,7 @@ import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, FilterBar, ReportTable, KpiRow, Badge, ErrorState } from "@/components/owner";
 import { ownerFetch } from "@/lib/ownerFetch";
 import { rupee, num, fmtDate } from "@/lib/owner/format";
+import { toISTDateKey } from "@/lib/owner/dates";
 
 const CATEGORY_OPTIONS = [
   { value: "ALL", label: "All categories" },
@@ -36,13 +37,14 @@ export default function FinanceTransactionsPage() {
       setLoading(true);
       setError(null);
       const params = new URLSearchParams();
-      params.set("dateFrom", filterState.range.from.slice(0, 10));
-      params.set("dateTo", filterState.range.to.slice(0, 10));
+      // get-all takes IST calendar dates, not ISO instants.
+      params.set("dateFrom", toISTDateKey(filterState.range.from));
+      params.set("dateTo", toISTDateKey(filterState.range.to));
       if (filterState.filters.branch && filterState.filters.branch !== "All") params.set("branch", filterState.filters.branch);
       if (filterState.filters.category && filterState.filters.category !== "ALL") params.set("category", filterState.filters.category);
       if (search) params.set("search", search);
       params.set("sortKey", sortKey);
-      params.set("sortDir", sortDir === "desc" ? "-1" : "1");
+      params.set("sortDir", sortDir);
       params.set("page", String(page));
       params.set("limit", String(pageSize));
 
@@ -105,7 +107,7 @@ export default function FinanceTransactionsPage() {
                 loading={loading || !data}
                 primaryIndex={0}
                 items={[
-                  { label: "Total", value: rupee(grandTotal), sub: `${num(total)} transactions`, kind: "info" },
+                  { label: "Total", value: rupee(grandTotal), sub: `${num(total)} rows · excludes settlements & external methods`, kind: "info" },
                   { label: "Transplant", value: rupee(stats.TRANSPLANT?.total), sub: `${num(stats.TRANSPLANT?.count)} txns`, kind: "good" },
                   { label: "Service", value: rupee(stats.SERVICE?.total), sub: `${num(stats.SERVICE?.count)} txns`, kind: "info" },
                   { label: "Medicine", value: rupee(stats.MEDICINE?.total), sub: `${num(stats.MEDICINE?.count)} txns`, kind: "info" },

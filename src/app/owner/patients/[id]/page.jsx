@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, DataTable, Badge, InlineNotice, Skeleton, ErrorState } from "@/components/owner";
@@ -15,7 +15,10 @@ import { rupee, fmtDate } from "@/lib/owner/format";
 
 const names = (arr) => (Array.isArray(arr) && arr.length ? arr.map((e) => e?.name).filter(Boolean).join(", ") : "—");
 
-const JOURNEY_STEPS = ["NEW", "NOT_VISITED", "NOT_CONVERTED", "BOOKING_DONE", "SURGERY_BOOKED", "CLOSED"];
+// The forward path. NOT_VISITED / NOT_CONVERTED are EXITS from it (a CLOSED
+// patient never "passed" them), so they render as a branch, not as steps.
+const JOURNEY_STEPS = ["NEW", "BOOKING_DONE", "SURGERY_BOOKED", "CLOSED"];
+const EXIT_STATUSES = { NOT_VISITED: "after registration — visit date passed", NOT_CONVERTED: "after counselling — nothing paid" };
 const STEP_LABEL = {
   NEW: "New", NOT_VISITED: "Not Visited", NOT_CONVERTED: "Not Converted",
   BOOKING_DONE: "Booking Done", SURGERY_BOOKED: "Converted", CLOSED: "Surgery Done",
@@ -31,25 +34,46 @@ function Field({ label, value }) {
 }
 
 function JourneyStrip({ status }) {
-  const currentIndex = JOURNEY_STEPS.indexOf(status);
+  const exited = EXIT_STATUSES[status];
+  const currentIndex = exited ? 0 : JOURNEY_STEPS.indexOf(status);
   return (
-    <div className="journey" style={{ gridTemplateColumns: `repeat(${JOURNEY_STEPS.length}, 1fr)` }}>
-      {JOURNEY_STEPS.map((step, i) => (
-        <div
-          key={step}
-          className={`journey-step${i < currentIndex ? " done" : ""}${i === currentIndex ? " current" : ""}`}
-        >
-          <strong>{STEP_LABEL[step]}</strong>
-          <span>{i === currentIndex ? "Current" : i < currentIndex ? "Passed" : ""}</span>
-        </div>
-      ))}
-    </div>
+    <>
+      <div className="journey" style={{ gridTemplateColumns: `repeat(${JOURNEY_STEPS.length}, 1fr)` }}>
+        {JOURNEY_STEPS.map((step, i) => (
+          <div
+            key={step}
+            className={`journey-step${i < currentIndex ? " done" : ""}${i === currentIndex && !exited ? " current" : ""}`}
+          >
+            <strong>{STEP_LABEL[step]}</strong>
+            <span>{i === currentIndex && !exited ? "Current" : i < currentIndex ? "Passed" : ""}</span>
+          </div>
+        ))}
+      </div>
+      {exited && (
+        <p className="muted" style={{ margin: "8px 0 0" }}>
+          <Badge kind="bad">{STEP_LABEL[status]}</Badge> Left the path {exited}.
+        </p>
+      )}
+    </>
   );
+}
+
+// The list page that opened this record passes ?back=<preset>&backq=<its query>.
+const BACK_BASES = {
+  all: "/owner/patients/all", notConverted: "/owner/patients/not-converted", bookingDone: "/owner/patients/booking-done",
+  converted: "/owner/patients/converted", surgeryDone: "/owner/patients/surgery-done", direct: "/owner/patients/direct",
+};
+function useBackHref() {
+  const sp = useSearchParams();
+  const base = BACK_BASES[sp.get("back")] || "/owner/patients/all";
+  const q = sp.get("backq");
+  return q ? `${base}?${q}` : base;
 }
 
 export default function PatientDetailPage() {
   const params = useParams();
   const id = params.id;
+  const backHref = useBackHref();
 
   const [patient, setPatient] = useState(null);
   const [statusExplanation, setStatusExplanation] = useState(null);
@@ -83,7 +107,7 @@ export default function PatientDetailPage() {
           title={patient?.personal?.name || "Patient"}
           subtitle={patient?.personal?.phone}
           controls={
-            <Link href="/owner/patients/all" className="btn" style={{ textDecoration: "none" }}>
+            <Link href={backHref} className="btn btn-link">
               ← Back to list
             </Link>
           }

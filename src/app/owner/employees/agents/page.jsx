@@ -4,9 +4,6 @@ import EmployeeReportPage from "@/components/owner/EmployeeReportPage";
 import { SHARED_COLUMNS, callbyColumn } from "@/lib/owner/employeeColumns";
 import { rupee, num } from "@/lib/owner/format";
 
-// Default-visible: name, employeeId, tlName, totalCalls, totalLeads, interested,
-// followUps, totalPatients, amountReceived, performance — everything else (the
-// table is ~23 columns) is one click away via ReportTable's column toggle.
 const config = {
   title: "Agents",
   subtitle: "Calls, leads, conversion, salary and incentive",
@@ -17,7 +14,9 @@ const config = {
   columns: [
     SHARED_COLUMNS.name,
     SHARED_COLUMNS.phone,
+    SHARED_COLUMNS.email,
     SHARED_COLUMNS.employeeId,
+    SHARED_COLUMNS.role,
     SHARED_COLUMNS.dateOfJoining,
     SHARED_COLUMNS.tlName,
     SHARED_COLUMNS.managerName,

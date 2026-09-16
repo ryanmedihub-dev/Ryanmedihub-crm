@@ -9,24 +9,37 @@ import FilterBar from "./FilterBar";
 import ReportTable from "./ReportTable";
 import KpiRow from "./KpiRow";
 import ErrorState from "./ErrorState";
+import TrendChart from "./TrendChart";
 import { ownerFetch } from "@/lib/ownerFetch";
+import { num } from "@/lib/owner/format";
+import { usePagedList } from "@/lib/owner/usePagedList";
+
+// Text columns open A→Z; everything else (dates, money, "days since") opens
+// with the most recent / largest first.
+const TEXT_SORT_KEYS = new Set(["name", "branch", "status", "technique"]);
+const dirForKey = (key) => (TEXT_SORT_KEYS.has(key) ? "asc" : "desc");
 
 // Generic shell behind all six Patients list pages (Owner Panel v2, Part 3) —
 // one table, one KPI row, one API route (/api/owner/patients?preset=...),
 // driven by a config object. Same pattern as EmployeeReportPage/LeadStatusReportPage.
+//
+// config: { preset, title, subtitle, tableId, defaultSort, defaultSortDir,
+//           columns, kpis(data), extras?, extraContent?(data), trendLabel? }
 export default function PatientReportPage({ config }) {
   const router = useRouter();
 
   const [filterState, setFilterState] = useState(null);
-  const [search, setSearch] = useState("");
-  const [sortKey, setSortKey] = useState(config.defaultSort || "createdAt");
-  const [sortDir, setSortDir] = useState(config.defaultSortDir || "desc");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const list = usePagedList({
+    defaultSort: config.defaultSort || "createdAt",
+    defaultDir: config.defaultSortDir || "desc",
+    dirForKey,
+  });
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const extras = config.extras || [];
 
   const load = useCallback(
     async ({ signal } = {}) => {
@@ -34,18 +47,18 @@ export default function PatientReportPage({ config }) {
       setLoading(true);
       setError(null);
 
-      const params = new URLSearchParams();
+      const params = new URLSearchParams(list.query);
       params.set("preset", config.preset);
       params.set("dateFrom", filterState.range.from);
       params.set("dateTo", filterState.range.to);
       if (filterState.filters.branch && filterState.filters.branch !== "All") {
         params.set("branch", filterState.filters.branch);
       }
-      if (search) params.set("search", search);
-      params.set("sortBy", sortKey);
-      params.set("sortDir", sortDir);
-      params.set("page", String(page));
-      params.set("pageSize", String(pageSize));
+      if (filterState.filters.q) params.set("search", filterState.filters.q);
+      for (const ex of extras) {
+        const v = filterState.filters[ex.key];
+        if (v && v !== "all") params.set(ex.key, v);
+      }
 
       const r = await ownerFetch(`/api/owner/patients?${params.toString()}`, { signal });
       if (r.aborted) return;
@@ -53,7 +66,7 @@ export default function PatientReportPage({ config }) {
       else setError(r.error);
       setLoading(false);
     },
-    [filterState, search, sortKey, sortDir, page, pageSize, config.preset],
+    [filterState, list.query, config.preset, extras],
   );
 
   useEffect(() => {
@@ -62,18 +75,20 @@ export default function PatientReportPage({ config }) {
     return () => ctrl.abort();
   }, [load]);
 
-  const handleSort = (key) => {
-    setPage(1);
-    if (key === sortKey) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    else {
-      setSortKey(key);
-      setSortDir("asc");
-    }
-  };
-
   const kpis = useMemo(() => (data ? config.kpis(data) : []), [data, config]);
   const rows = data?.rows || [];
   const total = data?.total || 0;
+
+  // The detail page's "Back" returns to THIS preset with the same filters.
+  const backQuery = useMemo(() => {
+    if (typeof window === "undefined") return "";
+    const current = window.location.search.replace(/^\?/, "");
+    const q = new URLSearchParams({ back: config.preset });
+    if (current) q.set("backq", current);
+    return `?${q.toString()}`;
+  }, [config.preset, filterState]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const extraDefaults = Object.fromEntries(extras.map((ex) => [ex.key, ex.defaultValue ?? ""]));
 
   return (
     <div className="app">
@@ -92,8 +107,13 @@ export default function PatientReportPage({ config }) {
         <div className="content">
           <FilterBar
             show={["date", "branch"]}
+            extras={[
+              ...extras,
+              { key: "q", label: "Search", type: "text", placeholder: "Name / phone" },
+            ]}
+            defaults={{ q: "", ...extraDefaults, ...(config.filterDefaults || {}) }}
             onChange={({ filters, range }) => {
-              setPage(1);
+              list.resetPage();
               setFilterState({ filters, range });
             }}
           />
@@ -106,30 +126,22 @@ export default function PatientReportPage({ config }) {
 
               {config.extraContent && data && config.extraContent(data)}
 
-              <Card title={config.title} subtitle={loading ? "Loading…" : `${total} ${total === 1 ? "patient" : "patients"}`}>
+              {data?.trend?.length > 1 && (
+                <Card title="Trend" subtitle={config.trendLabel || "Patients per day · selected period"}>
+                  <TrendChart data={data.trend} label={config.trendLabel || "Patients"} />
+                </Card>
+              )}
+
+              <Card title={`${config.title} list`} subtitle={loading ? "Loading…" : `${num(total)} ${total === 1 ? "patient" : "patients"}`}>
                 <ReportTable
                   tableId={config.tableId}
                   columns={config.columns}
                   rows={rows}
                   loading={loading}
-                  sortKey={sortKey}
-                  sortDir={sortDir}
-                  onSort={handleSort}
-                  search={search}
-                  onSearchChange={(v) => {
-                    setSearch(v);
-                    setPage(1);
-                  }}
-                  searchPlaceholder="Search name / phone…"
-                  page={page}
-                  pageSize={pageSize}
+                  {...list.tableProps}
+                  onSearchChange={undefined}
                   total={total}
-                  onPageChange={setPage}
-                  onPageSizeChange={(n) => {
-                    setPageSize(n);
-                    setPage(1);
-                  }}
-                  onRowClick={(row) => router.push(`/owner/patients/${row.id}`)}
+                  onRowClick={(row) => router.push(`/owner/patients/${row.id}${backQuery}`)}
                   csvFilename={`patients-${config.preset}.csv`}
                 />
               </Card>

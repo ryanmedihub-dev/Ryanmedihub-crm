@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
 import Patient from "@/models/Patient";
 import { fetchCallby } from "@/lib/callby";
-import { withCallbyRoute, toCallDateParams } from "@/lib/owner/callbyRoute";
+import { withCallbyRoute, toLeadDateParams } from "@/lib/owner/callbyRoute";
 import { parseEmployeeFilters } from "@/lib/owner/pagination";
 import { normalizePhone } from "@/lib/phone";
+import { toISTDateKey } from "@/lib/owner/dates";
 
 // /owner/statistics — the full conversion funnel, leads-created through
 // surgery-done, stage-by-stage (Owner Panel v2, Part 6). Cross-system: the
@@ -95,7 +96,7 @@ export const GET = withCallbyRoute(async (req) => {
   const breakdownBy = searchParams.get("breakdownBy") || "none"; // none | source | agent | team
 
   const result = await fetchCallby("/api/leads", {
-    params: { ...toCallDateParams(dateFrom, dateTo), range: "custom", startDate: dateFrom?.slice(0, 10), endDate: dateTo?.slice(0, 10), page: "1", limit: String(LEAD_SAMPLE_CAP) },
+    params: { ...toLeadDateParams(dateFrom, dateTo), page: "1", limit: String(LEAD_SAMPLE_CAP) },
   });
   const leads = result?.data?.leads || [];
   const truncated = (result?.data?.total || 0) > leads.length;
@@ -125,7 +126,7 @@ export const GET = withCallbyRoute(async (req) => {
   // fetched (no second callby call).
   const dailyMap = new Map();
   for (const l of leads) {
-    const day = l.createdAt ? new Date(l.createdAt).toISOString().slice(0, 10) : null;
+    const day = toISTDateKey(l.createdAt) || null;
     if (!day) continue;
     if (!dailyMap.has(day)) dailyMap.set(day, { date: day, leadsCreated: 0, converted: 0 });
     const d = dailyMap.get(day);

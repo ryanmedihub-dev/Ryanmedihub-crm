@@ -1,5 +1,6 @@
 import { fetchCallbyCached } from "@/lib/callby";
 import { toCallDateParams } from "@/lib/owner/callbyRoute";
+import { toISTDateKey } from "@/lib/owner/dates";
 
 // One implementation of the Leads and Calls landing numbers (callby-backed).
 // /api/owner/leads/overview, /api/owner/calls/overview and Sanya's
@@ -34,14 +35,17 @@ export async function getLeadFunnel({ dateFrom = "", dateTo = "" } = {}) {
  */
 export async function getCallStats({ dateFrom = "", dateTo = "" } = {}) {
   const params = dateFrom || dateTo
-    ? { range: "custom", startDate: (dateFrom || dateTo).slice(0, 10), endDate: (dateTo || dateFrom).slice(0, 10) }
+    ? { range: "custom", startDate: toISTDateKey(dateFrom || dateTo), endDate: toISTDateKey(dateTo || dateFrom) }
     : { range: "today" };
   const result = await fetchCallbyCached("/api/calls/stats", { params });
   const d = result?.data || {};
+  // callby's top-level callsPerHour/topDialers are always TODAY's; the
+  // period-scoped copies live under `selected`.
+  const selected = d.selected || null;
   return {
-    selected: d.selected || null,
+    selected,
     today: d.today || null,
-    callsPerHour: d.callsPerHour || d.selected?.callsPerHour || [],
-    topDialers: d.topDialers || [],
+    callsPerHour: selected?.callsPerHour || d.callsPerHour || [],
+    topDialers: selected?.topDialers || d.topDialers || [],
   };
 }

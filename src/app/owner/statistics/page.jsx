@@ -61,10 +61,15 @@ export default function StatisticsPage() {
   const goToStage = (key) => {
     const base = STAGE_LINKS[key];
     if (!base) return;
-    const from = (filterState?.range?.from || "").slice(0, 10);
-    const to = (filterState?.range?.to || "").slice(0, 10);
+    const f = filterState?.filters;
     const sep = base.includes("?") ? "&" : "?";
-    router.push(from && to ? `${base}${sep}range=Custom&from=${from}&to=${to}` : base);
+    if (!f?.range || f.range === "Today") return router.push(base);
+    const q = new URLSearchParams({ range: f.range });
+    if (f.range === "Custom") {
+      if (f.from) q.set("from", f.from);
+      if (f.to) q.set("to", f.to);
+    }
+    router.push(`${base}${sep}${q.toString()}`);
   };
 
   const stages = data?.stages || [];

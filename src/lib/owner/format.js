@@ -9,8 +9,13 @@ export const rupee = (n) => (missing(n) ? "—" : formatCurrency(Math.round(n)))
 export const num = (n) => (missing(n) ? "—" : new Intl.NumberFormat("en-IN").format(n));
 export const roasFmt = (n) => (missing(n) ? "—" : `${Number(n).toFixed(2)}×`);
 export const pct = (n, digits = 0) => (missing(n) ? "—" : `${(n * 100).toFixed(digits)}%`);
-export const fmtDate = (v) =>
-  v ? new Date(v).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
+// Always rendered in IST regardless of the viewer's device zone.
+const IST = { timeZone: "Asia/Kolkata" };
+export const fmtDate = (v) => {
+  if (!v) return "—";
+  const d = new Date(v);
+  return isNaN(d.getTime()) ? "—" : d.toLocaleDateString("en-IN", { ...IST, day: "2-digit", month: "short", year: "numeric" });
+};
 // Was copy-pasted per-page (agent-360, live-workforce, ...) — one shared version for
 // Part 2's calls/leads pages, which need it constantly (call/lead timestamps).
 export const fmtDateTime = (v) => {
@@ -18,12 +23,12 @@ export const fmtDateTime = (v) => {
   const d = new Date(v);
   return isNaN(d.getTime())
     ? "—"
-    : d.toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+    : d.toLocaleString("en-IN", { ...IST, day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 };
 export const fmtTime = (v) => {
   if (!v) return "—";
   const d = new Date(v);
-  return isNaN(d.getTime()) ? "—" : d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+  return isNaN(d.getTime()) ? "—" : d.toLocaleTimeString("en-IN", { ...IST, hour: "2-digit", minute: "2-digit" });
 };
 /** Seconds -> "Xh Ym" / "Xm" — for call duration and active-window spans. */
 export const fmtDurationShort = (totalSeconds) => {

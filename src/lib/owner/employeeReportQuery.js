@@ -11,6 +11,13 @@ import { fetchCallbyCached, CallbyError } from "@/lib/callby";
 import { employeeSection, SECTION_LABELS } from "@/lib/owner/employeeSections";
 import { scoreCohort, ROLE_PERFORMANCE_CONFIG, PERFORMANCE_BANDS } from "@/lib/owner/performance";
 import { parsePageParams, parseEmployeeFilters, pageMeta } from "@/lib/owner/pagination";
+import { daysInPeriod, periodBounds } from "@/lib/owner/dates";
+import { getISTStartOfDay, getISTEndOfDay } from "@/lib/dateHelpers";
+import { CONVERTED_STATUSES } from "@/lib/owner/patientStatus";
+
+// Leadership groups agents with no TL under this key; the roster route pins
+// tlName to it, so the section match must read it as "tlName is empty".
+export const UNASSIGNED_TEAM = "(unassigned)";
 
 // One query builder behind all five Employees list pages (Owner Panel v2, Part 1).
 // Each role route is a one-line wrapper: `runEmployeeReportQuery(req, "Agent")`.
@@ -40,11 +47,7 @@ function escapeRegex(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-export function daysInPeriod(from, to) {
-  if (!from || !to) return 1;
-  const ms = new Date(to).getTime() - new Date(from).getTime();
-  return Math.max(1, Math.round(ms / 86400000) + 1);
-}
+export { daysInPeriod };
 
 const round = (n) => Math.round((Number(n) || 0) * 100) / 100;
 
@@ -65,9 +68,12 @@ export async function buildAgentMetrics(employees, { from, to }) {
 
   let callbyError = null;
   try {
+    // callby reads dateFrom/dateTo (not from/to) and silently defaults to the
+    // last 30 days when they're absent. Call figures are period-scoped; the
+    // lead figures from this endpoint are a present-moment snapshot.
     const params = {};
-    if (from) params.from = from;
-    if (to) params.to = to;
+    if (from) params.dateFrom = from;
+    if (to) params.dateTo = to;
     const result = await fetchCallbyCached("/api/leads/workforce-summary", { params });
     const agents = result?.data?.agents || result?.agents || [];
     const byCallbyId = new Map(
@@ -95,20 +101,15 @@ export async function buildAgentMetrics(employees, { from, to }) {
 
   const ids = employees.map((e) => e._id);
   const match = { "personal.reference": { $in: ids } };
-  if (from || to) {
-    match["personal.visitDate"] = {};
-    if (from) match["personal.visitDate"].$gte = new Date(from);
-    if (to) match["personal.visitDate"].$lte = new Date(to);
-  }
+  const visitBounds = periodBounds(from, to);
+  if (visitBounds) match["personal.visitDate"] = visitBounds;
   const rows = await Patient.aggregate([
     { $match: match },
     {
       $group: {
         _id: "$personal.reference",
         totalPatients: { $sum: 1 },
-        // Matches src/app/api/super-admin/performance/route.js's by-reference
-        // aggregation — the established "agent conversion" definition.
-        converted: { $sum: { $cond: [{ $in: ["$ops.status", ["SURGERY_BOOKED", "CLOSED"]] }, 1, 0] } },
+        converted: { $sum: { $cond: [{ $in: ["$ops.status", CONVERTED_STATUSES] }, 1, 0] } },
         amountReceived: { $sum: { $ifNull: ["$payments.amountReceived", 0] } },
       },
     },
@@ -136,21 +137,15 @@ async function buildCounsellorMetrics(employees, { from, to }) {
 
   const ids = employees.map((e) => e._id);
   const match = { "counselling.counsellor": { $in: ids } };
-  if (from || to) {
-    match["personal.visitDate"] = {};
-    if (from) match["personal.visitDate"].$gte = new Date(from);
-    if (to) match["personal.visitDate"].$lte = new Date(to);
-  }
+  const visitBounds = periodBounds(from, to);
+  if (visitBounds) match["personal.visitDate"] = visitBounds;
   const rows = await Patient.aggregate([
     { $match: match },
     {
       $group: {
         _id: "$counselling.counsellor",
         patientsConsulted: { $sum: 1 },
-        // A booking token paid — matches this route's own pre-Part-1 "tokens"
-        // figure (src/app/api/owner/counsellor-conversion). Flagged for
-        // sign-off: could instead mean surgery-closed.
-        converted: { $sum: { $cond: [{ $gt: ["$payments.amountReceived", 0] }, 1, 0] } },
+        converted: { $sum: { $cond: [{ $in: ["$ops.status", CONVERTED_STATUSES] }, 1, 0] } },
         amountReceived: { $sum: { $ifNull: ["$payments.amountReceived", 0] } },
         avgDiscount: { $avg: { $ifNull: ["$payments.discount", 0] } },
         avgPackageBefore: { $avg: "$personal.packageQuoted" },
@@ -185,9 +180,7 @@ async function buildSurgeryMetrics(employees, { from, to }) {
   }
 
   const ids = employees.map((e) => e._id);
-  const dateMatch = { "surgery.surgeryDate": { $exists: true, $ne: null } };
-  if (from) dateMatch["surgery.surgeryDate"].$gte = new Date(from);
-  if (to) dateMatch["surgery.surgeryDate"].$lte = new Date(to);
+  const dateMatch = { "surgery.surgeryDate": { $exists: true, $ne: null, ...(periodBounds(from, to) || {}) } };
 
   // $facet output names may not contain "." (Mongo Location16412 — this page
   // 500'd on every load until the keys were flattened), so the field path is
@@ -230,11 +223,8 @@ async function buildHrMetrics(employees, { from, to }) {
 
   const ids = employees.map((e) => e._id);
   const match = { assignedHr: { $in: ids } };
-  if (from || to) {
-    match.date = {};
-    if (from) match.date.$gte = new Date(from);
-    if (to) match.date.$lte = new Date(to);
-  }
+  const dateBounds = periodBounds(from, to);
+  if (dateBounds) match.date = dateBounds;
   const rows = await Interviewer.aggregate([
     { $match: match },
     {
@@ -285,11 +275,8 @@ export async function buildCompensationMetrics(employees, { from, to }) {
 
   const ids = employees.map((e) => e._id);
   const match = { "payee.kind": "EMPLOYEE", "payee.refId": { $in: ids }, isCancelled: { $ne: true } };
-  if (from || to) {
-    match.createdAt = {};
-    if (from) { const f = new Date(from); f.setHours(0, 0, 0, 0); match.createdAt.$gte = f; }
-    if (to) { const t = new Date(to); t.setHours(23, 59, 59, 999); match.createdAt.$lte = t; }
-  }
+  const createdBounds = periodBounds(from, to);
+  if (createdBounds) match.createdAt = createdBounds;
 
   const forPurpose = (purpose, field) => ({ $sum: { $cond: [{ $eq: ["$purpose", purpose] }, `$${field}`, 0] } });
 
@@ -328,7 +315,9 @@ export function derivePerfMetrics(section, m, periodDays) {
     case "Agent":
       return {
         connectRate: m.totalCalls ? m.connected / m.totalCalls : 0,
-        conversionRate: m.totalLeads ? m.converted / m.totalLeads : 0,
+        // Both sides from Patient (referred → converted) — callby's lead count
+        // is a present snapshot, not the period, so it can't be the denominator.
+        conversionRate: m.totalPatients ? m.converted / m.totalPatients : 0,
         targetAttainment: m.dailyTarget ? m.totalCalls / (m.dailyTarget * periodDays) : 0,
       };
     case "Counsellor":
@@ -378,7 +367,7 @@ function buildKpis(section, t) {
 
   if (section === "Agent") {
     base.push({ label: "Total Calls", value: t?.totalCalls || 0, sub: "This period", kind: "info" });
-    base.push({ label: "Total Leads", value: t?.totalLeads || 0, sub: "Assigned", kind: "info" });
+    base.push({ label: "Total Leads", value: t?.totalLeads || 0, sub: "Currently assigned (snapshot)", kind: "info" });
   } else if (section === "Counsellor") {
     base.push({ label: "Patients Consulted", value: t?.patientsConsulted || 0, sub: "This period", kind: "info" });
   } else if (section === "Surgery") {
@@ -396,7 +385,7 @@ function buildKpis(section, t) {
 // itself; everything else lives under the attached `_m` metrics object. Anything
 // not listed falls back to name so a crafted sortBy can't probe arbitrary paths.
 const EMPLOYEE_SORT_FIELDS = new Set([
-  "name", "phone", "employeeId", "branch", "tlName", "managerName", "dateOfJoining", "isactive",
+  "name", "phone", "email", "employeeId", "role", "branch", "tlName", "managerName", "dateOfJoining", "isactive",
 ]);
 const EMPLOYEE_SORT_ALIASES = { salary: "salaryStructure.baseSalary", incentiveRate: "incentiveRate" };
 const COMP_KEYS = ["salaryPayable", "salaryPaid", "incentivePayable", "incentivePaid"];
@@ -430,7 +419,7 @@ const SECTION_KPI_SUMS = {
 };
 
 const ROW_FIELDS = [
-  "name", "phone", "employeeId", "dateOfJoining", "tlName", "managerName", "branch", "isactive",
+  "name", "phone", "email", "employeeId", "role", "dateOfJoining", "tlName", "managerName", "branch", "isactive",
 ];
 
 /**
@@ -440,10 +429,16 @@ const ROW_FIELDS = [
  */
 export async function buildSectionMatch(section, filters = {}) {
   const distinctRoles = await Employee.distinct("role", { mergedInto: null });
-  const sectionRoles = distinctRoles.filter((r) => employeeSection(r) === section);
+  let sectionRoles = distinctRoles.filter((r) => employeeSection(r) === section);
   // A missing/blank role classifies as "Other" — $in with null also matches
   // documents without the field.
   if (section === "Other") sectionRoles.push(null, "");
+  // "Role" advanced filter narrows the section's own role bucket rather than
+  // fighting it with a second `role` match key (Mongo would just keep the last one).
+  if (filters.role) {
+    const q = filters.role.trim().toLowerCase();
+    sectionRoles = sectionRoles.filter((r) => r && r.toLowerCase().includes(q));
+  }
 
   const match = { mergedInto: null, role: { $in: sectionRoles } };
   if (filters.isactive === true || filters.isactive === false) match.isactive = filters.isactive;
@@ -455,11 +450,31 @@ export async function buildSectionMatch(section, filters = {}) {
   if (filters.branch && filters.branch !== "All") match.branch = filters.branch;
   if (filters.search) {
     const re = new RegExp(escapeRegex(filters.search), "i");
-    match.$or = [{ name: re }, { phone: re }, { employeeId: re }, { tlName: re }];
+    match.$or = [
+      { name: re }, { phone: re }, { employeeId: re }, { tlName: re },
+      { managerName: re }, { email: re }, { role: re },
+    ];
   }
-  if (filters.tlName) {
+  if (filters.tlName === UNASSIGNED_TEAM) {
+    match.$and = [...(match.$and || []), { $or: [{ tlName: { $exists: false } }, { tlName: null }, { tlName: "" }] }];
+  } else if (filters.tlName) {
     // Exact team, case/whitespace-insensitive — same rule the Leadership page uses.
     match.tlName = new RegExp(`^\\s*${escapeRegex(filters.tlName.trim())}\\s*$`, "i");
+  }
+  if (filters.dojFrom || filters.dojTo) {
+    match.dateOfJoining = {};
+    if (filters.dojFrom) match.dateOfJoining.$gte = getISTStartOfDay(filters.dojFrom);
+    if (filters.dojTo) match.dateOfJoining.$lte = getISTEndOfDay(filters.dojTo);
+  }
+  if (filters.salaryMin != null || filters.salaryMax != null) {
+    match["salaryStructure.baseSalary"] = {};
+    if (filters.salaryMin != null) match["salaryStructure.baseSalary"].$gte = filters.salaryMin;
+    if (filters.salaryMax != null) match["salaryStructure.baseSalary"].$lte = filters.salaryMax;
+  }
+  if (filters.incentiveRateMin != null || filters.incentiveRateMax != null) {
+    match.incentiveRate = {};
+    if (filters.incentiveRateMin != null) match.incentiveRate.$gte = filters.incentiveRateMin;
+    if (filters.incentiveRateMax != null) match.incentiveRate.$lte = filters.incentiveRateMax;
   }
   return match;
 }

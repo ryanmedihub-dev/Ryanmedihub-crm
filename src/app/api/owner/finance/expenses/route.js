@@ -7,6 +7,8 @@ import AdSpend from "@/models/AdSpend";
 import {
   parseEmployeeFilters, parsePageParams, parseSortParams, pagedFacet, unpackFacet, pageMeta,
 } from "@/lib/owner/pagination";
+import { expenseMatch } from "@/lib/transactionFilters";
+import { periodBounds } from "@/lib/owner/dates";
 
 const ALLOWED_ROLES = ["owner", "super-admin"];
 
@@ -38,13 +40,12 @@ export async function GET(req) {
       allowed: SORTABLE, defaultKey: "total", defaultDir: "desc", tiebreak: "subType",
     });
 
-    const match = { transactionCategory: "EXPENSE" };
+    // Same booked-money rules as the transactions KPI and P&L (approved only,
+    // no settlements, no external methods) — one expense total, not three.
+    const match = expenseMatch();
     if (branch && branch !== "All") match.branch = branch;
-    if (dateFrom || dateTo) {
-      match.date = {};
-      if (dateFrom) match.date.$gte = new Date(dateFrom);
-      if (dateTo) match.date.$lte = new Date(dateTo);
-    }
+    const dateBounds = periodBounds(dateFrom, dateTo);
+    if (dateBounds) match.date = dateBounds;
 
     const marketingTypes = Object.keys(EXPENSE_TYPE_TO_PLATFORM);
     const groupStages = [

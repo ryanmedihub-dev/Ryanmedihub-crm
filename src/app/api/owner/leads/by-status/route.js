@@ -5,6 +5,7 @@ import { fetchCallby } from "@/lib/callby";
 import { withCallbyRoute, toLeadDateParams } from "@/lib/owner/callbyRoute";
 import { parseEmployeeFilters, parsePageParams } from "@/lib/owner/pagination";
 import { normalizePhone } from "@/lib/phone";
+import { CONVERTED_STATUSES } from "@/lib/owner/patientStatus";
 
 // Backs the four Interested/Follow-ups/Not-interested/Unattempted pages
 // (Owner Panel v2, Part 2) — one route, one shared client component
@@ -54,12 +55,13 @@ export const GET = withCallbyRoute(async (req) => {
   if (preset === "notInterested" && rows.length) {
     await dbConnect();
     const normalizedPhones = [...new Set(rows.map((l) => normalizePhone(l.phone)).filter(Boolean))];
-    // "Recovered" means genuinely engaged after being marked lost — consulted at
-    // minimum, not just added as a NEW/NOT_VISITED/NOT_CONVERTED record.
+    // "Recovered" means money changed hands after being marked lost — any
+    // payment (BOOKING_DONE) or a full conversion — not just a NEW/NOT_VISITED/
+    // NOT_CONVERTED record.
     const patients = normalizedPhones.length
       ? await Patient.find({
           "personal.phoneNormalized": { $in: normalizedPhones },
-          "ops.status": { $in: ["CONSULTED", "BOOKING_DONE", "SURGERY_BOOKED", "CLOSED"] },
+          "ops.status": { $in: ["BOOKING_DONE", ...CONVERTED_STATUSES] },
         })
           .select("personal.phone personal.name ops.status")
           .lean()

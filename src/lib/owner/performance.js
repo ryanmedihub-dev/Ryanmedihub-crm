@@ -19,7 +19,8 @@ export const PERFORMANCE_BANDS = ["Excellent", "Good", "Average", "Bad"];
 export const ROLE_PERFORMANCE_CONFIG = {
   Agent: {
     minSample: 5,
-    sampleField: "leadsAssigned",
+    // Must match a key buildAgentMetrics emits (src/lib/owner/employeeReportQuery.js).
+    sampleField: "totalLeads",
     sampleLabel: "leads assigned",
     metrics: [
       { key: "connectRate", label: "Connect rate", weight: 0.35 },

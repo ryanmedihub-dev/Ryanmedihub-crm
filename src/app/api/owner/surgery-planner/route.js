@@ -1,5 +1,6 @@
 
 import { NextResponse } from "next/server";
+import { getISTStartOfDay, getISTEndOfDay } from "@/lib/dateHelpers";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
@@ -37,10 +38,9 @@ export async function POST(req) {
       .sort({ "surgery.surgeryDate": 1 })
       .lean();
 
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const todayEnd = new Date();
-    todayEnd.setHours(23, 59, 59, 999);
+    // "Today" for OT capacity is the IST calendar day, not the server's.
+    const todayStart = getISTStartOfDay();
+    const todayEnd = getISTEndOfDay();
 
     const capacityAgg = await Patient.aggregate([
       { $match: { ...branchFilter, "surgery.surgeryDate": { $gte: todayStart, $lte: todayEnd } } },

@@ -14,6 +14,7 @@ const STATUS_KIND = {
 export function patientStatusBadge(status) {
   return <Badge kind={STATUS_KIND[status] || "neutral"}>{PATIENT_STATUS_LABELS[status] || status || "—"}</Badge>;
 }
+export const patientStatusCell = (r) => patientStatusBadge(r.status);
 
 const names = (arr) => (Array.isArray(arr) && arr.length ? arr.map((e) => e?.name).filter(Boolean).join(", ") : "—");
 
@@ -32,11 +33,14 @@ export const PATIENT_SHARED_COLUMNS = [
 ];
 
 // --- Not Converted --------------------------------------------------------
+// Sorting on these "days since" columns is served by the API as the inverse
+// sort on the underlying date (see SORT_FIELD_MAP in api/owner/patients).
 export const DAYS_SINCE_ACTIVITY_COLUMN = {
   key: "daysSinceActivity",
   label: "Days Since Last Activity",
   align: "right",
   sortable: true,
+  csv: (r) => daysAgo(r.lastActivityAt) ?? "",
   render: (r) => {
     const d = daysAgo(r.lastActivityAt);
     return d == null ? <span className="muted">—</span> : <Badge kind={d > 14 ? "bad" : "neutral"}>{d}d</Badge>;
@@ -49,11 +53,14 @@ export const LAST_CONTACT_COLUMN = {
 };
 
 // --- Booking Done ----------------------------------------------------------
+// No booking timestamp exists on Patient — this is days since REGISTRATION
+// (createdAt), and is labelled as such.
 export const DAYS_SINCE_BOOKING_COLUMN = {
   key: "daysSinceBooking",
-  label: "Days Since Booking",
+  label: "Days Since Registration",
   align: "right",
   sortable: true,
+  csv: (r) => daysAgo(r.createdAt) ?? "",
   render: (r) => {
     const d = daysAgo(r.createdAt);
     if (d == null) return "—";

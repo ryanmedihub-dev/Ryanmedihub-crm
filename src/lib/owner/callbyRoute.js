@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { CallbyError } from "@/lib/callby";
+import { toISTDateKey } from "@/lib/owner/dates";
 
 const ALLOWED_ROLES = ["owner", "super-admin"];
 
@@ -31,11 +32,14 @@ export function withCallbyRoute(fn) {
   };
 }
 
-/** {dateFrom, dateTo} (ISO) -> callby's date-only `startDate`/`endDate` for GET /api/calls. */
+/**
+ * {dateFrom, dateTo} (ISO) -> callby's date-only `startDate`/`endDate` for
+ * GET /api/calls. callby reads these as IST calendar dates, so convert in IST.
+ */
 export function toCallDateParams(dateFrom, dateTo) {
   const params = {};
-  if (dateFrom) params.startDate = dateFrom.slice(0, 10);
-  if (dateTo) params.endDate = dateTo.slice(0, 10);
+  if (dateFrom) params.startDate = toISTDateKey(dateFrom);
+  if (dateTo) params.endDate = toISTDateKey(dateTo);
   return params;
 }
 
@@ -48,7 +52,7 @@ export function toLeadDateParams(dateFrom, dateTo) {
   if (!dateFrom && !dateTo) return {};
   return {
     range: "custom",
-    startDate: (dateFrom || dateTo).slice(0, 10),
-    endDate: (dateTo || dateFrom).slice(0, 10),
+    startDate: toISTDateKey(dateFrom || dateTo),
+    endDate: toISTDateKey(dateTo || dateFrom),
   };
 }

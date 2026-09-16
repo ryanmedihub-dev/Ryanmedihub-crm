@@ -11,7 +11,9 @@ import { DEFAULT_PAGE_SIZE } from "@/lib/owner/pagination";
 //   const list = usePagedList({ defaultSort: "total", defaultDir: "desc" });
 //   ... ownerFetch(`/api/x?${base}&${list.query}`)
 //   <ReportTable {...list.tableProps} rows={...} total={data.total} />
-export function usePagedList({ defaultSort = "name", defaultDir = "asc", pageSize: initialPageSize = DEFAULT_PAGE_SIZE } = {}) {
+// `dirForKey(key)` may return the direction a NEWLY selected column should
+// open with (e.g. "desc" for metrics so the first click reads best-first).
+export function usePagedList({ defaultSort = "name", defaultDir = "asc", dirForKey, pageSize: initialPageSize = DEFAULT_PAGE_SIZE } = {}) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(initialPageSize);
   const [sortKey, setSortKey] = useState(defaultSort);
@@ -25,10 +27,10 @@ export function usePagedList({ defaultSort = "name", defaultDir = "asc", pageSiz
         setSortDir((d) => (d === "asc" ? "desc" : "asc"));
         return prev;
       }
-      setSortDir("asc");
+      setSortDir(dirForKey?.(key) === "desc" ? "desc" : "asc");
       return key;
     });
-  }, []);
+  }, [dirForKey]);
 
   const onSearchChange = useCallback((v) => {
     setPage(1);

@@ -1,6 +1,8 @@
 import Transactions from "@/models/Transactions";
 import { accountsSync, unsettledMethodsSync } from "@/lib/masterData";
 import { buildBalanceMatch } from "@/lib/accountBalances";
+import { expenseMatch } from "@/lib/transactionFilters";
+import { istDayBucket, periodBounds } from "@/lib/owner/dates";
 
 // One implementation of the Finance landing numbers. Both the /owner/finance
 // routes and Sanya's `get_finance_summary` tool call these.
@@ -64,7 +66,7 @@ export async function getFinanceTrend({ from = "", to = "", branch = "" }) {
     { $match: match },
     {
       $group: {
-        _id: { date: { $dateToString: { format: "%Y-%m-%d", date: "$date" } }, costType: "$costType" },
+        _id: { date: istDayBucket("$date"), costType: "$costType" },
         total: { $sum: "$amount" },
       },
     },
@@ -91,13 +93,10 @@ export async function getFinanceTrend({ from = "", to = "", branch = "" }) {
  * way /owner/finance/expenses groups its table (expense × expenseType).
  */
 export async function getExpenseSummary({ from = "", to = "", branch = "All", top = 10 }) {
-  const match = { transactionCategory: "EXPENSE" };
+  const match = expenseMatch();
   if (branch && branch !== "All") match.branch = branch;
-  if (from || to) {
-    match.date = {};
-    if (from) match.date.$gte = new Date(from);
-    if (to) match.date.$lte = new Date(to);
-  }
+  const dateBounds = periodBounds(from, to);
+  if (dateBounds) match.date = dateBounds;
   const [result] = await Transactions.aggregate([
     { $match: match },
     {

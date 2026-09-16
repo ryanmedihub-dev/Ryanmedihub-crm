@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { periodBounds } from "@/lib/owner/dates";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import dbConnect from "@/lib/db";
@@ -86,11 +87,8 @@ export async function GET(req) {
     }
 
     const payableMatch = { purpose: "SALARY", "payee.kind": "EMPLOYEE", "payee.refId": { $in: cohort.map((e) => e._id) }, isCancelled: { $ne: true } };
-    if (dateFrom || dateTo) {
-      payableMatch.createdAt = {};
-      if (dateFrom) { const f = new Date(dateFrom); f.setHours(0, 0, 0, 0); payableMatch.createdAt.$gte = f; }
-      if (dateTo) { const t = new Date(dateTo); t.setHours(23, 59, 59, 999); payableMatch.createdAt.$lte = t; }
-    }
+    const createdBounds = periodBounds(dateFrom, dateTo);
+    if (createdBounds) payableMatch.createdAt = createdBounds;
 
     const [compById, salaryPayables] = await Promise.all([
       buildCompensationMetrics(cohort, period),

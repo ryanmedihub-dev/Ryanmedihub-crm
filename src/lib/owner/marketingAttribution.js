@@ -2,6 +2,7 @@ import AdSpend from "@/models/AdSpend";
 import Leads from "@/models/Leads";
 import Patient from "@/models/Patient";
 import { normalizePhone } from "@/lib/phone";
+import { CONVERTED_STATUSES } from "@/lib/owner/patientStatus";
 
 // Shared attribution logic for the Marketing section (Owner Panel v2, Part 4).
 // Pulled out of the original src/app/api/owner/marketing-summary/route.js
@@ -23,10 +24,8 @@ import { normalizePhone } from "@/lib/phone";
 //     So "Converted"/"Revenue"/"CAC"/"ROAS" answer "of the leads this
 //     period's spend produced, what have they generated SO FAR", not
 //     "revenue collected this period".
-//   - Existing "converted" definition kept as-is from the pre-Part-4 code
-//     (SURGERY_BOOKED + BOOKING_DONE + CLOSED) — broader than Part 3's
-//     Patient-page "Converted" (SURGERY_BOOKED only). Flagged as a cross-part
-//     inconsistency in the Part 4 report, not silently changed here.
+//   - "Converted" uses the panel-wide CONVERTED_STATUSES (paid in full or
+//     surgery done) so marketing CAC/ROAS agree with every other page.
 //
 // PER-CAMPAIGN LIMIT: Leads.tag only distinguishes platform (Meta/Google/
 // Form/Collab), never campaign. Per-platform lead/conversion/revenue
@@ -35,7 +34,7 @@ import { normalizePhone } from "@/lib/phone";
 // (that's local to AdSpend) — see computeCampaignSpend below.
 
 export const TAG_BY_PLATFORM = { Meta: "Meta Leads", Google: "Google Leads" };
-export const MARKETING_CONVERTED_STATUSES = ["SURGERY_BOOKED", "BOOKING_DONE", "CLOSED"];
+export const MARKETING_CONVERTED_STATUSES = CONVERTED_STATUSES;
 const PLATFORM_BY_TAG = Object.fromEntries(Object.entries(TAG_BY_PLATFORM).map(([p, t]) => [t, p]));
 
 /**

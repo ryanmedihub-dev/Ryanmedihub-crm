@@ -2200,11 +2200,23 @@
 /* =============================================================================
    Owner Panel v2 — FilterBar (F3) + ReportTable (F4)
    ========================================================================== */
+.owner-app .filter-bar-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
 .owner-app .filter-bar {
   display: flex;
   flex-wrap: wrap;
   gap: var(--sp-2);
   align-items: center;
+}
+.owner-app .filter-bar-advanced {
+  padding-top: var(--sp-2);
+  border-top: 1px dashed var(--line-strong);
+}
+.owner-app .filter-bar-advanced .control {
+  min-width: 140px;
 }
 
 .owner-app .report-table {
@@ -2286,4 +2298,68 @@
 .owner-app .report-table .table-wrap table th:first-child {
   z-index: 3;
   background: var(--surface-2);
+}
+
+/* =============================================================================
+   Entity header (employee / patient detail pages)
+   ========================================================================== */
+.owner-app .entity-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-4);
+  align-items: center;
+}
+.owner-app .entity-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--grad-accent);
+  color: var(--accent-ink);
+  display: grid;
+  place-items: center;
+  font-size: var(--fs-18);
+  font-weight: 700;
+  flex: none;
+  box-shadow: var(--shadow-accent);
+}
+.owner-app .entity-main {
+  min-width: 0;
+  flex: 1 1 240px;
+}
+.owner-app .entity-main h2 {
+  font-size: var(--fs-18);
+}
+.owner-app .entity-main p {
+  margin: 4px 0 0;
+  font-size: var(--fs-13);
+}
+.owner-app .entity-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+}
+.owner-app .entity-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-5);
+  margin: 0;
+  margin-left: auto;
+}
+.owner-app .entity-facts > div {
+  min-width: 90px;
+}
+.owner-app .entity-facts dt {
+  font-size: var(--fs-12);
+  color: var(--ink-muted);
+}
+.owner-app .entity-facts dd {
+  margin: 2px 0 0;
+  font-weight: 600;
+}
+.owner-app a.btn,
+.owner-app .btn-link {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
 }

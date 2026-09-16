@@ -16,10 +16,10 @@ const config = {
   defaultSortDir: "desc",
   columns: [...PATIENT_SHARED_COLUMNS, ...REVENUE_COLUMNS],
   kpis: (data) => [
-    { label: "Converted", value: num(data.total), sub: "This period", kind: "good" },
-    { label: "Package Value", value: rupee(data.totals?.packageSum), sub: "This period", kind: "info" },
-    { label: "Received", value: rupee(data.totals?.receivedSum), sub: "This period", kind: "good" },
-    { label: "Discount Given", value: rupee(data.totals?.discountSum), sub: "This period", kind: "warn" },
+    { label: "Converted", value: num(data.total), sub: "Registered this period, fully paid", kind: "good" },
+    { label: "Package Value", value: rupee(data.totals?.packageSum), sub: "Final packages", kind: "info" },
+    { label: "Received", value: rupee(data.totals?.receivedSum), sub: "From these patients", kind: "good" },
+    { label: "Discount Given", value: rupee(data.totals?.discountSum), sub: "From these patients", kind: "warn" },
   ],
 };
 

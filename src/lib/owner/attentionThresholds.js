@@ -9,4 +9,7 @@ export const ATTENTION_THRESHOLDS = {
   // Patient sitting at SURGERY_BOOKED (paid, not yet CLOSED) with no update
   // in this many days or more.
   surgeryBookedStaleDays: 14,
+  // NOT_CONVERTED patient with no record update in this many days or more
+  // (the /owner/patients/not-converted "stale" badge and KPI).
+  notConvertedStaleDays: 14,
 };

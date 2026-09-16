@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { istDayBucket } from "@/lib/owner/dates";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import dbConnect from "@/lib/db";
@@ -81,7 +82,7 @@ export async function GET(req) {
             { $match: match },
             {
               $group: {
-                _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+                _id: istDayBucket("$createdAt"),
                 turns: { $sum: 1 },
                 errors: { $sum: { $cond: [{ $in: ["$outcome", ["error", "pii_blocked"]] }, 1, 0] } },
                 costUsd: { $sum: "$costUsd" },

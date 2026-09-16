@@ -51,6 +51,11 @@ export function parseEmployeeFilters(searchParams) {
   const get = typeof searchParams?.get === "function"
     ? (k) => searchParams.get(k)
     : (k) => searchParams?.[k];
+  const toNum = (v) => {
+    if (v === null || v === undefined || v === "") return null;
+    const n = parseFloat(v);
+    return Number.isFinite(n) ? n : null;
+  };
 
   const dateFrom = get("dateFrom") || get("from") || "";
   const dateTo = get("dateTo") || get("to") || "";
@@ -64,7 +69,20 @@ export function parseEmployeeFilters(searchParams) {
   const sortBy = get("sortBy") || "name";
   const sortDir = get("sortDir") === "desc" ? "desc" : "asc";
 
-  return { dateFrom, dateTo, branch, tlName, isactive, callbyLinked, search, sortBy, sortDir };
+  // Advanced Employees filters — role/date-of-joining/salary/incentive-rate,
+  // on top of the standard set above (Owner Panel v2, Employees filter rework).
+  const role = (get("role") || "").trim();
+  const dojFrom = get("dojFrom") || "";
+  const dojTo = get("dojTo") || "";
+  const salaryMin = toNum(get("salaryMin"));
+  const salaryMax = toNum(get("salaryMax"));
+  const incentiveRateMin = toNum(get("incentiveRateMin"));
+  const incentiveRateMax = toNum(get("incentiveRateMax"));
+
+  return {
+    dateFrom, dateTo, branch, tlName, isactive, callbyLinked, search, sortBy, sortDir,
+    role, dojFrom, dojTo, salaryMin, salaryMax, incentiveRateMin, incentiveRateMax,
+  };
 }
 
 /**

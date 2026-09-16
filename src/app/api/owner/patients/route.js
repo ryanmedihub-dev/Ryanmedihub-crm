@@ -5,22 +5,35 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { withDB } from "@/lib/withDB";
 import Patient from "@/models/Patient";
 import Employee from "@/models/Employee";
-import { PRESET_STATUS, PATIENT_DIRECT_REFERENCE_NAME } from "@/lib/owner/patientStatus";
+import {
+  PRESET_STATUS, PATIENT_STATUSES, PATIENT_DIRECT_REFERENCE_NAME, CONVERTED_STATUSES,
+} from "@/lib/owner/patientStatus";
 import { parseEmployeeFilters, parsePageParams } from "@/lib/owner/pagination";
+import { periodBounds, istDayBucket } from "@/lib/owner/dates";
+import { ATTENTION_THRESHOLDS } from "@/lib/owner/attentionThresholds";
 
 const ALLOWED_ROLES = ["owner", "super-admin"];
 
+// Public sort key -> Mongo path. `invert: true` = the column shows "days
+// since X", so ascending on the column is DESCENDING on the date.
 const SORT_FIELD_MAP = {
-  name: "personal.name",
-  createdAt: "createdAt",
-  visitDate: "personal.visitDate",
-  packageAmount: "counselling.finlpackage",
-  amountReceived: "payments.amountReceived",
-  pendingAmount: "payments.pendingAmount",
-  surgeryDate: "surgery.surgeryDate",
-  discount: "payments.discount",
-  graftsImplanted: "surgery.graftsImplanted",
+  name: { field: "personal.name" },
+  createdAt: { field: "createdAt" },
+  visitDate: { field: "personal.visitDate" },
+  packageAmount: { field: "counselling.finlpackage" },
+  amountReceived: { field: "payments.amountReceived" },
+  pendingAmount: { field: "payments.pendingAmount" },
+  surgeryDate: { field: "surgery.surgeryDate" },
+  discount: { field: "payments.discount" },
+  graftsImplanted: { field: "surgery.graftsImplanted" },
+  daysSinceActivity: { field: "updatedAt", invert: true },
+  daysSinceBooking: { field: "createdAt", invert: true },
 };
+
+// Which date the period filter applies to, per preset. Surgery Done is about
+// WHEN THE SURGERY HAPPENED; everything else is about when the patient was
+// registered.
+const PRESET_DATE_FIELD = { surgeryDone: "surgery.surgeryDate" };
 
 function escapeRegex(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -28,10 +41,22 @@ function escapeRegex(s) {
 
 const SURGERY_EMPLOYEE_FIELDS = ["doctor", "seniorTech", "implanterRight", "implanterLeft", "graftingPerson", "helper"];
 
+const TOTALS_GROUP = {
+  _id: null,
+  count: { $sum: 1 },
+  packageSum: { $sum: { $ifNull: ["$counselling.finlpackage", 0] } },
+  receivedSum: { $sum: { $ifNull: ["$payments.amountReceived", 0] } },
+  pendingSum: { $sum: { $ifNull: ["$payments.pendingAmount", 0] } },
+  discountSum: { $sum: { $ifNull: ["$payments.discount", 0] } },
+  converted: { $sum: { $cond: [{ $in: ["$ops.status", CONVERTED_STATUSES] }, 1, 0] } },
+};
+
+const daysAgoExpr = (field) => ({ $divide: [{ $subtract: ["$$NOW", `$${field}`] }, 86400000] });
+
 // One query builder behind all six Patients list pages (Owner Panel v2,
 // Part 3). Pure ryan-crm data — no callby round trip, so this can afford a
-// single $facet aggregation (page of rows + status/revenue totals for the
-// WHOLE filtered set, not just the page) in one round trip, per F7.
+// single $facet aggregation (page of rows + status/revenue totals + trend
+// for the WHOLE filtered set, not just the page) in one round trip, per F7.
 const getHandler = async (req) => {
   const session = await getServerSession(authOptions);
   if (!session || !ALLOWED_ROLES.includes(session?.user?.role)) {
@@ -43,55 +68,81 @@ const getHandler = async (req) => {
   const { dateFrom, dateTo, branch, search, sortBy, sortDir } = parseEmployeeFilters(searchParams);
   const { page, pageSize, skip, limit } = parsePageParams(searchParams);
 
+  if (preset !== "direct" && !Object.prototype.hasOwnProperty.call(PRESET_STATUS, preset)) {
+    return NextResponse.json({ success: false, message: `Unknown preset: ${preset}` }, { status: 400 });
+  }
+
+  const dateField = PRESET_DATE_FIELD[preset] || "createdAt";
   const match = {};
   if (branch && branch !== "All") match["personal.branch"] = branch;
-  if (dateFrom || dateTo) {
-    match.createdAt = {};
-    if (dateFrom) match.createdAt.$gte = new Date(dateFrom);
-    if (dateTo) match.createdAt.$lte = new Date(dateTo);
-  }
+  const bounds = periodBounds(dateFrom, dateTo);
+  if (bounds) match[dateField] = bounds;
   if (search) {
     const re = new RegExp(escapeRegex(search), "i");
     match.$or = [{ "personal.name": re }, { "personal.phone": re }];
   }
 
+  let directRef = null;
   if (preset === "direct") {
     const ryan = await Employee.findOne({ name: PATIENT_DIRECT_REFERENCE_NAME }).select("_id").lean();
     // No matching Employee -> an impossible id, so the query legitimately returns zero rather
     // than silently falling through to "no filter" (which would show everyone as "Direct").
-    match["personal.reference"] = ryan ? ryan._id : new mongoose.Types.ObjectId();
-  } else if (Object.prototype.hasOwnProperty.call(PRESET_STATUS, preset)) {
-    const status = PRESET_STATUS[preset];
-    if (status) match["ops.status"] = status;
+    directRef = ryan ? ryan._id : new mongoose.Types.ObjectId();
+    match["personal.reference"] = directRef;
   } else {
-    return NextResponse.json({ success: false, message: `Unknown preset: ${preset}` }, { status: 400 });
+    const status = PRESET_STATUS[preset];
+    if (status) {
+      match["ops.status"] = status;
+    } else {
+      // The All page may narrow by one or more statuses (?status=A,B).
+      const wanted = (searchParams.get("status") || "").split(",").map((s) => s.trim()).filter((s) => PATIENT_STATUSES.includes(s));
+      if (wanted.length) match["ops.status"] = { $in: wanted };
+    }
   }
 
-  const sortField = SORT_FIELD_MAP[sortBy] || "createdAt";
-  const sortDirNum = sortDir === "desc" ? -1 : 1;
+  const sortSpec = SORT_FIELD_MAP[sortBy] || SORT_FIELD_MAP.createdAt;
+  let sortDirNum = sortDir === "desc" ? -1 : 1;
+  if (sortSpec.invert) sortDirNum = -sortDirNum;
 
   const facet = {
     rows: [
-      { $sort: { [sortField]: sortDirNum, _id: 1 } },
+      { $sort: { [sortSpec.field]: sortDirNum, _id: 1 } },
       { $skip: skip },
       { $limit: limit },
     ],
-    totals: [
+    totals: [{ $group: TOTALS_GROUP }],
+    statusBreakdown: [{ $group: { _id: "$ops.status", count: { $sum: 1 } } }],
+    trend: [
+      { $match: { [dateField]: { $ne: null } } },
+      { $group: { _id: istDayBucket(`$${dateField}`), count: { $sum: 1 } } },
+      { $sort: { _id: 1 } },
+    ],
+  };
+
+  // Preset-specific "attention" counts over the WHOLE filtered set (the pages
+  // used to compute these from the visible page only).
+  if (preset === "notConverted") {
+    facet.stats = [
+      { $group: { _id: null, stale: { $sum: { $cond: [{ $gt: [daysAgoExpr("updatedAt"), ATTENTION_THRESHOLDS.notConvertedStaleDays] }, 1, 0] } } } },
+    ];
+  } else if (preset === "bookingDone") {
+    facet.stats = [
       {
         $group: {
           _id: null,
-          count: { $sum: 1 },
-          packageSum: { $sum: { $ifNull: ["$counselling.finlpackage", 0] } },
-          receivedSum: { $sum: { $ifNull: ["$payments.amountReceived", 0] } },
-          pendingSum: { $sum: { $ifNull: ["$payments.pendingAmount", 0] } },
-          discountSum: { $sum: { $ifNull: ["$payments.discount", 0] } },
+          stale: {
+            $sum: {
+              $cond: [
+                { $and: [{ $gt: [daysAgoExpr("createdAt"), ATTENTION_THRESHOLDS.bookingDoneStaleDays] }, { $eq: [{ $ifNull: ["$surgery.surgeryDate", null] }, null] }] },
+                1, 0,
+              ],
+            },
+          },
+          withSurgeryDate: { $sum: { $cond: [{ $ne: [{ $ifNull: ["$surgery.surgeryDate", null] }, null] }, 1, 0] } },
         },
       },
-    ],
-    statusBreakdown: [{ $group: { _id: "$ops.status", count: { $sum: 1 } } }],
-  };
-
-  if (preset === "surgeryDone") {
+    ];
+  } else if (preset === "surgeryDone") {
     facet.surgeryStats = [
       {
         $group: {
@@ -111,10 +162,16 @@ const getHandler = async (req) => {
     ];
   }
 
-  const [result] = await Patient.aggregate([{ $match: match }, { $facet: facet }]);
+  const queries = [Patient.aggregate([{ $match: match }, { $facet: facet }])];
+  if (preset === "direct") {
+    // "Everyone else" = same window/branch, any reference that is NOT the Direct sentinel.
+    const othersMatch = { ...match, "personal.reference": { $ne: directRef } };
+    queries.push(Patient.aggregate([{ $match: othersMatch }, { $group: TOTALS_GROUP }]));
+  }
+  const [[result], othersAgg] = await Promise.all(queries);
 
   const rawRows = result.rows || [];
-  const totalsRow = result.totals?.[0] || { count: 0, packageSum: 0, receivedSum: 0, pendingSum: 0, discountSum: 0 };
+  const totalsRow = result.totals?.[0] || { count: 0, packageSum: 0, receivedSum: 0, pendingSum: 0, discountSum: 0, converted: 0 };
   const statusBreakdown = (result.statusBreakdown || []).reduce((acc, r) => ({ ...acc, [r._id || "UNKNOWN"]: r.count }), {});
 
   // Batch-resolve every Employee ref on this PAGE of rows only (never per-row) —
@@ -174,23 +231,36 @@ const getHandler = async (req) => {
     return base;
   });
 
+  const pickTotals = (t) => ({
+    count: t?.count || 0,
+    packageSum: t?.packageSum || 0,
+    receivedSum: t?.receivedSum || 0,
+    pendingSum: t?.pendingSum || 0,
+    discountSum: t?.discountSum || 0,
+    converted: t?.converted || 0,
+    conversionRate: t?.count ? Math.round((t.converted / t.count) * 1000) / 10 : 0,
+  });
+
   const response = {
     success: true,
     rows,
     total: totalsRow.count,
     page,
     pageSize,
-    // Echoed back so a page can construct a related query (e.g. Direct's
-    // "vs everyone else" comparison) without re-deriving the resolved range.
+    sortBy,
+    sortDir,
+    dateField,
+    // Echoed back so a page can construct a related query without re-deriving the resolved range.
     appliedFilters: { dateFrom, dateTo, branch: branch || "All" },
-    totals: {
-      packageSum: totalsRow.packageSum,
-      receivedSum: totalsRow.receivedSum,
-      pendingSum: totalsRow.pendingSum,
-      discountSum: totalsRow.discountSum,
-    },
+    totals: pickTotals(totalsRow),
+    stats: result.stats?.[0] ? { stale: result.stats[0].stale || 0, withSurgeryDate: result.stats[0].withSurgeryDate || 0 } : null,
     statusBreakdown,
+    trend: (result.trend || []).map((r) => ({ date: r._id, value: r.count })),
   };
+
+  if (preset === "direct") {
+    response.others = pickTotals(othersAgg?.[0]);
+  }
 
   if (preset === "surgeryDone") {
     const s = result.surgeryStats?.[0] || { totalGraftsImplanted: 0, countWithGrafts: 0, missingGrafts: 0, totalGraftsNeeded: 0 };

@@ -13,7 +13,8 @@ import { num } from "@/lib/owner/format";
 const config = {
   preset: "surgeryDone",
   title: "Surgery Done",
-  subtitle: "Completed surgeries — full clinical record and team attribution",
+  subtitle: "Completed surgeries by surgery date — full clinical record and team attribution",
+  trendLabel: "Surgeries per day · selected period",
   tableId: "patients-surgery-done",
   defaultSort: "surgeryDate",
   defaultSortDir: "desc",
@@ -24,7 +25,7 @@ const config = {
   kpis: (data) => {
     const s = data.surgeryStats || {};
     return [
-      { label: "Total Surgeries", value: num(data.total), sub: "This period", kind: "info" },
+      { label: "Total Surgeries", value: num(data.total), sub: "Surgery date in this period", kind: "info" },
       { label: "Total Grafts Implanted", value: num(s.totalGraftsImplanted), sub: `Across ${num(s.countWithGrafts)} recorded cases`, kind: "info" },
       {
         label: "Avg. Grafts / Case",

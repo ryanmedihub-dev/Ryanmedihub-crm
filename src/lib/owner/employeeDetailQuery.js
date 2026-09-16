@@ -4,37 +4,63 @@ import Interviewer from "@/models/Interviewer";
 import { fetchCallby, CallbyError } from "@/lib/callby";
 import { employeeSection } from "@/lib/owner/employeeSections";
 import {
-  buildCompensationMetrics, SECTION_METRIC_BUILDERS, derivePerfMetrics, sampleValue, daysInPeriod,
+  buildCompensationMetrics, SECTION_METRIC_BUILDERS, derivePerfMetrics, sampleValue,
 } from "@/lib/owner/employeeReportQuery";
 import { scoreCohort } from "@/lib/owner/performance";
+import { CONVERTED_STATUSES } from "@/lib/owner/patientStatus";
+import { istDayBucket, periodBounds, daysInPeriod } from "@/lib/owner/dates";
+import { parseSortParams, pagedFacet, unpackFacet } from "@/lib/owner/pagination";
 
 // Backs /api/owner/employees/[id] — one detail route for all six roles (Owner
 // Panel v2, Part 1). Loads the Employee elsewhere; this builds the
-// role-specific rows + trend + compensation for a single employee.
+// role-specific KPIs, rows (paginated), trend and compensation for one
+// employee, all scoped to the same [from, to] window.
 
-function dateMatch(field, from, to) {
-  if (!from && !to) return {};
-  const m = {};
-  if (from) m.$gte = new Date(from);
-  if (to) m.$lte = new Date(to);
-  return { [field]: m };
+const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
+
+function periodMatch(field, from, to) {
+  const bounds = periodBounds(from, to);
+  return bounds ? { [field]: bounds } : {};
 }
 
-async function dailyTrend(Model, match, dateField) {
-  const rows = await Model.aggregate([
-    { $match: { ...match, [dateField]: { $ne: null, $exists: true } } },
-    { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: `$${dateField}` } }, value: { $sum: 1 } } },
-    { $sort: { _id: 1 } },
+/**
+ * One aggregation: a page of rows + totals over the whole filtered set + the
+ * per-day trend, all from the same $match.
+ */
+async function pagedDetail(Model, { match, dateField, sort, skip, limit, project, totalsGroup }) {
+  const [result] = await Model.aggregate([
+    { $match: match },
+    {
+      $facet: {
+        ...pagedFacet({ sort, skip, limit, rowStages: [{ $project: project }], totals: [{ $group: { _id: null, ...totalsGroup } }] }).$facet,
+        trend: [
+          { $match: { [dateField]: { $ne: null, $exists: true } } },
+          { $group: { _id: istDayBucket(`$${dateField}`), value: { $sum: 1 } } },
+          { $sort: { _id: 1 } },
+        ],
+      },
+    },
   ]);
-  return rows.map((r) => ({ date: r._id, value: r.value }));
+  const { rows, totals, total } = unpackFacet(result);
+  return { rows, totals: totals || {}, total, trend: (result?.trend || []).map((r) => ({ date: r._id, value: r.value })) };
 }
 
-async function agentDetail(employee, { from, to }) {
+const kpi = (label, value, sub, kind = "info", format) => ({ label, value, sub, kind, ...(format ? { format } : {}) });
+
+// ---------------------------------------------------------------------------
+// Agent
+// ---------------------------------------------------------------------------
+const AGENT_SORT = { visitDate: "personal.visitDate", name: "personal.name", amountReceived: "payments.amountReceived", status: "ops.status" };
+
+async function agentDetail(employee, { from, to, searchParams }) {
   let callby = null;
   let callbyError = null;
   if (employee.callbyUserId) {
     try {
-      const result = await fetchCallby(`/api/leads/agent-detail/${employee.callbyUserId}`);
+      const params = {};
+      if (from) params.dateFrom = from;
+      if (to) params.dateTo = to;
+      const result = await fetchCallby(`/api/leads/agent-detail/${employee.callbyUserId}`, { params });
       callby = result?.data || result;
     } catch (err) {
       callbyError = err instanceof CallbyError ? err.message : "Failed to load callby data";
@@ -43,124 +69,161 @@ async function agentDetail(employee, { from, to }) {
     callbyError = "Not linked to callby — see /owner/employees/links";
   }
 
-  const match = { "personal.reference": employee._id, ...dateMatch("personal.visitDate", from, to) };
-  const rows = await Patient.find(match)
-    .select("personal.name personal.phone personal.visitDate ops.status payments.amountReceived")
-    .sort({ "personal.visitDate": -1 })
-    .limit(500)
-    .lean();
+  const { sort, skip, limit, sortBy, sortDir } = parseSortParams(searchParams, { allowed: AGENT_SORT, defaultKey: "visitDate", defaultDir: "desc" });
+  const { rows, totals, total, trend } = await pagedDetail(Patient, {
+    match: { "personal.reference": employee._id, ...periodMatch("personal.visitDate", from, to) },
+    dateField: "personal.visitDate",
+    sort, skip, limit,
+    project: { name: "$personal.name", phone: "$personal.phone", visitDate: "$personal.visitDate", status: "$ops.status", amountReceived: { $ifNull: ["$payments.amountReceived", 0] } },
+    totalsGroup: {
+      referred: { $sum: 1 },
+      converted: { $sum: { $cond: [{ $in: ["$ops.status", CONVERTED_STATUSES] }, 1, 0] } },
+      amountReceived: { $sum: { $ifNull: ["$payments.amountReceived", 0] } },
+    },
+  });
 
-  const trend = await dailyTrend(Patient, { "personal.reference": employee._id }, "personal.visitDate");
+  const calls = callby?.calls || {};
+  const kpis = [
+    kpi("Referred Patients", totals.referred || 0, "Visited in this period"),
+    kpi("Converted", totals.converted || 0, "Paid in full / surgery done", "good"),
+    kpi("Amount Received", round2(totals.amountReceived), "From referred patients", "info", "currency"),
+    kpi("Total Calls", calls.total ?? "—", employee.callbyUserId ? "This period (callby)" : "Not linked to callby"),
+    kpi("Connected", calls.connected ?? "—", calls.total ? `${Math.round(((calls.connected || 0) / calls.total) * 100)}% connect rate` : "This period (callby)"),
+  ];
 
   return {
-    trend,
-    rows: rows.map((p) => ({
-      id: String(p._id),
-      name: p.personal?.name || "Unknown",
-      phone: p.personal?.phone || "",
-      visitDate: p.personal?.visitDate,
-      status: p.ops?.status,
-      amountReceived: p.payments?.amountReceived || 0,
-    })),
+    kpis, trend, total, sortBy, sortDir,
+    rows: rows.map((p) => ({ ...p, id: String(p._id), name: p.name || "Unknown", phone: p.phone || "" })),
     rowsLabel: "Referred patients",
-    callby,
-    callbyError,
+    callby, callbyError,
     recentCalls: callby?.recentCalls || [],
     recentLeadChangelog: callby?.recentLeadChangelog || [],
   };
 }
 
-async function counsellorDetail(employee, { from, to }) {
-  const match = { "counselling.counsellor": employee._id, ...dateMatch("personal.visitDate", from, to) };
-  const rows = await Patient.find(match)
-    .select("personal.name personal.phone personal.visitDate personal.packageQuoted counselling.finlpackage payments.amountReceived payments.discount ops.status")
-    .sort({ "personal.visitDate": -1 })
-    .limit(500)
-    .lean();
+// ---------------------------------------------------------------------------
+// Counsellor
+// ---------------------------------------------------------------------------
+const COUNSELLOR_SORT = {
+  visitDate: "personal.visitDate", name: "personal.name", amountReceived: "payments.amountReceived",
+  packageAfterConsult: "counselling.finlpackage", discount: "payments.discount", status: "ops.status",
+};
 
-  const trend = await dailyTrend(Patient, { "counselling.counsellor": employee._id }, "personal.visitDate");
+async function counsellorDetail(employee, { from, to, searchParams }) {
+  const { sort, skip, limit, sortBy, sortDir } = parseSortParams(searchParams, { allowed: COUNSELLOR_SORT, defaultKey: "visitDate", defaultDir: "desc" });
+  const { rows, totals, total, trend } = await pagedDetail(Patient, {
+    match: { "counselling.counsellor": employee._id, ...periodMatch("personal.visitDate", from, to) },
+    dateField: "personal.visitDate",
+    sort, skip, limit,
+    project: {
+      name: "$personal.name", phone: "$personal.phone", visitDate: "$personal.visitDate",
+      packageBeforeConsult: { $ifNull: ["$personal.packageQuoted", 0] },
+      packageAfterConsult: { $ifNull: ["$counselling.finlpackage", 0] },
+      discount: { $ifNull: ["$payments.discount", 0] },
+      amountReceived: { $ifNull: ["$payments.amountReceived", 0] },
+      status: "$ops.status",
+    },
+    totalsGroup: {
+      consulted: { $sum: 1 },
+      converted: { $sum: { $cond: [{ $in: ["$ops.status", CONVERTED_STATUSES] }, 1, 0] } },
+      amountReceived: { $sum: { $ifNull: ["$payments.amountReceived", 0] } },
+      avgDiscount: { $avg: { $ifNull: ["$payments.discount", 0] } },
+    },
+  });
+
+  const kpis = [
+    kpi("Patients Consulted", totals.consulted || 0, "Visited in this period"),
+    kpi("Converted", totals.converted || 0, "Paid in full / surgery done", "good"),
+    kpi("Amount Received", round2(totals.amountReceived), "From consulted patients", "info", "currency"),
+    kpi("Avg. Discount", round2(totals.avgDiscount), "Per patient", "info", "currency"),
+  ];
 
   return {
-    trend,
-    rows: rows.map((p) => ({
-      id: String(p._id),
-      name: p.personal?.name || "Unknown",
-      phone: p.personal?.phone || "",
-      visitDate: p.personal?.visitDate,
-      packageBeforeConsult: p.personal?.packageQuoted || 0,
-      packageAfterConsult: p.counselling?.finlpackage || 0,
-      discount: p.payments?.discount || 0,
-      amountReceived: p.payments?.amountReceived || 0,
-      status: p.ops?.status,
-    })),
+    kpis, trend, total, sortBy, sortDir,
+    rows: rows.map((p) => ({ ...p, id: String(p._id), name: p.name || "Unknown", phone: p.phone || "" })),
     rowsLabel: "Patients consulted",
-    callby: null,
-    callbyError: null,
+    callby: null, callbyError: null,
   };
 }
 
+// ---------------------------------------------------------------------------
+// Surgery
+// ---------------------------------------------------------------------------
 const SURGERY_ROLE_FIELDS = [
   "surgery.doctor", "surgery.seniorTech", "surgery.implanterRight",
   "surgery.implanterLeft", "surgery.graftingPerson", "surgery.helper",
 ];
+const SURGERY_SORT = { surgeryDate: "surgery.surgeryDate", name: "personal.name", graftsImplanted: "surgery.graftsImplanted", technique: "surgery.technique" };
 
-async function surgeryDetail(employee, { from, to }) {
-  const match = {
-    $or: SURGERY_ROLE_FIELDS.map((f) => ({ [f]: employee._id })),
-    ...dateMatch("surgery.surgeryDate", from, to),
-  };
-  const rows = await Patient.find(match)
-    .select("personal.name personal.phone surgery.surgeryDate surgery.technique surgery.graftsImplanted surgery.OT")
-    .sort({ "surgery.surgeryDate": -1 })
-    .limit(500)
-    .lean();
+async function surgeryDetail(employee, { from, to, searchParams }) {
+  const { sort, skip, limit, sortBy, sortDir } = parseSortParams(searchParams, { allowed: SURGERY_SORT, defaultKey: "surgeryDate", defaultDir: "desc" });
+  const { rows, totals, total, trend } = await pagedDetail(Patient, {
+    match: {
+      $or: SURGERY_ROLE_FIELDS.map((f) => ({ [f]: employee._id })),
+      "surgery.surgeryDate": { $ne: null, ...(periodBounds(from, to) || {}) },
+    },
+    dateField: "surgery.surgeryDate",
+    sort, skip, limit,
+    project: {
+      name: "$personal.name", phone: "$personal.phone", surgeryDate: "$surgery.surgeryDate",
+      technique: { $ifNull: ["$surgery.technique", ""] }, graftsImplanted: { $ifNull: ["$surgery.graftsImplanted", 0] }, OT: "$surgery.OT",
+    },
+    totalsGroup: {
+      surgeries: { $sum: 1 },
+      grafts: { $sum: { $ifNull: ["$surgery.graftsImplanted", 0] } },
+      techniques: { $addToSet: "$surgery.technique" },
+    },
+  });
 
-  const trend = await dailyTrend(
-    Patient,
-    { $or: SURGERY_ROLE_FIELDS.map((f) => ({ [f]: employee._id })) },
-    "surgery.surgeryDate",
-  );
+  const surgeries = totals.surgeries || 0;
+  const kpis = [
+    kpi("Surgeries", surgeries, "This period"),
+    kpi("Grafts Implanted", totals.grafts || 0, "This period", "good"),
+    kpi("Avg. Grafts / Surgery", surgeries ? Math.round((totals.grafts || 0) / surgeries) : 0, "This period"),
+    kpi("Techniques", (totals.techniques || []).filter(Boolean).length, "Distinct techniques"),
+  ];
 
   return {
-    trend,
-    rows: rows.map((p) => ({
-      id: String(p._id),
-      name: p.personal?.name || "Unknown",
-      phone: p.personal?.phone || "",
-      surgeryDate: p.surgery?.surgeryDate,
-      technique: p.surgery?.technique || "",
-      graftsImplanted: p.surgery?.graftsImplanted || 0,
-      OT: p.surgery?.OT ?? null,
-    })),
+    kpis, trend, total, sortBy, sortDir,
+    rows: rows.map((p) => ({ ...p, id: String(p._id), name: p.name || "Unknown", phone: p.phone || "" })),
     rowsLabel: "Surgeries",
-    callby: null,
-    callbyError: null,
+    callby: null, callbyError: null,
   };
 }
 
-async function hrDetail(employee, { from, to }) {
-  const match = { assignedHr: employee._id, ...dateMatch("date", from, to) };
-  const rows = await Interviewer.find(match)
-    .select("name position status interviewDate finalSalary date")
-    .sort({ date: -1 })
-    .limit(500)
-    .lean();
+// ---------------------------------------------------------------------------
+// HR
+// ---------------------------------------------------------------------------
+const HR_SORT = { interviewDate: "date", candidateName: "name", position: "position", status: "status", finalSalary: "finalSalary" };
 
-  const trend = await dailyTrend(Interviewer, { assignedHr: employee._id }, "date");
+async function hrDetail(employee, { from, to, searchParams }) {
+  const { sort, skip, limit, sortBy, sortDir } = parseSortParams(searchParams, { allowed: HR_SORT, defaultKey: "interviewDate", defaultDir: "desc" });
+  const { rows, totals, total, trend } = await pagedDetail(Interviewer, {
+    match: { assignedHr: employee._id, ...periodMatch("date", from, to) },
+    dateField: "date",
+    sort, skip, limit,
+    project: { candidateName: "$name", position: 1, status: 1, interviewDate: { $ifNull: ["$interviewDate", "$date"] }, finalSalary: { $ifNull: ["$finalSalary", 0] } },
+    totalsGroup: {
+      interviews: { $sum: 1 },
+      selected: { $sum: { $cond: [{ $eq: ["$status", "Selected"] }, 1, 0] } },
+      rejected: { $sum: { $cond: [{ $eq: ["$status", "Rejected"] }, 1, 0] } },
+      hold: { $sum: { $cond: [{ $eq: ["$status", "On Hold"] }, 1, 0] } },
+    },
+  });
+
+  const interviews = totals.interviews || 0;
+  const kpis = [
+    kpi("Total Interviews", interviews, "This period"),
+    kpi("Selected", totals.selected || 0, interviews ? `${Math.round(((totals.selected || 0) / interviews) * 100)}% selection rate` : "This period", "good"),
+    kpi("Rejected", totals.rejected || 0, "This period", "bad"),
+    kpi("On Hold", totals.hold || 0, "This period", "warn"),
+  ];
 
   return {
-    trend,
-    rows: rows.map((i) => ({
-      id: String(i._id),
-      candidateName: i.name,
-      position: i.position,
-      status: i.status,
-      interviewDate: i.interviewDate,
-      finalSalary: i.finalSalary || 0,
-    })),
+    kpis, trend, total, sortBy, sortDir,
+    rows: rows.map((i) => ({ ...i, id: String(i._id) })),
     rowsLabel: "Interviews",
-    callby: null,
-    callbyError: null,
+    callby: null, callbyError: null,
   };
 }
 
@@ -174,12 +237,13 @@ const SECTION_DETAIL_BUILDERS = {
 // Performance is peer-relative (src/lib/owner/performance.js), so even a single
 // employee's badge needs the whole section's cohort to rank against — same cost
 // as a list-page load for that section, bounded by employee count, run once per
-// detail-page visit.
+// detail-page visit. The peer set is the ACTIVE members of the section (what
+// the list page shows by default) plus this employee if inactive.
 async function computePerformanceForEmployee(employee, section, { from, to }) {
   const builder = SECTION_METRIC_BUILDERS[section];
   if (!builder) return null; // "Other" — no formula
 
-  const peers = await Employee.find({ mergedInto: null, isactive: { $ne: false } })
+  const peers = await Employee.find({ mergedInto: null, isactive: true })
     .select("name role callbyUserId")
     .lean();
   const cohortEmployees = peers.filter((e) => employeeSection(e.role) === section);
@@ -198,19 +262,24 @@ async function computePerformanceForEmployee(employee, section, { from, to }) {
   return perfById.get(String(employee._id)) || null;
 }
 
-export async function loadEmployeeDetail(employee, { from, to }) {
+export async function loadEmployeeDetail(employee, { from, to, searchParams }) {
   const section = employeeSection(employee.role);
+  const builder = SECTION_DETAIL_BUILDERS[section];
 
-  const [compById, performance] = await Promise.all([
+  const [compById, performance, sectionData] = await Promise.all([
     buildCompensationMetrics([employee], { from, to }),
     computePerformanceForEmployee(employee, section, { from, to }),
+    builder
+      ? builder(employee, { from, to, searchParams })
+      : Promise.resolve({ kpis: [], trend: [], rows: [], total: 0, rowsLabel: null, callby: null, callbyError: null }),
   ]);
   const compensation = compById.get(String(employee._id)) || {};
 
-  const builder = SECTION_DETAIL_BUILDERS[section];
-  const sectionData = builder
-    ? await builder(employee, { from, to })
-    : { trend: [], rows: [], rowsLabel: null, callby: null, callbyError: null };
+  const kpis = [
+    ...sectionData.kpis,
+    kpi("Salary Paid", round2(compensation.salaryPaid), "Against payables raised this period", "info", "currency"),
+    kpi("Incentive Paid", round2(compensation.incentivePaid), "Against payables raised this period", "info", "currency"),
+  ];
 
-  return { section, compensation, performance, ...sectionData };
+  return { section, compensation, performance, ...sectionData, kpis };
 }

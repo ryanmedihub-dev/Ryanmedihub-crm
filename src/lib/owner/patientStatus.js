@@ -44,6 +44,14 @@ export const PATIENT_STATUS_EXPLANATION = {
   CONSULTED: "In the schema's enum but never produced by the save-hook — should not appear on real data.",
 };
 
+// The ONE definition of "converted" for every rate/KPI in the owner panel
+// (agents, counsellors, patients landing, marketing ROAS/CAC, lead recovery,
+// Sanya). Confirmed with the user 2026-09-16: paid in full or surgery done.
+// The /owner/patients/converted LIST is narrower (SURGERY_BOOKED only, see
+// PRESET_STATUS) because CLOSED patients have their own Surgery Done page.
+export const CONVERTED_STATUSES = ["SURGERY_BOOKED", "CLOSED"];
+export const isConverted = (status) => CONVERTED_STATUSES.includes(status);
+
 // Confirmed with the user (this session): which status backs each of Part 3's
 // six list pages. `null` means no status filter (the All page).
 export const PRESET_STATUS = {

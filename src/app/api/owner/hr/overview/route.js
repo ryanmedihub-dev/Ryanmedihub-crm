@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { istDayBucket } from "@/lib/owner/dates";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import dbConnect from "@/lib/db";
@@ -61,7 +62,7 @@ export async function GET(req) {
             { $limit: 15 },
           ],
           daywise: [
-            { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } }, count: { $sum: 1 } } },
+            { $group: { _id: istDayBucket("$date"), count: { $sum: 1 } } },
             { $sort: { _id: 1 } },
           ],
         },

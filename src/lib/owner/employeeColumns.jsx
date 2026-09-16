@@ -42,27 +42,27 @@ export function callbyColumn(key, label, extra = {}) {
 // incentivePaid, performance).
 export const SHARED_COLUMNS = {
   name: { key: "name", label: "Name", sortable: true, render: (r) => r.name || "—" },
-  phone: { key: "phone", label: "Phone", render: (r) => r.phone || "—", defaultHidden: true },
+  phone: { key: "phone", label: "Phone", render: (r) => r.phone || "—" },
+  email: { key: "email", label: "Email", render: (r) => r.email || "—", defaultHidden: true },
   employeeId: { key: "employeeId", label: "Employee ID", render: (r) => r.employeeId || "—" },
-  dateOfJoining: { key: "dateOfJoining", label: "Date of Joining", render: (r) => fmtDate(r.dateOfJoining), defaultHidden: true },
+  role: { key: "role", label: "Role", sortable: true, render: (r) => r.role || "—" },
+  dateOfJoining: { key: "dateOfJoining", label: "Date of Joining", sortable: true, render: (r) => fmtDate(r.dateOfJoining) },
   tlName: { key: "tlName", label: "TL", render: (r) => r.tlName || "—" },
-  managerName: { key: "managerName", label: "Manager", render: (r) => r.managerName || "— (unmapped)", defaultHidden: true },
-  branch: { key: "branch", label: "Branch", render: (r) => r.branch || "—", defaultHidden: true },
+  managerName: { key: "managerName", label: "Manager", render: (r) => r.managerName || "— (unmapped)" },
+  branch: { key: "branch", label: "Branch", render: (r) => r.branch || "—" },
   isactive: {
     key: "isactive",
     label: "Status",
-    defaultHidden: true,
     render: (r) => <Badge kind={r.isactive ? "good" : "neutral"} glyph>{r.isactive ? "Active" : "Inactive"}</Badge>,
     csv: (r) => (r.isactive ? "Active" : "Inactive"),
   },
   // incentiveRate is a RATE, not an earned amount — labelled explicitly so it's
   // never mistaken for money paid (see incentivePaid for that).
-  salary: { key: "salary", label: "Base Salary", align: "right", render: (r) => rupee(r.salary), defaultHidden: true },
+  salary: { key: "salary", label: "Base Salary", align: "right", sortable: true, render: (r) => rupee(r.salary) },
   incentiveRate: {
     key: "incentiveRate",
     label: "Incentive Rate",
     align: "right",
-    defaultHidden: true,
     render: (r) => (r.incentiveRate ? `${r.incentiveRate} (rate)` : "—"),
   },
   salaryPaid: { key: "salaryPaid", label: "Salary Paid", align: "right", sortable: true, render: (r) => rupee(r.salaryPaid) },

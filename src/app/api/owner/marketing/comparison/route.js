@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { istDayBucket } from "@/lib/owner/dates";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import dbConnect from "@/lib/db";
@@ -60,7 +61,7 @@ export async function GET(req) {
         { $match: branchMatch },
         {
           $group: {
-            _id: { date: { $dateToString: { format: "%Y-%m-%d", date: "$date" } }, platform: "$platform" },
+            _id: { date: istDayBucket("$date"), platform: "$platform" },
             spend: { $sum: "$amount" },
           },
         },

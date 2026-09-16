@@ -14,7 +14,9 @@ const config = {
   columns: [
     SHARED_COLUMNS.name,
     SHARED_COLUMNS.phone,
+    SHARED_COLUMNS.email,
     SHARED_COLUMNS.employeeId,
+    SHARED_COLUMNS.role,
     SHARED_COLUMNS.dateOfJoining,
     { ...SHARED_COLUMNS.tlName, defaultHidden: true },
     { ...SHARED_COLUMNS.managerName, defaultHidden: true },
