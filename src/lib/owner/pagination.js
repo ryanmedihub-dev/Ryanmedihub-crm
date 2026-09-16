@@ -58,11 +58,13 @@ export function parseEmployeeFilters(searchParams) {
   const tlName = get("tlName") || "";
   const isactiveRaw = get("isactive");
   const isactive = isactiveRaw === "true" ? true : isactiveRaw === "false" ? false : null;
+  const callbyLinkedRaw = get("callbyLinked");
+  const callbyLinked = callbyLinkedRaw === "true" ? true : callbyLinkedRaw === "false" ? false : null;
   const search = (get("search") || "").trim();
   const sortBy = get("sortBy") || "name";
   const sortDir = get("sortDir") === "desc" ? "desc" : "asc";
 
-  return { dateFrom, dateTo, branch, tlName, isactive, search, sortBy, sortDir };
+  return { dateFrom, dateTo, branch, tlName, isactive, callbyLinked, search, sortBy, sortDir };
 }
 
 /**

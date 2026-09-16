@@ -5,7 +5,7 @@
 | Brief item | Status |
 |---|---|
 | A. `Employee` schema: `callbyUserId`, `dateOfJoining`, `tlName`, `managerName` | ✅ `src/models/Employee.js` (+ create/update APIs accept DOJ/TL/manager; `callbyUserId` only via the links route) |
-| B. Reconciliation script | ✅ `scripts/link-employees-to-callby.mjs` (dry-run by default) |
+| B. Reconciliation script | ✅ `scripts/sync-callby-links.mjs` (code-only: `Employee.employeeId` == callby's `ryanEmployeeCode`; dry-run by default) |
 | C. Manual-linking UI | ✅ `/owner/employees/links` + `src/app/api/owner/callby-links/route.js` |
 | D1. `<FilterBar />` (F3) | ✅ `src/components/owner/FilterBar.jsx` + `src/lib/owner/useOwnerFilters.js` — URL-query state, default range **Today**, presets incl. This Week / This Month |
 | D2. `<ReportTable />` (F4) | ✅ `src/components/owner/ReportTable.jsx` + `src/lib/owner/pagination.js` — server pagination props, column toggle (persisted), CSV export, sticky first column |

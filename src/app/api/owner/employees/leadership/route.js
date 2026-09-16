@@ -105,6 +105,10 @@ export async function GET(req) {
           distinctSpellings: [...g.rawNames],
           branch: [...new Set(g.members.map((m) => m.branch))].join(", "),
           teamSize: g.members.length,
+          // Call/lead totals below are summed only from linked members — an
+          // unlinked member contributes silent zeros, not "we don't know". Carry
+          // the coverage count so the UI can flag a team whose total is partial.
+          teamLinkedCount: g.members.filter((m) => m.callbyUserId).length,
           teamTotalCalls: teamTotals.totalCalls,
           teamTotalLeads: teamTotals.totalLeads,
           teamPatientsVisited: teamTotals.totalPatients,

@@ -447,6 +447,11 @@ export async function buildSectionMatch(section, filters = {}) {
 
   const match = { mergedInto: null, role: { $in: sectionRoles } };
   if (filters.isactive === true || filters.isactive === false) match.isactive = filters.isactive;
+  if (filters.callbyLinked === true) match.callbyUserId = { $exists: true, $nin: [null, ""] };
+  if (filters.callbyLinked === false) match.$and = [
+    ...(match.$and || []),
+    { $or: [{ callbyUserId: { $exists: false } }, { callbyUserId: null }, { callbyUserId: "" }] },
+  ];
   if (filters.branch && filters.branch !== "All") match.branch = filters.branch;
   if (filters.search) {
     const re = new RegExp(escapeRegex(filters.search), "i");

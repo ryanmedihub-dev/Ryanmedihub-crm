@@ -12,8 +12,8 @@ const ALLOWED_ROLES = ["owner", "super-admin"];
 // Selected page (Owner Panel v2, Part 5). There was no Interviewer<->Employee
 // link for "did they actually join" — this adds one, matched by phone then
 // exact name, same confident-match-only convention as
-// scripts/link-employees-to-callby.mjs. Never guesses: no match -> a clear
-// error, not a wrong link.
+// scripts/sync-callby-links.mjs's code-only rule (no fuzzy matching). Never
+// guesses: no match -> a clear error, not a wrong link.
 export async function PATCH(req, { params }) {
   try {
     await dbConnect();

@@ -7,8 +7,8 @@ import { fetchCallby, CallbyError } from "@/lib/callby";
 import { isCallerRole } from "@/lib/owner/callerRoles";
 
 // Backs the /owner/employees/links UI — the manual pairing screen for the
-// employees the reconciliation script (scripts/link-employees-to-callby.mjs)
-// couldn't confidently match to a callby user.
+// employees the reconciliation script (scripts/sync-callby-links.mjs)
+// couldn't match by code to a callby user.
 
 const ALLOWED_ROLES = ["owner", "super-admin"];
 

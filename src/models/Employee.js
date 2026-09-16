@@ -48,9 +48,10 @@ const employeeSchema = new mongoose.Schema({
   // --- callby bridge (Owner Panel v2, Part 0) -------------------------------
   // ryan-crm and callby are two databases with no foreign key between them.
   // `callbyUserId` holds the callby user id (as a string) once an Employee has
-  // been reconciled to their callby account — by scripts/link-employees-to-callby.mjs
-  // first, then the /owner/employees/links UI for the leftovers. Everything that
-  // needs an employee's calls/leads/target joins through this field.
+  // been reconciled to their callby account — by scripts/sync-callby-links.mjs
+  // (Employee.employeeId == callby's ryanEmployeeCode, code only, no name
+  // matching) first, then the /owner/employees/links UI for the leftovers.
+  // Everything that needs an employee's calls/leads/target joins through this field.
   callbyUserId: { type: String, default: null, index: true },
 
   // Not previously tracked on Employee. `tlName` mirrors callby's free-text TL

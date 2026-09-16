@@ -19,6 +19,12 @@ const STATUS_OPTIONS = [
   { value: "false", label: "Inactive" },
 ];
 
+const CALLBY_LINKED_OPTIONS = [
+  { value: "", label: "All" },
+  { value: "true", label: "Linked to callby" },
+  { value: "false", label: "Not linked" },
+];
+
 // Generic shell behind all five Employees list pages (Owner Panel v2, Part 1) —
 // the six pages are config objects, not six copies of this component. See
 // src/app/owner/employees/agents/page.jsx for the config shape.
@@ -49,6 +55,7 @@ export default function EmployeeReportPage({ config }) {
         params.set("branch", filterState.filters.branch);
       }
       if (filterState.filters.isactive) params.set("isactive", filterState.filters.isactive);
+      if (filterState.filters.callbyLinked) params.set("callbyLinked", filterState.filters.callbyLinked);
       if (search) params.set("search", search);
       params.set("sortBy", sortKey);
       params.set("sortDir", sortDir);
@@ -108,8 +115,11 @@ export default function EmployeeReportPage({ config }) {
         <div className="content">
           <FilterBar
             show={["date", "branch"]}
-            extras={[{ key: "isactive", label: "Status", options: STATUS_OPTIONS }]}
-            defaults={{ isactive: "" }}
+            extras={[
+              { key: "isactive", label: "Status", options: STATUS_OPTIONS },
+              { key: "callbyLinked", label: "callby link", options: CALLBY_LINKED_OPTIONS },
+            ]}
+            defaults={{ isactive: "", callbyLinked: "" }}
             onChange={({ filters, range }) => {
               setPage(1);
               setFilterState({ filters, range });

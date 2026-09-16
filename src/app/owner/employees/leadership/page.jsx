@@ -139,9 +139,51 @@ export default function LeadershipPage() {
                       ),
                     },
                     { key: "branch", label: "Branch", render: (t) => t.branch || "—" },
-                    { key: "teamSize", label: "Team Size", align: "right", render: (t) => num(t.teamSize) },
-                    { key: "teamTotalCalls", label: "Total Calls", align: "right", render: (t) => num(t.teamTotalCalls) },
-                    { key: "teamTotalLeads", label: "Total Leads", align: "right", render: (t) => num(t.teamTotalLeads) },
+                    {
+                      key: "teamSize",
+                      label: "Team Size",
+                      align: "right",
+                      render: (t) => (
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                          {num(t.teamSize)}
+                          {t.teamLinkedCount < t.teamSize && (
+                            <Badge kind="warn">{t.teamSize - t.teamLinkedCount} not linked</Badge>
+                          )}
+                        </span>
+                      ),
+                    },
+                    {
+                      key: "teamTotalCalls",
+                      label: "Total Calls",
+                      align: "right",
+                      render: (t) => (
+                        <span
+                          title={
+                            t.teamLinkedCount < t.teamSize
+                              ? `Partial — only ${t.teamLinkedCount} of ${t.teamSize} team members are linked to callby`
+                              : undefined
+                          }
+                        >
+                          {num(t.teamTotalCalls)}
+                        </span>
+                      ),
+                    },
+                    {
+                      key: "teamTotalLeads",
+                      label: "Total Leads",
+                      align: "right",
+                      render: (t) => (
+                        <span
+                          title={
+                            t.teamLinkedCount < t.teamSize
+                              ? `Partial — only ${t.teamLinkedCount} of ${t.teamSize} team members are linked to callby`
+                              : undefined
+                          }
+                        >
+                          {num(t.teamTotalLeads)}
+                        </span>
+                      ),
+                    },
                     { key: "teamPatientsVisited", label: "Patients Visited", align: "right", render: (t) => num(t.teamPatientsVisited) },
                     { key: "teamConverted", label: "Converted", align: "right", render: (t) => num(t.teamConverted) },
                     { key: "teamPerformance", label: "Team Performance", render: (t) => performanceCell(t.teamPerformance) },

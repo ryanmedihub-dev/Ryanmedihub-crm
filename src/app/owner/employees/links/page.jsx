@@ -8,7 +8,8 @@ import {
 import { ownerFetch } from "@/lib/ownerFetch";
 
 // Manual pairing screen for the employee <-> callby links the reconciliation
-// script (scripts/link-employees-to-callby.mjs) couldn't match confidently.
+// script (scripts/sync-callby-links.mjs) couldn't match by code — no
+// Employee.employeeId, or no callby user carries that code yet.
 // Without this, every Employees page silently under-reports for anyone unlinked.
 
 export default function CallbyLinksPage() {
@@ -244,7 +245,7 @@ export default function CallbyLinksPage() {
               <Card title="Linked pairs" subtitle={`${linked.length} link${linked.length === 1 ? "" : "s"}`}>
                 <DataTable
                   loading={loading}
-                  emptyMessage="No links yet — run scripts/link-employees-to-callby.mjs --apply first, then fix the rest here."
+                  emptyMessage="No links yet — run scripts/sync-callby-links.mjs --apply first, then fix the rest here."
                   columns={[
                     { key: "employee", label: "Employee", render: (r) => r.employee?.name },
                     { key: "role", label: "Role", render: (r) => r.employee?.role || "—" },
