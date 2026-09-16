@@ -140,6 +140,7 @@ export default function EmployeeUpdate() {
       effectiveFrom: new Date().toISOString().split("T")[0],
     },
     incentiveRate: "",
+    dateOfJoining: "",
   });
 
   const handleSalaryChange = (field, value) => {
@@ -185,6 +186,9 @@ export default function EmployeeUpdate() {
                 : new Date().toISOString().split("T")[0],
             },
             incentiveRate: result.data.incentiveRate ?? "",
+            dateOfJoining: result.data.dateOfJoining
+              ? new Date(result.data.dateOfJoining).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" })
+              : "",
           });
         }
       } catch (error) {
@@ -260,6 +264,7 @@ export default function EmployeeUpdate() {
             baseSalary: parseFloat(formData.salaryStructure.baseSalary) || 0,
           },
           incentiveRate: parseFloat(formData.incentiveRate) || 0,
+          dateOfJoining: formData.dateOfJoining || null,
         }),
       });
 
@@ -423,11 +428,17 @@ export default function EmployeeUpdate() {
                   )}
 
                   <InputField
+                    label="Date of Joining"
+                    type="date"
+                    value={formData.dateOfJoining}
+                    onChange={createChangeHandler("dateOfJoining")}
+                  />
+
+                  <InputField
                     label="Active Status"
                     type="checkbox"
                     value={formData.isactive}
                     onChange={createChangeHandler("isactive")}
-                    className="md:col-span-2"
                   />
 
                   <div className="md:col-span-2 pt-4 border-t border-gray-200">

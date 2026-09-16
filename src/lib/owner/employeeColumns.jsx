@@ -56,17 +56,28 @@ export const SHARED_COLUMNS = {
     render: (r) => <Badge kind={r.isactive ? "good" : "neutral"} glyph>{r.isactive ? "Active" : "Inactive"}</Badge>,
     csv: (r) => (r.isactive ? "Active" : "Inactive"),
   },
-  // incentiveRate is a RATE, not an earned amount — labelled explicitly so it's
-  // never mistaken for money paid (see incentivePaid for that).
+  // Money columns are for the PAY MONTHS the date filter covers (payables are
+  // keyed by period, not by when they were raised). "Earned" = payables raised
+  // for the employee; "Paid" = what has actually been settled against them.
   salary: { key: "salary", label: "Base Salary", align: "right", sortable: true, render: (r) => rupee(r.salary) },
+  salaryPaid: {
+    key: "salaryPaid",
+    label: "Salary Paid",
+    align: "right",
+    sortable: true,
+    render: (r) => (r.salaryPayable ? <span title={`${rupee(r.salaryPayable)} due`}>{rupee(r.salaryPaid)}</span> : <span className="muted">—</span>),
+    csv: (r) => r.salaryPaid ?? 0,
+  },
+  incentiveEarned: { key: "incentivePayable", label: "Incentive Earned", align: "right", sortable: true, render: (r) => (r.incentivePayable ? rupee(r.incentivePayable) : <span className="muted">—</span>), csv: (r) => r.incentivePayable ?? 0 },
+  incentivePaid: { key: "incentivePaid", label: "Incentive Paid", align: "right", sortable: true, render: (r) => (r.incentivePayable ? rupee(r.incentivePaid) : <span className="muted">—</span>), csv: (r) => r.incentivePaid ?? 0 },
+  // The usual per-patient rate from the employee record — a setting, not money.
   incentiveRate: {
     key: "incentiveRate",
-    label: "Incentive Rate",
+    label: "Incentive Rate (setting)",
     align: "right",
-    render: (r) => (r.incentiveRate ? `${r.incentiveRate} (rate)` : "—"),
+    defaultHidden: true,
+    render: (r) => (r.incentiveRate ? `₹${r.incentiveRate} / patient` : "—"),
   },
-  salaryPaid: { key: "salaryPaid", label: "Salary Paid", align: "right", sortable: true, render: (r) => rupee(r.salaryPaid) },
-  incentivePaid: { key: "incentivePaid", label: "Incentive Paid", align: "right", sortable: true, defaultHidden: true, render: (r) => rupee(r.incentivePaid) },
   performance: {
     key: "performance",
     label: "Performance",

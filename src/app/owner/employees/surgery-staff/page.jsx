@@ -25,9 +25,10 @@ const config = {
     { key: "patientsOperated", label: "Patients Operated", align: "right", sortable: true, render: (r) => num(r.patientsOperated) },
     { key: "graftsImplanted", label: "Grafts Implanted", align: "right", sortable: true, render: (r) => num(r.graftsImplanted) },
     SHARED_COLUMNS.salary,
-    SHARED_COLUMNS.incentiveRate,
     SHARED_COLUMNS.salaryPaid,
+    SHARED_COLUMNS.incentiveEarned,
     SHARED_COLUMNS.incentivePaid,
+    SHARED_COLUMNS.incentiveRate,
     SHARED_COLUMNS.performance,
   ],
 };

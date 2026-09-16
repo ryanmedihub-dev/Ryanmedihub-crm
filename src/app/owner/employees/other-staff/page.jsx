@@ -25,9 +25,10 @@ const config = {
     SHARED_COLUMNS.branch,
     SHARED_COLUMNS.isactive,
     SHARED_COLUMNS.salary,
-    SHARED_COLUMNS.incentiveRate,
     SHARED_COLUMNS.salaryPaid,
+    SHARED_COLUMNS.incentiveEarned,
     SHARED_COLUMNS.incentivePaid,
+    SHARED_COLUMNS.incentiveRate,
   ],
 };
 

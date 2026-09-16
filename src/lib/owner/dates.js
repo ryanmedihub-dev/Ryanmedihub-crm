@@ -37,6 +37,27 @@ export function istDayBucket(fieldExpr) {
  * `from`/`to` to day boundaries in the user's zone; re-flooring with
  * setHours() on a UTC server shifts the window by 5h30, so don't.
  */
+/**
+ * Every IST calendar month touched by a client window, as [{ year, month }]
+ * (month 1–12). Payables/salaries are keyed by pay period, so "this period"
+ * for them means "these pay months". Empty window → [].
+ */
+export function istMonthKeys(from, to) {
+  if (!from || !to) return [];
+  const start = toISTDateKey(from);
+  const end = toISTDateKey(to);
+  if (!start || !end) return [];
+  let [y, m] = start.split("-").map(Number);
+  const [ey, em] = end.split("-").map(Number);
+  const out = [];
+  while (y < ey || (y === ey && m <= em)) {
+    out.push({ year: y, month: m });
+    m += 1;
+    if (m > 12) { m = 1; y += 1; }
+  }
+  return out;
+}
+
 /** Inclusive number of calendar days in a client window (min 1). */
 export function daysInPeriod(from, to) {
   if (!from || !to) return 1;

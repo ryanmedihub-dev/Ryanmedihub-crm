@@ -196,14 +196,16 @@ export default function EmployeeDetailPage({ section, listHref, rowsColumns, def
                 </>
               )}
 
-              <Card title="Compensation" subtitle="Payables raised in this period">
+              <Card title="Compensation" subtitle="Salary and incentive for the pay months the date filter covers">
                 <div className="grid cols-equal">
                   <div>
-                    <div className="metric-pair"><span>Base Salary</span><span className="readout">{rupee(emp.salary)}</span></div>
-                    <div className="metric-pair"><span>Incentive Rate</span><span className="readout">{emp.incentiveRate ? `${emp.incentiveRate} (rate)` : "—"}</span></div>
+                    <div className="metric-pair"><span>Base Salary (monthly)</span><span className="readout">{rupee(emp.salary)}</span></div>
+                    <div className="metric-pair"><span>Salary Due</span><span className="readout">{rupee(data.compensation?.salaryPayable)}</span></div>
+                    <div className="metric-pair"><span>Salary Paid</span><span className="readout">{rupee(data.compensation?.salaryPaid)}</span></div>
                   </div>
                   <div>
-                    <div className="metric-pair"><span>Salary Paid</span><span className="readout">{rupee(data.compensation?.salaryPaid)}</span></div>
+                    <div className="metric-pair"><span>Incentive Rate (setting)</span><span className="readout">{emp.incentiveRate ? `₹${emp.incentiveRate} / patient` : "—"}</span></div>
+                    <div className="metric-pair"><span>Incentive Earned</span><span className="readout">{rupee(data.compensation?.incentivePayable)}</span></div>
                     <div className="metric-pair"><span>Incentive Paid</span><span className="readout">{rupee(data.compensation?.incentivePaid)}</span></div>
                   </div>
                 </div>

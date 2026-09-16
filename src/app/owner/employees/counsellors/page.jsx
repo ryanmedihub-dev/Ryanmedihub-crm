@@ -36,9 +36,10 @@ const config = {
     { key: "amountReceived", label: "Amount Received", align: "right", sortable: true, render: (r) => rupee(r.amountReceived) },
     { key: "avgDiscount", label: "Avg. Discount", align: "right", sortable: true, render: (r) => rupee(r.avgDiscount) },
     SHARED_COLUMNS.salary,
-    SHARED_COLUMNS.incentiveRate,
     SHARED_COLUMNS.salaryPaid,
+    SHARED_COLUMNS.incentiveEarned,
     SHARED_COLUMNS.incentivePaid,
+    SHARED_COLUMNS.incentiveRate,
     SHARED_COLUMNS.performance,
   ],
 };

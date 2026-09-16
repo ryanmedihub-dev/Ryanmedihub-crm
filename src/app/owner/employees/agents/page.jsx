@@ -36,9 +36,10 @@ const config = {
     { key: "nonConverted", label: "Non-Converted", align: "right", sortable: true, defaultHidden: true, render: (r) => num(r.nonConverted) },
     { key: "amountReceived", label: "Amount Received", align: "right", sortable: true, render: (r) => rupee(r.amountReceived) },
     SHARED_COLUMNS.salary,
-    SHARED_COLUMNS.incentiveRate,
     SHARED_COLUMNS.salaryPaid,
+    SHARED_COLUMNS.incentiveEarned,
     SHARED_COLUMNS.incentivePaid,
+    SHARED_COLUMNS.incentiveRate,
     SHARED_COLUMNS.performance,
   ],
 };

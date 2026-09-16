@@ -26,9 +26,10 @@ export const hrEmployeeConfig = {
     { key: "rejected", label: "Rejected", align: "right", sortable: true, defaultHidden: true, render: (r) => num(r.rejected) },
     { key: "hold", label: "On Hold", align: "right", sortable: true, defaultHidden: true, render: (r) => num(r.hold) },
     SHARED_COLUMNS.salary,
-    SHARED_COLUMNS.incentiveRate,
     SHARED_COLUMNS.salaryPaid,
+    SHARED_COLUMNS.incentiveEarned,
     SHARED_COLUMNS.incentivePaid,
+    SHARED_COLUMNS.incentiveRate,
     SHARED_COLUMNS.performance,
   ],
 };

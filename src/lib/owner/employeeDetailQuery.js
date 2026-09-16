@@ -275,10 +275,11 @@ export async function loadEmployeeDetail(employee, { from, to, searchParams }) {
   ]);
   const compensation = compById.get(String(employee._id)) || {};
 
+  const fmt = (n) => `₹${new Intl.NumberFormat("en-IN").format(Math.round(n || 0))}`;
   const kpis = [
     ...sectionData.kpis,
-    kpi("Salary Paid", round2(compensation.salaryPaid), "Against payables raised this period", "info", "currency"),
-    kpi("Incentive Paid", round2(compensation.incentivePaid), "Against payables raised this period", "info", "currency"),
+    kpi("Salary Paid", round2(compensation.salaryPaid), `of ${fmt(compensation.salaryPayable)} due · pay months in range`, "info", "currency"),
+    kpi("Incentive Earned", round2(compensation.incentivePayable), `${fmt(compensation.incentivePaid)} paid · pay months in range`, "good", "currency"),
   ];
 
   return { section, compensation, performance, ...sectionData, kpis };

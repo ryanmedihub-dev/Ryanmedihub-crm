@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
-import { periodBounds } from "@/lib/owner/dates";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import dbConnect from "@/lib/db";
 import Employee from "@/models/Employee";
 import Payable from "@/models/Payable";
-import { buildCompensationMetrics } from "@/lib/owner/employeeReportQuery";
+import { buildCompensationMetrics, payablePeriodMatch } from "@/lib/owner/employeeReportQuery";
 import {
   parseEmployeeFilters, parsePageParams, parseSortParams, pagedFacet, unpackFacet, pageMeta,
 } from "@/lib/owner/pagination";
@@ -86,9 +85,12 @@ export async function GET(req) {
       });
     }
 
-    const payableMatch = { purpose: "SALARY", "payee.kind": "EMPLOYEE", "payee.refId": { $in: cohort.map((e) => e._id) }, isCancelled: { $ne: true } };
-    const createdBounds = periodBounds(dateFrom, dateTo);
-    if (createdBounds) payableMatch.createdAt = createdBounds;
+    // Same pay-month keying as buildCompensationMetrics (payables are for a
+    // period; they're raised weeks later).
+    const payableMatch = {
+      purpose: "SALARY", "payee.kind": "EMPLOYEE", "payee.refId": { $in: cohort.map((e) => e._id) }, isCancelled: { $ne: true },
+      ...payablePeriodMatch(dateFrom, dateTo),
+    };
 
     const [compById, salaryPayables] = await Promise.all([
       buildCompensationMetrics(cohort, period),

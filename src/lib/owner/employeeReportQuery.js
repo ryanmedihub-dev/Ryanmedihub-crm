@@ -11,7 +11,7 @@ import { fetchCallbyCached, CallbyError } from "@/lib/callby";
 import { employeeSection, SECTION_LABELS } from "@/lib/owner/employeeSections";
 import { scoreCohort, ROLE_PERFORMANCE_CONFIG, PERFORMANCE_BANDS } from "@/lib/owner/performance";
 import { parsePageParams, parseEmployeeFilters, pageMeta } from "@/lib/owner/pagination";
-import { daysInPeriod, periodBounds } from "@/lib/owner/dates";
+import { daysInPeriod, periodBounds, istMonthKeys } from "@/lib/owner/dates";
 import { getISTStartOfDay, getISTEndOfDay } from "@/lib/dateHelpers";
 import { CONVERTED_STATUSES } from "@/lib/owner/patientStatus";
 
@@ -50,6 +50,7 @@ function escapeRegex(s) {
 export { daysInPeriod };
 
 const round = (n) => Math.round((Number(n) || 0) * 100) / 100;
+const rupee0 = (n) => `₹${new Intl.NumberFormat("en-IN").format(Math.round(Number(n) || 0))}`;
 
 // ---------------------------------------------------------------------------
 // Section-specific metric builders. Each returns { metricsById, callbyError }.
@@ -267,6 +268,24 @@ export const SECTION_METRIC_BUILDERS = {
 // fetching it over HTTP).
 // ---------------------------------------------------------------------------
 
+/**
+ * Payables for the pay months a client window covers. Salary/incentive
+ * payables are raised weeks after the month they're for (July salary is
+ * created mid-September), so matching on createdAt showed nothing for most
+ * ranges. Payables without a period fall back to createdAt.
+ */
+export function payablePeriodMatch(from, to) {
+  const months = istMonthKeys(from, to);
+  if (!months.length) return {};
+  const byPeriod = months.map(({ year, month }) => ({ "period.year": year, "period.month": month }));
+  return {
+    $or: [
+      ...byPeriod,
+      { $and: [{ $or: [{ "period.month": null }, { period: { $exists: false } }] }, { createdAt: periodBounds(from, to) }] },
+    ],
+  };
+}
+
 export async function buildCompensationMetrics(employees, { from, to }) {
   const metricsById = new Map();
   for (const e of employees) {
@@ -274,9 +293,7 @@ export async function buildCompensationMetrics(employees, { from, to }) {
   }
 
   const ids = employees.map((e) => e._id);
-  const match = { "payee.kind": "EMPLOYEE", "payee.refId": { $in: ids }, isCancelled: { $ne: true } };
-  const createdBounds = periodBounds(from, to);
-  if (createdBounds) match.createdAt = createdBounds;
+  const match = { "payee.kind": "EMPLOYEE", "payee.refId": { $in: ids }, isCancelled: { $ne: true }, ...payablePeriodMatch(from, to) };
 
   const forPurpose = (purpose, field) => ({ $sum: { $cond: [{ $eq: ["$purpose", purpose] }, `$${field}`, 0] } });
 
@@ -360,8 +377,8 @@ function buildKpis(section, t) {
     { label: "Headcount", value: headcount, sub: `${SECTION_LABELS[section]} in view`, kind: "info" },
     { label: "Active", value: active, sub: `${headcount - active} inactive`, kind: "good" },
     { label: "Linked to callby", value: linked, sub: `${headcount - linked} not linked`, kind: linked === headcount ? "good" : "warn" },
-    { label: "Salary Paid", value: round(t?.salaryPaid), sub: "This period", kind: "info", format: "currency" },
-    { label: "Incentive Paid", value: round(t?.incentivePaid), sub: "This period", kind: "info", format: "currency" },
+    { label: "Salary Paid", value: round(t?.salaryPaid), sub: `of ${rupee0(t?.salaryPayable)} due · pay months in range`, kind: "info", format: "currency" },
+    { label: "Incentive Earned", value: round(t?.incentivePayable), sub: `${rupee0(t?.incentivePaid)} paid · pay months in range`, kind: "good", format: "currency" },
     { label: "Avg. Performance", value: avgScore == null ? "—" : `${avgScore}`, sub: `${scoredCount} scored`, kind: "good" },
   ];
 
@@ -593,6 +610,8 @@ export async function queryEmployeeSection({ section, filters, page, pageSize, s
               active: { $sum: { $cond: ["$isactive", 1, 0] } },
               linked: { $sum: { $cond: ["$callbyLinked", 1, 0] } },
               salaryPaid: { $sum: { $ifNull: ["$_m.salaryPaid", 0] } },
+              salaryPayable: { $sum: { $ifNull: ["$_m.salaryPayable", 0] } },
+              incentivePayable: { $sum: { $ifNull: ["$_m.incentivePayable", 0] } },
               incentivePaid: { $sum: { $ifNull: ["$_m.incentivePaid", 0] } },
               scoredCount: { $sum: { $cond: [{ $eq: ["$_m.performance.insufficientData", false] }, 1, 0] } },
               scoreSum: { $sum: { $cond: [{ $eq: ["$_m.performance.insufficientData", false] }, "$_m.performance.score", 0] } },
