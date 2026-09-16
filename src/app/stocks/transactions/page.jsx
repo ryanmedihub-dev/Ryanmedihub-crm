@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { maskPhone } from "@/utils/phoneUtils";
 import StockSidebar from "@/components/Sidebars/StockSidebar";
@@ -533,11 +533,21 @@ function DataTable({ category, rows, onDelete, onSort, sortConfig, pagination, o
   );
 }
 
+const EMPTY_STATS = { TRANSPLANT: { count: 0, total: 0 }, SERVICE: { count: 0, total: 0 }, MEDICINE: { count: 0, total: 0 }, EXPENSE: { count: 0, total: 0 } };
+
+// Only these columns are backed by an index the API can sort on server-side
+// (see allowedSortKeys in /api/transactions/get-all). Clicking any other column
+// header still re-fetches (so pagination stays correct) but keeps date order.
+const SERVER_SORT_KEYS = new Set(["date", "amount", "method", "branch", "procedure"]);
+const SORT_KEY_MAP = { patient: "patientName" };
+
 export default function StocksTransactionsPage() {
   const tenantBranches = ["Delhi", "Mumbai", "Hyderabad", "Noida"];
 
   const router = useRouter();
   const [transactions, setTransactions] = useState([]);
+  const [serverTotal, setServerTotal] = useState(0);
+  const [categoryStats, setCategoryStats] = useState(EMPTY_STATS);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -546,6 +556,7 @@ export default function StocksTransactionsPage() {
   const [filters, setFilters] = useState({ branch: "", dateFrom: getTodayDate(), dateTo: getTodayDate(), paymentMethod: "", procedure: "" });
   const [showFilters, setShowFilters] = useState(false);
   const [tableSearch, setTableSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingTransaction, setDeletingTransaction] = useState(null);
   const [showBillGenerator, setShowBillGenerator] = useState(false);
@@ -556,20 +567,47 @@ export default function StocksTransactionsPage() {
   const toast = useToast();
   const [sortConfig, setSortConfig] = useState({ key: "date", direction: "desc" });
 
-  useEffect(() => { fetchData(); }, [pendingOnly]);
+  // Debounce the search box so typing doesn't fire a request per keystroke.
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(tableSearch), 350);
+    return () => clearTimeout(t);
+  }, [tableSearch]);
 
   useEffect(() => { if (activeCategory !== "EXPENSE" && pendingOnly) setPendingOnly(false); }, [activeCategory]);
+
+  // Any of these changing invalidates the current page of results.
+  useEffect(() => { setPage(1); }, [activeCategory, filters, debouncedSearch, pendingOnly]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const approvalQuery = pendingOnly ? "&approvalStatus=PENDING" : "";
-      const res = await fetch(`/api/transactions/get-all?limit=10000${approvalQuery}`, { credentials: "include" });
+
+      const params = new URLSearchParams();
+      params.set("page", String(page));
+      params.set("limit", String(perPage));
+      params.set("category", activeCategory);
+      if (filters.branch) params.set("branch", filters.branch);
+      if (filters.dateFrom) params.set("dateFrom", filters.dateFrom);
+      if (filters.dateTo) params.set("dateTo", filters.dateTo);
+      if (filters.paymentMethod) params.set("paymentMethod", filters.paymentMethod);
+      if (filters.procedure) params.set("procedure", filters.procedure);
+      if (debouncedSearch) params.set("search", debouncedSearch);
+      if (activeCategory === "EXPENSE" && pendingOnly) params.set("approvalStatus", "PENDING");
+
+      const serverKey = SORT_KEY_MAP[sortConfig.key] || sortConfig.key;
+      if (SERVER_SORT_KEYS.has(serverKey)) {
+        params.set("sortKey", serverKey);
+        params.set("sortDir", sortConfig.direction);
+      }
+
+      const res = await fetch(`/api/transactions/get-all?${params.toString()}`, { credentials: "include" });
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const data = await res.json();
-      if (data.success && data.transactions) {
-        setTransactions(data.transactions);
+      if (data.success) {
+        setTransactions(data.transactions || []);
+        setServerTotal(data.total || 0);
+        setCategoryStats(data.stats || EMPTY_STATS);
       } else {
         throw new Error(data.message || data.error || "Invalid data format");
       }
@@ -582,103 +620,26 @@ export default function StocksTransactionsPage() {
     }
   };
 
+  useEffect(() => { fetchData(); }, [activeCategory, filters, debouncedSearch, pendingOnly, page, perPage, sortConfig]);
+
   const handleRefresh = async () => { setRefreshing(true); await fetchData(); };
-
-  const filterByDateRange = (items, dateFrom, dateTo) => {
-    if (!dateFrom && !dateTo) return items;
-    return items.filter((item) => {
-      const itemDate = new Date(item.date);
-      if (dateFrom) { const fromDate = new Date(dateFrom); fromDate.setHours(0, 0, 0, 0); if (itemDate < fromDate) return false; }
-      if (dateTo) { const toDate = new Date(dateTo); toDate.setHours(23, 59, 59, 999); if (itemDate > toDate) return false; }
-      return true;
-    });
-  };
-
-  const matchesSearch = (row, searchLower) => {
-    const commonMatch = row.method?.toLowerCase().includes(searchLower) || row.branch?.toLowerCase().includes(searchLower) || row.remarks?.toLowerCase().includes(searchLower) || row.paymentId?.toLowerCase().includes(searchLower) || row.amount?.toString().includes(searchLower);
-    if (commonMatch) return true;
-    const rowCategory = row.transactionCategory || row.category || "TRANSPLANT";
-    if (rowCategory === "TRANSPLANT" || rowCategory === "SERVICE") {
-      const patientName = row.patient?.personal?.name || row.patientName || "";
-      const patientPhone = row.patient?.personal?.phone || row.patientPhone || "";
-      return patientName.toLowerCase().includes(searchLower) || patientPhone.includes(searchLower) || row.procedure?.toLowerCase().includes(searchLower);
-    }
-    if (rowCategory === "MEDICINE") {
-      const patientName = row.patient?.personal?.name || row.patientName || "";
-      const patientPhone = row.patient?.personal?.phone || row.patientPhone || "";
-      const medicineName = typeof row.medicineId === "object" ? row.medicineId?.name : "";
-      return patientName.toLowerCase().includes(searchLower) || patientPhone.includes(searchLower) || medicineName?.toLowerCase().includes(searchLower);
-    }
-    if (rowCategory === "EXPENSE") {
-      const expenseName = row.expense || row.expenseCategory || "";
-      const expenseType = row.expenseType || "";
-      const giverName = row.expenseGiver?.name || "";
-      return expenseName.toLowerCase().includes(searchLower) || expenseType.toLowerCase().includes(searchLower) || giverName.toLowerCase().includes(searchLower);
-    }
-    return false;
-  };
-
-  const filteredTransactions = useMemo(() => {
-    let list = transactions;
-    if (tableSearch) { const searchLower = tableSearch.toLowerCase(); list = list.filter((row) => matchesSearch(row, searchLower)); }
-    if (!tableSearch) {
-      list = list.filter((t) => {
-        const category = t.transactionCategory || t.category;
-        if (activeCategory === "TRANSPLANT") return category === "TRANSPLANT" || !category || category === "";
-        return category === activeCategory;
-      });
-    }
-    if (filters.branch) list = list.filter((t) => t.branch?.toLowerCase() === filters.branch.toLowerCase());
-    if (filters.paymentMethod) list = list.filter((t) => t.method?.toLowerCase() === filters.paymentMethod.toLowerCase());
-    if (filters.procedure) list = list.filter((t) => t.procedure?.toLowerCase() === filters.procedure.toLowerCase());
-    list = filterByDateRange(list, filters.dateFrom, filters.dateTo);
-    return list;
-  }, [transactions, activeCategory, filters, tableSearch]);
-
-  const categoryStats = useMemo(() => {
-    const stats = { TRANSPLANT: { count: 0, total: 0 }, SERVICE: { count: 0, total: 0 }, MEDICINE: { count: 0, total: 0 }, EXPENSE: { count: 0, total: 0 } };
-    let filteredList = transactions;
-    if (filters.branch) filteredList = filteredList.filter((t) => t.branch?.toLowerCase() === filters.branch.toLowerCase());
-    if (filters.paymentMethod) filteredList = filteredList.filter((t) => t.method?.toLowerCase() === filters.paymentMethod.toLowerCase());
-    if (filters.procedure) filteredList = filteredList.filter((t) => t.procedure?.toLowerCase() === filters.procedure.toLowerCase());
-    filteredList = filterByDateRange(filteredList, filters.dateFrom, filters.dateTo);
-    filteredList.forEach((t) => {
-      const category = t.transactionCategory || t.category;
-      const actualCategory = category || "TRANSPLANT";
-      if (stats[actualCategory]) { stats[actualCategory].count++; stats[actualCategory].total += calculateNetAmount(t); }
-    });
-    return stats;
-  }, [transactions, filters]);
-
-  const sortedRows = useMemo(() => {
-    const sorted = [...filteredTransactions];
-    if (sortConfig.key) {
-      sorted.sort((a, b) => {
-        let aVal = a[sortConfig.key];
-        let bVal = b[sortConfig.key];
-        if (sortConfig.key === "patient") { aVal = a.patient?.personal?.name || a.patientName || "Walk-in Customer"; bVal = b.patient?.personal?.name || b.patientName || "Walk-in Customer"; }
-        if (sortConfig.key === "date") { aVal = new Date(aVal); bVal = new Date(bVal); }
-        if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
-        if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
-        return 0;
-      });
-    }
-    return sorted;
-  }, [filteredTransactions, sortConfig]);
 
   const handleSort = (key) => { setSortConfig((prev) => ({ key, direction: prev.key === key && prev.direction === "asc" ? "desc" : "asc" })); };
 
-  const total = sortedRows.length;
+  // The API already returns exactly this page, sorted and filtered — no client-side
+  // slicing needed.
+  const paginatedRows = transactions;
+  const total = serverTotal;
   const pages = Math.max(1, Math.ceil(total / perPage));
   const current = Math.min(page, pages);
-  const startIdx = (current - 1) * perPage;
-  const endIdx = Math.min(startIdx + perPage, total);
-  const paginatedRows = sortedRows.slice(startIdx, endIdx);
+  const startIdx = total === 0 ? 0 : (current - 1) * perPage;
+  const endIdx = Math.min(startIdx + paginatedRows.length, total);
+
+  // If a filter change shrinks the result set below the current page, snap back.
+  useEffect(() => { if (page > pages) setPage(pages); }, [pages, page]);
 
   const clearFilters = () => { setFilters({ branch: "", dateFrom: getTodayDate(), dateTo: getTodayDate(), paymentMethod: "", procedure: "" }); setTableSearch(""); setPage(1); };
   const hasActiveFilters = Object.values(filters).some((value) => value !== "") || tableSearch;
-
-  useEffect(() => { setPage(1); }, [filters, activeCategory, tableSearch]);
 
   const openDeleteConfirm = (transaction) => { setDeletingTransaction(transaction); setShowDeleteConfirm(true); };
 
@@ -837,7 +798,7 @@ export default function StocksTransactionsPage() {
                   <div className="mt-4 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-semibold text-indigo-900">Active Filters:</span>
-                      <span className="text-xs text-indigo-700">{sortedRows.length} results</span>
+                      <span className="text-xs text-indigo-700">{serverTotal} results</span>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {filters.branch && <span className="px-2 py-1 bg-white text-indigo-700 rounded-md text-xs font-medium border border-indigo-200">Branch: {filters.branch}</span>}

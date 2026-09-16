@@ -5,49 +5,67 @@ import dbConnect from "@/lib/db";
 import Stock from "@/models/Stock";
 import { NAME_COLLATION } from "@/lib/sortOptions";
 
+// Everything below used to run as two Stock.find({}).lean() passes — one for the
+// filtered list, one unfiltered across the WHOLE collection just to sum things up in
+// JS — on every single request, including every keystroke in the search box. A single
+// $facet aggregation does the list + both stat breakdowns in one round trip, with Mongo
+// doing the summing instead of Node, and only the matched page of documents crossing
+// the wire.
 async function buildResponse(query, threshold, restrictedLocation = null) {
-  const stocks = await Stock.find(query).sort({ name: 1 }).collation(NAME_COLLATION).lean();
   const statsQuery = restrictedLocation ? { location: restrictedLocation } : {};
-  const allStocks = await Stock.find(statsQuery).lean();
+  const now = new Date();
 
-  const statistics = {
-    totalItems: allStocks.length,
-    totalStockValue: allStocks.reduce(
-      (sum, s) => sum + (s.totalQuantity || 0) * (s.mrp || 0),
-      0
-    ),
-    lowStockCount: allStocks.filter((s) => (s.totalQuantity || 0) <= threshold).length,
-    expiredCount: allStocks.filter(
-      (s) => s.expiry && new Date(s.expiry) <= new Date()
-    ).length,
+  const statAccumulators = {
+    totalItems: { $sum: 1 },
+    totalStockValue: { $sum: { $multiply: [{ $ifNull: ["$totalQuantity", 0] }, { $ifNull: ["$mrp", 0] }] } },
+    lowStockCount: { $sum: { $cond: [{ $lte: [{ $ifNull: ["$totalQuantity", 0] }, threshold] }, 1, 0] } },
+    expiredCount: {
+      $sum: {
+        $cond: [{ $and: [{ $ne: ["$expiry", null] }, { $lte: ["$expiry", now] }] }, 1, 0],
+      },
+    },
   };
 
-  const locationMap = {};
-  allStocks.forEach((s) => {
-    const loc = s.location || "Unassigned";
-    if (!locationMap[loc]) {
-      locationMap[loc] = {
-        location: loc,
-        totalItems: 0,
-        availableQty: 0,
-        stockValue: 0,
-        purchaseValue: 0,
-        soldValue: 0,
-        lowStockCount: 0,
-        expiredCount: 0,
-      };
-    }
-    const entry = locationMap[loc];
-    entry.totalItems += 1;
-    entry.availableQty += s.totalQuantity || 0;
-    entry.stockValue += (s.totalQuantity || 0) * (s.mrp || 0);
-    entry.purchaseValue += (s.totalQuantity || 0) * (s.purchaseAmt || 0);
-    entry.soldValue += (s.totalQuantity || 0) * (s.soldAmt || 0);
-    if ((s.totalQuantity || 0) <= threshold) entry.lowStockCount += 1;
-    if (s.expiry && new Date(s.expiry) <= new Date()) entry.expiredCount += 1;
-  });
+  const [result] = await Stock.aggregate([
+    {
+      $facet: {
+        list: [{ $match: query }, { $sort: { name: 1 } }],
+        overall: [{ $match: statsQuery }, { $group: { _id: null, ...statAccumulators } }],
+        byLocation: [
+          { $match: statsQuery },
+          {
+            $group: {
+              _id: { $ifNull: ["$location", "Unassigned"] },
+              ...statAccumulators,
+              availableQty: { $sum: { $ifNull: ["$totalQuantity", 0] } },
+              purchaseValue: { $sum: { $multiply: [{ $ifNull: ["$totalQuantity", 0] }, { $ifNull: ["$purchaseAmt", 0] }] } },
+              soldValue: { $sum: { $multiply: [{ $ifNull: ["$totalQuantity", 0] }, { $ifNull: ["$soldAmt", 0] }] } },
+            },
+          },
+        ],
+      },
+    },
+  ]).collation(NAME_COLLATION);
 
-  const locationStats = Object.values(locationMap);
+  const stocks = result?.list || [];
+  const overall = result?.overall?.[0];
+  const statistics = {
+    totalItems: overall?.totalItems || 0,
+    totalStockValue: overall?.totalStockValue || 0,
+    lowStockCount: overall?.lowStockCount || 0,
+    expiredCount: overall?.expiredCount || 0,
+  };
+
+  const locationStats = (result?.byLocation || []).map((entry) => ({
+    location: entry._id,
+    totalItems: entry.totalItems,
+    availableQty: entry.availableQty,
+    stockValue: entry.totalStockValue,
+    purchaseValue: entry.purchaseValue,
+    soldValue: entry.soldValue,
+    lowStockCount: entry.lowStockCount,
+    expiredCount: entry.expiredCount,
+  }));
 
   return { stocks, statistics, locationStats };
 }
