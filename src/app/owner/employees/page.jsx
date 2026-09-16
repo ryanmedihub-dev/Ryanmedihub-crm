@@ -102,15 +102,16 @@ export default function EmployeesLanding() {
                   />
                 </Card>
 
-                <Card title="Headcount by Branch">
+                <Card title="Headcount by Branch" subtitle="Click a branch to open the Agents page filtered to it">
                   <DataTable
                     loading={loading}
                     columns={[
-                      { key: "branch", label: "Branch" },
+                      { key: "branch", label: "Branch", render: (r) => r.label || r.branch || "(no branch)" },
                       { key: "total", label: "Headcount", align: "right", render: (r) => num(r.total) },
                       { key: "active", label: "Active", align: "right", render: (r) => num(r.active) },
                     ]}
-                    rows={(data?.byBranch || []).map((b) => ({ ...b, id: b.branch }))}
+                    rows={(data?.byBranch || []).map((b) => ({ ...b, id: b.branch || "(none)" }))}
+                    onRowClick={(row) => router.push(row.branch ? `/owner/employees/agents?branch=${encodeURIComponent(row.branch)}` : "/owner/employees/other-staff")}
                   />
                 </Card>
               </div>
@@ -118,20 +119,21 @@ export default function EmployeesLanding() {
               <div className="grid cols-equal">
                 {["Agent", "Counsellor", "Surgery", "HR"].map((section) => {
                   const p = data?.performers?.[section];
+                  const coverage = p && p.total != null ? ` · ${p.scoredCount} of ${p.total} scored` : "";
                   return (
-                    <Card key={section} title={`${SECTION_LABELS[section]} — Top / Bottom`} subtitle="By performance score, this period">
+                    <Card key={section} title={`${SECTION_LABELS[section]} — Top / Bottom`} subtitle={`By performance score, this period${coverage}`}>
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                         <div>
                           <p className="muted" style={{ margin: "0 0 6px", fontSize: "var(--fs-12)" }}>Top</p>
                           {(p?.top || []).map((r) => (
-                            <div key={r.id} className="metric-row"><span>{r.name}</span><div /><strong>{r.performance.score}</strong></div>
+                            <div key={r.id} className="metric-pair"><span>{r.name}</span><span className="readout">{r.performance.score}</span></div>
                           ))}
                           {!loading && (!p?.top || p.top.length === 0) && <p className="muted">Not enough data</p>}
                         </div>
                         <div>
                           <p className="muted" style={{ margin: "0 0 6px", fontSize: "var(--fs-12)" }}>Bottom</p>
                           {(p?.bottom || []).map((r) => (
-                            <div key={r.id} className="metric-row"><span>{r.name}</span><div /><strong>{r.performance.score}</strong></div>
+                            <div key={r.id} className="metric-pair"><span>{r.name}</span><span className="readout">{r.performance.score}</span></div>
                           ))}
                           {!loading && (!p?.bottom || p.bottom.length === 0) && <p className="muted">Not enough data</p>}
                         </div>

@@ -69,17 +69,20 @@ const getHandler = async () => {
     return callbyErrorResponse(err);
   }
 
-  const employees = await Employee.find({ isactive: { $ne: false }, mergedInto: null })
-    .select("name phone employeeId role branch callbyUserId tlName")
+  // Inactive employees are included so a stale link on someone who has left
+  // can still be seen and undone; they're flagged and default-hidden on screen.
+  const allEmployees = await Employee.find({ mergedInto: null })
+    .select("name phone employeeId role branch callbyUserId tlName isactive")
     .sort({ name: 1 })
     .lean();
+  const employees = allEmployees.filter((e) => e.isactive !== false);
 
   const agentById = new Map(agents.map((a) => [a.callbyUserId, a]));
   const linkedEmpByCallbyId = new Map(
-    employees.filter((e) => e.callbyUserId).map((e) => [String(e.callbyUserId), e]),
+    allEmployees.filter((e) => e.callbyUserId).map((e) => [String(e.callbyUserId), e]),
   );
 
-  const linked = employees
+  const linked = allEmployees
     .filter((e) => e.callbyUserId)
     .map((e) => ({
       employee: e,
@@ -122,6 +125,9 @@ const postHandler = async (req) => {
   if (!employeeId || !callbyUserId) {
     return NextResponse.json({ success: false, message: "employeeId and callbyUserId are required" }, { status: 400 });
   }
+  if (!OBJECT_ID.test(String(employeeId))) {
+    return NextResponse.json({ success: false, message: "employeeId must be an Employee ObjectId" }, { status: 400 });
+  }
 
   const cid = String(callbyUserId).trim();
   if (!OBJECT_ID.test(cid)) {
@@ -158,8 +164,8 @@ const deleteHandler = async (req) => {
 
   const { searchParams } = new URL(req.url);
   const employeeId = searchParams.get("employeeId");
-  if (!employeeId) {
-    return NextResponse.json({ success: false, message: "employeeId is required" }, { status: 400 });
+  if (!employeeId || !OBJECT_ID.test(employeeId)) {
+    return NextResponse.json({ success: false, message: "employeeId must be an Employee ObjectId" }, { status: 400 });
   }
 
   const employee = await Employee.findByIdAndUpdate(

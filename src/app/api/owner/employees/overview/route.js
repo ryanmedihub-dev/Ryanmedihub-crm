@@ -5,8 +5,9 @@ import dbConnect from "@/lib/db";
 import Employee from "@/models/Employee";
 import { employeeSection, SECTION_LABELS } from "@/lib/owner/employeeSections";
 import {
-  SECTION_METRIC_BUILDERS, buildCompensationMetrics, derivePerfMetrics, sampleValue, daysInPeriod,
+  SECTION_METRIC_BUILDERS, buildCompensationMetrics, derivePerfMetrics, sampleValue,
 } from "@/lib/owner/employeeReportQuery";
+import { daysInPeriod } from "@/lib/owner/dates";
 import { scoreCohort } from "@/lib/owner/performance";
 import { parseEmployeeFilters } from "@/lib/owner/pagination";
 
@@ -54,13 +55,22 @@ export async function GET(req) {
 
     const byBranch = {};
     for (const e of scoped) {
-      byBranch[e.branch] ||= { branch: e.branch, total: 0, active: 0 };
-      byBranch[e.branch].total += 1;
-      if (e.isactive !== false) byBranch[e.branch].active += 1;
+      const key = e.branch || "";
+      byBranch[key] ||= { branch: e.branch || "", label: e.branch || "(no branch)", total: 0, active: 0 };
+      byBranch[key].total += 1;
+      if (e.isactive !== false) byBranch[key].active += 1;
     }
 
-    // Compensation across everyone in scope, for the period.
-    const compById = await buildCompensationMetrics(scoped, period);
+    // Compensation for everyone in scope + one metric build per scored section,
+    // all in parallel — each is an independent aggregation.
+    const sectionJobs = SCORED_SECTIONS.map(async (section) => {
+      const employees = (bySection[section] || []).filter((e) => e.isactive !== false);
+      if (employees.length === 0) return { section, employees, metricsById: new Map(), callbyError: null };
+      const { metricsById, callbyError } = await SECTION_METRIC_BUILDERS[section](employees, period);
+      return { section, employees, metricsById, callbyError };
+    });
+    const [compById, ...sectionResults] = await Promise.all([buildCompensationMetrics(scoped, period), ...sectionJobs]);
+
     let totalSalaryPaid = 0;
     let totalIncentivePaid = 0;
     for (const c of compById.values()) {
@@ -71,15 +81,12 @@ export async function GET(req) {
     // Top/bottom performers per scored section (active employees only).
     let callbyError = null;
     const performers = {};
-    for (const section of SCORED_SECTIONS) {
-      const employees = (bySection[section] || []).filter((e) => e.isactive !== false);
+    for (const { section, employees, metricsById, callbyError: err } of sectionResults) {
+      if (err) callbyError = callbyError || err;
       if (employees.length === 0) {
-        performers[section] = { top: [], bottom: [] };
+        performers[section] = { top: [], bottom: [], scoredCount: 0, total: 0 };
         continue;
       }
-      const builder = SECTION_METRIC_BUILDERS[section];
-      const { metricsById, callbyError: err } = await builder(employees, period);
-      if (err) callbyError = callbyError || err;
 
       const cohort = employees.map((e) => {
         const m = metricsById.get(String(e._id)) || {};
@@ -92,9 +99,12 @@ export async function GET(req) {
         .filter((r) => r.performance && r.performance.insufficientData === false)
         .sort((a, b) => b.performance.score - a.performance.score);
 
+      const top = scored.slice(0, 3);
       performers[section] = {
-        top: scored.slice(0, 3),
-        bottom: scored.slice(-3).reverse().filter((r) => !scored.slice(0, 3).some((t) => t.id === r.id)),
+        top,
+        bottom: scored.slice(-3).reverse().filter((r) => !top.some((t) => t.id === r.id)),
+        scoredCount: scored.length,
+        total: employees.length,
       };
     }
 

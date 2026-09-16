@@ -1,10 +1,8 @@
 import { SHARED_COLUMNS } from "@/lib/owner/employeeColumns";
 import { num } from "@/lib/owner/format";
 
-// The Employees/HR page's config (Owner Panel v2, Part 1), extracted so
-// /owner/hr/statistics (Part 5) can reuse it verbatim instead of re-deriving
-// the same per-HR-employee interview report — both pages render the exact
-// same data from the exact same endpoint.
+// The Employees/HR page's config (Owner Panel v2, Part 1). /owner/hr/statistics
+// used to render the same report and now redirects here.
 export const hrEmployeeConfig = {
   title: "HR",
   subtitle: "Interviews conducted, selection outcomes",

@@ -8,13 +8,12 @@ import { ownerFetch } from "@/lib/ownerFetch";
 import { num } from "@/lib/owner/format";
 
 const LINKS = [
-  { href: "/owner/hr/statistics", label: "HR Statistics", note: "Per-HR-employee performance" },
   { href: "/owner/hr/interviews", label: "All Interviews", note: "Full interview report" },
   { href: "/owner/hr/selected", label: "Selected", note: "+ joined status" },
   { href: "/owner/hr/rejected", label: "Rejected", note: "+ position breakdown" },
   { href: "/owner/hr/by-position", label: "By Position", note: "Which roles are hard to hire" },
-  { href: "/owner/hr/payroll", label: "Incentives & Payroll", note: "Coming later" },
-  { href: "/owner/hr/actions", label: "HR Action Center", note: "Coming later" },
+  { href: "/owner/employees/hr", label: "HR Team", note: "Per-HR-employee performance" },
+  { href: "/owner/finance/salary-incentive", label: "Salary & Incentive", note: "Payroll lives under Finance" },
 ];
 
 export default function HrLanding() {

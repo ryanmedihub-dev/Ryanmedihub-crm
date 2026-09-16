@@ -10,6 +10,9 @@ const OWNER_V2_REDIRECTS = {
   "/owner/retry": "/owner/leads/retry",
   "/owner/leaks": "/owner/ai/attention",
   "/owner/leads/leaks": "/owner/ai/attention",
+  // Owner recheck (2026-09): duplicate/placeholder HR pages fold into the real ones.
+  "/owner/hr/statistics": "/owner/employees/hr",
+  "/owner/hr/payroll": "/owner/finance/salary-incentive",
   // Part 3: the standalone search-a-patient tool is superseded by the All
   // page's ReportTable search box + click-through to /owner/patients/[id].
   "/owner/patient-journey": "/owner/patients/all",

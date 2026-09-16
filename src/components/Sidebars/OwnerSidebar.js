@@ -19,7 +19,7 @@ const SECTIONS = [
     icon: "☏",
     items: [
       { label: "Agents", href: "/owner/employees/agents" },
-      { label: "Counsellors", href: "/owner/employees/counsellors", soon: true },
+      { label: "Counsellors", href: "/owner/employees/counsellors" },
       { label: "Surgery", href: "/owner/employees/surgery-staff" },
       { label: "HR", href: "/owner/employees/hr" },
       { label: "Other staff", href: "/owner/employees/other-staff" },
@@ -51,7 +51,6 @@ const SECTIONS = [
       { label: "Not Interested / Lost", href: "/owner/leads/not-interested" },
       { label: "Unattempted", href: "/owner/leads/unattempted" },
       { label: "Retry & Recovery", href: "/owner/leads/retry" },
-      { label: "Attention", href: "/owner/ai/attention" },
     ],
   },
   {
@@ -85,12 +84,11 @@ const SECTIONS = [
     href: "/owner/hr",
     icon: "₹",
     items: [
-      { label: "HR Statistics", href: "/owner/hr/statistics" },
       { label: "All Interviews", href: "/owner/hr/interviews" },
       { label: "Selected", href: "/owner/hr/selected" },
       { label: "Rejected", href: "/owner/hr/rejected" },
       { label: "By Position", href: "/owner/hr/by-position" },
-      { label: "Incentives & Payroll", href: "/owner/hr/payroll", soon: true },
+      { label: "HR Team", href: "/owner/employees/hr" },
     ],
   },
   {
@@ -114,8 +112,8 @@ const SECTIONS = [
       { label: "Attendance", href: "/owner/ai/attendance" },
       { label: "Attention", href: "/owner/ai/attention" },
       { label: "Suggestions", href: "/owner/ai/suggestions" },
-      { label: "Sanya Assistant", href: "/owner/ai/sanya", soon: true },
-      { label: "AI Health & Audit", href: "/owner/ai/health", soon: true },
+      { label: "Sanya Assistant", href: "/owner/ai/sanya" },
+      { label: "AI Health & Audit", href: "/owner/ai/health" },
       { label: "Clinical AI Quality", href: "/owner/ai/clinical-quality", soon: true },
     ],
   },

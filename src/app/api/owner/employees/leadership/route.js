@@ -5,7 +5,8 @@ import dbConnect from "@/lib/db";
 import Employee from "@/models/Employee";
 import TlManagerMap from "@/models/TlManagerMap";
 import { employeeSection } from "@/lib/owner/employeeSections";
-import { buildAgentMetrics, buildCompensationMetrics, daysInPeriod } from "@/lib/owner/employeeReportQuery";
+import { buildAgentMetrics, derivePerfMetrics, sampleValue, UNASSIGNED_TEAM } from "@/lib/owner/employeeReportQuery";
+import { daysInPeriod } from "@/lib/owner/dates";
 import { scoreCohort, teamPerformanceFromMembers } from "@/lib/owner/performance";
 import { parseEmployeeFilters } from "@/lib/owner/pagination";
 
@@ -30,44 +31,39 @@ export async function GET(req) {
     }
 
     const { searchParams } = new URL(req.url);
-    const { dateFrom, dateTo, branch } = parseEmployeeFilters(searchParams);
+    const { dateFrom, dateTo, branch, isactive } = parseEmployeeFilters(searchParams);
     const period = { from: dateFrom, to: dateTo };
 
     const allEmployees = await Employee.find({ mergedInto: null })
       .select("name role branch isactive callbyUserId tlName salaryStructure incentiveRate")
       .lean();
 
-    let agents = allEmployees.filter((e) => employeeSection(e.role) === "Agent" && e.isactive !== false);
+    let agents = allEmployees.filter((e) => employeeSection(e.role) === "Agent");
+    // Default to active agents (what the Agents page shows); ?isactive=false / all widen it.
+    if (isactive === null || isactive === true) agents = agents.filter((e) => e.isactive !== false);
+    else agents = agents.filter((e) => e.isactive === false);
     if (branch && branch !== "All") agents = agents.filter((e) => e.branch === branch);
 
     if (agents.length === 0) {
       return NextResponse.json({ success: true, teams: [], callbyError: null });
     }
 
-    const [{ metricsById, callbyError }, compById] = await Promise.all([
-      buildAgentMetrics(agents, period),
-      buildCompensationMetrics(agents, period),
-    ]);
+    const { metricsById, callbyError } = await buildAgentMetrics(agents, period);
 
+    // Same scoring inputs as the Agents list, so a team score is the mean of
+    // exactly the member scores the roster shows.
     const periodDays = daysInPeriod(period.from, period.to);
     const cohort = agents.map((e) => {
-      const m = metricsById.get(String(e._id)) || {};
-      return {
-        id: String(e._id),
-        sample: m.totalLeads || 0,
-        metrics: {
-          connectRate: m.totalCalls ? m.connected / m.totalCalls : 0,
-          conversionRate: m.totalLeads ? m.converted / m.totalLeads : 0,
-          targetAttainment: m.dailyTarget ? m.totalCalls / (m.dailyTarget * periodDays) : 0,
-        },
-      };
+      const id = String(e._id);
+      const m = metricsById.get(id) || {};
+      return { id, sample: sampleValue("Agent", m), metrics: derivePerfMetrics("Agent", m, periodDays) };
     });
     const perfById = scoreCohort("Agent", cohort);
 
     const groups = new Map(); // tlNameKey -> { rawNames: Set, members: [] }
     for (const e of agents) {
       const raw = (e.tlName || "").trim();
-      const key = raw.toLowerCase() || "(unassigned)";
+      const key = raw.toLowerCase() || UNASSIGNED_TEAM;
       if (!groups.has(key)) groups.set(key, { rawNames: new Set(), members: [] });
       const g = groups.get(key);
       if (raw) g.rawNames.add(raw);
@@ -97,13 +93,13 @@ export async function GET(req) {
         // Best-effort: the TL's own Employee record, matched by name — there is
         // no employeeId link from callby's tlName string to an Employee. Flagged
         // via tlEmployeeFound rather than guessing when ambiguous/absent.
-        const tlEmployee = tlNameKey !== "(unassigned)" ? empByLowerName.get(tlNameKey) : null;
+        const tlEmployee = tlNameKey !== UNASSIGNED_TEAM ? empByLowerName.get(tlNameKey) : null;
 
         return {
           tlNameKey,
           tlName: [...g.rawNames][0] || "Unassigned",
           distinctSpellings: [...g.rawNames],
-          branch: [...new Set(g.members.map((m) => m.branch))].join(", "),
+          branch: [...new Set(g.members.map((m) => m.branch).filter(Boolean))].join(", ") || "—",
           teamSize: g.members.length,
           // Call/lead totals below are summed only from linked members — an
           // unlinked member contributes silent zeros, not "we don't know". Carry

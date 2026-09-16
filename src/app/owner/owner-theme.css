@@ -2363,3 +2363,42 @@
   display: inline-flex;
   align-items: center;
 }
+.owner-app .inline-notice.success {
+  background: var(--pos-bg);
+  border-color: var(--pos-border);
+  color: var(--pos-fg);
+}
+.owner-app .inline-notice-body {
+  margin: 3px 0 0;
+}
+.owner-app .inline-notice-body.no-title {
+  margin: 0;
+}
+.owner-app .inline-notice-actions {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: center;
+  flex: none;
+}
+.owner-app .inline-notice-actions .icon-btn {
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border-color: transparent;
+  color: inherit;
+}
+
+/* Table cell helpers: inline badge next to a value */
+.owner-app .cell-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.owner-app .cell-badge {
+  margin-left: 6px;
+}
+.owner-app .form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}

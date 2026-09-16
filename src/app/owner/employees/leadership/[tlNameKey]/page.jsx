@@ -11,7 +11,11 @@ import { rupee, num } from "@/lib/owner/format";
 export default function TeamRosterPage() {
   const params = useParams();
   const tlNameKey = String(params.tlNameKey || "");
-  const tlName = decodeURIComponent(tlNameKey);
+  const decoded = decodeURIComponent(tlNameKey);
+  // The key is lower-cased for grouping; show it as a name.
+  const tlName = decoded === "(unassigned)"
+    ? "Unassigned (no TL)"
+    : decoded.replace(/\b\p{L}/gu, (c) => c.toUpperCase());
 
   const config = {
     title: `Team: ${tlName}`,

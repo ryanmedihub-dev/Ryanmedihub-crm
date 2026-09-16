@@ -247,7 +247,16 @@ export default function CallbyLinksPage() {
                   loading={loading}
                   emptyMessage="No links yet — run scripts/sync-callby-links.mjs --apply first, then fix the rest here."
                   columns={[
-                    { key: "employee", label: "Employee", render: (r) => r.employee?.name },
+                    {
+                      key: "employee",
+                      label: "Employee",
+                      render: (r) => (
+                        <span className="cell-inline">
+                          {r.employee?.name}
+                          {r.employee?.isactive === false && <Badge kind="neutral">inactive</Badge>}
+                        </span>
+                      ),
+                    },
                     { key: "role", label: "Role", render: (r) => r.employee?.role || "—" },
                     {
                       key: "callbyAgent",
@@ -255,7 +264,7 @@ export default function CallbyLinksPage() {
                       render: (r) => (
                         <>
                           {r.callbyAgent?.name}
-                          {r.callbyAgent?.stale && <span style={{ marginLeft: 6 }}><Badge kind="warn">stale</Badge></span>}
+                          {r.callbyAgent?.stale && <span className="cell-badge"><Badge kind="warn">stale</Badge></span>}
                         </>
                       ),
                     },

@@ -23,10 +23,6 @@ const config = {
     SHARED_COLUMNS.branch,
     SHARED_COLUMNS.isactive,
     { key: "patientsOperated", label: "Patients Operated", align: "right", sortable: true, render: (r) => num(r.patientsOperated) },
-    {
-      key: "surgeriesAttempted", label: "Surgeries Attempted", align: "right", sortable: true, defaultHidden: true,
-      render: (r) => num(r.surgeriesAttempted),
-    },
     { key: "graftsImplanted", label: "Grafts Implanted", align: "right", sortable: true, render: (r) => num(r.graftsImplanted) },
     SHARED_COLUMNS.salary,
     SHARED_COLUMNS.incentiveRate,
