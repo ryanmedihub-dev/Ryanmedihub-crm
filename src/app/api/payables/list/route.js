@@ -26,7 +26,7 @@ export async function GET(request) {
 
     const { searchParams } = new URL(request.url);
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
-    const limit = Math.min(200, Math.max(1, parseInt(searchParams.get("limit") || "20")));
+    const limit = Math.min(5000, Math.max(1, parseInt(searchParams.get("limit") || "20")));
     // `purpose` accepts one value or a comma-separated list; an unknown value is a 400.
     const purposeList = (searchParams.get("purpose") || "")
       .split(",")

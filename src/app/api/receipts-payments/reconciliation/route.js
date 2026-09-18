@@ -4,7 +4,14 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
 import { accountsSync } from "@/lib/masterData";
 import { ALL_BRANCHES } from "@/lib/branches";
-import { getOpeningBalances, computeContraMovements, computeSuspenseMovements, round2 } from "@/lib/accountBalances";
+import {
+  getOpeningBalances,
+  computeContraMovements,
+  computeSuspenseMovements,
+  computeBorrowingMovements,
+  computeAdvanceMovements,
+  round2,
+} from "@/lib/accountBalances";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 const LOAN_ACCOUNTS = ["Bajaj Loan", "Fibe Loan"];
@@ -32,11 +39,13 @@ export async function GET(request) {
 
     const toPlusInstant = new Date(new Date(to).getTime() + 1);
 
-    const [openings, closings, contraRows, suspenseRows] = await Promise.all([
+    const [openings, closings, contraRows, suspenseRows, borrowingRows, advanceRows] = await Promise.all([
       getOpeningBalances(CASH_ACCOUNTS, from, branch),
       getOpeningBalances(CASH_ACCOUNTS, toPlusInstant, branch),
       Promise.all(CASH_ACCOUNTS.map((a) => computeContraMovements(a, from, to, null, branch))),
       Promise.all(CASH_ACCOUNTS.map((a) => computeSuspenseMovements(a, from, to, null, branch))),
+      Promise.all(CASH_ACCOUNTS.map((a) => computeBorrowingMovements(a, from, to, null, branch))),
+      Promise.all(CASH_ACCOUNTS.map((a) => computeAdvanceMovements(a, from, to, null, branch))),
     ]);
 
     const opening = round2(
@@ -47,8 +56,22 @@ export async function GET(request) {
     );
     const contraNet = round2(contraRows.reduce((s, c) => s + (c.totalIn - c.totalOut), 0));
     const suspenseNet = round2(suspenseRows.reduce((s, c) => s + (c.totalIn - c.totalOut), 0));
+    // Borrowings received / advances paid out are real cash movements on these accounts (they
+    // just aren't "revenue" or "expense" in the Transactions sense), so — same as contra and
+    // suspense — the closing balance already carries them and the reconciliation must too, or
+    // any borrowing/advance activity in the period shows up as a false "off by ₹X".
+    const borrowingNet = round2(borrowingRows.reduce((s, c) => s + (c.totalIn - c.totalOut), 0));
+    const advanceNet = round2(advanceRows.reduce((s, c) => s + (c.totalIn - c.totalOut), 0));
 
-    return NextResponse.json({ success: true, opening, closing, contraNet, suspenseNet });
+    return NextResponse.json({
+      success: true,
+      opening,
+      closing,
+      contraNet,
+      suspenseNet,
+      borrowingNet,
+      advanceNet,
+    });
   } catch (error) {
     console.error("Error building receipts/payments reconciliation:", error);
     return NextResponse.json({ error: "Failed to build reconciliation" }, { status: 500 });

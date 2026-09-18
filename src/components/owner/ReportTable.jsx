@@ -31,7 +31,7 @@ function toCsvValue(col, row) {
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
-function downloadCsv(filename, columns, rows) {
+export function downloadCsv(filename, columns, rows) {
   const header = columns.map((c) => toCsvValue({ key: "__h", csv: () => c.label || c.key }, {})).join(",");
   const body = rows.map((r) => columns.map((c) => toCsvValue(c, r)).join(",")).join("\n");
   const blob = new Blob([`${header}\n${body}`], { type: "text/csv;charset=utf-8;" });

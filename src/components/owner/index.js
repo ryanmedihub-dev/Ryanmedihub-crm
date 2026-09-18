@@ -3,6 +3,7 @@ export { default as Card } from "./Card";
 export { default as DataTable } from "./DataTable";
 export { default as ReportTable } from "./ReportTable";
 export { default as FilterBar } from "./FilterBar";
+export { default as ReportPanel } from "./ReportPanel";
 export { default as Badge } from "./Badge";
 export { default as Funnel } from "./Funnel";
 export { default as Heatmap } from "./Heatmap";

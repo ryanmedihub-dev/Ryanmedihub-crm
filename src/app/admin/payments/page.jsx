@@ -1,15 +1,13 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
-import Link from "next/link";
-import { Wallet, AlertTriangle, CheckCircle2, Download, Loader2 } from "lucide-react";
+import { Suspense, useState } from "react";
+import { Wallet, Download, Loader2 } from "lucide-react";
 import DrillDownTable from "@/components/finance/DrillDownTable";
-import { formatCurrency } from "@/lib/financeUI";
+import CashReconciliation from "@/components/finance/CashReconciliation";
 import DebouncedDateInput from "@/components/finance/DebouncedDateInput";
+import { ALL_BRANCHES } from "@/lib/branches";
 import { exportWorkbook, fetchAllPages, filterProvenanceRows } from "@/lib/exportToExcel";
 import FinancingTransactions from "@/components/finance/FinancingTransactions";
-
-const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
 
 function monthStart() {
   const d = new Date();
@@ -28,39 +26,22 @@ export default function PaymentsPage() {
 function PaymentsPageInner() {
   const [from, setFrom] = useState(monthStart());
   const [to, setTo] = useState(todayStr());
-  const [recon, setRecon] = useState(null);
-  const [receiptsTotal, setReceiptsTotal] = useState(null);
-  const [paymentsTotal, setPaymentsTotal] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [branch, setBranch] = useState("");
   const [exporting, setExporting] = useState(false);
 
-  useEffect(() => {
-    setLoading(true);
-    Promise.all([
-      fetch(`/api/receipts-payments/reconciliation?from=${from}&to=${to}`).then((r) => r.json()),
-      fetch(`/api/receipts/grouped?level=1&from=${from}&to=${to}`).then((r) => r.json()),
-      fetch(`/api/payments/grouped?level=1&from=${from}&to=${to}`).then((r) => r.json()),
-    ])
-      .then(([r, receipts, payments]) => {
-        setRecon(r);
-        setReceiptsTotal((receipts.rows || []).reduce((s, x) => s + (x.movement || 0), 0));
-        setPaymentsTotal((payments.rows || []).reduce((s, x) => s + (x.movement || 0), 0));
-      })
-      .catch(() => setRecon(null))
-      .finally(() => setLoading(false));
-  }, [from, to]);
-
-  const expected =
-    recon && receiptsTotal !== null && paymentsTotal !== null
-      ? round2(recon.opening + receiptsTotal - paymentsTotal + recon.contraNet + recon.suspenseNet)
-      : null;
-  const delta = recon && expected !== null ? round2(expected - recon.closing) : 0;
-  const matches = recon && Math.abs(delta) < 0.01;
+  const scope = { branch, dateFrom: from, dateTo: to };
+  const handleScopeChange = (next) => {
+    setBranch(next.branch || "");
+    setFrom(next.dateFrom || "");
+    setTo(next.dateTo || "");
+  };
 
   const handleExport = async () => {
     setExporting(true);
     try {
-      const json = await fetch(`/api/payments/grouped?level=1&from=${from}&to=${to}`).then((r) => r.json());
+      const p = new URLSearchParams({ level: "1", from, to });
+      if (branch) p.set("branch", branch);
+      const json = await fetch(`/api/payments/grouped?${p}`).then((r) => r.json());
       const heads = json.rows || [];
 
       const overviewRows = heads.map((r) => ({
@@ -72,9 +53,10 @@ function PaymentsPageInner() {
       }));
 
       // Every payment for the period on one sheet, regardless of expense head.
+      const branchQS = branch ? `&branch=${encodeURIComponent(branch)}` : "";
       const { rows: leafRows } = await fetchAllPages(
         (page, limit) =>
-          `/api/payments/grouped?level=3&all=1&from=${from}&to=${to}&page=${page}&limit=${limit}`,
+          `/api/payments/grouped?level=3&all=1&from=${from}&to=${to}&page=${page}&limit=${limit}${branchQS}`,
         "rows",
         { limit: 200, maxPages: 60 },
       );
@@ -94,7 +76,7 @@ function PaymentsPageInner() {
       await exportWorkbook({
         filename: `payments_${from}_to_${to}.xlsx`,
         sheets: [
-          { name: "Info", rows: filterProvenanceRows({ dateFrom: from, dateTo: to }), colWidths: [22, 24] },
+          { name: "Info", rows: filterProvenanceRows({ dateFrom: from, dateTo: to, branch }), colWidths: [22, 24] },
           {
             name: "Overview",
             rows: overviewRows,
@@ -115,13 +97,18 @@ function PaymentsPageInner() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50">
       <main className="flex-1 p-4 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto space-y-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">Payments</h1>
-              <p className="text-sm text-gray-500 mt-1">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="max-w-xl">
+              <div className="flex items-center gap-2.5">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-rose-50 text-rose-600">
+                  <Wallet className="h-5 w-5" />
+                </span>
+                <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
+              </div>
+              <p className="text-sm text-gray-500 mt-2">
                 Every rupee that actually left a cash or bank account — pure cash basis, the
                 mirror of Receipts.
               </p>
@@ -129,70 +116,41 @@ function PaymentsPageInner() {
             <button
               onClick={handleExport}
               disabled={exporting}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 rounded-lg text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50"
             >
               {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
               Download Excel
             </button>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Period</span>
-              <DebouncedDateInput
-                value={from}
-                onCommit={setFrom}
-                className="px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs"
-              />
-              <span className="text-gray-400 text-xs">to</span>
-              <DebouncedDateInput
-                value={to}
-                onCommit={setTo}
-                className="px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs"
-              />
-            </div>
-
-            {loading ? (
-              <p className="text-sm text-gray-400">Reconciling…</p>
-            ) : recon ? (
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
-                <span>Opening: <strong className="text-gray-900">{formatCurrency(recon.opening)}</strong></span>
-                <span className="text-emerald-700">+Receipts: <strong>{formatCurrency(receiptsTotal)}</strong></span>
-                <span className="text-rose-700">−Payments: <strong>{formatCurrency(paymentsTotal)}</strong></span>
-                {recon.contraNet !== 0 && (
-                  <span className="text-sky-700">
-                    {recon.contraNet > 0 ? "+" : ""}Contra: <strong>{formatCurrency(recon.contraNet)}</strong>
-                  </span>
-                )}
-                {recon.suspenseNet !== 0 && (
-                  <span className="text-amber-700">
-                    {recon.suspenseNet > 0 ? "+" : ""}Suspense: <strong>{formatCurrency(recon.suspenseNet)}</strong>
-                  </span>
-                )}
-                <span>=Closing: <strong className="text-gray-900">{formatCurrency(recon.closing)}</strong></span>
-                {matches ? (
-                  <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold">
-                    <CheckCircle2 className="w-4 h-4" /> matches Close Book
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1 text-amber-700 font-semibold">
-                    <AlertTriangle className="w-4 h-4" /> off by {formatCurrency(Math.abs(delta))}
-                  </span>
-                )}
-              </div>
-            ) : (
-              <p className="text-sm text-gray-400">Reconciliation unavailable.</p>
-            )}
-
-            {!loading && recon && !matches && (
-              <Link
-                href="/admin/transactions?furtherMode=__UNTRACKED__"
-                className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-700 hover:text-amber-800"
-              >
-                <AlertTriangle className="w-3.5 h-3.5" /> Review untracked transactions
-              </Link>
-            )}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1">Period</span>
+            <DebouncedDateInput
+              value={from}
+              onCommit={setFrom}
+              className="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white shadow-sm"
+            />
+            <span className="text-gray-400 text-xs">to</span>
+            <DebouncedDateInput
+              value={to}
+              onCommit={setTo}
+              className="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white shadow-sm"
+            />
+            <select
+              value={branch}
+              onChange={(e) => setBranch(e.target.value)}
+              className="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white shadow-sm"
+            >
+              <option value="">All branches</option>
+              {ALL_BRANCHES.map((b) => (
+                <option key={b} value={b}>
+                  {b}
+                </option>
+              ))}
+            </select>
           </div>
+
+          <CashReconciliation from={from} to={to} branch={branch} />
 
           <section className="space-y-3">
             <div className="flex items-center gap-2">
@@ -213,6 +171,8 @@ function PaymentsPageInner() {
                   closing: "Total to date",
                 },
               }}
+              scope={scope}
+              onScopeChange={handleScopeChange}
             />
           </section>
 
@@ -220,7 +180,7 @@ function PaymentsPageInner() {
             <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide">
               Advance Transactions
             </h2>
-            <FinancingTransactions kind="advance" from={from} to={to} />
+            <FinancingTransactions kind="advance" from={from} to={to} branch={branch} />
           </section>
         </div>
       </main>

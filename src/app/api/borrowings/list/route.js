@@ -28,7 +28,7 @@ export async function GET(request) {
     const includeCancelled = searchParams.get("includeCancelled") === "true";
     const party = searchParams.get("party") || "";
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
-    const limit = Math.min(200, Math.max(1, parseInt(searchParams.get("limit") || "50")));
+    const limit = Math.min(5000, Math.max(1, parseInt(searchParams.get("limit") || "50")));
 
     const match = {};
     if (!includeCancelled) match.isCancelled = { $ne: true };
