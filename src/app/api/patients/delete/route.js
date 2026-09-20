@@ -4,6 +4,7 @@ import Patient from "@/models/Patient";
 import Employee from "@/models/Employee";
 import Transactions from "@/models/Transactions";
 import { withDB } from "@/lib/withDB";
+import { cacheInvalidate } from "@/lib/cache";
 
 const handler = async () => {
   const session = await mongoose.startSession();
@@ -72,6 +73,7 @@ const handler = async () => {
 
     await session.commitTransaction();
 
+    await cacheInvalidate("finance", "owner", "patients");
     return NextResponse.json({
       success: true,
       deletedPatients: patientIds.length,

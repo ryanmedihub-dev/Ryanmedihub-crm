@@ -15,6 +15,7 @@ import {
   round2,
 } from "@/lib/accountBalances";
 import { checkPeriodLock } from "@/lib/periodLock";
+import { cacheKey, cached } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 
@@ -50,6 +51,21 @@ export async function GET(request) {
       return NextResponse.json({ error: "from and to dates are required" }, { status: 400 });
     }
 
+    const meta = {};
+    const key = cacheKey("finance", { route: "close-book-ledger", account, from, to, transactionCategory, method, branch, page, limit }, session);
+    const data = await cached(key, 15, () => computeLedger({
+      account, from, to, transactionCategory, method, branch, page, limit,
+    }), meta);
+    const res = NextResponse.json(data);
+    res.headers.set("X-Cache", meta.status);
+    return res;
+  } catch (error) {
+    console.error("Error building account ledger:", error);
+    return NextResponse.json({ error: "Failed to build account ledger" }, { status: 500 });
+  }
+}
+
+async function computeLedger({ account, from, to, transactionCategory, method, branch, page, limit }) {
     const match = buildBalanceMatch({
       account,
       from,
@@ -279,7 +295,7 @@ export async function GET(request) {
       })),
     );
 
-    return NextResponse.json({
+    return {
       success: true,
       account,
       period: { from, to },
@@ -305,9 +321,5 @@ export async function GET(request) {
         totalPages: Math.max(1, Math.ceil(movementCount / limit)),
       },
       elapsedMs,
-    });
-  } catch (error) {
-    console.error("Error building account ledger:", error);
-    return NextResponse.json({ error: "Failed to build account ledger" }, { status: 500 });
-  }
+    };
 }

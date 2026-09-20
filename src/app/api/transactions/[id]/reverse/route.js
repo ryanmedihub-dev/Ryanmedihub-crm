@@ -12,6 +12,7 @@ import {
   isFullyCollected,
   unwindClinicShareCrystallisation,
 } from "@/lib/collabDerivation";
+import { cacheInvalidate } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 
@@ -68,6 +69,7 @@ export async function POST(request, { params }) {
       return reversalResult;
     });
 
+    await cacheInvalidate("finance", "owner", "patients");
     return NextResponse.json(
       {
         success: true,

@@ -7,6 +7,7 @@ import Transactions from "@/models/Transactions";
 import AccountTransfer from "@/models/AccountTransfer";
 import { reverseTransaction, ReversalError } from "@/lib/reverseTransaction";
 import { checkPeriodLock } from "@/lib/periodLock";
+import { cacheInvalidate } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 const LOAN_ACCOUNTS = ["Bajaj Loan", "Fibe Loan"];
@@ -164,6 +165,7 @@ export async function POST(request, { params }) {
       }
     });
 
+    await cacheInvalidate("finance", "owner", "patients");
     return NextResponse.json(
       {
         success: true,

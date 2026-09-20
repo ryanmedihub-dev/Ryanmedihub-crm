@@ -5,6 +5,7 @@ import connectDB from "@/lib/db";
 import Transactions from "@/models/Transactions";
 import "@/models/Patient";
 import { resolveDateRange, toDateQuery } from "@/lib/dateHelpers";
+import { cacheKey, cached } from "@/lib/cache";
 
 const MAX_ROWS = 2000;
 
@@ -29,6 +30,22 @@ export async function GET(request) {
     const dateQuery = toDateQuery(dateRange);
     if (dateQuery) query.date = dateQuery;
 
+    const meta = {};
+    const key = cacheKey("finance", { route: "transactions-get-data", ...Object.fromEntries(searchParams) }, session);
+    const data = await cached(key, 30, () => computeTransactionsGetData(query), meta);
+    const res = NextResponse.json(data);
+    res.headers.set("X-Cache", meta.status);
+    return res;
+  } catch (error) {
+    console.error("Error fetching transaction data:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to fetch transactions", message: error.message },
+      { status: 500 },
+    );
+  }
+}
+
+async function computeTransactionsGetData(query) {
     const transactions = await Transactions.find(query)
       .select(
         "costType patient branch procedure paymentType paymentId method amount discount date remarks transactionCategory createdBy editors",
@@ -67,16 +84,9 @@ export async function GET(request) {
       return acc;
     }, {});
 
-    return NextResponse.json({
+    return {
       success: true,
       data:    finaldata,
       types:   Object.keys(finaldata),
-    });
-  } catch (error) {
-    console.error("Error fetching transaction data:", error);
-    return NextResponse.json(
-      { success: false, error: "Failed to fetch transactions", message: error.message },
-      { status: 500 },
-    );
-  }
+    };
 }

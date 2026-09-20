@@ -13,6 +13,7 @@ import { ATTENTION_THRESHOLDS } from "@/lib/owner/attentionThresholds";
 import { employeeSection } from "@/lib/owner/employeeSections";
 import { SECTION_METRIC_BUILDERS, derivePerfMetrics, sampleValue, daysInPeriod } from "@/lib/owner/employeeReportQuery";
 import { scoreCohort } from "@/lib/owner/performance";
+import { cacheKey, cached } from "@/lib/cache";
 
 // /owner/dashboard — built LAST in the Owner Panel v2 series because it
 // summarizes everything the other parts already built. Nothing here is a new
@@ -173,7 +174,7 @@ async function topBottomPerformers() {
   return { top: scoredAll.slice(0, 3), bottom: scoredAll.slice(-3).reverse(), scoredCount: scoredAll.length };
 }
 
-export const GET = withCallbyRoute(async (req) => {
+export const GET = withCallbyRoute(async (req, session) => {
   await dbConnect();
   const { searchParams } = new URL(req.url);
   const branch = searchParams.get("branch") || "All";
@@ -181,23 +182,30 @@ export const GET = withCallbyRoute(async (req) => {
   const to = new Date(searchParams.get("to") || Date.now());
   const { prevFrom, prevTo } = prevWindow(from, to);
 
-  const [revenue, surgeries, funnel, attention, performers] = await Promise.all([
-    revenueFacet(branch, from, to, prevFrom, prevTo),
-    surgeriesFacet(branch, from, to, prevFrom, prevTo),
-    compactFunnel(from, to),
-    attentionSummary(),
-    topBottomPerformers(),
-  ]);
+  const meta = {};
+  const key = cacheKey("owner", { route: "dashboard", ...Object.fromEntries(searchParams) }, session);
+  const data = await cached(key, 60, async () => {
+    const [revenue, surgeries, funnel, attention, performers] = await Promise.all([
+      revenueFacet(branch, from, to, prevFrom, prevTo),
+      surgeriesFacet(branch, from, to, prevFrom, prevTo),
+      compactFunnel(from, to),
+      attentionSummary(),
+      topBottomPerformers(),
+    ]);
 
-  const res = NextResponse.json({
-    success: true,
-    period: { from, to, prevFrom, prevTo },
-    revenue,
-    surgeries,
-    funnel,
-    attention,
-    performers,
-  });
+    return {
+      success: true,
+      period: { from, to, prevFrom, prevTo },
+      revenue,
+      surgeries,
+      funnel,
+      attention,
+      performers,
+    };
+  }, meta);
+
+  const res = NextResponse.json(data);
+  res.headers.set("X-Cache", meta.status);
   res.headers.set("Cache-Control", "private, max-age=20, stale-while-revalidate=40");
   return res;
 });

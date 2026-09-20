@@ -10,6 +10,7 @@ import { ALL_BRANCHES } from "@/lib/branches";
 import { ADVANCE_TYPES, ADVANCE_REVENUE_CATEGORY } from "@/constants/advanceTypes";
 import { checkPeriodLock } from "@/lib/periodLock";
 import { settledTotalExpr } from "@/lib/advanceSettlements";
+import { cacheInvalidate } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 const REFID_REQUIRED_KINDS = ["EMPLOYEE", "VENDOR", "PATIENT"];
@@ -153,6 +154,7 @@ export async function POST(req) {
       });
       await advance.save();
 
+      await cacheInvalidate("finance", "owner");
       return NextResponse.json({ message: "Recovery recorded", advance, receivable }, { status: 201 });
     }
 
@@ -216,6 +218,7 @@ export async function POST(req) {
         await dbSession.endSession();
       }
 
+      await cacheInvalidate("finance", "owner");
       return NextResponse.json({ message: "Further advance recorded", advance, receivable }, { status: 201 });
     }
 
@@ -270,6 +273,7 @@ export async function POST(req) {
       await dbSession.endSession();
     }
 
+    await cacheInvalidate("finance", "owner");
     return NextResponse.json({ message: "Advance created", advance, receivable }, { status: 201 });
   } catch (error) {
     if (error?.name === "ValidationError") {

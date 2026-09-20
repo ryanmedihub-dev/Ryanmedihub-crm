@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { withDB } from "@/lib/withDB";
 import Leads from "@/models/Leads";
+import { cacheInvalidate } from "@/lib/cache";
 
 const handler = async (req) => {
   const { name, phone, email, location, visitPlan, visitDate, remarks, tag } =
@@ -26,6 +27,7 @@ const handler = async (req) => {
 
   await newLead.save();
 
+  await cacheInvalidate("patients", "owner");
   return NextResponse.json(
     { success: true, message: "Lead created successfully", lead: newLead },
     { status: 201 }

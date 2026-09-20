@@ -4,6 +4,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import dbConnect from "@/lib/db";
 import Stock from "@/models/Stock";
 import Vendor from "@/models/Vendor";
+import { cacheInvalidate } from "@/lib/cache";
 
 export async function POST(req) {
   try {
@@ -136,6 +137,7 @@ export async function POST(req) {
       0
     );
 
+    await cacheInvalidate("finance", "owner");
     return NextResponse.json(
       {
         success: true,

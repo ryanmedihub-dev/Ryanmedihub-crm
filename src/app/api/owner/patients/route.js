@@ -11,6 +11,7 @@ import {
 import { parseEmployeeFilters, parsePageParams } from "@/lib/owner/pagination";
 import { periodBounds, istDayBucket } from "@/lib/owner/dates";
 import { ATTENTION_THRESHOLDS } from "@/lib/owner/attentionThresholds";
+import { cacheKey, cached } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["owner", "super-admin"];
 
@@ -72,6 +73,9 @@ const getHandler = async (req) => {
     return NextResponse.json({ success: false, message: `Unknown preset: ${preset}` }, { status: 400 });
   }
 
+  const meta = {};
+  const key = cacheKey("owner", { route: "patients-list", ...Object.fromEntries(searchParams) }, session);
+  const data = await cached(key, 60, async () => {
   const dateField = PRESET_DATE_FIELD[preset] || "createdAt";
   const match = {};
   if (branch && branch !== "All") match["personal.branch"] = branch;
@@ -271,7 +275,12 @@ const getHandler = async (req) => {
     response.techniqueMix = (result.techniqueMix || []).map((t) => ({ technique: t._id, count: t.count }));
   }
 
-  return NextResponse.json(response);
+  return response;
+  }, meta);
+
+  const res = NextResponse.json(data);
+  res.headers.set("X-Cache", meta.status);
+  return res;
 };
 
 export const GET = withDB(getHandler);

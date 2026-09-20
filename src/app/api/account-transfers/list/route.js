@@ -5,6 +5,7 @@ import connectDB from "@/lib/db";
 import AccountTransfer from "@/models/AccountTransfer";
 import { accountsSync } from "@/lib/masterData";
 import { ALL_BRANCHES } from "@/lib/branches";
+import { cacheKey, cached } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 
@@ -30,18 +31,39 @@ export async function GET(request) {
     const includeCancelled = searchParams.get("includeCancelled") === "true";
     const onlyCancelled = searchParams.get("onlyCancelled") === "true";
 
+    const meta = {};
+    const key = cacheKey("finance", { route: "account-transfers-list", ...Object.fromEntries(searchParams) }, session);
+    let data;
+    try {
+      data = await cached(key, 45, () => computeAccountTransfersList({
+        onlyCancelled, includeCancelled, branch, account, from, to, page, limit,
+      }), meta);
+    } catch (err) {
+      if (err instanceof Response) return err;
+      throw err;
+    }
+    const res = NextResponse.json(data);
+    res.headers.set("X-Cache", meta.status);
+    return res;
+  } catch (error) {
+    console.error("Error listing contra entries:", error);
+    return NextResponse.json({ error: "Failed to fetch contra entries" }, { status: 500 });
+  }
+}
+
+async function computeAccountTransfersList({ onlyCancelled, includeCancelled, branch, account, from, to, page, limit }) {
     const match = {};
     if (onlyCancelled) match.isCancelled = true;
     else if (!includeCancelled) match.isCancelled = { $ne: true };
     if (branch) {
       if (!ALL_BRANCHES.includes(branch)) {
-        return NextResponse.json({ error: "Invalid branch" }, { status: 400 });
+        throw NextResponse.json({ error: "Invalid branch" }, { status: 400 });
       }
       match.branch = branch;
     }
     if (account) {
       if (!accountsSync().includes(account)) {
-        return NextResponse.json({ error: "Invalid account" }, { status: 400 });
+        throw NextResponse.json({ error: "Invalid account" }, { status: 400 });
       }
       match.$or = [{ fromAccount: account }, { toAccount: account }];
     }
@@ -64,9 +86,5 @@ export async function GET(request) {
       AccountTransfer.countDocuments(match),
     ]);
 
-    return NextResponse.json({ success: true, transfers, total, page, limit });
-  } catch (error) {
-    console.error("Error listing contra entries:", error);
-    return NextResponse.json({ error: "Failed to fetch contra entries" }, { status: 500 });
-  }
+    return { success: true, transfers, total, page, limit };
 }

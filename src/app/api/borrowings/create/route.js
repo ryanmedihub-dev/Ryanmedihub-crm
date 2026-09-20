@@ -8,6 +8,7 @@ import Payable from "@/models/Payable";
 import { ALL_BRANCHES } from "@/lib/branches";
 import { accountsSync, expenseTypesSync } from "@/lib/masterData";
 import { checkPeriodLock } from "@/lib/periodLock";
+import { cacheInvalidate } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 const borrowingSubtypes = () => expenseTypesSync("Borrowings");
@@ -145,6 +146,7 @@ export async function POST(req) {
       });
       await borrowing.save();
 
+      await cacheInvalidate("finance", "owner");
       return NextResponse.json({ message: "Repayment recorded", borrowing, payable }, { status: 201 });
     }
 
@@ -208,6 +210,7 @@ export async function POST(req) {
         await dbSession.endSession();
       }
 
+      await cacheInvalidate("finance", "owner");
       return NextResponse.json({ message: "Tranche recorded", borrowing, payable }, { status: 201 });
     }
 
@@ -261,6 +264,7 @@ export async function POST(req) {
       await dbSession.endSession();
     }
 
+    await cacheInvalidate("finance", "owner");
     return NextResponse.json({ message: "Borrowing created", borrowing, payable }, { status: 201 });
   } catch (error) {
     if (error?.name === "ValidationError") {

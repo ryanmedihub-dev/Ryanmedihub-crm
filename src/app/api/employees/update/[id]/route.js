@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import Employee from "@/models/Employee";
 import dbConnect from "@/lib/db";
 import { normalizeEmployeeRoleForSave } from "@/constants/employeeRoles";
+import { cacheInvalidate } from "@/lib/cache";
 
 export async function PUT(request, { params }) {
   try {
@@ -92,6 +93,7 @@ export async function PUT(request, { params }) {
       );
     }
 
+    await cacheInvalidate("employees", "owner");
     return NextResponse.json(
       {
         success: true,

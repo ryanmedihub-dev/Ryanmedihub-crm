@@ -4,6 +4,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
 import { accountsSync } from "@/lib/masterData";
 import { getAccountBalance } from "@/lib/accountBalances";
+import { cacheKey, cached } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 
@@ -22,15 +23,17 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const asOf = searchParams.get("asOf") || new Date().toISOString();
 
-    const entries = await Promise.all(
-      accountsSync().map(async (account) => [account, await getAccountBalance(account, asOf)]),
-    );
-
-    return NextResponse.json({
-      success: true,
-      asOf,
-      balances: Object.fromEntries(entries),
-    });
+    const meta = {};
+    const key = cacheKey("finance", { route: "account-transfers-balances", asOf }, session);
+    const data = await cached(key, 45, async () => {
+      const entries = await Promise.all(
+        accountsSync().map(async (account) => [account, await getAccountBalance(account, asOf)]),
+      );
+      return { success: true, asOf, balances: Object.fromEntries(entries) };
+    }, meta);
+    const res = NextResponse.json(data);
+    res.headers.set("X-Cache", meta.status);
+    return res;
   } catch (error) {
     console.error("Error computing account balances:", error);
     return NextResponse.json({ error: "Failed to compute balances" }, { status: 500 });

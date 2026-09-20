@@ -8,6 +8,7 @@ import Transactions from "@/models/Transactions";
 import Borrowing from "@/models/Borrowing";
 import DeleteLog from "@/models/DeleteLog";
 import { buildReceivableAggregationStages } from "@/lib/receivableAggregation";
+import { cacheInvalidate } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 
@@ -142,6 +143,7 @@ export async function PATCH(req, { params }) {
 
     await receivable.save();
 
+    await cacheInvalidate("finance", "owner");
     return NextResponse.json({ message: "Receivable updated", receivable });
   } catch (error) {
     console.error("Error updating receivable:", error);
@@ -220,6 +222,7 @@ export async function DELETE(req, { params }) {
 
     await receivable.deleteOne();
 
+    await cacheInvalidate("finance", "owner");
     return NextResponse.json({ message: "Receivable deleted" });
   } catch (error) {
     console.error("Error deleting receivable:", error);

@@ -5,6 +5,7 @@ import connectDB from "@/lib/db";
 import MasterData, { MASTER_DATA_KINDS } from "@/models/MasterData";
 import { invalidate } from "@/lib/masterData";
 import { computeUsage } from "@/lib/masterData/guardrails";
+import { cacheInvalidate } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["super-admin", "owner"];
 
@@ -128,5 +129,6 @@ export async function POST(req) {
   }
 
   invalidate();
+  await cacheInvalidate("masterdata", "finance", "owner");
   return NextResponse.json({ message: "Created", row: doc.toObject() }, { status: 201 });
 }

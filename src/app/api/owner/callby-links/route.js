@@ -5,6 +5,7 @@ import { withDB } from "@/lib/withDB";
 import Employee from "@/models/Employee";
 import { fetchCallby, CallbyError } from "@/lib/callby";
 import { isCallerRole } from "@/lib/owner/callerRoles";
+import { cacheKey, cached } from "@/lib/cache";
 
 // Backs the /owner/employees/links UI — the manual pairing screen for the
 // employees the reconciliation script (scripts/sync-callby-links.mjs)
@@ -59,61 +60,69 @@ function callbyErrorResponse(err) {
 
 // GET — everything the linking screen needs in one shot.
 const getHandler = async () => {
-  const { error } = await requireSession();
+  const { session, error } = await requireSession();
   if (error) return error;
 
-  let agents;
+  const meta = {};
+  const key = cacheKey("owner", { route: "callby-links" }, session);
+  let data;
   try {
-    agents = await loadCallbyAgents();
+    data = await cached(key, 60, async () => {
+      const agents = await loadCallbyAgents();
+
+      // Inactive employees are included so a stale link on someone who has left
+      // can still be seen and undone; they're flagged and default-hidden on screen.
+      const allEmployees = await Employee.find({ mergedInto: null })
+        .select("name phone employeeId role branch callbyUserId tlName isactive")
+        .sort({ name: 1 })
+        .lean();
+      const employees = allEmployees.filter((e) => e.isactive !== false);
+
+      const agentById = new Map(agents.map((a) => [a.callbyUserId, a]));
+      const linkedEmpByCallbyId = new Map(
+        allEmployees.filter((e) => e.callbyUserId).map((e) => [String(e.callbyUserId), e]),
+      );
+
+      const linked = allEmployees
+        .filter((e) => e.callbyUserId)
+        .map((e) => ({
+          employee: e,
+          callbyAgent: agentById.get(String(e.callbyUserId)) || { callbyUserId: String(e.callbyUserId), name: "(not in callby roster)", tlName: "", stale: true },
+        }));
+
+      // isCaller rides along so the screen can default to the employees that can
+      // actually be in callby (same list the reconciliation script reports against).
+      const unlinkedEmployees = employees
+        .filter((e) => !e.callbyUserId)
+        .map((e) => ({ ...e, isCaller: isCallerRole(e.role) }));
+      const unlinkedCallbyAgents = agents.filter((a) => !linkedEmpByCallbyId.has(a.callbyUserId));
+
+      const callers = employees.filter((e) => isCallerRole(e.role));
+      const callersLinked = callers.filter((e) => e.callbyUserId).length;
+
+      return {
+        success: true,
+        linked,
+        unlinkedEmployees,
+        unlinkedCallbyAgents,
+        counts: {
+          employees: employees.length,
+          linked: linked.length,
+          unlinkedEmployees: unlinkedEmployees.length,
+          unlinkedCallers: unlinkedEmployees.filter((e) => e.isCaller).length,
+          callers: callers.length,
+          callersLinked,
+          unlinkedCallbyAgents: unlinkedCallbyAgents.length,
+        },
+      };
+    }, meta);
   } catch (err) {
     return callbyErrorResponse(err);
   }
 
-  // Inactive employees are included so a stale link on someone who has left
-  // can still be seen and undone; they're flagged and default-hidden on screen.
-  const allEmployees = await Employee.find({ mergedInto: null })
-    .select("name phone employeeId role branch callbyUserId tlName isactive")
-    .sort({ name: 1 })
-    .lean();
-  const employees = allEmployees.filter((e) => e.isactive !== false);
-
-  const agentById = new Map(agents.map((a) => [a.callbyUserId, a]));
-  const linkedEmpByCallbyId = new Map(
-    allEmployees.filter((e) => e.callbyUserId).map((e) => [String(e.callbyUserId), e]),
-  );
-
-  const linked = allEmployees
-    .filter((e) => e.callbyUserId)
-    .map((e) => ({
-      employee: e,
-      callbyAgent: agentById.get(String(e.callbyUserId)) || { callbyUserId: String(e.callbyUserId), name: "(not in callby roster)", tlName: "", stale: true },
-    }));
-
-  // isCaller rides along so the screen can default to the employees that can
-  // actually be in callby (same list the reconciliation script reports against).
-  const unlinkedEmployees = employees
-    .filter((e) => !e.callbyUserId)
-    .map((e) => ({ ...e, isCaller: isCallerRole(e.role) }));
-  const unlinkedCallbyAgents = agents.filter((a) => !linkedEmpByCallbyId.has(a.callbyUserId));
-
-  const callers = employees.filter((e) => isCallerRole(e.role));
-  const callersLinked = callers.filter((e) => e.callbyUserId).length;
-
-  return NextResponse.json({
-    success: true,
-    linked,
-    unlinkedEmployees,
-    unlinkedCallbyAgents,
-    counts: {
-      employees: employees.length,
-      linked: linked.length,
-      unlinkedEmployees: unlinkedEmployees.length,
-      unlinkedCallers: unlinkedEmployees.filter((e) => e.isCaller).length,
-      callers: callers.length,
-      callersLinked,
-      unlinkedCallbyAgents: unlinkedCallbyAgents.length,
-    },
-  });
+  const res = NextResponse.json(data);
+  res.headers.set("X-Cache", meta.status);
+  return res;
 };
 
 // POST { employeeId, callbyUserId } — create one pairing.

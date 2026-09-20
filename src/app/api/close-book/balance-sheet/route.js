@@ -12,6 +12,7 @@ import {
   round2,
   TRANSACTION_TO_MOVEMENT,
 } from "@/lib/accountBalances";
+import { cacheKey, cached } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin", "owner"];
 
@@ -35,6 +36,19 @@ export async function GET(request) {
       return NextResponse.json({ error: "from and to dates are required" }, { status: 400 });
     }
 
+    const meta = {};
+    const key = cacheKey("finance", { route: "close-book-balance-sheet", from, to, branch }, session);
+    const data = await cached(key, 15, () => computeBalanceSheet({ from, to, branch }), meta);
+    const res = NextResponse.json(data);
+    res.headers.set("X-Cache", meta.status);
+    return res;
+  } catch (error) {
+    console.error("Error building balance sheet:", error);
+    return NextResponse.json({ error: "Failed to build balance sheet" }, { status: 500 });
+  }
+}
+
+async function computeBalanceSheet({ from, to, branch }) {
     const started = Date.now();
 
     const contraStage = buildContraUnionStage({ from, to, branch });
@@ -101,7 +115,7 @@ export async function GET(request) {
       { $group: { _id: null, count: { $sum: 1 }, amount: { $sum: "$amount" } } },
     ]);
 
-    return NextResponse.json({
+    return {
       success: true,
       period: { from, to },
       accounts,
@@ -111,9 +125,5 @@ export async function GET(request) {
         amount: round2(unattributed?.amount || 0),
       },
       elapsedMs,
-    });
-  } catch (error) {
-    console.error("Error building balance sheet:", error);
-    return NextResponse.json({ error: "Failed to build balance sheet" }, { status: 500 });
-  }
+    };
 }

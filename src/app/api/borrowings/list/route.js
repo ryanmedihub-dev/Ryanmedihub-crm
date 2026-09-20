@@ -4,6 +4,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
 import Borrowing from "@/models/Borrowing";
 import { resolveBranchFilter } from "@/lib/branches";
+import { cacheKey, cached } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 
@@ -30,6 +31,21 @@ export async function GET(request) {
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
     const limit = Math.min(5000, Math.max(1, parseInt(searchParams.get("limit") || "50")));
 
+    const meta = {};
+    const key = cacheKey("finance", { route: "borrowings-list", ...Object.fromEntries(searchParams) }, session);
+    const data = await cached(key, 45, () => computeBorrowingsList({
+      account, direction, payableId, branch, from, to, includeCancelled, party, page, limit,
+    }), meta);
+    const res = NextResponse.json(data);
+    res.headers.set("X-Cache", meta.status);
+    return res;
+  } catch (error) {
+    console.error("Error listing borrowings:", error);
+    return NextResponse.json({ error: "Failed to list borrowings" }, { status: 500 });
+  }
+}
+
+async function computeBorrowingsList({ account, direction, payableId, branch, from, to, includeCancelled, party, page, limit }) {
     const match = {};
     if (!includeCancelled) match.isCancelled = { $ne: true };
     if (party) match["party.label"] = { $regex: party, $options: "i" };
@@ -53,16 +69,12 @@ export async function GET(request) {
       Borrowing.countDocuments(match),
     ]);
 
-    return NextResponse.json({
+    return {
       success: true,
       borrowings: rows,
       total,
       page,
       limit,
       totalPages: Math.max(1, Math.ceil(total / limit)),
-    });
-  } catch (error) {
-    console.error("Error listing borrowings:", error);
-    return NextResponse.json({ error: "Failed to list borrowings" }, { status: 500 });
-  }
+    };
 }

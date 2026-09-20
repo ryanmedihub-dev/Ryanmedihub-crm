@@ -7,6 +7,7 @@ import Transactions from "@/models/Transactions";
 import { REVENUE_METHODS } from "@/constants/paymentMethods";
 import { getBankRoutingDefaults } from "@/lib/masterData/lists";
 import { unsettledMethodsSync, nonCashMethodsSync } from "@/lib/masterData";
+import { cacheInvalidate } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 
@@ -136,6 +137,7 @@ export async function POST(req, { params }) {
       editors: [],
     });
 
+    await cacheInvalidate("finance", "owner");
     return NextResponse.json(
       {
         message: "Receipt recorded",

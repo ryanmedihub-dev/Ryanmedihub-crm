@@ -5,6 +5,7 @@ import connectDB from "@/lib/db";
 import mongoose from "mongoose";
 import BankRoutingRule from "@/models/BankRoutingRule";
 import { invalidate } from "@/lib/masterData";
+import { cacheInvalidate } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["super-admin", "owner"];
 
@@ -70,6 +71,7 @@ export async function PATCH(req, { params }) {
   }
 
   invalidate();
+  await cacheInvalidate("masterdata", "finance", "owner");
   return NextResponse.json({ message: "Rule updated", rule: rule.toObject() });
 }
 
@@ -91,6 +93,7 @@ export async function DELETE(req, { params }) {
 
   await BankRoutingRule.deleteOne({ _id: id });
   invalidate();
+  await cacheInvalidate("masterdata", "finance", "owner");
   return NextResponse.json({
     message: "Rule deleted",
     deleted: {

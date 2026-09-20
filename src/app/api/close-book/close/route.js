@@ -6,6 +6,7 @@ import connectDB from "@/lib/db";
 import AccountPeriod from "@/models/AccountPeriod";
 import { accountsSync } from "@/lib/masterData";
 import { computePeriodFigures } from "@/lib/accountPeriods";
+import { cacheInvalidate } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 
@@ -163,6 +164,7 @@ export async function POST(req) {
       await dbSession.endSession();
     }
 
+    await cacheInvalidate("finance", "owner", "reports");
     return NextResponse.json(
       {
         success: true,

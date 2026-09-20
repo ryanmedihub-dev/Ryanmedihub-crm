@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { withDB } from "@/lib/withDB";
 import Employee from "@/models/Employee";
 import { normalizeEmployeeRoleForSave } from "@/constants/employeeRoles";
+import { cacheInvalidate } from "@/lib/cache";
 
 const handler = async (req) => {
 
@@ -36,6 +37,7 @@ const handler = async (req) => {
 
     await newEmployee.save();
 
+    await cacheInvalidate("employees", "owner");
     return NextResponse.json(
       { message: "Employee created successfully", employee: newEmployee },
       { status: 201 }

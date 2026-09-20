@@ -6,6 +6,7 @@ import Transactions from "@/models/Transactions";
 import Payable from "@/models/Payable";
 import Receivable from "@/models/Receivable";
 import { unsettledMethodsSync, accountsSync } from "@/lib/masterData";
+import { cacheKey, cached } from "@/lib/cache";
 const ALLOWED_ROLES = ["admin", "super-admin", "owner"];
 
 export async function GET(request) {
@@ -27,6 +28,19 @@ export async function GET(request) {
       ? accountsParam.split(",").filter((a) => accountsSync().includes(a))
       : [];
 
+    const meta = {};
+    const key = cacheKey("finance", { route: "close-book-pnl", from, to, branch, accounts: selectedAccounts.join(",") }, session);
+    const data = await cached(key, 15, () => computePnl({ from, to, branch, selectedAccounts }), meta);
+    const res = NextResponse.json(data);
+    res.headers.set("X-Cache", meta.status);
+    return res;
+  } catch (error) {
+    console.error("Error computing P&L:", error);
+    return NextResponse.json({ error: "Failed to compute P&L" }, { status: 500 });
+  }
+}
+
+async function computePnl({ from, to, branch, selectedAccounts }) {
     const dateRange = {};
     if (from) dateRange.$gte = new Date(from);
     if (to) dateRange.$lte = new Date(to);
@@ -76,9 +90,5 @@ export async function GET(request) {
     const income = round2((directRevenueAgg[0]?.total || 0) + (receivablesRaisedAgg[0]?.total || 0));
     const expense = round2((directExpenseAgg[0]?.total || 0) + (payablesRaisedAgg[0]?.total || 0));
 
-    return NextResponse.json({ success: true, income, expense, profit: round2(income - expense) });
-  } catch (error) {
-    console.error("Error computing P&L:", error);
-    return NextResponse.json({ error: "Failed to compute P&L" }, { status: 500 });
-  }
+    return { success: true, income, expense, profit: round2(income - expense) };
 }

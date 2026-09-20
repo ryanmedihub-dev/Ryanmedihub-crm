@@ -13,6 +13,7 @@ import Receivable from "@/models/Receivable";
 import Transactions from "@/models/Transactions";
 import DeleteLog from "@/models/DeleteLog";
 import { EMPLOYEE_REFERENCES } from "@/constants/employeeReferences";
+import { cacheInvalidate } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["hr", "super-admin", "admin"];
 const MODELS = { Patient, Interviewer, Payable, Advance, Borrowing, Receivable, Transactions };
@@ -84,6 +85,7 @@ export async function DELETE(req, { params }) {
       branch: employee.branch,
     });
 
+    await cacheInvalidate("employees", "owner");
     return NextResponse.json({ success: true, message: `"${employee.name}" deleted` });
   } catch (error) {
     if (error.name === "CastError") {

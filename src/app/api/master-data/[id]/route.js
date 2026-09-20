@@ -12,6 +12,7 @@ import {
   hasPayablesUnderCategory,
   computeMethodFlagImpact,
 } from "@/lib/masterData/guardrails";
+import { cacheInvalidate } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["super-admin", "owner"];
 
@@ -215,6 +216,7 @@ export async function PATCH(req, { params }) {
   }
 
   invalidate();
+  await cacheInvalidate("masterdata", "finance", "owner");
   return NextResponse.json({ message: "Updated", row: row.toObject() });
 }
 
@@ -295,5 +297,6 @@ export async function DELETE(req, { params }) {
   }
 
   invalidate();
+  await cacheInvalidate("masterdata", "finance", "owner");
   return NextResponse.json({ message: "Deleted", deleted: { _id: row._id, kind: row.kind, value: row.value } });
 }

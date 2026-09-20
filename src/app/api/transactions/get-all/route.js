@@ -9,6 +9,7 @@ import { resolveBranchFilter } from "@/lib/branches";
 import { SETTLEMENT_EXCLUSION } from "@/constants/bankRouting";
 import { unsettledMethodsSync, nonCashMethodsSync } from "@/lib/masterData";
 import { getISTStartOfDay, getISTEndOfDay } from "@/lib/dateHelpers";
+import { cacheKey, cached } from "@/lib/cache";
 
 function deriveEntryType(tx) {
   if (tx.reversalOf) return "REVERSAL";
@@ -86,6 +87,30 @@ export async function GET(request) {
 
     await connectDB();
 
+    const meta = {};
+    const key = cacheKey("finance", { route: "transactions-get-all", ...Object.fromEntries(searchParams) }, session);
+    const data = await cached(key, 30, () => computeTransactionsGetAll({
+      session, page, limit, category, dateFrom, dateTo, search, approvalStatus, payableId,
+      receivableId, patientId, sortKey, sortDir, branches, paymentMethods, procedures,
+      furtherModes, expenseCategories, expenseTypes, entryTypes,
+    }), meta);
+    const res = NextResponse.json(data);
+    res.headers.set("X-Cache", meta.status);
+    return res;
+  } catch (error) {
+    console.error("❌ Error fetching all transactions:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to fetch transactions", message: error.message },
+      { status: 500 }
+    );
+  }
+}
+
+async function computeTransactionsGetAll({
+  session, page, limit, category, dateFrom, dateTo, search, approvalStatus, payableId,
+  receivableId, patientId, sortKey, sortDir, branches, paymentMethods, procedures,
+  furtherModes, expenseCategories, expenseTypes, entryTypes,
+}) {
     const branchFilter = resolveBranchFilter(
       session,
       branches.length === 1 ? branches[0] : "",
@@ -286,19 +311,12 @@ export async function GET(request) {
             : null,
     }));
 
-    return NextResponse.json({
+    return {
       success: true,
       transactions: mappedTransactions,
       total,
       page,
       limit,
       stats,
-    });
-  } catch (error) {
-    console.error("❌ Error fetching all transactions:", error);
-    return NextResponse.json(
-      { success: false, error: "Failed to fetch transactions", message: error.message },
-      { status: 500 }
-    );
-  }
+    };
 }

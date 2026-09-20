@@ -7,6 +7,7 @@ import Payable from "@/models/Payable";
 import Employee from "@/models/Employee";
 import { ALL_BRANCHES } from "@/lib/branches";
 import { checkPeriodLock } from "@/lib/periodLock";
+import { cacheInvalidate } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin", "reception", "stock"];
 
@@ -88,6 +89,7 @@ export async function POST(req) {
       },
     ]);
 
+    await cacheInvalidate("finance", "owner", "employees");
     return NextResponse.json(
       { message: "Target incentive payable created", payable },
       { status: 201 },

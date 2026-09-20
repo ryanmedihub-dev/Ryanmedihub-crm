@@ -1,3 +1,4 @@
+import { cacheKey, cacheGet, cacheSet } from "@/lib/cache";
 
 const CALLBY_API_URL = process.env.CALLBY_API_URL;
 const CALLBY_SERVICE_TOKEN = process.env.CALLBY_SERVICE_TOKEN;
@@ -71,31 +72,48 @@ export async function fetchCallby(path, { params, method = "GET", body } = {}) {
 // that is this one HTTP round trip to callby's workforce-summary (measured with
 // scripts/bench/owner-endpoints.mjs). Every page turn / column sort / filter
 // change re-fetched it. Reports tolerate a minute of staleness, so identical
-// GETs within CALLBY_CACHE_TTL_MS are served from memory instead.
+// GETs within CALLBY_CACHE_TTL_MS are served from a cache instead.
 //
-// Scope: per Node process (on Vercel, per warm lambda) — a cold instance still
-// pays the fetch once. Errors are never cached. Only opt-in callers use it
-// (pass { cacheTtlMs }); anything live (calls/live, retry queue) keeps hitting
-// callby directly.
+// Two layers: an in-process Map (L1, ~15s) in front of Redis (L2, the full
+// TTL). L1 saves a warm lambda the HTTP round trip to Upstash for a key it
+// already has; L2 is shared across lambdas, so a cold instance inherits
+// whatever a warm one already fetched instead of re-paying callby's ~2s —
+// that cross-instance sharing is the whole point of moving this off a
+// per-process Map. Not user-scoped: callby is queried with a service token
+// and the 18 consuming routes already gate on role via withCallbyRoute()
+// before they ever call this. Errors are never cached at either layer — the
+// L1 entry is deleted on rejection and nothing is written to Redis. Only
+// opt-in callers use it (pass { cacheTtlMs }); anything live (calls/live,
+// retry queue) keeps hitting callby directly via fetchCallby().
 // ---------------------------------------------------------------------------
 export const CALLBY_CACHE_TTL_MS = 60_000;
+const L1_TTL_MS = 15_000;
 
-const cache = new Map(); // key -> { expires, promise }
+const l1 = new Map(); // key -> { expires, promise }
 
 export async function fetchCallbyCached(path, { params, cacheTtlMs = CALLBY_CACHE_TTL_MS } = {}) {
   const key = `${path}?${new URLSearchParams(params || {}).toString()}`;
   const now = Date.now();
-  const hit = cache.get(key);
+  const hit = l1.get(key);
   if (hit && hit.expires > now) return hit.promise;
 
-  const promise = fetchCallby(path, { params }).catch((err) => {
-    cache.delete(key); // never serve a failure twice
+  const redisKey = cacheKey("callby", { path, ...(params || {}) });
+  const promise = (async () => {
+    const cachedValue = await cacheGet(redisKey);
+    if (cachedValue !== null && cachedValue !== undefined) return cachedValue;
+
+    const value = await fetchCallby(path, { params });
+    cacheSet(redisKey, value, Math.ceil(cacheTtlMs / 1000)); // fire and forget
+    return value;
+  })().catch((err) => {
+    l1.delete(key); // never serve a failure twice
     throw err;
   });
-  cache.set(key, { expires: now + cacheTtlMs, promise });
+
+  l1.set(key, { expires: now + L1_TTL_MS, promise });
   // Bound the map so a long-lived process can't grow it without limit.
-  if (cache.size > 200) {
-    for (const [k, v] of cache) if (v.expires <= now) cache.delete(k);
+  if (l1.size > 200) {
+    for (const [k, v] of l1) if (v.expires <= now) l1.delete(k);
   }
   return promise;
 }

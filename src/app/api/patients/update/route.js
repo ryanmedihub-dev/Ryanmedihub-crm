@@ -6,6 +6,7 @@ import Employee from "@/models/Employee";
 import mongoose from "mongoose";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/route";
+import { cacheInvalidate } from "@/lib/cache";
 
 const handler = async (req) => {
   try {
@@ -182,6 +183,7 @@ const handler = async (req) => {
       });
     }
 
+    await cacheInvalidate("finance", "owner", "patients");
     return NextResponse.json(
       {
         success: true,

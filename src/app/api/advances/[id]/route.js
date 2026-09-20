@@ -11,6 +11,7 @@ import { ALL_BRANCHES } from "@/lib/branches";
 import { checkPeriodLock } from "@/lib/periodLock";
 import { totalSettledAmount, settledTotalExpr } from "@/lib/advanceSettlements";
 import { settleAdvanceAgainstPayable, unsettleAdvanceFromPayable } from "@/lib/entryCore/settleAdvanceAgainstPayable";
+import { cacheInvalidate } from "@/lib/cache";
 
 const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
 
@@ -122,6 +123,7 @@ export async function PATCH(req, { params }) {
         });
         if (r.error) return NextResponse.json({ error: r.error }, { status: r.status });
         const fresh = await Advance.findById(id);
+        await cacheInvalidate("finance", "owner");
         return NextResponse.json({ message: "Settlement unlinked", advance: fresh });
       }
 
@@ -134,6 +136,7 @@ export async function PATCH(req, { params }) {
       });
       if (r.error) return NextResponse.json({ error: r.error }, { status: r.status });
       const fresh = await Advance.findById(id);
+      await cacheInvalidate("finance", "owner");
       return NextResponse.json({ message: "Settlement linked", advance: fresh });
     }
 
@@ -190,6 +193,7 @@ export async function PATCH(req, { params }) {
       await dbSession.endSession();
     }
 
+    await cacheInvalidate("finance", "owner");
     return NextResponse.json({
       message: nextCancelled ? "Advance cancelled" : "Advance reinstated",
       advance,
@@ -326,6 +330,7 @@ export async function PUT(req, { params }) {
       await dbSession.endSession();
     }
 
+    await cacheInvalidate("finance", "owner");
     return NextResponse.json({ message: "Advance updated", advance });
   } catch (error) {
     console.error("Error editing advance:", error);
@@ -357,6 +362,7 @@ export async function DELETE(req, { params }) {
 
     await Advance.deleteOne({ _id: advance._id });
 
+    await cacheInvalidate("finance", "owner");
     return NextResponse.json({ message: "Advance deleted" });
   } catch (error) {
     console.error("Error deleting advance:", error);

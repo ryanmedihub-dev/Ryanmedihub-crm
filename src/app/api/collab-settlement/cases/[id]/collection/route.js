@@ -4,6 +4,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
 import CollabCase from "@/models/CollabCase";
 import { recordCollabCollectionAtomic, computeCaseBalance } from "@/lib/collabDerivation";
+import { cacheInvalidate } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["collab", "admin", "super-admin"];
 
@@ -84,6 +85,7 @@ export async function POST(req, { params }) {
       actor: { name: session.user.name, email: session.user.email },
     });
 
+    await cacheInvalidate("finance", "owner", "patients");
     return NextResponse.json({
       message: "Collection recorded",
       collabCase: updated,

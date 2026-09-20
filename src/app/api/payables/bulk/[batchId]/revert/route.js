@@ -7,6 +7,7 @@ import UploadBatch from "@/models/UploadBatch";
 import Payable from "@/models/Payable";
 import Transactions from "@/models/Transactions";
 import { buildPayableAggregationStages } from "@/lib/payableAggregation";
+import { cacheInvalidate } from "@/lib/cache";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -43,6 +44,7 @@ export async function POST(req, { params }) {
       batch.revertedAt = new Date();
       batch.revertedBy = { name: session.user.name, email: session.user.email };
       await batch.save();
+      await cacheInvalidate("finance", "owner");
       return NextResponse.json({ cancelled: 0, skipped: [], message: "Batch had no payables." });
     }
 
@@ -94,6 +96,7 @@ export async function POST(req, { params }) {
     batch.revertedBy = performedBy;
     await batch.save();
 
+    await cacheInvalidate("finance", "owner");
     return NextResponse.json({
       cancelled: cancelled.length,
       skipped,

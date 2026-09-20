@@ -5,6 +5,7 @@ import connectDB from "@/lib/db";
 import Transactions from "@/models/Transactions";
 import Payable from "@/models/Payable";
 import { unsettledMethodsSync, accountsSync } from "@/lib/masterData";
+import { cacheKey, cached } from "@/lib/cache";
 const ALLOWED_ROLES = ["admin", "super-admin", "owner"];
 
 /**
@@ -42,6 +43,19 @@ export async function GET(request) {
       ? accountsParam.split(",").filter((a) => accountsSync().includes(a))
       : [];
 
+    const meta = {};
+    const key = cacheKey("finance", { route: "admin-expense-by-head", from, to, branch, accounts: selectedAccounts.join(","), limit }, session);
+    const data = await cached(key, 60, () => computeExpenseByHead({ from, to, branch, selectedAccounts, limit }), meta);
+    const res = NextResponse.json(data);
+    res.headers.set("X-Cache", meta.status);
+    return res;
+  } catch (error) {
+    console.error("Error computing expense by head:", error);
+    return NextResponse.json({ error: "Failed to compute expense by head" }, { status: 500 });
+  }
+}
+
+async function computeExpenseByHead({ from, to, branch, selectedAccounts, limit }) {
     const dateRange = {};
     if (from) dateRange.$gte = new Date(from);
     if (to) dateRange.$lte = new Date(to);
@@ -115,15 +129,11 @@ export async function GET(request) {
 
     const grandTotal = round2(all.reduce((s, r) => s + r.movement, 0));
 
-    return NextResponse.json({
+    return {
       success: true,
       rows: all.slice(0, limit),
       headCount: all.length,
       shownTotal: round2(all.slice(0, limit).reduce((s, r) => s + r.movement, 0)),
       grandTotal,
-    });
-  } catch (error) {
-    console.error("Error computing expense by head:", error);
-    return NextResponse.json({ error: "Failed to compute expense by head" }, { status: 500 });
-  }
+    };
 }

@@ -8,6 +8,7 @@ import { withDbTransaction, syncExternalPartyOnUpdate } from "@/lib/externalPart
 import { backDateGuard } from "@/lib/backDateGuard";
 import Transactions from "@/models/Transactions";
 import Patient from "@/models/Patient";
+import { cacheInvalidate } from "@/lib/cache";
 
 async function recalculatePatientPayments(patient, session) {
   const allTransactions = await Transactions.find({
@@ -261,6 +262,7 @@ export async function PUT(req) {
       }
     }
 
+    await cacheInvalidate("finance", "owner", "patients");
     return NextResponse.json({
       message: "Service transaction updated successfully",
       transaction: existingTransaction,

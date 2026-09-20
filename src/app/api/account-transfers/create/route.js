@@ -9,6 +9,7 @@ import { accountsSync } from "@/lib/masterData";
 import { ALL_BRANCHES } from "@/lib/branches";
 import { getAccountBalance } from "@/lib/accountBalances";
 import { checkPeriodLock } from "@/lib/periodLock";
+import { cacheInvalidate } from "@/lib/cache";
 
 const TRANSFER_KINDS = ["MANUAL", "LOAN_SETTLEMENT", "LOAN_CANCELLATION"];
 
@@ -147,6 +148,7 @@ export async function POST(req) {
       console.error("Contra entry saved but balance check failed:", balanceError);
     }
 
+    await cacheInvalidate("finance", "owner");
     return NextResponse.json({ message: "Contra entry created", transfer, warning }, { status: 201 });
   } catch (error) {
     if (error?.name === "ValidationError" || error?.message?.includes("contra entry")) {

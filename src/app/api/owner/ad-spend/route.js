@@ -6,6 +6,7 @@ import { withDB } from "@/lib/withDB";
 import AdSpend from "@/models/AdSpend";
 import { ALL_BRANCHES } from "@/lib/branches";
 import { attributeSpendToOutcomes } from "@/lib/owner/marketingAttribution";
+import { cacheKey, cached } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["owner", "super-admin"];
 const PLATFORMS = ["Meta", "Google"];
@@ -31,7 +32,7 @@ function validatePayload({ date, branch, platform, amount, clicks }) {
 }
 
 const getHandler = async (req) => {
-  const { error } = await requireSession();
+  const { session, error } = await requireSession();
   if (error) return error;
 
   const { searchParams } = new URL(req.url);
@@ -41,36 +42,44 @@ const getHandler = async (req) => {
   const to = searchParams.get("to");
   const withReturn = searchParams.get("withReturn") === "true";
 
-  const query = {};
-  if (branch && branch !== "All") query.branch = branch;
-  if (platform && PLATFORMS.includes(platform)) query.platform = platform;
-  if (from || to) {
-    query.date = {};
-    if (from) query.date.$gte = new Date(from);
-    if (to) query.date.$lte = new Date(to);
-  }
+  const meta = {};
+  const key = cacheKey("owner", { route: "ad-spend", ...Object.fromEntries(searchParams) }, session);
+  const data = await cached(key, 180, async () => {
+    const query = {};
+    if (branch && branch !== "All") query.branch = branch;
+    if (platform && PLATFORMS.includes(platform)) query.platform = platform;
+    if (from || to) {
+      query.date = {};
+      if (from) query.date.$gte = new Date(from);
+      if (to) query.date.$lte = new Date(to);
+    }
 
-  const entries = await AdSpend.find(query)
-    .populate("campaignId", "name status")
-    .sort({ date: -1, createdAt: -1 })
-    .lean();
+    const entries = await AdSpend.find(query)
+      .populate("campaignId", "name status")
+      .sort({ date: -1, createdAt: -1 })
+      .lean();
 
-  const response = { success: true, entries };
+    const response = { success: true, entries };
 
-  // The "return" picture — spend/leads/CPL/CPC/converted/revenue/CAC/ROAS for
-  // the same filter, via the shared attribution module (marketingAttribution.js).
-  if (withReturn && from && to) {
-    const platforms = platform && PLATFORMS.includes(platform) ? [platform] : PLATFORMS;
-    const { byPlatform } = await attributeSpendToOutcomes({
-      platforms,
-      branch,
-      from: new Date(from),
-      to: new Date(to),
-    });
-    response.returnByPlatform = byPlatform;
-  }
+    // The "return" picture — spend/leads/CPL/CPC/converted/revenue/CAC/ROAS for
+    // the same filter, via the shared attribution module (marketingAttribution.js).
+    if (withReturn && from && to) {
+      const platforms = platform && PLATFORMS.includes(platform) ? [platform] : PLATFORMS;
+      const { byPlatform } = await attributeSpendToOutcomes({
+        platforms,
+        branch,
+        from: new Date(from),
+        to: new Date(to),
+      });
+      response.returnByPlatform = byPlatform;
+    }
 
-  return NextResponse.json(response);
+    return response;
+  }, meta);
+
+  const res = NextResponse.json(data);
+  res.headers.set("X-Cache", meta.status);
+  return res;
 };
 
 const postHandler = async (req) => {

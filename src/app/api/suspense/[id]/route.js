@@ -7,6 +7,7 @@ import SuspenseEntry from "@/models/SuspenseEntry";
 import Transactions from "@/models/Transactions";
 import { accountsSync } from "@/lib/masterData";
 import { ALL_BRANCHES } from "@/lib/branches";
+import { cacheInvalidate } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 
@@ -92,6 +93,7 @@ export async function PUT(req, { params }) {
     }
 
     await entry.save();
+    await cacheInvalidate("finance", "owner");
     return NextResponse.json({ message: "Suspense entry updated", entry });
   } catch (error) {
     if (error?.name === "ValidationError" || error?.message?.includes("Suspense")) {
@@ -122,6 +124,7 @@ export async function DELETE(req, { params }) {
 
     await SuspenseEntry.deleteOne({ _id: id });
 
+    await cacheInvalidate("finance", "owner");
     return NextResponse.json({
       message: "Suspense entry deleted",
       deleted: {
@@ -193,6 +196,7 @@ export async function PATCH(req, { params }) {
         performedAt: new Date(),
       });
       await entry.save();
+      await cacheInvalidate("finance", "owner");
       return NextResponse.json({ message: "Suspense entry resolved", entry });
     }
 
@@ -211,6 +215,7 @@ export async function PATCH(req, { params }) {
         performedAt: new Date(),
       });
       await entry.save();
+      await cacheInvalidate("finance", "owner");
       return NextResponse.json({ message: "Suspense entry reopened", entry });
     }
 
@@ -225,6 +230,7 @@ export async function PATCH(req, { params }) {
         performedAt: new Date(),
       });
       await entry.save();
+      await cacheInvalidate("finance", "owner");
       return NextResponse.json({ message: "Suspense entry cancelled", entry });
     }
 
@@ -243,6 +249,7 @@ export async function PATCH(req, { params }) {
       });
       entry.amount = parsed;
       await entry.save();
+      await cacheInvalidate("finance", "owner");
       return NextResponse.json({ message: "Suspense entry updated", entry });
     }
 
@@ -250,6 +257,7 @@ export async function PATCH(req, { params }) {
       if (!note) return NextResponse.json({ error: "A note is required" }, { status: 400 });
       entry.log.push({ action: "Note Added", note, performedBy, performedAt: new Date() });
       await entry.save();
+      await cacheInvalidate("finance", "owner");
       return NextResponse.json({ message: "Note added", entry });
     }
 

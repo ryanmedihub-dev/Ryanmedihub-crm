@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
 import { recordPatientIncentive, IncentiveError } from "@/lib/incentiveDerivation";
+import { cacheInvalidate } from "@/lib/cache";
 
 // Open incentive entry point used by the "Incentive" panel on the role transaction-create
 // pages. Any authenticated staff member may record a per-patient incentive here — it tops up
@@ -47,6 +48,7 @@ export async function POST(req) {
       throw err;
     }
 
+    await cacheInvalidate("finance", "owner", "employees");
     return NextResponse.json(
       {
         message: "Incentive recorded",

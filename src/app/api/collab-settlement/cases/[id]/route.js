@@ -11,6 +11,7 @@ import Payable from "@/models/Payable";
 import Receivable from "@/models/Receivable";
 import DeleteLog from "@/models/DeleteLog";
 import { reverseTransaction, ReversalError } from "@/lib/reverseTransaction";
+import { cacheInvalidate } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 
@@ -174,6 +175,7 @@ export async function PATCH(req, { params }) {
         await dbSession.endSession();
       }
 
+      await cacheInvalidate("finance", "owner", "patients");
       return NextResponse.json({
         message: "Collab case cancelled",
         reversedTransactions: reversedCount,
@@ -202,6 +204,7 @@ export async function PATCH(req, { params }) {
 
     await collabCase.save();
 
+    await cacheInvalidate("finance", "owner", "patients");
     return NextResponse.json({ message: "Collab case updated", collabCase });
   } catch (error) {
     console.error("Error updating collab case:", error);
@@ -339,6 +342,7 @@ export async function DELETE(req, { params }) {
       await dbSession.endSession();
     }
 
+    await cacheInvalidate("finance", "owner", "patients");
     return NextResponse.json({
       message: "Collab case deleted",
       deletedTransactions: linkedTx.length,

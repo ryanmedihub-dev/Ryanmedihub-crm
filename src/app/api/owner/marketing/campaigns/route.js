@@ -6,6 +6,7 @@ import AdCampaign from "@/models/AdCampaign";
 import { ALL_BRANCHES } from "@/lib/branches";
 import { computeCampaignSpend } from "@/lib/owner/marketingAttribution";
 import { parseEmployeeFilters } from "@/lib/owner/pagination";
+import { cacheKey, cached } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["owner", "super-admin"];
 const PLATFORMS = ["Meta", "Google"];
@@ -43,33 +44,42 @@ function validatePayload(body) {
 // Leads/CPL/Converted/CAC are NOT computed per campaign — Leads.tag only
 // distinguishes platform, never campaign (see marketingAttribution.js).
 const getHandler = async (req) => {
-  const { error } = await requireSession();
+  const { session, error } = await requireSession();
   if (error) return error;
 
   const { searchParams } = new URL(req.url);
   const { dateFrom, dateTo, branch } = parseEmployeeFilters(searchParams);
   const status = searchParams.get("status") || "Active";
   const platform = searchParams.get("platform");
-  const showAll = status === "All";
 
-  const match = {};
-  if (!showAll) match.status = status;
-  if (platform && PLATFORMS.includes(platform)) match.platform = platform;
-  if (branch && branch !== "All") match.branch = branch;
+  const meta = {};
+  const key = cacheKey("owner", { route: "marketing-campaigns", ...Object.fromEntries(searchParams) }, session);
+  const data = await cached(key, 180, async () => {
+    const showAll = status === "All";
 
-  const campaigns = await AdCampaign.find(match).sort({ createdAt: -1 }).lean();
+    const match = {};
+    if (!showAll) match.status = status;
+    if (platform && PLATFORMS.includes(platform)) match.platform = platform;
+    if (branch && branch !== "All") match.branch = branch;
 
-  const from = dateFrom ? new Date(dateFrom) : new Date(0);
-  const to = dateTo ? new Date(dateTo) : new Date();
+    const campaigns = await AdCampaign.find(match).sort({ createdAt: -1 }).lean();
 
-  const rows = await Promise.all(
-    campaigns.map(async (c) => {
-      const spend = await computeCampaignSpend({ campaignId: c._id, from, to });
-      return { ...c, id: String(c._id), ...spend };
-    }),
-  );
+    const from = dateFrom ? new Date(dateFrom) : new Date(0);
+    const to = dateTo ? new Date(dateTo) : new Date();
 
-  return NextResponse.json({ success: true, campaigns: rows });
+    const rows = await Promise.all(
+      campaigns.map(async (c) => {
+        const spend = await computeCampaignSpend({ campaignId: c._id, from, to });
+        return { ...c, id: String(c._id), ...spend };
+      }),
+    );
+
+    return { success: true, campaigns: rows };
+  }, meta);
+
+  const res = NextResponse.json(data);
+  res.headers.set("X-Cache", meta.status);
+  return res;
 };
 
 // POST — create a campaign.

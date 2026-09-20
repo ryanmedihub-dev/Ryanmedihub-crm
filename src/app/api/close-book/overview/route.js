@@ -20,6 +20,7 @@ import {
   OTHER_PURPOSES,
   payableGroupForPurpose,
 } from "@/constants/payableGroups";
+import { cacheKey, cached } from "@/lib/cache";
 
 export const revalidate = 0;
 
@@ -236,15 +237,19 @@ export async function GET(request) {
     const branch = typeof branchFilterObj.branch === "string" ? branchFilterObj.branch : "";
     const to = searchParams.get("to") || new Date().toISOString().slice(0, 10);
 
-    const data =
-      side === "liabilities"
-        ? await liabilitiesOverview({ branch, to })
-        : await assetsOverview({ branch, to });
+    const meta = {};
+    const key = cacheKey("finance", { route: "close-book-overview", side, branch, to }, session);
+    const payload = await cached(key, 15, async () => {
+      const data =
+        side === "liabilities"
+          ? await liabilitiesOverview({ branch, to })
+          : await assetsOverview({ branch, to });
+      return { success: true, asOf: to, ...data };
+    }, meta);
 
-    return NextResponse.json(
-      { success: true, asOf: to, ...data },
-      { headers: { "Cache-Control": "s-maxage=0, stale-while-revalidate=30" } },
-    );
+    return NextResponse.json(payload, {
+      headers: { "Cache-Control": "s-maxage=0, stale-while-revalidate=30", "X-Cache": meta.status },
+    });
   } catch (error) {
     console.error("Error building ledger overview:", error);
     return NextResponse.json({ error: "Failed to build overview" }, { status: 500 });

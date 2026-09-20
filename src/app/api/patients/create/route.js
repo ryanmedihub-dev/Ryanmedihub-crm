@@ -6,6 +6,7 @@ import { normalizePhone } from "@/lib/phone";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { cacheInvalidate } from "@/lib/cache";
 
 const handler = async (req) => {
   const session = await getServerSession(authOptions);
@@ -159,6 +160,7 @@ const handler = async (req) => {
       await Promise.all(employeeUpdatePromises);
     }
 
+    await cacheInvalidate("finance", "owner", "patients");
     return NextResponse.json(
       {
         savedPatient,

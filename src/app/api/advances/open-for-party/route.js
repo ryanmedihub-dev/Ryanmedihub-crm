@@ -9,6 +9,7 @@ import mongoose from "mongoose";
 import connectDB from "@/lib/db";
 import Advance, { ADVANCE_PARTY_KINDS } from "@/models/Advance";
 import { totalSettledAmount, settlementLinesFor } from "@/lib/advanceSettlements";
+import { cacheKey, cached } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
@@ -29,17 +30,36 @@ export async function GET(request) {
     const partyLabel = searchParams.get("partyLabel") || "";
     const branch = searchParams.get("branch") || "";
 
+    const meta = {};
+    const key = cacheKey("finance", { route: "advances-open-for-party", ...Object.fromEntries(searchParams) }, session);
+    let data;
+    try {
+      data = await cached(key, 45, () => computeOpenAdvancesForParty({ partyKind, partyRefId, partyLabel, branch }), meta);
+    } catch (err) {
+      if (err instanceof Response) return err;
+      throw err;
+    }
+    const res = NextResponse.json(data);
+    res.headers.set("X-Cache", meta.status);
+    return res;
+  } catch (error) {
+    console.error("Error listing open advances for party:", error);
+    return NextResponse.json({ error: "Failed to list advances" }, { status: 500 });
+  }
+}
+
+async function computeOpenAdvancesForParty({ partyKind, partyRefId, partyLabel, branch }) {
     if (!ADVANCE_PARTY_KINDS.includes(partyKind)) {
-      return NextResponse.json({ error: `partyKind must be one of: ${ADVANCE_PARTY_KINDS.join(", ")}` }, { status: 400 });
+      throw NextResponse.json({ error: `partyKind must be one of: ${ADVANCE_PARTY_KINDS.join(", ")}` }, { status: 400 });
     }
     if (!partyRefId && !partyLabel) {
-      return NextResponse.json({ error: "partyRefId or partyLabel is required" }, { status: 400 });
+      throw NextResponse.json({ error: "partyRefId or partyLabel is required" }, { status: 400 });
     }
 
     const match = { direction: "OUT", isCancelled: { $ne: true }, "party.kind": partyKind };
     if (partyRefId) {
       if (!mongoose.Types.ObjectId.isValid(partyRefId)) {
-        return NextResponse.json({ error: "Invalid partyRefId" }, { status: 400 });
+        throw NextResponse.json({ error: "Invalid partyRefId" }, { status: 400 });
       }
       match["party.refId"] = new mongoose.Types.ObjectId(partyRefId);
     } else {
@@ -49,7 +69,7 @@ export async function GET(request) {
 
     const rows = await Advance.find(match).sort({ date: 1 }).lean();
     if (rows.length === 0) {
-      return NextResponse.json({ success: true, advances: [], totalRemaining: 0 });
+      return { success: true, advances: [], totalRemaining: 0 };
     }
 
     // Cash recovered per receivable — one grouped query, not one per advance.
@@ -92,9 +112,5 @@ export async function GET(request) {
     }
 
     const totalRemaining = round2(advances.reduce((s, a) => s + a.remaining, 0));
-    return NextResponse.json({ success: true, advances, totalRemaining });
-  } catch (error) {
-    console.error("Error listing open advances for party:", error);
-    return NextResponse.json({ error: "Failed to list advances" }, { status: 500 });
-  }
+    return { success: true, advances, totalRemaining };
 }

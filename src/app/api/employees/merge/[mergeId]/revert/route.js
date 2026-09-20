@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
 import { runRevert } from "@/lib/employees/mergeEngine";
+import { cacheInvalidate } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 
@@ -21,6 +22,7 @@ export async function POST(request, { params }) {
       mergeId,
       actor: { name: session.user.name, email: session.user.email },
     });
+    if (status < 400) await cacheInvalidate("employees", "owner");
     return NextResponse.json(body, { status });
   } catch (error) {
     console.error("Employee merge revert error:", error);

@@ -5,6 +5,7 @@ import connectDB from "@/lib/db";
 import Patient from "@/models/Patient";
 import { createCollabCaseAtomic } from "@/lib/collabDerivation";
 import { COLLAB_BRANCHES } from "@/lib/branches";
+import { cacheInvalidate } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["collab", "admin", "super-admin"];
 
@@ -132,6 +133,7 @@ export async function POST(req) {
       },
     });
 
+    await cacheInvalidate("finance", "owner", "patients");
     return NextResponse.json(
       {
         message: "Collab case created",

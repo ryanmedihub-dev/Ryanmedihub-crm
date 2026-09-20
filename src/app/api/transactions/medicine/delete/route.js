@@ -8,6 +8,7 @@ import Stock from "@/models/Stock";
 import DeleteLog from "@/models/DeleteLog";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { cacheInvalidate } from "@/lib/cache";
 
 export async function DELETE(req) {
   let session;
@@ -154,6 +155,7 @@ export async function DELETE(req) {
       await Transaction.findByIdAndDelete(transactionId);
     }
 
+    await cacheInvalidate("finance", "owner", "patients");
     return NextResponse.json({
       success: true,
       message: batchId

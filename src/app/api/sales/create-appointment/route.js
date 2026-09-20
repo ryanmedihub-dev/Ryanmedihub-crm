@@ -1,6 +1,7 @@
 import Patient from "@/models/Patient";
 import { withDB } from "@/lib/withDB";
 import { NextResponse } from "next/server";
+import { cacheInvalidate } from "@/lib/cache";
 
 const handler = async (req) => {
   if (req.method !== 'POST') {
@@ -18,6 +19,7 @@ const handler = async (req) => {
 
     await patient.save();
 
+    await cacheInvalidate("patients", "owner");
     return NextResponse.json({
       success: true,
       message: "Appointment booked successfully",

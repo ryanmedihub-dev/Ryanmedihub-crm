@@ -5,6 +5,7 @@ import mongoose from "mongoose";
 import connectDB from "@/lib/db";
 import AccountPeriod, { isOpeningSeed } from "@/models/AccountPeriod";
 import { recomputeChain } from "@/lib/accountPeriods";
+import { cacheInvalidate } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["super-admin"];
 
@@ -82,6 +83,7 @@ export async function POST(req) {
 
     const changed = recomputed.filter((r) => r.changed);
 
+    await cacheInvalidate("finance", "owner", "reports");
     return NextResponse.json({
       success: true,
       message: `Period reopened. ${recomputed.length} period(s) recomputed, ${changed.length} changed.`,

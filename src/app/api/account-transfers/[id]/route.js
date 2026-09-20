@@ -7,6 +7,7 @@ import AccountTransfer from "@/models/AccountTransfer";
 import { accountsSync } from "@/lib/masterData";
 import { ALL_BRANCHES } from "@/lib/branches";
 import { getAccountBalance } from "@/lib/accountBalances";
+import { cacheInvalidate } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 
@@ -116,6 +117,7 @@ export async function PUT(req, { params }) {
       console.error("Contra entry saved but balance check failed:", balanceError);
     }
 
+    await cacheInvalidate("finance", "owner");
     return NextResponse.json({ message: "Contra entry updated", transfer, warning });
   } catch (error) {
     if (error?.name === "ValidationError" || error?.message?.includes("contra entry")) {
@@ -158,6 +160,7 @@ export async function PATCH(req, { params }) {
         performedAt: new Date(),
       });
       await transfer.save();
+      await cacheInvalidate("finance", "owner");
       return NextResponse.json({ message: "Contra entry cancelled — no longer moves balances", transfer });
     }
 
@@ -175,6 +178,7 @@ export async function PATCH(req, { params }) {
         performedAt: new Date(),
       });
       await transfer.save();
+      await cacheInvalidate("finance", "owner");
       return NextResponse.json({ message: "Contra entry reinstated — moving balances again", transfer });
     }
 
@@ -182,6 +186,7 @@ export async function PATCH(req, { params }) {
       if (!note) return NextResponse.json({ error: "A note is required" }, { status: 400 });
       transfer.log.push({ action: "Note Added", note, performedBy, performedAt: new Date() });
       await transfer.save();
+      await cacheInvalidate("finance", "owner");
       return NextResponse.json({ message: "Note added", transfer });
     }
 
@@ -219,6 +224,7 @@ export async function DELETE(req, { params }) {
     };
     await AccountTransfer.deleteOne({ _id: id });
 
+    await cacheInvalidate("finance", "owner");
     return NextResponse.json({ message: "Contra entry deleted", deleted: snapshot });
   } catch (error) {
     console.error("Error deleting contra entry:", error);

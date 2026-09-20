@@ -9,6 +9,7 @@ import Transactions from "@/models/Transactions";
 import { buildPayableAggregationStages } from "@/lib/payableAggregation";
 import { AGEING_SORT } from "@/lib/ageing";
 import { resolveBranchFilter } from "@/lib/branches";
+import { cacheKey, cached } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 
@@ -50,6 +51,27 @@ export async function GET(request) {
     const outstandingOnly = searchParams.get("outstanding") === "true";
     const sort = searchParams.get("sort") || "";
 
+    const meta = {};
+    const key = cacheKey("finance", { route: "payables-list", ...Object.fromEntries(searchParams) }, session);
+    const data = await cached(key, 45, () => computePayablesList({
+      purposeList, payeeKind, payeeRefId, payeeLabel, expenseCategory, expenseSubType, status,
+      dateFrom, dateTo, search, includeCancelled, ageingBucket, outstandingOnly, sort,
+      session, branch: searchParams.get("branch") || "", page, limit,
+    }), meta);
+    const res = NextResponse.json(data);
+    res.headers.set("X-Cache", meta.status);
+    return res;
+  } catch (error) {
+    console.error("Error listing payables:", error);
+    return NextResponse.json({ error: "Failed to fetch payables" }, { status: 500 });
+  }
+}
+
+async function computePayablesList({
+  purposeList, payeeKind, payeeRefId, payeeLabel, expenseCategory, expenseSubType, status,
+  dateFrom, dateTo, search, includeCancelled, ageingBucket, outstandingOnly, sort,
+  session, branch: branchParam, page, limit,
+}) {
     const match = {};
     if (!includeCancelled) match.isCancelled = false;
     if (purposeList.length === 1) match.purpose = purposeList[0];
@@ -59,7 +81,7 @@ export async function GET(request) {
     if (payeeLabel) match["payee.label"] = payeeLabel;
     const skipBranchFilter = payeeKind === "VENDOR" && !!payeeRefId;
     if (!skipBranchFilter) {
-      Object.assign(match, resolveBranchFilter(session, searchParams.get("branch") || ""));
+      Object.assign(match, resolveBranchFilter(session, branchParam));
     }
     if (expenseCategory) match.expenseCategory = expenseCategory;
     if (expenseSubType) match.expenseSubType = expenseSubType;
@@ -125,15 +147,11 @@ export async function GET(request) {
       });
     }
 
-    return NextResponse.json({
+    return {
       success: true,
       payables: rows,
       total: totalAgg[0]?.total || 0,
       page,
       limit,
-    });
-  } catch (error) {
-    console.error("Error listing payables:", error);
-    return NextResponse.json({ error: "Failed to fetch payables" }, { status: 500 });
-  }
+    };
 }

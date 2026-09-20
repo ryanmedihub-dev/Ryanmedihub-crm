@@ -9,6 +9,7 @@ import { backDateGuard } from "@/lib/backDateGuard";
 import Transactions from "@/models/Transactions";
 import Patient from "@/models/Patient";
 import Stock from "@/models/Stock";
+import { cacheInvalidate } from "@/lib/cache";
 
 export async function PUT(req) {
   try {
@@ -235,6 +236,7 @@ export async function PUT(req) {
       return NextResponse.json({ error: syncError.message }, { status: 400 });
     }
 
+    await cacheInvalidate("finance", "owner", "patients");
     return NextResponse.json({
       success: true,
       message: "Medicine sale updated successfully",

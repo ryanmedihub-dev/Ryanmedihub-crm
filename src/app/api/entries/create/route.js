@@ -4,6 +4,7 @@ import { runGuards, GuardError } from "@/lib/entryCore/guards";
 import { dispatchEntry } from "@/lib/entryCore";
 import { validateEntry } from "@/lib/entryEngine/validate";
 import { nonCashMethodsSync, unsettledMethodsSync } from "@/lib/masterData";
+import { cacheInvalidate } from "@/lib/cache";
 
 // The one new write route the Phase B brief asks for. Every existing route keeps its own
 // URL and its own (already-audited) body — this dispatches through the same entryCore
@@ -46,6 +47,7 @@ export async function POST(req) {
       );
     }
 
+    await cacheInvalidate("finance", "owner", "patients");
     const { status, ...rest } = result;
     return NextResponse.json({ success: true, ...rest }, { status: status || 201 });
   } catch (error) {

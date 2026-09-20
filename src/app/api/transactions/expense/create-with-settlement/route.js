@@ -9,6 +9,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
 import { backDateGuard } from "@/lib/backDateGuard";
 import { createExpenseWithSettlement } from "@/lib/entryCore/createExpenseWithSettlement";
+import { cacheInvalidate } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 
@@ -33,6 +34,7 @@ export async function POST(req) {
         { status: res.status || 400 },
       );
     }
+    await cacheInvalidate("finance", "owner", "patients");
     return NextResponse.json({ success: true, ...res.data }, { status: res.status || 201 });
   } catch (error) {
     console.error("Error creating expense with settlement:", error);

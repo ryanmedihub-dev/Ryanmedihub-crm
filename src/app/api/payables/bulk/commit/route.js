@@ -5,6 +5,7 @@ import connectDB from "@/lib/db";
 import UploadBatch from "@/models/UploadBatch";
 import { createPayable } from "@/lib/entryCore/createPayable";
 import { runValidatePipeline, MAX_ROWS } from "@/lib/uploads/validatePipeline";
+import { cacheInvalidate } from "@/lib/cache";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -167,6 +168,7 @@ export async function POST(req) {
     batch.status = status;
     await batch.save();
 
+    await cacheInvalidate("finance", "owner");
     return NextResponse.json({
       batchId: String(batch._id),
       batchNo: batch.batchNo,

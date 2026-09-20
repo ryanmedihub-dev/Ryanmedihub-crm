@@ -6,6 +6,7 @@ import mongoose from "mongoose";
 import CollabSettlement from "@/models/CollabSettlement";
 import Transactions from "@/models/Transactions";
 import DeleteLog from "@/models/DeleteLog";
+import { cacheInvalidate } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 
@@ -84,6 +85,7 @@ export async function DELETE(req, { params }) {
       await dbSession.endSession();
     }
 
+    await cacheInvalidate("finance", "owner", "patients");
     return NextResponse.json({
       message: "Settlement deleted",
       deletedTransactions: linkedIds.length,

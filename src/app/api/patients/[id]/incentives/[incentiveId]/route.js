@@ -6,6 +6,7 @@ import connectDB from "@/lib/db";
 import Patient from "@/models/Patient";
 import { INCENTIVE_PURPOSES } from "@/constants/incentivePurposes";
 import { findOrCreateIncentivePayable, recomputeIncentivePayable, IncentiveError } from "@/lib/incentiveDerivation";
+import { cacheInvalidate } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 
@@ -132,6 +133,7 @@ export async function PATCH(req, { params }) {
       await dbSession.endSession();
     }
 
+    await cacheInvalidate("finance", "owner", "patients");
     return NextResponse.json({ message: "Incentive updated", incentive: updatedRow });
   } catch (error) {
     console.error("Error updating incentive:", error);
@@ -202,6 +204,7 @@ export async function DELETE(req, { params }) {
       await dbSession.endSession();
     }
 
+    await cacheInvalidate("finance", "owner", "patients");
     return NextResponse.json({ message: "Incentive cancelled", incentive: cancelledRow });
   } catch (error) {
     console.error("Error cancelling incentive:", error);

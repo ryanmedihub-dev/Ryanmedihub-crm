@@ -10,6 +10,7 @@ import {
 import { daysInPeriod } from "@/lib/owner/dates";
 import { scoreCohort } from "@/lib/owner/performance";
 import { parseEmployeeFilters } from "@/lib/owner/pagination";
+import { cacheKey, cached } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["owner", "super-admin"];
 const SCORED_SECTIONS = ["Agent", "Counsellor", "Surgery", "HR"];
@@ -31,6 +32,9 @@ export async function GET(req) {
     const period = { from: dateFrom, to: dateTo };
     const periodDays = daysInPeriod(period.from, period.to);
 
+    const meta = {};
+    const key = cacheKey("owner", { route: "employees-overview", ...Object.fromEntries(searchParams) }, session);
+    const data = await cached(key, 120, async () => {
     const allEmployees = await Employee.find({ mergedInto: null })
       .select("name role branch isactive callbyUserId tlName salaryStructure incentiveRate")
       .lean();
@@ -108,7 +112,7 @@ export async function GET(req) {
       };
     }
 
-    return NextResponse.json({
+    return {
       success: true,
       headcount,
       byBranch: Object.values(byBranch),
@@ -116,7 +120,12 @@ export async function GET(req) {
       totalIncentivePaid,
       performers,
       callbyError,
-    });
+    };
+    }, meta);
+
+    const res = NextResponse.json(data);
+    res.headers.set("X-Cache", meta.status);
+    return res;
   } catch (err) {
     console.error("owner employees overview error:", err);
     return NextResponse.json({ success: false, message: "Internal server error" }, { status: 500 });

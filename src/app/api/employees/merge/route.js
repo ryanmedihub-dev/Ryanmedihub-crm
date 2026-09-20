@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
 import { runMerge } from "@/lib/employees/mergeEngine";
+import { cacheInvalidate } from "@/lib/cache";
 
 // A merge repoints the finance ledger — tighter than the delete route, NOT looser: hr is out.
 const ALLOWED_ROLES = ["admin", "super-admin"];
@@ -31,6 +32,7 @@ export async function POST(request) {
       note,
       actor: { name: session.user.name, email: session.user.email },
     });
+    if (status < 400) await cacheInvalidate("employees", "owner");
     return NextResponse.json(body, { status });
   } catch (error) {
     console.error("Employee merge error:", error);

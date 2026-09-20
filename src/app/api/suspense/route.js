@@ -6,6 +6,7 @@ import mongoose from "mongoose";
 import SuspenseEntry from "@/models/SuspenseEntry";
 import { accountsSync } from "@/lib/masterData";
 import { ALL_BRANCHES, resolveBranchFilter } from "@/lib/branches";
+import { cacheInvalidate } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 
@@ -178,6 +179,7 @@ export async function POST(req) {
 
     await entry.save();
 
+    await cacheInvalidate("finance", "owner");
     return NextResponse.json({ message: "Suspense entry recorded", entry }, { status: 201 });
   } catch (error) {
     if (error?.name === "ValidationError" || error?.message?.includes("Suspense")) {

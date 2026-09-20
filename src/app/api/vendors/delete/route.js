@@ -4,6 +4,7 @@ import Vendor from "@/models/Vendor";
 import Stock from "@/models/Stock";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { cacheInvalidate } from "@/lib/cache";
 
 export async function DELETE(req) {
   try {
@@ -59,6 +60,7 @@ export async function DELETE(req) {
 
     await Vendor.findByIdAndDelete(id);
 
+    await cacheInvalidate("finance", "owner");
     return NextResponse.json(
       {
         success: true,

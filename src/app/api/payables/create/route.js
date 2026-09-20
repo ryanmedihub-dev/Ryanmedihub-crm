@@ -9,6 +9,7 @@ import { expenseTypesSync } from "@/lib/masterData";
 import { ALL_BRANCHES } from "@/lib/branches";
 import { computeTaxBreakdown } from "@/lib/taxMath";
 import { checkPeriodLock } from "@/lib/periodLock";
+import { cacheInvalidate } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 const PATIENT_REQUIRED_PURPOSES = ["INCENTIVE", "PATIENT_COMMISSION"];
@@ -196,6 +197,7 @@ export async function POST(req) {
     if (!includeTDS) {
       const payable = buildVendorPayable();
       await payable.save();
+      await cacheInvalidate("finance", "owner");
       return NextResponse.json({ message: "Payable created", payable }, { status: 201 });
     }
 
@@ -238,6 +240,7 @@ export async function POST(req) {
       await dbSession.endSession();
     }
 
+    await cacheInvalidate("finance", "owner");
     return NextResponse.json(
       { message: "Payable created with linked TDS payable", payable, tdsPayable },
       { status: 201 },

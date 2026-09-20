@@ -9,6 +9,7 @@ import {
 } from "@/lib/owner/pagination";
 import { expenseMatch } from "@/lib/transactionFilters";
 import { periodBounds } from "@/lib/owner/dates";
+import { cacheKey, cached } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["owner", "super-admin"];
 
@@ -40,81 +41,89 @@ export async function GET(req) {
       allowed: SORTABLE, defaultKey: "total", defaultDir: "desc", tiebreak: "subType",
     });
 
-    // Same booked-money rules as the transactions KPI and P&L (approved only,
-    // no settlements, no external methods) — one expense total, not three.
-    const match = expenseMatch();
-    if (branch && branch !== "All") match.branch = branch;
-    const dateBounds = periodBounds(dateFrom, dateTo);
-    if (dateBounds) match.date = dateBounds;
+    const meta = {};
+    const key = cacheKey("owner", { route: "finance-expenses", ...Object.fromEntries(searchParams) }, session);
+    const data = await cached(key, 60, async () => {
+      // Same booked-money rules as the transactions KPI and P&L (approved only,
+      // no settlements, no external methods) — one expense total, not three.
+      const match = expenseMatch();
+      if (branch && branch !== "All") match.branch = branch;
+      const dateBounds = periodBounds(dateFrom, dateTo);
+      if (dateBounds) match.date = dateBounds;
 
-    const marketingTypes = Object.keys(EXPENSE_TYPE_TO_PLATFORM);
-    const groupStages = [
-      { $match: match },
-      {
-        $group: {
-          _id: { category: { $ifNull: ["$expense", "Unspecified"] }, subType: { $ifNull: ["$expenseType", "Unspecified"] } },
-          total: { $sum: "$amount" },
-          count: { $sum: 1 },
+      const marketingTypes = Object.keys(EXPENSE_TYPE_TO_PLATFORM);
+      const groupStages = [
+        { $match: match },
+        {
+          $group: {
+            _id: { category: { $ifNull: ["$expense", "Unspecified"] }, subType: { $ifNull: ["$expenseType", "Unspecified"] } },
+            total: { $sum: "$amount" },
+            count: { $sum: 1 },
+          },
         },
-      },
-      { $project: { _id: 0, category: "$_id.category", subType: "$_id.subType", total: 1, count: 1 } },
-    ];
-    if (search) {
-      const re = new RegExp(escapeRegex(search), "i");
-      groupStages.push({ $match: { $or: [{ category: re }, { subType: re }] } });
-    }
+        { $project: { _id: 0, category: "$_id.category", subType: "$_id.subType", total: 1, count: 1 } },
+      ];
+      if (search) {
+        const re = new RegExp(escapeRegex(search), "i");
+        groupStages.push({ $match: { $or: [{ category: re }, { subType: re }] } });
+      }
 
-    const adSpendMatch = { platform: { $in: ["Meta", "Google"] } };
-    if (branch && branch !== "All") adSpendMatch.branch = branch;
-    if (dateFrom || dateTo) {
-      adSpendMatch.date = {};
-      if (dateFrom) adSpendMatch.date.$gte = new Date(dateFrom);
-      if (dateTo) adSpendMatch.date.$lte = new Date(dateTo);
-    }
+      const adSpendMatch = { platform: { $in: ["Meta", "Google"] } };
+      if (branch && branch !== "All") adSpendMatch.branch = branch;
+      if (dateFrom || dateTo) {
+        adSpendMatch.date = {};
+        if (dateFrom) adSpendMatch.date.$gte = new Date(dateFrom);
+        if (dateTo) adSpendMatch.date.$lte = new Date(dateTo);
+      }
 
-    const [result, adSpendAgg] = await Promise.all([
-      Transactions.aggregate([
-        ...groupStages,
-        pagedFacet({
-          sort, skip, limit,
-          totals: [
-            {
-              $group: {
-                _id: null,
-                totalExpense: { $sum: "$total" },
-                entries: { $sum: "$count" },
-                marketingTxTotal: { $sum: { $cond: [{ $in: ["$subType", marketingTypes] }, "$total", 0] } },
+      const [result, adSpendAgg] = await Promise.all([
+        Transactions.aggregate([
+          ...groupStages,
+          pagedFacet({
+            sort, skip, limit,
+            totals: [
+              {
+                $group: {
+                  _id: null,
+                  totalExpense: { $sum: "$total" },
+                  entries: { $sum: "$count" },
+                  marketingTxTotal: { $sum: { $cond: [{ $in: ["$subType", marketingTypes] }, "$total", 0] } },
+                },
               },
-            },
-          ],
-        }),
-      ]).collation({ locale: "en", strength: 2 }),
-      // Same window, same branch scope, AdSpend side — no budget data exists
-      // anywhere so this route never invents one; it only reconciles the two
-      // numbers that already exist.
-      AdSpend.aggregate([{ $match: adSpendMatch }, { $group: { _id: null, total: { $sum: "$amount" } } }]),
-    ]);
+            ],
+          }),
+        ]).collation({ locale: "en", strength: 2 }),
+        // Same window, same branch scope, AdSpend side — no budget data exists
+        // anywhere so this route never invents one; it only reconciles the two
+        // numbers that already exist.
+        AdSpend.aggregate([{ $match: adSpendMatch }, { $group: { _id: null, total: { $sum: "$amount" } } }]),
+      ]);
 
-    const { rows, totals, total } = unpackFacet(result);
-    const adSpendTotal = adSpendAgg?.[0]?.total || 0;
-    const marketingTxTotal = totals?.marketingTxTotal || 0;
+      const { rows, totals, total } = unpackFacet(result);
+      const adSpendTotal = adSpendAgg?.[0]?.total || 0;
+      const marketingTxTotal = totals?.marketingTxTotal || 0;
 
-    return NextResponse.json({
-      success: true,
-      rows,
-      total,
-      ...pageMeta({ page, pageSize, total }),
-      sortBy,
-      sortDir,
-      totalExpense: totals?.totalExpense || 0,
-      entries: totals?.entries || 0,
-      marketingReconciliation: {
-        transactionsTotal: marketingTxTotal,
-        adSpendTotal,
-        delta: marketingTxTotal - adSpendTotal,
-      },
-      note: "No budget data exists anywhere in the app — no budget-vs-actual column is shown; this is actuals only.",
-    });
+      return {
+        success: true,
+        rows,
+        total,
+        ...pageMeta({ page, pageSize, total }),
+        sortBy,
+        sortDir,
+        totalExpense: totals?.totalExpense || 0,
+        entries: totals?.entries || 0,
+        marketingReconciliation: {
+          transactionsTotal: marketingTxTotal,
+          adSpendTotal,
+          delta: marketingTxTotal - adSpendTotal,
+        },
+        note: "No budget data exists anywhere in the app — no budget-vs-actual column is shown; this is actuals only.",
+      };
+    }, meta);
+
+    const res = NextResponse.json(data);
+    res.headers.set("X-Cache", meta.status);
+    return res;
   } catch (err) {
     console.error("owner finance expenses error:", err);
     return NextResponse.json({ success: false, message: "Internal server error" }, { status: 500 });

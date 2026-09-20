@@ -10,6 +10,7 @@ import { buildReceivableGroupedStages, buildReceivableAggregationStages } from "
 import { ADVANCE_REVENUE_CATEGORY } from "@/constants/advanceTypes";
 import { loadClosedPeriodSnapshot, blockReasonFromSnapshot } from "@/lib/periodLock";
 import { resolveBranchFilter } from "@/lib/branches";
+import { cacheKey, cached } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 const CATEGORY = ADVANCE_REVENUE_CATEGORY;
@@ -37,6 +38,27 @@ export async function GET(request) {
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
     const limit = Math.min(200, Math.max(1, parseInt(searchParams.get("limit") || "50")));
 
+    const meta = {};
+    const key = cacheKey("finance", { route: "advances-grouped", ...Object.fromEntries(searchParams) }, session);
+    let data;
+    try {
+      data = await cached(key, 45, () => computeGroupedAdvances({
+        level, subType, branch, from, to, party, status, documentId, page, limit,
+      }), meta);
+    } catch (err) {
+      if (err instanceof Response) return err;
+      throw err;
+    }
+    const res = NextResponse.json(data);
+    res.headers.set("X-Cache", meta.status);
+    return res;
+  } catch (error) {
+    console.error("Error building grouped advances:", error);
+    return NextResponse.json({ error: "Failed to load grouped advances" }, { status: 500 });
+  }
+}
+
+async function computeGroupedAdvances({ level, subType, branch, from, to, party, status, documentId, page, limit }) {
     if (level === 1) {
       const rows = await Receivable.aggregate([
         { $match: { revenueCategory: CATEGORY } },
@@ -48,7 +70,7 @@ export async function GET(request) {
           subTypeField: "revenueSubType",
         }),
       ]);
-      return NextResponse.json({ success: true, rows });
+      return { success: true, rows };
     }
 
     if (level === 2) {
@@ -62,12 +84,12 @@ export async function GET(request) {
           subTypeField: "revenueSubType",
         }),
       );
-      return NextResponse.json({ success: true, rows });
+      return { success: true, rows };
     }
 
     if (level === 4) {
       if (!documentId || !mongoose.Types.ObjectId.isValid(documentId)) {
-        return NextResponse.json({ error: "A valid documentId is required at level 4" }, { status: 400 });
+        throw NextResponse.json({ error: "A valid documentId is required at level 4" }, { status: 400 });
       }
       const rowMatch = {
         receivableId: new mongoose.Types.ObjectId(documentId),
@@ -121,7 +143,7 @@ export async function GET(request) {
         lockReason: blockReasonFromSnapshot(closedPeriods, r.account, r.date),
       }));
 
-      return NextResponse.json({ success: true, rows: rowsWithLock, total, page, limit });
+      return { success: true, rows: rowsWithLock, total, page, limit };
     }
 
     const match = { revenueCategory: CATEGORY };
@@ -154,9 +176,5 @@ export async function GET(request) {
       lockReason: blockReasonFromSnapshot(closedPeriods, null, r.createdAt || new Date()),
     }));
 
-    return NextResponse.json({ success: true, rows, total, page, limit });
-  } catch (error) {
-    console.error("Error building grouped advances:", error);
-    return NextResponse.json({ error: "Failed to load grouped advances" }, { status: 500 });
-  }
+    return { success: true, rows, total, page, limit };
 }

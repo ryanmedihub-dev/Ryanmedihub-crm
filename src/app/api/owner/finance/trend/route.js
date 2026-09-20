@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import dbConnect from "@/lib/db";
 import { getFinanceTrend } from "@/lib/owner/metrics/finance";
+import { cacheKey, cached } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin", "owner"];
 
@@ -29,9 +30,16 @@ export async function GET(req) {
     const to = searchParams.get("to") || "";
     const branch = searchParams.get("branch") || "";
 
-    const { daily } = await getFinanceTrend({ from, to, branch });
+    const meta = {};
+    const key = cacheKey("owner", { route: "finance-trend", from, to, branch }, session);
+    const data = await cached(key, 60, async () => {
+      const { daily } = await getFinanceTrend({ from, to, branch });
+      return { success: true, daily };
+    }, meta);
 
-    return NextResponse.json({ success: true, daily });
+    const res = NextResponse.json(data);
+    res.headers.set("X-Cache", meta.status);
+    return res;
   } catch (err) {
     console.error("owner finance trend error:", err);
     return NextResponse.json({ success: false, message: "Internal server error" }, { status: 500 });

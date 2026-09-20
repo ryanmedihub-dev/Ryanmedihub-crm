@@ -7,6 +7,7 @@ import Employee from "@/models/Employee";
 import { SECTION_LABELS } from "@/lib/owner/employeeSections";
 import { loadEmployeeDetail } from "@/lib/owner/employeeDetailQuery";
 import { parseEmployeeFilters, parsePageParams, pageMeta } from "@/lib/owner/pagination";
+import { cacheKey, cached } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["owner", "super-admin"];
 
@@ -38,41 +39,49 @@ export async function GET(req, { params }) {
     const { dateFrom, dateTo } = parseEmployeeFilters(searchParams);
     const { page, pageSize } = parsePageParams(searchParams);
 
-    const detail = await loadEmployeeDetail(employee, { from: dateFrom, to: dateTo, searchParams });
+    const meta = {};
+    const key = cacheKey("owner", { route: "employees-detail", id, ...Object.fromEntries(searchParams) }, session);
+    const data = await cached(key, 120, async () => {
+      const detail = await loadEmployeeDetail(employee, { from: dateFrom, to: dateTo, searchParams });
 
-    return NextResponse.json({
-      success: true,
-      employee: {
-        id: String(employee._id),
-        name: employee.name,
-        phone: employee.phone,
-        email: employee.email,
-        employeeId: employee.employeeId,
-        role: employee.role,
-        section: detail.section,
-        sectionLabel: SECTION_LABELS[detail.section] || detail.section,
-        branch: employee.branch,
-        isactive: employee.isactive,
-        dateOfJoining: employee.dateOfJoining,
-        tlName: employee.tlName,
-        managerName: employee.managerName,
-        callbyLinked: !!employee.callbyUserId,
-        salary: employee.salaryStructure?.baseSalary || 0,
-        incentiveRate: employee.incentiveRate || 0,
-        performance: detail.performance,
-      },
-      kpis: detail.kpis,
-      compensation: detail.compensation,
-      trend: detail.trend,
-      rows: detail.rows,
-      rowsLabel: detail.rowsLabel,
-      sortBy: detail.sortBy || null,
-      sortDir: detail.sortDir || null,
-      ...pageMeta({ page, pageSize, total: detail.total || 0 }),
-      recentCalls: detail.recentCalls || [],
-      recentLeadChangelog: detail.recentLeadChangelog || [],
-      callbyError: detail.callbyError || null,
-    });
+      return {
+        success: true,
+        employee: {
+          id: String(employee._id),
+          name: employee.name,
+          phone: employee.phone,
+          email: employee.email,
+          employeeId: employee.employeeId,
+          role: employee.role,
+          section: detail.section,
+          sectionLabel: SECTION_LABELS[detail.section] || detail.section,
+          branch: employee.branch,
+          isactive: employee.isactive,
+          dateOfJoining: employee.dateOfJoining,
+          tlName: employee.tlName,
+          managerName: employee.managerName,
+          callbyLinked: !!employee.callbyUserId,
+          salary: employee.salaryStructure?.baseSalary || 0,
+          incentiveRate: employee.incentiveRate || 0,
+          performance: detail.performance,
+        },
+        kpis: detail.kpis,
+        compensation: detail.compensation,
+        trend: detail.trend,
+        rows: detail.rows,
+        rowsLabel: detail.rowsLabel,
+        sortBy: detail.sortBy || null,
+        sortDir: detail.sortDir || null,
+        ...pageMeta({ page, pageSize, total: detail.total || 0 }),
+        recentCalls: detail.recentCalls || [],
+        recentLeadChangelog: detail.recentLeadChangelog || [],
+        callbyError: detail.callbyError || null,
+      };
+    }, meta);
+
+    const res = NextResponse.json(data);
+    res.headers.set("X-Cache", meta.status);
+    return res;
   } catch (error) {
     console.error("owner employee detail error:", error);
     return NextResponse.json({ success: false, message: "Internal server error" }, { status: 500 });

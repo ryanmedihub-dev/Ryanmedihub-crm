@@ -5,6 +5,7 @@ import connectDB from "@/lib/db";
 import BankRoutingRule from "@/models/BankRoutingRule";
 import { invalidate } from "@/lib/masterData";
 import { ALL_BRANCHES } from "@/lib/branches";
+import { cacheInvalidate } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["super-admin", "owner"];
 const CATEGORIES = ["TRANSPLANT", "SERVICE", "MEDICINE"];
@@ -73,6 +74,7 @@ export async function POST(req) {
     });
     await existing.save();
     invalidate();
+    await cacheInvalidate("masterdata", "finance", "owner");
     return NextResponse.json({ message: "Rule updated", rule: existing.toObject() });
   }
 
@@ -108,5 +110,6 @@ export async function POST(req) {
   }
 
   invalidate();
+  await cacheInvalidate("masterdata", "finance", "owner");
   return NextResponse.json({ message: "Rule created", rule: rule.toObject() }, { status: 201 });
 }

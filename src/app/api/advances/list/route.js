@@ -7,6 +7,7 @@ import Advance from "@/models/Advance";
 import Employee from "@/models/Employee";
 import { resolveBranchFilter } from "@/lib/branches";
 import { settledTotalExpr } from "@/lib/advanceSettlements";
+import { cacheKey, cached } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 
@@ -35,6 +36,25 @@ export async function GET(request) {
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
     const limit = Math.min(5000, Math.max(1, parseInt(searchParams.get("limit") || "50")));
 
+    const meta = {};
+    const key = cacheKey("finance", { route: "advances-list", ...Object.fromEntries(searchParams) }, session);
+    const data = await cached(key, 45, () => computeAdvancesList({
+      account, direction, receivableId, partyRefId, status, branch, from, to, includeCancelled,
+      party, page, limit,
+    }), meta);
+    const res = NextResponse.json(data);
+    res.headers.set("X-Cache", meta.status);
+    return res;
+  } catch (error) {
+    console.error("Error listing advances:", error);
+    return NextResponse.json({ error: "Failed to list advances" }, { status: 500 });
+  }
+}
+
+async function computeAdvancesList({
+  account, direction, receivableId, partyRefId, status, branch, from, to, includeCancelled,
+  party, page, limit,
+}) {
     // "Search employee" accepts a name or a staff employeeId code — resolve a code to the
     // matching employee's name so the label regex below still finds them.
     if (party) {
@@ -128,16 +148,12 @@ export async function GET(request) {
 
     const total = totalAgg?.[0]?.n || 0;
 
-    return NextResponse.json({
+    return {
       success: true,
       advances: rows,
       total,
       page,
       limit,
       totalPages: Math.max(1, Math.ceil(total / limit)),
-    });
-  } catch (error) {
-    console.error("Error listing advances:", error);
-    return NextResponse.json({ error: "Failed to list advances" }, { status: 500 });
-  }
+    };
 }

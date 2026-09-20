@@ -11,6 +11,7 @@ import { unsettledMethodsSync } from "@/lib/masterData";
 import { loadClosedPeriodSnapshot, blockReasonFromSnapshot } from "@/lib/periodLock";
 import { resolveBranchFilter } from "@/lib/branches";
 import { attachCollabPatients } from "@/lib/collabPatientLookup";
+import { cacheKey, cached } from "@/lib/cache";
 
 // "owner" added (Owner Panel v2, Part 5) — this route is GET-only (read-only
 // grouped payables view); /owner/finance/liabilities and /owner/finance/rent
@@ -75,6 +76,33 @@ export async function GET(request) {
     }
     const payeeKind = payeeKindParam || undefined;
 
+    const meta = {};
+    const key = cacheKey("finance", { route: "payables-grouped", ...Object.fromEntries(searchParams) }, session);
+    let data;
+    try {
+      data = await cached(key, 45, () => computeGroupedPayables({
+        level, category, subType, groupBy, isParty, subGroupBy, subGroupByParty, vendorId,
+        branch, from, to, party, status, ageing, documentId, page, limit, purpose, payeeKind,
+        searchParams,
+      }), meta);
+    } catch (err) {
+      if (err instanceof Response) return err; // a validation error thrown from inside the producer
+      throw err;
+    }
+    const res = NextResponse.json(data);
+    res.headers.set("X-Cache", meta.status);
+    return res;
+  } catch (error) {
+    console.error("Error building grouped payables:", error);
+    return NextResponse.json({ error: "Failed to load grouped payables" }, { status: 500 });
+  }
+}
+
+async function computeGroupedPayables({
+  level, category, subType, groupBy, isParty, subGroupBy, subGroupByParty, vendorId,
+  branch, from, to, party, status, ageing, documentId, page, limit, purpose, payeeKind,
+  searchParams,
+}) {
     if (level < 3) {
       // "Search employee" boxes accept a name or a staff employeeId code — resolve a code
       // to the matching employee's name so the label regex below still finds them.
@@ -98,12 +126,12 @@ export async function GET(request) {
           party: partySearch,
         }),
       );
-      return NextResponse.json({ success: true, rows });
+      return { success: true, rows };
     }
 
     if (level === 4) {
       if (!documentId || !mongoose.Types.ObjectId.isValid(documentId)) {
-        return NextResponse.json({ error: "A valid documentId is required at level 4" }, { status: 400 });
+        throw NextResponse.json({ error: "A valid documentId is required at level 4" }, { status: 400 });
       }
       const txMatch = {
         payableId: new mongoose.Types.ObjectId(documentId),
@@ -154,24 +182,24 @@ export async function GET(request) {
         lockReason: blockReasonFromSnapshot(closedPeriods, r.account, r.date),
       }));
 
-      return NextResponse.json({ success: true, rows: rowsWithLock, total, page, limit });
+      return { success: true, rows: rowsWithLock, total, page, limit };
     }
 
     let match;
     if (groupBy === "vendor") {
       if (!vendorId || !mongoose.Types.ObjectId.isValid(vendorId)) {
-        return NextResponse.json({ error: "A valid vendorId is required at level 3 in vendor mode" }, { status: 400 });
+        throw NextResponse.json({ error: "A valid vendorId is required at level 3 in vendor mode" }, { status: 400 });
       }
       match = { "payee.kind": "VENDOR", "payee.refId": new mongoose.Types.ObjectId(vendorId) };
     } else if (isParty) {
       if (!category) {
-        return NextResponse.json({ error: "party is required at level 3" }, { status: 400 });
+        throw NextResponse.json({ error: "party is required at level 3" }, { status: 400 });
       }
       // `category` carries the exact payee label when grouping by party.
       match = { "payee.label": category };
     } else {
       if (!category) {
-        return NextResponse.json({ error: "category is required at level 3" }, { status: 400 });
+        throw NextResponse.json({ error: "category is required at level 3" }, { status: 400 });
       }
       match = { expenseCategory: category };
       if (subType) {
@@ -243,9 +271,5 @@ export async function GET(request) {
       });
     }
 
-    return NextResponse.json({ success: true, rows, total, page, limit });
-  } catch (error) {
-    console.error("Error building grouped payables:", error);
-    return NextResponse.json({ error: "Failed to load grouped payables" }, { status: 500 });
-  }
+    return { success: true, rows, total, page, limit };
 }

@@ -8,6 +8,7 @@ import Payable from "@/models/Payable";
 import Receivable from "@/models/Receivable";
 import Transactions from "@/models/Transactions";
 import { COLLAB_BRANCHES } from "@/lib/branches";
+import { cacheInvalidate } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 
@@ -189,6 +190,7 @@ export async function POST(req) {
       console.error("Settlement saved, but linked transaction creation failed:", txError);
     }
 
+    await cacheInvalidate("finance", "owner", "patients");
     return NextResponse.json(
       { message: "Settlement recorded", settlement, skippedAllocations },
       { status: 201 },

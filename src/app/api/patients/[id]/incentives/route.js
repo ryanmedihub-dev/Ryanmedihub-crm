@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
 import { recordPatientIncentive, IncentiveError } from "@/lib/incentiveDerivation";
+import { cacheInvalidate } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 
@@ -49,6 +50,7 @@ export async function POST(req, { params }) {
       throw err;
     }
 
+    await cacheInvalidate("finance", "owner", "patients");
     return NextResponse.json(
       {
         message: "Incentive recorded",

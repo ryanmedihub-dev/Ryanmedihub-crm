@@ -9,6 +9,7 @@ import Borrowing from "@/models/Borrowing";
 import { buildPayableGroupedStages, buildPayableAggregationStages } from "@/lib/payableAggregation";
 import { loadClosedPeriodSnapshot, blockReasonFromSnapshot } from "@/lib/periodLock";
 import { resolveBranchFilter } from "@/lib/branches";
+import { cacheKey, cached } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 const CATEGORY = "Borrowings";
@@ -36,12 +37,33 @@ export async function GET(request) {
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
     const limit = Math.min(200, Math.max(1, parseInt(searchParams.get("limit") || "50")));
 
+    const meta = {};
+    const key = cacheKey("finance", { route: "borrowings-grouped", ...Object.fromEntries(searchParams) }, session);
+    let data;
+    try {
+      data = await cached(key, 45, () => computeGroupedBorrowings({
+        level, subType, branch, from, to, party, status, documentId, page, limit,
+      }), meta);
+    } catch (err) {
+      if (err instanceof Response) return err;
+      throw err;
+    }
+    const res = NextResponse.json(data);
+    res.headers.set("X-Cache", meta.status);
+    return res;
+  } catch (error) {
+    console.error("Error building grouped borrowings:", error);
+    return NextResponse.json({ error: "Failed to load grouped borrowings" }, { status: 500 });
+  }
+}
+
+async function computeGroupedBorrowings({ level, subType, branch, from, to, party, status, documentId, page, limit }) {
     if (level === 1) {
       const rows = await Payable.aggregate([
         { $match: { expenseCategory: CATEGORY } },
         ...buildPayableGroupedStages(Transactions.collection.name, { level: 1, branch, from, to }),
       ]);
-      return NextResponse.json({ success: true, rows });
+      return { success: true, rows };
     }
 
     if (level === 2) {
@@ -54,12 +76,12 @@ export async function GET(request) {
           to,
         }),
       );
-      return NextResponse.json({ success: true, rows });
+      return { success: true, rows };
     }
 
     if (level === 4) {
       if (!documentId || !mongoose.Types.ObjectId.isValid(documentId)) {
-        return NextResponse.json({ error: "A valid documentId is required at level 4" }, { status: 400 });
+        throw NextResponse.json({ error: "A valid documentId is required at level 4" }, { status: 400 });
       }
       const rowMatch = {
         payableId: new mongoose.Types.ObjectId(documentId),
@@ -113,11 +135,11 @@ export async function GET(request) {
         lockReason: blockReasonFromSnapshot(closedPeriods, r.account, r.date),
       }));
 
-      return NextResponse.json({ success: true, rows: rowsWithLock, total, page, limit });
+      return { success: true, rows: rowsWithLock, total, page, limit };
     }
 
     if (!subType && !CATEGORY) {
-      return NextResponse.json({ error: "subType is required at level 3" }, { status: 400 });
+      throw NextResponse.json({ error: "subType is required at level 3" }, { status: 400 });
     }
     const match = { expenseCategory: CATEGORY };
     if (subType) match.expenseSubType = subType;
@@ -149,9 +171,5 @@ export async function GET(request) {
       lockReason: blockReasonFromSnapshot(closedPeriods, null, r.createdAt || new Date()),
     }));
 
-    return NextResponse.json({ success: true, rows, total, page, limit });
-  } catch (error) {
-    console.error("Error building grouped borrowings:", error);
-    return NextResponse.json({ error: "Failed to load grouped borrowings" }, { status: 500 });
-  }
+    return { success: true, rows, total, page, limit };
 }

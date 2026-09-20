@@ -4,6 +4,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import dbConnect from "@/lib/db";
 import AdCampaign from "@/models/AdCampaign";
 import { ALL_BRANCHES } from "@/lib/branches";
+import { cacheKey, cached } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["owner", "super-admin"];
 const PLATFORMS = ["Meta", "Google"];
@@ -22,12 +23,21 @@ async function requireSession() {
 export async function GET(req, { params }) {
   try {
     await dbConnect();
-    const { error } = await requireSession();
+    const { session, error } = await requireSession();
     if (error) return error;
     const { id } = await params;
-    const campaign = await AdCampaign.findById(id).lean();
-    if (!campaign) return NextResponse.json({ success: false, message: "Campaign not found" }, { status: 404 });
-    return NextResponse.json({ success: true, campaign });
+
+    const meta = {};
+    const key = cacheKey("owner", { route: "marketing-campaign-detail", id }, session);
+    const data = await cached(key, 180, async () => {
+      const campaign = await AdCampaign.findById(id).lean();
+      return campaign ? { success: true, campaign } : null;
+    }, meta);
+
+    if (!data) return NextResponse.json({ success: false, message: "Campaign not found" }, { status: 404 });
+    const res = NextResponse.json(data);
+    res.headers.set("X-Cache", meta.status);
+    return res;
   } catch (err) {
     console.error("campaign detail error:", err);
     return NextResponse.json({ success: false, message: "Internal server error" }, { status: 500 });

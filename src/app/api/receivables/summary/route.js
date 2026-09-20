@@ -6,6 +6,7 @@ import connectDB from "@/lib/db";
 import Receivable from "@/models/Receivable";
 import Transactions from "@/models/Transactions";
 import { buildReceivableAggregationStages } from "@/lib/receivableAggregation";
+import { cacheKey, cached } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin", "owner"];
 
@@ -29,6 +30,21 @@ export async function GET(request) {
     const branch = searchParams.get("branch") || "";
     const ageing = searchParams.get("ageing") || "";
 
+    const meta = {};
+    const key = cacheKey("finance", { route: "receivables-summary", ...Object.fromEntries(searchParams) }, session);
+    const data = await cached(key, 45, () => computeReceivablesSummary({
+      purpose, payerKind, payerRefId, payerLabel, branch, ageing,
+    }), meta);
+    const res = NextResponse.json(data);
+    res.headers.set("X-Cache", meta.status);
+    return res;
+  } catch (error) {
+    console.error("Error building receivable summary:", error);
+    return NextResponse.json({ error: "Failed to fetch receivable summary" }, { status: 500 });
+  }
+}
+
+async function computeReceivablesSummary({ purpose, payerKind, payerRefId, payerLabel, branch, ageing }) {
     const txCollection = Transactions.collection.name;
 
     const TOTALS_GROUP = {
@@ -65,11 +81,11 @@ export async function GET(request) {
           },
         },
       ]);
-      return NextResponse.json({
+      return {
         success: true,
         byBucket: facet?.byBucket || [],
         overall: pickTotals(facet?.overall?.[0]),
-      });
+      };
     }
 
     const sumMatch = async (match) => {
@@ -135,9 +151,5 @@ export async function GET(request) {
       byPayer = await sumMatch(payerMatch);
     }
 
-    return NextResponse.json({ success: true, overall, byPayer, byPurpose });
-  } catch (error) {
-    console.error("Error building receivable summary:", error);
-    return NextResponse.json({ error: "Failed to fetch receivable summary" }, { status: 500 });
-  }
+    return { success: true, overall, byPayer, byPurpose };
 }

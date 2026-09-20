@@ -8,6 +8,7 @@ import { buildCompensationMetrics, payablePeriodMatch } from "@/lib/owner/employ
 import {
   parseEmployeeFilters, parsePageParams, parseSortParams, pagedFacet, unpackFacet, pageMeta,
 } from "@/lib/owner/pagination";
+import { cacheKey, cached } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["owner", "super-admin"];
 
@@ -70,6 +71,9 @@ export async function GET(req) {
     const { sortBy, sortDir, sort } = parseSortParams(searchParams, { allowed: SORTABLE, defaultKey: "name" });
     const period = { from: dateFrom, to: dateTo };
 
+    const meta = {};
+    const key = cacheKey("owner", { route: "finance-salary-incentive", ...Object.fromEntries(searchParams) }, session);
+    const data = await cached(key, 60, async () => {
     const employeeMatch = { mergedInto: null };
     if (branch && branch !== "All") employeeMatch.branch = branch;
     if (search) {
@@ -78,11 +82,11 @@ export async function GET(req) {
     }
     const cohort = await Employee.find(employeeMatch).select("_id").lean();
     if (!cohort.length) {
-      return NextResponse.json({
+      return {
         success: true, rows: [], total: 0, ...pageMeta({ page, pageSize, total: 0 }), sortBy, sortDir,
         totals: { salaryDue: 0, salaryPaid: 0, incentiveDue: 0, incentivePaid: 0, employees: 0 },
         byBranch: [], byOperatingUnit: [], byRole: [], byMonth: [],
-      });
+      };
     }
 
     // Same pay-month keying as buildCompensationMetrics (payables are for a
@@ -179,7 +183,7 @@ export async function GET(req) {
       return { id: String(_id), ...doc, ...metrics };
     });
 
-    return NextResponse.json({
+    return {
       success: true,
       rows,
       total,
@@ -197,7 +201,12 @@ export async function GET(req) {
       byOperatingUnit: result?.byOperatingUnit || [],
       byRole: result?.byRole || [],
       byMonth: result?.byMonth || [],
-    });
+    };
+    }, meta);
+
+    const res = NextResponse.json(data);
+    res.headers.set("X-Cache", meta.status);
+    return res;
   } catch (err) {
     console.error("owner finance salary-incentive error:", err);
     return NextResponse.json({ success: false, message: "Internal server error" }, { status: 500 });

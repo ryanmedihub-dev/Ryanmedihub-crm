@@ -13,6 +13,7 @@ import {
 } from "@/lib/externalPartyDerivation";
 import { resolveReceivableAllocations } from "@/lib/receivableAllocation";
 import { backDateGuard } from "@/lib/backDateGuard";
+import { cacheInvalidate } from "@/lib/cache";
 
 export async function POST(req) {
   try {
@@ -226,6 +227,7 @@ export async function POST(req) {
       await patient.save();
     }
 
+    await cacheInvalidate("finance", "owner", "patients");
     return NextResponse.json(
       {
         success: true,

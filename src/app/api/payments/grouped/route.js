@@ -6,6 +6,7 @@ import Transactions from "@/models/Transactions";
 import { resolveBranchFilter } from "@/lib/branches";
 import { checkPeriodLock } from "@/lib/periodLock";
 import { buildCashFlowGroupedStages, buildCashFlowLeafMatch } from "@/lib/cashFlowAggregation";
+import { cacheKey, cached } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 
@@ -32,15 +33,36 @@ export async function GET(request) {
 
     const branchFilter = resolveBranchFilter(session, branch);
 
+    const meta = {};
+    const key = cacheKey("finance", { route: "payments-grouped", ...Object.fromEntries(searchParams) }, session);
+    let data;
+    try {
+      data = await cached(key, 45, () => computeGroupedPayments({
+        level, head, sub, allHeads, branchFilter, from, to, page, limit,
+      }), meta);
+    } catch (err) {
+      if (err instanceof Response) return err;
+      throw err;
+    }
+    const res = NextResponse.json(data);
+    res.headers.set("X-Cache", meta.status);
+    return res;
+  } catch (error) {
+    console.error("Error building grouped payments:", error);
+    return NextResponse.json({ error: "Failed to load grouped payments" }, { status: 500 });
+  }
+}
+
+async function computeGroupedPayments({ level, head, sub, allHeads, branchFilter, from, to, page, limit }) {
     if (level < 3) {
       const rows = await Transactions.aggregate(
         buildCashFlowGroupedStages({ level, costType: "Expenses", head, branchFilter, from, to }),
       );
-      return NextResponse.json({ success: true, rows });
+      return { success: true, rows };
     }
 
     if (!head && !allHeads) {
-      return NextResponse.json({ error: "head is required at level 3" }, { status: 400 });
+      throw NextResponse.json({ error: "head is required at level 3" }, { status: 400 });
     }
 
     const match = buildCashFlowLeafMatch({
@@ -93,9 +115,5 @@ export async function GET(request) {
       })),
     );
 
-    return NextResponse.json({ success: true, rows: rowsWithLock, total, page, limit });
-  } catch (error) {
-    console.error("Error building grouped payments:", error);
-    return NextResponse.json({ error: "Failed to load grouped payments" }, { status: 500 });
-  }
+    return { success: true, rows: rowsWithLock, total, page, limit };
 }

@@ -12,6 +12,7 @@ import {
 } from "@/lib/externalPartyDerivation";
 import { expenseTypesSync, nonCashMethodsSync } from "@/lib/masterData";
 import { backDateGuard } from "@/lib/backDateGuard";
+import { cacheInvalidate } from "@/lib/cache";
 
 const NO_GIVER_CATEGORIES = [
   "Salary",
@@ -274,6 +275,7 @@ export async function POST(req) {
       await vendorDoc.save();
     }
 
+    await cacheInvalidate("finance", "owner", "patients");
     return NextResponse.json(
       {
         message: "Expense transaction created successfully",

@@ -9,6 +9,7 @@ import { checkCascadeOnUpdate, applyCascadeOnUpdate } from "@/lib/cascadeIntegri
 import { withDbTransaction, syncExternalPartyOnUpdate } from "@/lib/externalPartyDerivation";
 import { backDateGuard } from "@/lib/backDateGuard";
 import mongoose from "mongoose";
+import { cacheInvalidate } from "@/lib/cache";
 
 export async function PUT(req) {
   try {
@@ -279,6 +280,7 @@ export async function PUT(req) {
       await recalculatePatientPayments(originalPatientId);
     }
 
+    await cacheInvalidate("finance", "owner", "patients");
     return NextResponse.json(
       {
         success: true,

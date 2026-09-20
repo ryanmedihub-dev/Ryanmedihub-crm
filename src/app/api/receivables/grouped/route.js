@@ -10,6 +10,7 @@ import { unsettledMethodsSync } from "@/lib/masterData";
 import { loadClosedPeriodSnapshot, blockReasonFromSnapshot } from "@/lib/periodLock";
 import { resolveBranchFilter } from "@/lib/branches";
 import { attachCollabPatients } from "@/lib/collabPatientLookup";
+import { cacheKey, cached } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 
@@ -42,6 +43,31 @@ export async function GET(request) {
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
     const limit = Math.min(200, Math.max(1, parseInt(searchParams.get("limit") || "50")));
 
+    const meta = {};
+    const key = cacheKey("finance", { route: "receivables-grouped", ...Object.fromEntries(searchParams) }, session);
+    let data;
+    try {
+      data = await cached(key, 45, () => computeGroupedReceivables({
+        level, category, subType, groupBy, isParty, branch, from, to, party, status, ageing,
+        documentId, page, limit,
+      }), meta);
+    } catch (err) {
+      if (err instanceof Response) return err;
+      throw err;
+    }
+    const res = NextResponse.json(data);
+    res.headers.set("X-Cache", meta.status);
+    return res;
+  } catch (error) {
+    console.error("Error building grouped receivables:", error);
+    return NextResponse.json({ error: "Failed to load grouped receivables" }, { status: 500 });
+  }
+}
+
+async function computeGroupedReceivables({
+  level, category, subType, groupBy, isParty, branch, from, to, party, status, ageing,
+  documentId, page, limit,
+}) {
     if (level < 3) {
       const rows = await Receivable.aggregate(
         buildReceivableGroupedStages(Transactions.collection.name, {
@@ -54,12 +80,12 @@ export async function GET(request) {
           groupBy,
         }),
       );
-      return NextResponse.json({ success: true, rows });
+      return { success: true, rows };
     }
 
     if (level === 4) {
       if (!documentId || !mongoose.Types.ObjectId.isValid(documentId)) {
-        return NextResponse.json({ error: "A valid documentId is required at level 4" }, { status: 400 });
+        throw NextResponse.json({ error: "A valid documentId is required at level 4" }, { status: 400 });
       }
       const receivableObjectId = new mongoose.Types.ObjectId(documentId);
       const idStr = String(documentId);
@@ -143,11 +169,11 @@ export async function GET(request) {
         lockReason: blockReasonFromSnapshot(closedPeriods, r.account, r.date),
       }));
 
-      return NextResponse.json({ success: true, rows: rowsWithLock, total, page, limit });
+      return { success: true, rows: rowsWithLock, total, page, limit };
     }
 
     if (!category) {
-      return NextResponse.json(
+      throw NextResponse.json(
         { error: isParty ? "party is required at level 3" : "category is required at level 3" },
         { status: 400 },
       );
@@ -198,9 +224,5 @@ export async function GET(request) {
       lockReason: blockReasonFromSnapshot(closedPeriods, null, r.dueDate || r.createdAt || new Date()),
     }));
 
-    return NextResponse.json({ success: true, rows, total, page, limit });
-  } catch (error) {
-    console.error("Error building grouped receivables:", error);
-    return NextResponse.json({ error: "Failed to load grouped receivables" }, { status: 500 });
-  }
+    return { success: true, rows, total, page, limit };
 }

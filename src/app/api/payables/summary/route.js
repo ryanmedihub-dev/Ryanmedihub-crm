@@ -6,6 +6,7 @@ import connectDB from "@/lib/db";
 import Payable from "@/models/Payable";
 import Transactions from "@/models/Transactions";
 import { buildPayableAggregationStages } from "@/lib/payableAggregation";
+import { cacheKey, cached } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin", "owner"];
 
@@ -30,6 +31,21 @@ export async function GET(request) {
     const branch = searchParams.get("branch") || "";
     const ageing = searchParams.get("ageing") || "";
 
+    const meta = {};
+    const key = cacheKey("finance", { route: "payables-summary", ...Object.fromEntries(searchParams) }, session);
+    const data = await cached(key, 45, () => computePayablesSummary({
+      purpose, payeeKind, payeeRefId, payeeLabel, expenseSubType, branch, ageing,
+    }), meta);
+    const res = NextResponse.json(data);
+    res.headers.set("X-Cache", meta.status);
+    return res;
+  } catch (error) {
+    console.error("Error building payable summary:", error);
+    return NextResponse.json({ error: "Failed to fetch payable summary" }, { status: 500 });
+  }
+}
+
+async function computePayablesSummary({ purpose, payeeKind, payeeRefId, payeeLabel, expenseSubType, branch, ageing }) {
     const txCollection = Transactions.collection.name;
 
     const TOTALS_GROUP = {
@@ -61,11 +77,11 @@ export async function GET(request) {
           },
         },
       ]);
-      return NextResponse.json({
+      return {
         success: true,
         byBucket: facet?.byBucket || [],
         overall: pickTotals(facet?.overall?.[0]),
-      });
+      };
     }
 
     const sumMatch = async (match) => {
@@ -132,9 +148,5 @@ export async function GET(request) {
       byPayee = await sumMatch(payeeMatch);
     }
 
-    return NextResponse.json({ success: true, overall, byPayee, byPurpose });
-  } catch (error) {
-    console.error("Error building payable summary:", error);
-    return NextResponse.json({ error: "Failed to fetch payable summary" }, { status: 500 });
-  }
+    return { success: true, overall, byPayee, byPurpose };
 }

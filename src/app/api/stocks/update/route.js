@@ -3,6 +3,7 @@ import dbConnect from "@/lib/db";
 import Stock from "@/models/Stock";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { cacheInvalidate } from "@/lib/cache";
 
 export async function PUT(req) {
   try {
@@ -81,6 +82,7 @@ export async function PUT(req) {
       { new: true, runValidators: true }
     );
 
+    await cacheInvalidate("finance", "owner");
     return NextResponse.json(
       {
         success: true,

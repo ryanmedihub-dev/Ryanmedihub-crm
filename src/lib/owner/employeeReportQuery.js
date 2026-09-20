@@ -14,6 +14,7 @@ import { parsePageParams, parseEmployeeFilters, pageMeta } from "@/lib/owner/pag
 import { daysInPeriod, periodBounds, istMonthKeys } from "@/lib/owner/dates";
 import { getISTStartOfDay, getISTEndOfDay } from "@/lib/dateHelpers";
 import { CONVERTED_STATUSES } from "@/lib/owner/patientStatus";
+import { cacheKey, cached } from "@/lib/cache";
 
 // Leadership groups agents with no TL under this key; the roster route pins
 // tlName to it, so the section match must read it as "tlName is empty".
@@ -509,7 +510,18 @@ export async function runEmployeeReportQuery(req, section) {
   const { searchParams } = new URL(req.url);
   const filters = parseEmployeeFilters(searchParams);
   const pageParams = parsePageParams(searchParams);
-  return NextResponse.json(await queryEmployeeSection({ section, filters, ...pageParams }));
+
+  // Shared by every Employees section route (agents/counsellors/hr/other-staff/
+  // surgery-staff, plus the leadership/[tlNameKey] roster which proxies through
+  // here as section "Agent") — cached once here rather than in each one-line
+  // route file.
+  const meta = {};
+  const key = cacheKey("owner", { route: "employees-section", section, ...Object.fromEntries(searchParams) }, session);
+  const data = await cached(key, 120, () => queryEmployeeSection({ section, filters, ...pageParams }), meta);
+
+  const res = NextResponse.json(data);
+  res.headers.set("X-Cache", meta.status);
+  return res;
 }
 
 /**

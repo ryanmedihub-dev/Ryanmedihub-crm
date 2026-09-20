@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
 import Transactions from "@/models/Transactions";
+import { cacheKey, cached } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin", "owner"];
 
@@ -27,6 +28,19 @@ export async function GET(request) {
     const to = searchParams.get("to") || "";
     const branch = searchParams.get("branch") || "";
 
+    const meta = {};
+    const key = cacheKey("finance", { route: "admin-sales-summary", from, to, branch }, session);
+    const data = await cached(key, 60, () => computeSalesSummary({ from, to, branch }), meta);
+    const res = NextResponse.json(data);
+    res.headers.set("X-Cache", meta.status);
+    return res;
+  } catch (error) {
+    console.error("Error computing sales summary:", error);
+    return NextResponse.json({ error: "Failed to compute sales summary" }, { status: 500 });
+  }
+}
+
+async function computeSalesSummary({ from, to, branch }) {
     const match = {
       costType: "Revenue",
       approvalStatus: { $nin: ["PENDING", "REJECTED"] },
@@ -60,14 +74,10 @@ export async function GET(request) {
       count += r.count || 0;
     }
 
-    return NextResponse.json({
+    return {
       success: true,
       total: round2(total),
       count,
       byCategory,
-    });
-  } catch (error) {
-    console.error("Error computing sales summary:", error);
-    return NextResponse.json({ error: "Failed to compute sales summary" }, { status: 500 });
-  }
+    };
 }

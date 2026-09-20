@@ -6,6 +6,7 @@ import { withCallbyRoute, toLeadDateParams } from "@/lib/owner/callbyRoute";
 import { parseEmployeeFilters } from "@/lib/owner/pagination";
 import { normalizePhone } from "@/lib/phone";
 import { toISTDateKey } from "@/lib/owner/dates";
+import { cacheKey, cached } from "@/lib/cache";
 
 // /owner/statistics — the full conversion funnel, leads-created through
 // surgery-done, stage-by-stage (Owner Panel v2, Part 6). Cross-system: the
@@ -89,61 +90,69 @@ export function stageRate(counts) {
   });
 }
 
-export const GET = withCallbyRoute(async (req) => {
+export const GET = withCallbyRoute(async (req, session) => {
   await dbConnect();
   const { searchParams } = new URL(req.url);
   const { dateFrom, dateTo } = parseEmployeeFilters(searchParams);
   const breakdownBy = searchParams.get("breakdownBy") || "none"; // none | source | agent | team
 
-  const result = await fetchCallby("/api/leads", {
-    params: { ...toLeadDateParams(dateFrom, dateTo), page: "1", limit: String(LEAD_SAMPLE_CAP) },
-  });
-  const leads = result?.data?.leads || [];
-  const truncated = (result?.data?.total || 0) > leads.length;
+  const meta = {};
+  const key = cacheKey("owner", { route: "statistics", ...Object.fromEntries(searchParams) }, session);
+  const data = await cached(key, 60, async () => {
+    const result = await fetchCallby("/api/leads", {
+      params: { ...toLeadDateParams(dateFrom, dateTo), page: "1", limit: String(LEAD_SAMPLE_CAP) },
+    });
+    const leads = result?.data?.leads || [];
+    const truncated = (result?.data?.total || 0) > leads.length;
 
-  const overall = await computeStagesForLeads(leads);
+    const overall = await computeStagesForLeads(leads);
 
-  let breakdown = null;
-  if (breakdownBy !== "none") {
-    const groups = new Map();
+    let breakdown = null;
+    if (breakdownBy !== "none") {
+      const groups = new Map();
+      for (const l of leads) {
+        const groupKey =
+          breakdownBy === "source" ? (l.source || "Unspecified")
+          : breakdownBy === "agent" ? (l.assignedTo?.name || "Unassigned")
+          : breakdownBy === "team" ? (l.assignedTo?.tlName || "Unassigned")
+          : "All";
+        if (!groups.has(groupKey)) groups.set(groupKey, []);
+        groups.get(groupKey).push(l);
+      }
+      breakdown = [];
+      for (const [groupKey, groupLeads] of groups) {
+        breakdown.push({ key: groupKey, ...(await computeStagesForLeads(groupLeads)) });
+      }
+      breakdown.sort((a, b) => b.leadsCreated - a.leadsCreated);
+    }
+
+    // Daily trend — leads created + converted, from the same sample already
+    // fetched (no second callby call).
+    const dailyMap = new Map();
     for (const l of leads) {
-      const key =
-        breakdownBy === "source" ? (l.source || "Unspecified")
-        : breakdownBy === "agent" ? (l.assignedTo?.name || "Unassigned")
-        : breakdownBy === "team" ? (l.assignedTo?.tlName || "Unassigned")
-        : "All";
-      if (!groups.has(key)) groups.set(key, []);
-      groups.get(key).push(l);
+      const day = toISTDateKey(l.createdAt) || null;
+      if (!day) continue;
+      if (!dailyMap.has(day)) dailyMap.set(day, { date: day, leadsCreated: 0, converted: 0 });
+      const d = dailyMap.get(day);
+      d.leadsCreated++;
+      if (l.status === "converted") d.converted++;
     }
-    breakdown = [];
-    for (const [key, groupLeads] of groups) {
-      breakdown.push({ key, ...(await computeStagesForLeads(groupLeads)) });
-    }
-    breakdown.sort((a, b) => b.leadsCreated - a.leadsCreated);
-  }
+    const daily = [...dailyMap.values()].sort((a, b) => a.date.localeCompare(b.date));
 
-  // Daily trend — leads created + converted, from the same sample already
-  // fetched (no second callby call).
-  const dailyMap = new Map();
-  for (const l of leads) {
-    const day = toISTDateKey(l.createdAt) || null;
-    if (!day) continue;
-    if (!dailyMap.has(day)) dailyMap.set(day, { date: day, leadsCreated: 0, converted: 0 });
-    const d = dailyMap.get(day);
-    d.leadsCreated++;
-    if (l.status === "converted") d.converted++;
-  }
-  const daily = [...dailyMap.values()].sort((a, b) => a.date.localeCompare(b.date));
+    return {
+      success: true,
+      stageDefinitions: STAGE_DEFINITIONS,
+      stages: stageRate(overall),
+      breakdownBy,
+      breakdown,
+      daily,
+      truncated,
+      sampleSize: leads.length,
+      totalLeadsInPeriod: result?.data?.total || leads.length,
+    };
+  }, meta);
 
-  return NextResponse.json({
-    success: true,
-    stageDefinitions: STAGE_DEFINITIONS,
-    stages: stageRate(overall),
-    breakdownBy,
-    breakdown,
-    daily,
-    truncated,
-    sampleSize: leads.length,
-    totalLeadsInPeriod: result?.data?.total || leads.length,
-  });
+  const res = NextResponse.json(data);
+  res.headers.set("X-Cache", meta.status);
+  return res;
 });

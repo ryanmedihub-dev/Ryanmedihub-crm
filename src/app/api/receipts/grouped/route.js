@@ -6,6 +6,7 @@ import Transactions from "@/models/Transactions";
 import { resolveBranchFilter } from "@/lib/branches";
 import { checkPeriodLock } from "@/lib/periodLock";
 import { buildCashFlowGroupedStages, buildCashFlowLeafMatch } from "@/lib/cashFlowAggregation";
+import { cacheKey, cached } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 
@@ -32,15 +33,36 @@ export async function GET(request) {
 
     const branchFilter = resolveBranchFilter(session, branch);
 
+    const meta = {};
+    const key = cacheKey("finance", { route: "receipts-grouped", ...Object.fromEntries(searchParams) }, session);
+    let data;
+    try {
+      data = await cached(key, 45, () => computeGroupedReceipts({
+        level, head, sub, groupBy, branchFilter, from, to, page, limit,
+      }), meta);
+    } catch (err) {
+      if (err instanceof Response) return err;
+      throw err;
+    }
+    const res = NextResponse.json(data);
+    res.headers.set("X-Cache", meta.status);
+    return res;
+  } catch (error) {
+    console.error("Error building grouped receipts:", error);
+    return NextResponse.json({ error: "Failed to load grouped receipts" }, { status: 500 });
+  }
+}
+
+async function computeGroupedReceipts({ level, head, sub, groupBy, branchFilter, from, to, page, limit }) {
     if (level < 3) {
       const rows = await Transactions.aggregate(
         buildCashFlowGroupedStages({ level, costType: "Revenue", head, groupBy, branchFilter, from, to }),
       );
-      return NextResponse.json({ success: true, rows });
+      return { success: true, rows };
     }
 
     if (!head) {
-      return NextResponse.json({ error: "head is required at level 3" }, { status: 400 });
+      throw NextResponse.json({ error: "head is required at level 3" }, { status: 400 });
     }
 
     const match = buildCashFlowLeafMatch({ costType: "Revenue", head, sub, groupBy, branchFilter, from, to });
@@ -85,9 +107,5 @@ export async function GET(request) {
       })),
     );
 
-    return NextResponse.json({ success: true, rows: rowsWithLock, total, page, limit });
-  } catch (error) {
-    console.error("Error building grouped receipts:", error);
-    return NextResponse.json({ error: "Failed to load grouped receipts" }, { status: 500 });
-  }
+    return { success: true, rows: rowsWithLock, total, page, limit };
 }

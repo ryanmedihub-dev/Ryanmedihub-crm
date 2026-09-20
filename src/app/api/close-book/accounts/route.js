@@ -12,6 +12,7 @@ import {
   round2,
   SIGNED_AMOUNT,
 } from "@/lib/accountBalances";
+import { cacheKey, cached } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 
@@ -36,6 +37,21 @@ export async function GET(request) {
     const branchFilterObj = resolveBranchFilter(session, branchParam);
     const branch = typeof branchFilterObj.branch === "string" ? branchFilterObj.branch : "";
 
+    const meta = {};
+    const key = cacheKey("finance", { route: "close-book-accounts", filter, from, to, branch, seriesDays, accountsParam }, session);
+    const data = await cached(key, 15, () => computeAccountsRollup({
+      filter, from, to, branch, seriesDays, accountsParam,
+    }), meta);
+    const res = NextResponse.json(data);
+    res.headers.set("X-Cache", meta.status);
+    return res;
+  } catch (error) {
+    console.error("Error building account rollup:", error);
+    return NextResponse.json({ error: "Failed to load accounts" }, { status: 500 });
+  }
+}
+
+async function computeAccountsRollup({ filter, from, to, branch, seriesDays, accountsParam }) {
     if (seriesDays) {
       const days = Math.min(90, Math.max(1, parseInt(seriesDays)));
       const end = new Date();
@@ -72,14 +88,10 @@ export async function GET(request) {
         series.push({ date: key, balance: running });
       }
 
-      return NextResponse.json({ success: true, series });
+      return { success: true, series };
     }
 
     const rows = await getAccountRollup({ filter, from, to, branch, accountsParam });
 
-    return NextResponse.json({ success: true, rows });
-  } catch (error) {
-    console.error("Error building account rollup:", error);
-    return NextResponse.json({ error: "Failed to load accounts" }, { status: 500 });
-  }
+    return { success: true, rows };
 }

@@ -5,6 +5,7 @@ import connectDB from "@/lib/db";
 import Receivable, { RECEIVABLE_KIND_VALUES, RECEIVABLE_PURPOSE_VALUES } from "@/models/Receivable";
 import { ALL_BRANCHES } from "@/lib/branches";
 import { checkPeriodLock } from "@/lib/periodLock";
+import { cacheInvalidate } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 const PATIENT_REQUIRED_PURPOSES = ["PATIENT_DUE", "REFUND_DUE", "ADVANCE_RECOVERY"];
@@ -102,6 +103,7 @@ export async function POST(req) {
 
     await receivable.save();
 
+    await cacheInvalidate("finance", "owner");
     return NextResponse.json({ message: "Receivable created", receivable }, { status: 201 });
   } catch (error) {
     console.error("Error creating receivable:", error);

@@ -9,6 +9,7 @@ import Receivable from "@/models/Receivable";
 import { accountsSync } from "@/lib/masterData";
 import { ALL_BRANCHES } from "@/lib/branches";
 import { checkPeriodLock } from "@/lib/periodLock";
+import { cacheInvalidate } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 
@@ -146,6 +147,7 @@ export async function PATCH(req, { params }) {
         } finally {
           await dbSession.endSession();
         }
+        await cacheInvalidate("finance", "owner");
         return NextResponse.json({ message: "Settlement unlinked", borrowing });
       }
 
@@ -190,6 +192,7 @@ export async function PATCH(req, { params }) {
       } finally {
         await dbSession.endSession();
       }
+      await cacheInvalidate("finance", "owner");
       return NextResponse.json({ message: "Settlement linked", borrowing });
     }
 
@@ -246,6 +249,7 @@ export async function PATCH(req, { params }) {
       await dbSession.endSession();
     }
 
+    await cacheInvalidate("finance", "owner");
     return NextResponse.json({
       message: nextCancelled ? "Borrowing cancelled" : "Borrowing reinstated",
       borrowing,
@@ -357,6 +361,7 @@ export async function PUT(req, { params }) {
       await dbSession.endSession();
     }
 
+    await cacheInvalidate("finance", "owner");
     return NextResponse.json({ message: "Borrowing updated", borrowing });
   } catch (error) {
     console.error("Error editing borrowing:", error);
@@ -388,6 +393,7 @@ export async function DELETE(req, { params }) {
 
     await Borrowing.deleteOne({ _id: borrowing._id });
 
+    await cacheInvalidate("finance", "owner");
     return NextResponse.json({ message: "Borrowing deleted" });
   } catch (error) {
     console.error("Error deleting borrowing:", error);

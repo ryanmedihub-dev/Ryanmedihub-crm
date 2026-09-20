@@ -3,6 +3,7 @@ import { withDB } from "@/lib/withDB";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { cacheInvalidate } from "@/lib/cache";
 
 const FALLBACK_DATE = new Date("2025-01-01T00:00:00.000Z");
 
@@ -70,6 +71,7 @@ const handler = async (req) => {
       { $set: { createdAt, updatedAt: createdAt } }
     );
 
+    await cacheInvalidate("finance", "owner", "patients");
     return NextResponse.json(
       { success: true, message: "Old PRP patient added successfully", patientId: saved._id },
       { status: 201 }

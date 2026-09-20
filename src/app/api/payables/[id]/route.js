@@ -11,6 +11,7 @@ import Advance from "@/models/Advance";
 import DeleteLog from "@/models/DeleteLog";
 import { buildPayableAggregationStages } from "@/lib/payableAggregation";
 import { settlementLinesFor } from "@/lib/advanceSettlements";
+import { cacheInvalidate } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 
@@ -212,6 +213,7 @@ export async function PATCH(req, { params }) {
 
     await payable.save();
 
+    await cacheInvalidate("finance", "owner");
     return NextResponse.json({ message: "Payable updated", payable, linkedTdsPayable });
   } catch (error) {
     console.error("Error updating payable:", error);
@@ -292,6 +294,7 @@ export async function DELETE(req, { params }) {
 
     await payable.deleteOne();
 
+    await cacheInvalidate("finance", "owner");
     return NextResponse.json({ message: "Payable deleted" });
   } catch (error) {
     console.error("Error deleting payable:", error);
