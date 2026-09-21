@@ -6,7 +6,7 @@ import { withDB } from "@/lib/withDB";
 import AdSpend from "@/models/AdSpend";
 import { ALL_BRANCHES } from "@/lib/branches";
 import { attributeSpendToOutcomes } from "@/lib/owner/marketingAttribution";
-import { cacheKey, cached } from "@/lib/cache";
+import { cacheKey, cached, cacheInvalidate } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["owner", "super-admin"];
 const PLATFORMS = ["Meta", "Google"];
@@ -105,6 +105,7 @@ const postHandler = async (req) => {
     enteredBy: { name: session.user.name, email: session.user.email },
   });
 
+  await cacheInvalidate("owner");
   return NextResponse.json({ success: true, entry });
 };
 
@@ -144,6 +145,7 @@ const putHandler = async (req) => {
     return NextResponse.json({ success: false, message: "Entry not found" }, { status: 404 });
   }
 
+  await cacheInvalidate("owner");
   return NextResponse.json({ success: true, entry });
 };
 
@@ -162,6 +164,7 @@ const deleteHandler = async (req) => {
     return NextResponse.json({ success: false, message: "Entry not found" }, { status: 404 });
   }
 
+  await cacheInvalidate("owner");
   return NextResponse.json({ success: true });
 };
 

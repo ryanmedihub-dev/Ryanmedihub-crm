@@ -16,6 +16,7 @@ import {
   Mail,
   ScrollText,
 } from "lucide-react";
+import { formatDate as fmtDate } from "@/lib/financeUI";
 
 const TAG_OPTIONS = [
   "Google Leads",
@@ -88,14 +89,6 @@ const TAG_STYLES = {
 
 const PER_PAGE_OPTIONS = [10, 25, 50, 100];
 
-function fmtDate(iso) {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-}
 
 function fmtFilterLabel(key, val) {
   if (!val) return null;

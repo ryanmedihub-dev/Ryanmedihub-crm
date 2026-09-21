@@ -3,9 +3,7 @@
 import { useSession } from "next-auth/react";
 import SearchableSelect from "@/components/SearchableSelect";
 import { maskPhone } from "@/utils/phoneUtils";
-
-const formatCurrency = (amount) =>
-  `₹${Number(amount || 0).toLocaleString("en-IN")}`;
+import { formatCurrency } from "@/lib/financeUI";
 
 export default function PatientPicker({
   picker,

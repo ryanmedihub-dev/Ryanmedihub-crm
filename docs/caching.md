@@ -22,7 +22,7 @@ Fixed list — add a new one here before using it in code.
 | Namespace | Covers | Invalidated by |
 |---|---|---|
 | `callby` | every cross-system fetch to the callby API (`fetchCallbyCached`) | nothing (TTL only) |
-| `owner` | `/api/owner/*` read routes | finance + patient + employee writes |
+| `owner` | `/api/owner/*` read routes | finance + patient + employee writes, campaign-lead upload commit/revert, AdSpend writes |
 | `finance` | payables, receivables, advances, borrowings, account-transfers, payments, receipts, close-book, transactions, admin dashboard reads | any finance write |
 | `masterdata` | `/api/master-data/*` lists | master-data writes |
 | `patients` | patient lists/dashboards, patient incentives | patient create/update/delete |
@@ -37,6 +37,7 @@ Fixed list — add a new one here before using it in code.
 | `owner/employees/*` | 120s |
 | `owner/finance/*` | 60s |
 | `owner/marketing/*`, `owner/hr/*` | 180s |
+| `owner/marketing/campaign-performance` (and its `[campaignId]/leads` drill-through) | 300s — explicit exception to the blanket `owner/marketing/*` row above; a full campaign-performance computation is several callby round trips plus a patient scan, so it's deliberately cached longer |
 | `owner/patients/*`, `owner/leads/*` (report views) | 60s |
 | `owner/calls/live`, `owner/leads/retry`, `owner/live-workforce`, `owner/ai/*` | not cached |
 | `payables/grouped\|list\|summary`, `receivables/grouped\|list\|summary\|open`, `advances/grouped\|list\|open-for-party`, `borrowings/grouped\|list`, `account-transfers/list\|balances`, `payments/grouped`, `receipts/grouped` | 45s |

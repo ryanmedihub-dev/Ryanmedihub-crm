@@ -4,6 +4,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
 import Employee from "@/models/Employee";
 import { NAME_COLLATION } from "@/lib/sortOptions";
+import { cacheKey, cached } from "@/lib/cache";
 
 export async function GET(request) {
   try {
@@ -36,18 +37,25 @@ export async function GET(request) {
       ];
     }
 
-    const [employees, total] = await Promise.all([
-      Employee.find(query)
-        .select("name phone email employeeId role isactive salaryStructure incentiveRate")
-        .sort({ name: 1 })
-        .collation(NAME_COLLATION)
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .lean(),
-      Employee.countDocuments(query),
-    ]);
+    const meta = {};
+    const key = cacheKey("employees", { search, role, isactive, page, limit }, session);
+    const { employees, total } = await cached(key, 30, async () => {
+      const [employees, total] = await Promise.all([
+        Employee.find(query)
+          .select("name phone email employeeId role isactive salaryStructure incentiveRate")
+          .sort({ name: 1 })
+          .collation(NAME_COLLATION)
+          .skip((page - 1) * limit)
+          .limit(limit)
+          .lean(),
+        Employee.countDocuments(query),
+      ]);
+      return { employees, total };
+    }, meta);
 
-    return NextResponse.json({ success: true, employees, total, page, limit });
+    const res = NextResponse.json({ success: true, employees, total, page, limit });
+    res.headers.set("X-Cache", meta.status);
+    return res;
   } catch (error) {
     console.error("Error listing employees:", error);
     return NextResponse.json({ error: "Failed to fetch employees" }, { status: 500 });

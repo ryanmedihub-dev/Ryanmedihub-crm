@@ -107,6 +107,9 @@ const payableSchema = new mongoose.Schema(
 );
 
 payableSchema.index({ "payee.kind": 1, "payee.refId": 1 });
+// Backs buildCompensationMetrics (Owner Employees pages): EMPLOYEE payables for a set of
+// employees over a pay-month window, split by purpose.
+payableSchema.index({ "payee.kind": 1, "payee.refId": 1, purpose: 1, "period.year": 1, "period.month": 1, isCancelled: 1 });
 payableSchema.index({ purpose: 1, "period.year": 1, "period.month": 1 });
 payableSchema.index({ branch: 1, isCancelled: 1 });
 payableSchema.index({ dueDate: 1 });

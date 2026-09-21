@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, FilterBar, KpiRow, DataTable, ErrorState, Badge } from "@/components/owner";
-import { ownerFetch } from "@/lib/ownerFetch";
+import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { rupee, num } from "@/lib/owner/format";
 
 // Presents /api/receivables/summary's data with owner-level rollups — the
@@ -11,43 +11,19 @@ import { rupee, num } from "@/lib/owner/format";
 // (Owner Panel v2, Part 5).
 export default function FinanceAssetsPage() {
   const [filterState, setFilterState] = useState(null);
-  const [overall, setOverall] = useState(null);
-  const [byPurpose, setByPurpose] = useState([]);
-  const [byBucket, setByBucket] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  const load = useCallback(
-    async ({ signal } = {}) => {
-      if (!filterState) return;
-      setLoading(true);
-      setError(null);
-      const branch = filterState.filters.branch && filterState.filters.branch !== "All" ? filterState.filters.branch : "";
-      const summaryParams = new URLSearchParams(branch ? { branch } : {});
-      const ageingParams = new URLSearchParams({ ageing: "1", ...(branch ? { branch } : {}) });
+  const branch = filterState?.filters?.branch && filterState.filters.branch !== "All" ? filterState.filters.branch : "";
+  const summaryUrl = filterState ? `/api/receivables/summary?${new URLSearchParams(branch ? { branch } : {}).toString()}` : null;
+  const ageingUrl = filterState ? `/api/receivables/summary?${new URLSearchParams({ ageing: "1", ...(branch ? { branch } : {}) }).toString()}` : null;
 
-      const [summaryR, ageingR] = await Promise.all([
-        ownerFetch(`/api/receivables/summary?${summaryParams.toString()}`, { signal }),
-        ownerFetch(`/api/receivables/summary?${ageingParams.toString()}`, { signal }),
-      ]);
-      if (summaryR.aborted) return;
-      if (summaryR.ok) {
-        setOverall(summaryR.data?.overall || null);
-        setByPurpose(summaryR.data?.byPurpose || []);
-      } else {
-        setError(summaryR.error);
-      }
-      if (ageingR.ok) setByBucket(ageingR.data?.byBucket || []);
-      setLoading(false);
-    },
-    [filterState],
-  );
+  const { data: summaryData, loading, error, isValidating: summaryValidating, mutate: loadSummary } = useOwnerData(summaryUrl);
+  const { data: ageingData, isValidating: ageingValidating, mutate: loadAgeing } = useOwnerData(ageingUrl);
 
-  useEffect(() => {
-    const ctrl = new AbortController();
-    load({ signal: ctrl.signal });
-    return () => ctrl.abort();
-  }, [load]);
+  const overall = summaryData?.overall || null;
+  const byPurpose = summaryData?.byPurpose || [];
+  const byBucket = ageingData?.byBucket || [];
+  const isValidating = summaryValidating || ageingValidating;
+  const load = () => { loadSummary(); loadAgeing(); };
 
   return (
     <div className="app">
@@ -57,8 +33,8 @@ export default function FinanceAssetsPage() {
           title="Assets"
           subtitle="Receivables outstanding — same data as /admin/assets, owner-level rollup"
           controls={
-            <button className="icon-btn" onClick={() => load()} disabled={loading} title="Refresh">
-              {loading ? "…" : "⟳"}
+            <button className="icon-btn" onClick={() => load()} disabled={isValidating} title="Refresh">
+              {isValidating ? "…" : "⟳"}
             </button>
           }
         />

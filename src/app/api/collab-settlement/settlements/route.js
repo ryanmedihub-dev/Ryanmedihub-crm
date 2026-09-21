@@ -4,6 +4,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
 import CollabSettlement from "@/models/CollabSettlement";
 import { COLLAB_BRANCHES } from "@/lib/branches";
+import { cacheKey, cached } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["collab", "admin", "super-admin"];
 
@@ -47,16 +48,23 @@ export async function GET(request) {
       }
     }
 
-    const [settlements, total] = await Promise.all([
-      CollabSettlement.find(query)
-        .sort({ date: -1 })
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .lean(),
-      CollabSettlement.countDocuments(query),
-    ]);
+    const meta = {};
+    const key = cacheKey("finance", { route: "collab-settlements", clinic, dateFrom, dateTo, page, limit }, session);
+    const { settlements, total } = await cached(key, 30, async () => {
+      const [settlements, total] = await Promise.all([
+        CollabSettlement.find(query)
+          .sort({ date: -1 })
+          .skip((page - 1) * limit)
+          .limit(limit)
+          .lean(),
+        CollabSettlement.countDocuments(query),
+      ]);
+      return { settlements, total };
+    }, meta);
 
-    return NextResponse.json({ success: true, settlements, total, page, limit });
+    const res = NextResponse.json({ success: true, settlements, total, page, limit });
+    res.headers.set("X-Cache", meta.status);
+    return res;
   } catch (error) {
     console.error("Error listing collab settlements:", error);
     return NextResponse.json({ error: "Failed to fetch settlements" }, { status: 500 });

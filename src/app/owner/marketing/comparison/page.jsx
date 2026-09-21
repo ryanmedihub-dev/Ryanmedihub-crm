@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, FilterBar, DataTable, Badge, ErrorState, TrendChart, InlineNotice, ManualDataNotice } from "@/components/owner";
-import { ownerFetch } from "@/lib/ownerFetch";
+import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { rupee, num, roasFmt } from "@/lib/owner/format";
 
 const METRICS = [
@@ -41,33 +41,17 @@ const LOWER_IS_BETTER = new Set(["spend", "cpl", "cpc", "cac"]);
 
 export default function MarketingComparisonPage() {
   const [filterState, setFilterState] = useState(null);
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  const load = useCallback(
-    async ({ signal } = {}) => {
-      if (!filterState) return;
-      setLoading(true);
-      setError(null);
-      const params = new URLSearchParams();
-      params.set("dateFrom", filterState.range.from);
-      params.set("dateTo", filterState.range.to);
-      if (filterState.filters.branch && filterState.filters.branch !== "All") params.set("branch", filterState.filters.branch);
-      const r = await ownerFetch(`/api/owner/marketing/comparison?${params.toString()}`, { signal });
-      if (r.aborted) return;
-      if (r.ok) setData(r.data);
-      else setError(r.error);
-      setLoading(false);
-    },
-    [filterState],
-  );
+  const url = useMemo(() => {
+    if (!filterState) return null;
+    const params = new URLSearchParams();
+    params.set("dateFrom", filterState.range.from);
+    params.set("dateTo", filterState.range.to);
+    if (filterState.filters.branch && filterState.filters.branch !== "All") params.set("branch", filterState.filters.branch);
+    return `/api/owner/marketing/comparison?${params.toString()}`;
+  }, [filterState]);
 
-  useEffect(() => {
-    const ctrl = new AbortController();
-    load({ signal: ctrl.signal });
-    return () => ctrl.abort();
-  }, [load]);
+  const { data, loading, error, isValidating, mutate: load } = useOwnerData(url);
 
   return (
     <div className="app">
@@ -77,8 +61,8 @@ export default function MarketingComparisonPage() {
           title="Meta vs Google"
           subtitle="Side-by-side comparison for the period — evidence only, no recommendation"
           controls={
-            <button className="icon-btn" onClick={() => load()} disabled={loading} title="Refresh">
-              {loading ? "…" : "⟳"}
+            <button className="icon-btn" onClick={() => load()} disabled={isValidating} title="Refresh">
+              {isValidating ? "…" : "⟳"}
             </button>
           }
         />

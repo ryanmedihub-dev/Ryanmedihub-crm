@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import {
   OwnerTopbar, Card, DataTable, Badge, EmptyState, ErrorState, InlineNotice,
 } from "@/components/owner";
 import { ownerFetch } from "@/lib/ownerFetch";
+import { useOwnerData } from "@/lib/owner/useOwnerData";
 
 // Manual pairing screen for the employee <-> callby links the reconciliation
 // script (scripts/sync-callby-links.mjs) couldn't match by code — no
@@ -13,10 +14,6 @@ import { ownerFetch } from "@/lib/ownerFetch";
 // Without this, every Employees page silently under-reports for anyone unlinked.
 
 export default function CallbyLinksPage() {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
   const [selEmp, setSelEmp] = useState(null);
   const [selAgent, setSelAgent] = useState(null);
   const [empQuery, setEmpQuery] = useState("");
@@ -27,21 +24,7 @@ export default function CallbyLinksPage() {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState(null);
 
-  const load = useCallback(async ({ signal } = {}) => {
-    setLoading(true);
-    setError(null);
-    const r = await ownerFetch("/api/owner/callby-links", { signal });
-    if (r.aborted) return;
-    if (r.ok) setData(r.data);
-    else setError(r.error);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    const ctrl = new AbortController();
-    load({ signal: ctrl.signal });
-    return () => ctrl.abort();
-  }, [load]);
+  const { data, loading, error, isValidating, mutate: load } = useOwnerData("/api/owner/callby-links");
 
   const unlinkedEmployees = data?.unlinkedEmployees || [];
   const unlinkedCallbyAgents = data?.unlinkedCallbyAgents || [];
@@ -109,8 +92,8 @@ export default function CallbyLinksPage() {
           title="callby Links"
           subtitle="Pair the employees the reconciliation script couldn't match to a callby user"
           controls={
-            <button className="icon-btn" onClick={() => load()} disabled={loading} title="Refresh">
-              {loading ? "…" : "⟳"}
+            <button className="icon-btn" onClick={() => load()} disabled={isValidating} title="Refresh">
+              {isValidating ? "…" : "⟳"}
             </button>
           }
         />

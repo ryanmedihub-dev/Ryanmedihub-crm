@@ -1,10 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, DataTable, KpiRow, ErrorState, EmptyState, InlineNotice, AttentionRamp } from "@/components/owner";
-import { ownerFetch } from "@/lib/ownerFetch";
+import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { rupee, num } from "@/lib/owner/format";
 
 const RULE_LEVEL = {
@@ -19,25 +18,7 @@ const ageCol = { key: "age", label: "Age", align: "right", render: (r) => (r.age
 
 export default function AttentionPage() {
   const router = useRouter();
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  const load = useCallback(async ({ signal } = {}) => {
-    setLoading(true);
-    setError(null);
-    const r = await ownerFetch("/api/owner/ai/attention", { signal });
-    if (r.aborted) return;
-    if (r.ok) setData(r.data);
-    else setError(r.error);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    const ctrl = new AbortController();
-    load({ signal: ctrl.signal });
-    return () => ctrl.abort();
-  }, [load]);
+  const { data, loading, error, isValidating, mutate: load } = useOwnerData("/api/owner/ai/attention");
 
   const rules = data?.rules || [];
 
@@ -49,8 +30,8 @@ export default function AttentionPage() {
           title="Attention"
           subtitle="Documented threshold rules over data you already have — no AI, no scoring model, no confidence percentages"
           controls={
-            <button className="icon-btn" onClick={() => load()} disabled={loading} title="Refresh">
-              {loading ? "…" : "⟳"}
+            <button className="icon-btn" onClick={() => load()} disabled={isValidating} title="Refresh">
+              {isValidating ? "…" : "⟳"}
             </button>
           }
         />

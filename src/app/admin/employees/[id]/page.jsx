@@ -4,13 +4,15 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Gift, Wallet } from "lucide-react";
+import { formatCurrency } from "@/lib/financeUI";
 
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
 ];
 
-const formatCurrency = (amount) => `₹${Number(amount || 0).toLocaleString("en-IN")}`;
+// Local: "N/A" for missing + the short en-IN default format — financeUI.formatDate renders
+// "—" and dd MMM yyyy, which this page's layout doesn't want.
 const formatDate = (date) => (date ? new Date(date).toLocaleDateString("en-IN") : "N/A");
 
 export default function EmployeeDetailPage() {

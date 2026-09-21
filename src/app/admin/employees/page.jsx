@@ -1,4 +1,3 @@
-"use client";
 import StaffTable from "@/components/StaffTable";
 
 const CONFIG = {

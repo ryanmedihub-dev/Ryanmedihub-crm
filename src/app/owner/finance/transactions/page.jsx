@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, FilterBar, ReportTable, KpiRow, Badge, ErrorState } from "@/components/owner";
-import { ownerFetch } from "@/lib/ownerFetch";
+import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { rupee, num, fmtDate } from "@/lib/owner/format";
 import { toISTDateKey } from "@/lib/owner/dates";
 
@@ -27,41 +27,23 @@ export default function FinanceTransactionsPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
 
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const url = useMemo(() => {
+    if (!filterState) return null;
+    const params = new URLSearchParams();
+    // get-all takes IST calendar dates, not ISO instants.
+    params.set("dateFrom", toISTDateKey(filterState.range.from));
+    params.set("dateTo", toISTDateKey(filterState.range.to));
+    if (filterState.filters.branch && filterState.filters.branch !== "All") params.set("branch", filterState.filters.branch);
+    if (filterState.filters.category && filterState.filters.category !== "ALL") params.set("category", filterState.filters.category);
+    if (search) params.set("search", search);
+    params.set("sortKey", sortKey);
+    params.set("sortDir", sortDir);
+    params.set("page", String(page));
+    params.set("limit", String(pageSize));
+    return `/api/transactions/get-all?${params.toString()}`;
+  }, [filterState, search, sortKey, sortDir, page, pageSize]);
 
-  const load = useCallback(
-    async ({ signal } = {}) => {
-      if (!filterState) return;
-      setLoading(true);
-      setError(null);
-      const params = new URLSearchParams();
-      // get-all takes IST calendar dates, not ISO instants.
-      params.set("dateFrom", toISTDateKey(filterState.range.from));
-      params.set("dateTo", toISTDateKey(filterState.range.to));
-      if (filterState.filters.branch && filterState.filters.branch !== "All") params.set("branch", filterState.filters.branch);
-      if (filterState.filters.category && filterState.filters.category !== "ALL") params.set("category", filterState.filters.category);
-      if (search) params.set("search", search);
-      params.set("sortKey", sortKey);
-      params.set("sortDir", sortDir);
-      params.set("page", String(page));
-      params.set("limit", String(pageSize));
-
-      const r = await ownerFetch(`/api/transactions/get-all?${params.toString()}`, { signal });
-      if (r.aborted) return;
-      if (r.ok) setData(r.data);
-      else setError(r.error);
-      setLoading(false);
-    },
-    [filterState, search, sortKey, sortDir, page, pageSize],
-  );
-
-  useEffect(() => {
-    const ctrl = new AbortController();
-    load({ signal: ctrl.signal });
-    return () => ctrl.abort();
-  }, [load]);
+  const { data, loading, error, isValidating, mutate: load } = useOwnerData(url);
 
   const handleSort = (key) => {
     setPage(1);
@@ -85,8 +67,8 @@ export default function FinanceTransactionsPage() {
           title="All Transactions"
           subtitle="Full transaction report — same data and query as /admin/transactions"
           controls={
-            <button className="icon-btn" onClick={() => load()} disabled={loading} title="Refresh">
-              {loading ? "…" : "⟳"}
+            <button className="icon-btn" onClick={() => load()} disabled={isValidating} title="Refresh">
+              {isValidating ? "…" : "⟳"}
             </button>
           }
         />

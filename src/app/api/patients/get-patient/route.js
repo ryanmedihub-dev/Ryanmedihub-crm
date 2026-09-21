@@ -6,6 +6,7 @@ import Patient from "@/models/Patient";
 import Employee from "@/models/Employee";
 import { COLLAB_BRANCHES } from "@/lib/branches";
 import { resolveDateRange, toDateQuery } from "@/lib/dateHelpers";
+import { cacheKey, cached } from "@/lib/cache";
 
 const split = (v) => (v || "").split(",").filter(Boolean);
 
@@ -156,19 +157,24 @@ const handler = async (req) => {
       query["surgery.implanterRight"] = ids.length === 1 ? ids[0] : { $in: ids };
     }
 
-    const [patients, total] = await Promise.all([
-      Patient.find(query)
-        .select(LIST_PROJECTION)
-        .sort({ [sortKey]: sortDir })
-        .skip(skip)
-        .limit(limit)
-        .populate("personal.reference",     "name")
-        .populate("counselling.counsellor", "name")
-        .lean(),
-      Patient.countDocuments(query),
-    ]);
+    const meta = {};
+    const key = cacheKey("patients", Object.fromEntries(searchParams), session);
+    const { patients, total } = await cached(key, 30, async () => {
+      const [patients, total] = await Promise.all([
+        Patient.find(query)
+          .select(LIST_PROJECTION)
+          .sort({ [sortKey]: sortDir })
+          .skip(skip)
+          .limit(limit)
+          .populate("personal.reference",     "name")
+          .populate("counselling.counsellor", "name")
+          .lean(),
+        Patient.countDocuments(query),
+      ]);
+      return { patients, total };
+    }, meta);
 
-    return NextResponse.json({
+    const res = NextResponse.json({
       patients, total, page, limit, success: true,
       dateWindow: {
         from: visitDateQuery && dateRange.start ? dateRange.start.toISOString() : null,
@@ -177,6 +183,8 @@ const handler = async (req) => {
         isAll: dateRange.isAll || searchBypassesDefaultWindow,
       },
     }, { status: 200 });
+    res.headers.set("X-Cache", meta.status);
+    return res;
   } catch (error) {
     console.error("Error fetching patients:", error);
     return NextResponse.json({ success: false, error: "Failed to fetch patients" }, { status: 500 });

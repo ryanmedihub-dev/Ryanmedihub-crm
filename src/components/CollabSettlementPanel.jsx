@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 import { COLLAB_BRANCHES } from "@/lib/branches";
 import { EXPENSE_METHODS } from "@/constants/paymentMethods";
 import { Loader2, TrendingDown, Wallet } from "lucide-react";
-
-const formatCurrency = (amount) => `₹${Number(amount || 0).toLocaleString("en-IN")}`;
+import { formatCurrency } from "@/lib/financeUI";
 
 const METHOD_OPTIONS = EXPENSE_METHODS;
 

@@ -88,5 +88,8 @@
       "Read(//c/dashzer/callby/backend/middleware/**)",
       "Read(//c/dashzer/callby/backend/lib/**)"
     ]
+  },
+  "enabledPlugins": {
+    "frontend-design@claude-plugins-official": true
   }
 }

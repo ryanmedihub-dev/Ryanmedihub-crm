@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, FilterBar, KpiRow, ErrorState, TrendChart } from "@/components/owner";
-import { ownerFetch } from "@/lib/ownerFetch";
+import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { num, fmtDurationShort } from "@/lib/owner/format";
 
 const LINKS = [
@@ -18,32 +18,16 @@ const LINKS = [
 
 export default function CallsLanding() {
   const [filterState, setFilterState] = useState(null);
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  const load = useCallback(
-    async ({ signal } = {}) => {
-      if (!filterState) return;
-      setLoading(true);
-      setError(null);
-      const params = new URLSearchParams();
-      params.set("dateFrom", filterState.range.from);
-      params.set("dateTo", filterState.range.to);
-      const r = await ownerFetch(`/api/owner/calls/overview?${params.toString()}`, { signal });
-      if (r.aborted) return;
-      if (r.ok) setData(r.data);
-      else setError(r.error);
-      setLoading(false);
-    },
-    [filterState],
-  );
+  const url = useMemo(() => {
+    if (!filterState) return null;
+    const params = new URLSearchParams();
+    params.set("dateFrom", filterState.range.from);
+    params.set("dateTo", filterState.range.to);
+    return `/api/owner/calls/overview?${params.toString()}`;
+  }, [filterState]);
 
-  useEffect(() => {
-    const ctrl = new AbortController();
-    load({ signal: ctrl.signal });
-    return () => ctrl.abort();
-  }, [load]);
+  const { data, loading, error, isValidating, mutate: load } = useOwnerData(url);
 
   const selected = data?.selected;
 
@@ -55,8 +39,8 @@ export default function CallsLanding() {
           title="Calls"
           subtitle="Call volume, connect rate, and links into every calls page"
           controls={
-            <button className="icon-btn" onClick={() => load()} disabled={loading} title="Refresh">
-              {loading ? "…" : "⟳"}
+            <button className="icon-btn" onClick={() => load()} disabled={isValidating} title="Refresh">
+              {isValidating ? "…" : "⟳"}
             </button>
           }
         />

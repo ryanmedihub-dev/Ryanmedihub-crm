@@ -1,5 +1,3 @@
-"use client";
-
 import { Suspense } from "react";
 import SurgerySidebar from "@/components/Sidebars/SurgerySidebar";
 import PatientTable from "@/components/PatientTable";

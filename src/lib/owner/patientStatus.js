@@ -52,6 +52,12 @@ export const PATIENT_STATUS_EXPLANATION = {
 export const CONVERTED_STATUSES = ["SURGERY_BOOKED", "CLOSED"];
 export const isConverted = (status) => CONVERTED_STATUSES.includes(status);
 
+// Visited = the patient actually turned up. Derived as "status is not NEW and not
+// NOT_VISITED" rather than by matching CONSULTED, which the Patient pre-save hook never
+// assigns (see the derivation order above). Filtering on the literal CONSULTED would
+// return zero rows forever and look like a data problem rather than a code one.
+export const VISITED_EXCLUDED_STATUSES = ["NEW", "NOT_VISITED"];
+
 // Confirmed with the user (this session): which status backs each of Part 3's
 // six list pages. `null` means no status filter (the All page).
 export const PRESET_STATUS = {

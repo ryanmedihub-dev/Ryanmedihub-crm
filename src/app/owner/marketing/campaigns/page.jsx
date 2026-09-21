@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import {
   OwnerTopbar, Card, FilterBar, DataTable, Badge, Modal, ErrorState, EmptyState, ManualDataNotice,
 } from "@/components/owner";
 import { ownerFetch } from "@/lib/ownerFetch";
+import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { ALL_BRANCHES } from "@/lib/branches";
 import { rupee, fmtDate, num } from "@/lib/owner/format";
 import { useToast } from "@/components/Toast";
@@ -36,9 +37,6 @@ export default function CampaignsPage() {
   const toast = useToast();
 
   const [filterState, setFilterState] = useState(null);
-  const [campaigns, setCampaigns] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -47,31 +45,19 @@ export default function CampaignsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
-  const load = useCallback(
-    async ({ signal } = {}) => {
-      if (!filterState) return;
-      setLoading(true);
-      setError(null);
-      const params = new URLSearchParams();
-      params.set("dateFrom", filterState.range.from);
-      params.set("dateTo", filterState.range.to);
-      if (filterState.filters.branch && filterState.filters.branch !== "All") params.set("branch", filterState.filters.branch);
-      if (filterState.filters.status) params.set("status", filterState.filters.status);
-      if (filterState.filters.platform) params.set("platform", filterState.filters.platform);
-      const r = await ownerFetch(`/api/owner/marketing/campaigns?${params.toString()}`, { signal });
-      if (r.aborted) return;
-      if (r.ok) setCampaigns(r.data?.campaigns || []);
-      else setError(r.error);
-      setLoading(false);
-    },
-    [filterState],
-  );
+  const url = useMemo(() => {
+    if (!filterState) return null;
+    const params = new URLSearchParams();
+    params.set("dateFrom", filterState.range.from);
+    params.set("dateTo", filterState.range.to);
+    if (filterState.filters.branch && filterState.filters.branch !== "All") params.set("branch", filterState.filters.branch);
+    if (filterState.filters.status) params.set("status", filterState.filters.status);
+    if (filterState.filters.platform) params.set("platform", filterState.filters.platform);
+    return `/api/owner/marketing/campaigns?${params.toString()}`;
+  }, [filterState]);
 
-  useEffect(() => {
-    const ctrl = new AbortController();
-    load({ signal: ctrl.signal });
-    return () => ctrl.abort();
-  }, [load]);
+  const { data, loading, error, mutate: load } = useOwnerData(url);
+  const campaigns = data?.campaigns || [];
 
   const openCreate = () => {
     setEditingId(null);

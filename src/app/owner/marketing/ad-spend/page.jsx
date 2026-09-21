@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useMemo, useState } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, DataTable, Modal, Badge, EmptyState, InlineNotice, KpiRow, ManualDataNotice } from "@/components/owner";
 import { ALL_BRANCHES } from "@/lib/branches";
 import { formatCurrency, formatDate } from "@/lib/financeUI";
 import { ownerFetch } from "@/lib/ownerFetch";
+import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { OWNER_BRANCHES as BRANCH_OPTIONS } from "@/lib/owner/filters";
 import { useToast } from "@/components/Toast";
 import { rupee, num, roasFmt } from "@/lib/owner/format";
@@ -22,12 +23,6 @@ function toDateInputValue(iso) {
 export default function AdSpendPage() {
   const toast = useToast();
 
-  const [entries, setEntries]   = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [campaigns, setCampaigns] = useState([]);
-  const [returnByPlatform, setReturnByPlatform] = useState(null);
-  const [lastUpdated, setLastUpdated] = useState(null);
-
   const [filters, setFilters] = useState({ branch: "All", platform: "All", from: "", to: "" });
 
   const [form, setForm]           = useState(EMPTY_FORM);
@@ -37,8 +32,7 @@ export default function AdSpendPage() {
 
   const [deleteTarget, setDeleteTarget] = useState(null);
 
-  const fetchEntries = useCallback(async ({ signal } = {}) => {
-    setLoading(true);
+  const entriesUrl = useMemo(() => {
     const params = new URLSearchParams();
     if (filters.branch !== "All") params.set("branch", filters.branch);
     if (filters.platform !== "All") params.set("platform", filters.platform);
@@ -47,38 +41,16 @@ export default function AdSpendPage() {
     // Return picture (spend/leads/CPL/CPC/converted/revenue/CAC/ROAS) needs a
     // resolved range — only ask for it once both ends are set.
     if (filters.from && filters.to) params.set("withReturn", "true");
+    return `/api/owner/ad-spend?${params.toString()}`;
+  }, [filters]);
 
-    const r = await ownerFetch(`/api/owner/ad-spend?${params.toString()}`, { signal });
-    if (r.aborted) return;
-    if (r.ok) {
-      const rows = r.data?.entries || [];
-      setEntries(rows);
-      setReturnByPlatform(r.data?.returnByPlatform || null);
-      const latest = rows.reduce((acc, e) => (!acc || new Date(e.createdAt) > new Date(acc.createdAt) ? e : acc), null);
-      setLastUpdated(latest);
-    } else {
-      toast.error(r.error);
-    }
-    setLoading(false);
-  }, [filters, toast]);
+  const { data: entriesData, loading, mutate: fetchEntries } = useOwnerData(entriesUrl);
+  const entries = entriesData?.entries || [];
+  const returnByPlatform = entriesData?.returnByPlatform || null;
+  const lastUpdated = entries.reduce((acc, e) => (!acc || new Date(e.createdAt) > new Date(acc.createdAt) ? e : acc), null);
 
-  const fetchCampaigns = useCallback(async ({ signal } = {}) => {
-    const r = await ownerFetch(`/api/owner/marketing/campaigns?status=Active&dateFrom=&dateTo=`, { signal });
-    if (r.aborted) return;
-    if (r.ok) setCampaigns(r.data?.campaigns || []);
-  }, []);
-
-  useEffect(() => {
-    const ctrl = new AbortController();
-    fetchEntries({ signal: ctrl.signal });
-    return () => ctrl.abort();
-  }, [fetchEntries]);
-
-  useEffect(() => {
-    const ctrl = new AbortController();
-    fetchCampaigns({ signal: ctrl.signal });
-    return () => ctrl.abort();
-  }, [fetchCampaigns]);
+  const { data: campaignsData } = useOwnerData("/api/owner/marketing/campaigns?status=Active&dateFrom=&dateTo=");
+  const campaigns = campaignsData?.campaigns || [];
 
   const resetForm = () => {
     setForm(EMPTY_FORM);
@@ -172,7 +144,7 @@ export default function AdSpendPage() {
           title="Ad Spend Entry"
           subtitle="Where the marketing number goes in — Meta & Google spend, entered by hand"
           controls={
-            <button className="icon-btn" onClick={fetchEntries} disabled={loading} title="Refresh">
+            <button className="icon-btn" onClick={() => fetchEntries()} disabled={loading} title="Refresh">
               {loading ? "…" : "⟳"}
             </button>
           }

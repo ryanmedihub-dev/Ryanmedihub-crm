@@ -11,6 +11,7 @@ import Receivable from "@/models/Receivable";
 import { buildPayableAggregationStages } from "@/lib/payableAggregation";
 import { buildReceivableAggregationStages } from "@/lib/receivableAggregation";
 import { COLLAB_BRANCHES } from "@/lib/branches";
+import { cacheKey, cached } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["collab", "admin", "super-admin"];
 
@@ -105,6 +106,24 @@ export async function GET(request) {
     const txCollection = Transactions.collection.name;
     const patientCollection = Patient.collection.name;
 
+    const meta = {};
+    const key = cacheKey("finance", { route: "collab-cases", ...Object.fromEntries(searchParams) }, session);
+    const { rows, total } = await cached(
+      key, 30,
+      () => computeCases({ match, search, page, limit, txCollection, patientCollection }),
+      meta,
+    );
+
+    const res = NextResponse.json({ success: true, cases: rows, total, page, limit });
+    res.headers.set("X-Cache", meta.status);
+    return res;
+  } catch (error) {
+    console.error("Error listing collab cases:", error);
+    return NextResponse.json({ error: "Failed to fetch collab cases" }, { status: 500 });
+  }
+}
+
+async function computeCases({ match, search, page, limit, txCollection, patientCollection }) {
     const basePipeline = [
       { $match: match },
       {
@@ -214,20 +233,10 @@ export async function GET(request) {
     // patient-level, so flag every repeat after the first to stop them being summed twice.
     const seenPatients = new Set();
     for (const r of rows) {
-      const key = String(r.patient || "");
-      r.patientFigureRepeated = key ? seenPatients.has(key) : false;
-      if (key) seenPatients.add(key);
+      const pid = String(r.patient || "");
+      r.patientFigureRepeated = pid ? seenPatients.has(pid) : false;
+      if (pid) seenPatients.add(pid);
     }
 
-    return NextResponse.json({
-      success: true,
-      cases: rows,
-      total: totalAgg[0]?.total || 0,
-      page,
-      limit,
-    });
-  } catch (error) {
-    console.error("Error listing collab cases:", error);
-    return NextResponse.json({ error: "Failed to fetch collab cases" }, { status: 500 });
-  }
+    return { rows, total: totalAgg[0]?.total || 0 };
 }

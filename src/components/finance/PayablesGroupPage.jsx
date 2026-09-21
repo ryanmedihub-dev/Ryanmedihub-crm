@@ -9,6 +9,7 @@ import LedgerMetrics from "@/components/finance/LedgerMetrics";
 import { AGEING_BUCKETS } from "@/lib/ageing";
 import { PAYABLE_GROUP_PURPOSES, PAYABLE_GROUP_LABELS } from "@/constants/payableGroups";
 import { useLedgerScope } from "@/components/finance/LedgerScopeProvider";
+import { useDebounced } from "@/lib/useDebounced";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const YEARS = Array.from({ length: 6 }, (_, i) => new Date().getFullYear() - 3 + i);
@@ -20,15 +21,6 @@ const MONTHLY_GROUPS = new Set(["rent", "employees"]);
 // (normally the expense sub-type, which is always the fixed "Salary"/"Incentive" value and
 // tells you nothing) instead breaks down into the employees who hold payables in that category.
 const SUB_PARTY_GROUPED = new Set(["employees"]);
-
-const useDebounced = (value, delay = 300) => {
-  const [v, setV] = useState(value);
-  useEffect(() => {
-    const t = setTimeout(() => setV(value), delay);
-    return () => clearTimeout(t);
-  }, [value, delay]);
-  return v;
-};
 
 export default function PayablesGroupPage({ group }) {
   const purposes = PAYABLE_GROUP_PURPOSES[group];

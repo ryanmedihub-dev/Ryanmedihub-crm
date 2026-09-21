@@ -3,6 +3,17 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import dbConnect from "@/lib/db";
 import vendor from "@/models/Vendor";
+import { cacheKey, cached } from "@/lib/cache";
+
+// ponytail: flat .limit() safety cap, not real pagination — the vendor list page fetches
+// this whole endpoint with no page/limit params and filters client-side. Vendor counts are
+// small (suppliers, not transactions), so a cap is enough; add real pagination if that stops
+// being true.
+const SAFETY_LIMIT = 2000;
+
+async function findVendors(query) {
+  return vendor.find(query).sort({ createdAt: -1 }).limit(SAFETY_LIMIT).lean();
+}
 
 export async function GET(req) {
   try {
@@ -77,11 +88,11 @@ export async function GET(req) {
       query.DealsIn = { $regex: dealsIn, $options: "i" };
     }
 
-    const vendors = await vendor.find(query)
-      .sort({ createdAt: -1 })
-      .lean();
+    const meta = {};
+    const key = cacheKey("finance", { route: "vendors-get", search, dealsIn, active }, session);
+    const vendors = await cached(key, 30, () => findVendors(query), meta);
 
-    return NextResponse.json(
+    const res = NextResponse.json(
       {
         success: true,
         data: vendors,
@@ -90,6 +101,8 @@ export async function GET(req) {
       },
       { status: 200 }
     );
+    res.headers.set("X-Cache", meta.status);
+    return res;
   } catch (error) {
     console.error("Error fetching vendors:", error);
     return NextResponse.json(
@@ -173,11 +186,11 @@ export async function POST(req) {
       query.DealsIn = { $regex: dealsIn, $options: "i" };
     }
 
-    const vendors = await vendor.find(query)
-      .sort({ createdAt: -1 })
-      .lean();
+    const meta = {};
+    const key = cacheKey("finance", { route: "vendors-get", search, dealsIn, active }, session);
+    const vendors = await cached(key, 30, () => findVendors(query), meta);
 
-    return NextResponse.json(
+    const res = NextResponse.json(
       {
         success: true,
         data: vendors,
@@ -186,6 +199,8 @@ export async function POST(req) {
       },
       { status: 200 }
     );
+    res.headers.set("X-Cache", meta.status);
+    return res;
   } catch (error) {
     console.error("Error fetching vendors:", error);
     return NextResponse.json(

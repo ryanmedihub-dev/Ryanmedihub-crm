@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -11,7 +11,7 @@ import {
   OwnerTopbar, KpiRow, Card, Funnel, DataTable, ErrorState, EmptyState,
   AttentionRamp, Skeleton, Badge,
 } from "@/components/owner";
-import { ownerFetch } from "@/lib/ownerFetch";
+import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { rupee, num as fmt } from "@/lib/owner/format";
 import { OWNER_BRANCHES as BRANCHES, DATE_RANGES, buildDateRange } from "@/lib/owner/filters";
 
@@ -31,40 +31,28 @@ export default function OwnerDashboard() {
   const [branch, setBranch] = useState("All");
   const [dateRange, setDateRange] = useState("Today");
   const [custom, setCustom] = useState({ from: "", to: "" });
-  const [finance, setFinance] = useState(null);
-  const [financeLoading, setFinanceLoading] = useState(true);
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  const fetchAll = useCallback(async ({ signal } = {}) => {
-    if (dateRange === "Custom" && !custom.from) return;
-    setLoading(true);
-    setFinanceLoading(true);
-    setError(null);
+  // Same guard as before: don't fire any of the three GETs until a custom range has a "from".
+  const dateReady = !(dateRange === "Custom" && !custom.from);
+  const bq = branch !== "All" ? `&branch=${encodeURIComponent(branch)}` : "";
+  const bqOnly = branch !== "All" ? `?branch=${encodeURIComponent(branch)}` : "";
+
+  const dashUrl = useMemo(() => {
+    if (!dateReady) return null;
     const { from, to } = buildDateRange(dateRange, custom);
-    const bq = branch !== "All" ? `&branch=${encodeURIComponent(branch)}` : "";
-    const [dashR, recR, payR] = await Promise.all([
-      ownerFetch(`/api/owner/dashboard?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}${bq}`, { signal }),
-      ownerFetch(`/api/receivables/summary${branch !== "All" ? `?branch=${encodeURIComponent(branch)}` : ""}`, { signal }),
-      ownerFetch(`/api/payables/summary${branch !== "All" ? `?branch=${encodeURIComponent(branch)}` : ""}`, { signal }),
-    ]);
-    if (dashR.aborted) return;
-    if (dashR.ok) setData(dashR.data);
-    else setError(dashR.error);
-    setFinance({
-      receivable: recR.ok ? recR.data?.overall ?? null : null,
-      payable: payR.ok ? payR.data?.overall ?? null : null,
-    });
-    setLoading(false);
-    setFinanceLoading(false);
-  }, [branch, dateRange, custom]);
+    return `/api/owner/dashboard?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}${bq}`;
+  }, [dateReady, dateRange, custom, bq]);
+  const { data, loading, error, isValidating: dashValidating, mutate: loadDash } = useOwnerData(dashUrl);
 
-  useEffect(() => {
-    const ctrl = new AbortController();
-    fetchAll({ signal: ctrl.signal });
-    return () => ctrl.abort();
-  }, [fetchAll]);
+  const recUrl = dateReady ? `/api/receivables/summary${bqOnly}` : null;
+  const payUrl = dateReady ? `/api/payables/summary${bqOnly}` : null;
+  const { data: recData, loading: recLoading, isValidating: recValidating, mutate: loadRec } = useOwnerData(recUrl);
+  const { data: payData, loading: payLoading, isValidating: payValidating, mutate: loadPay } = useOwnerData(payUrl);
+
+  const finance = { receivable: recData?.overall ?? null, payable: payData?.overall ?? null };
+  const financeLoading = recLoading || payLoading;
+  const isValidating = dashValidating || recValidating || payValidating;
+  const fetchAll = () => { loadDash(); loadRec(); loadPay(); };
 
   const revenue = data?.revenue || {};
   const surgeries = data?.surgeries || {};
@@ -125,8 +113,8 @@ export default function OwnerDashboard() {
                   <input type="date" className="control" value={custom.to} onChange={(e) => setCustom((p) => ({ ...p, to: e.target.value }))} aria-label="To date" />
                 </>
               )}
-              <button className="icon-btn" onClick={() => fetchAll()} disabled={loading} title="Refresh">
-                {loading ? "…" : "⟳"}
+              <button className="icon-btn" onClick={() => fetchAll()} disabled={isValidating} title="Refresh">
+                {isValidating ? "…" : "⟳"}
               </button>
             </>
           }

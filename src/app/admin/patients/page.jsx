@@ -1,5 +1,3 @@
-"use client";
-
 import { Suspense } from "react";
 import PatientTable from "@/components/PatientTable";
 import { ALL_BRANCHES } from "@/lib/branches";

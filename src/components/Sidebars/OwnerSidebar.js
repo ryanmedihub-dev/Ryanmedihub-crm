@@ -7,10 +7,6 @@ import { useSession } from "next-auth/react";
 import LogoutButton from "../LogoutButton";
 import { useShell } from "@/components/owner/ShellContext";
 
-// Owner Panel v2 nav (F8): 10 top-level sections, most with sub-pages, as
-// collapsible groups with active-trail highlighting. Each group header links to
-// its section landing ("dashboard page"). Open/closed state is remembered.
-
 const SECTIONS = [
   { title: "Dashboard", href: "/owner/dashboard", icon: "◎" },
   {
@@ -77,6 +73,8 @@ const SECTIONS = [
       { label: "Ad Spend Entry", href: "/owner/marketing/ad-spend" },
       { label: "Meta & Google", href: "/owner/marketing/platforms" },
       { label: "Meta vs Google", href: "/owner/marketing/comparison" },
+      { label: "Campaign Leads", href: "/owner/marketing/campaign-leads" },
+      { label: "Campaign Performance", href: "/owner/marketing/performance" },
     ],
   },
   {
@@ -120,7 +118,7 @@ const SECTIONS = [
   { title: "Statistics", href: "/owner/statistics", icon: "⟐" },
 ];
 
-const OPEN_KEY = "owner-nav-open";
+const OPEN_KEY = "owner-nav-open-group";
 
 export default function OwnerSidebar() {
   const pathname = usePathname();
@@ -130,48 +128,50 @@ export default function OwnerSidebar() {
   const inTrail = (href) => pathname === href || pathname.startsWith(href + "/");
   const activeSection = SECTIONS.find((s) => inTrail(s.href));
 
-  const [open, setOpen] = useState(() => new Set());
+  const [openGroup, setOpenGroup] = useState(null);
   const [hydrated, setHydrated] = useState(false);
 
-  // Restore remembered open groups; fall back to opening the active section.
+  // Restore open group from localStorage
   useEffect(() => {
-    let stored = null;
     try {
-      stored = JSON.parse(localStorage.getItem(OPEN_KEY) || "null");
+      const stored = localStorage.getItem(OPEN_KEY);
+      if (stored) setOpenGroup(stored);
     } catch {
-      stored = null;
+      // Ignore private mode errors
     }
-    const next = new Set(Array.isArray(stored) ? stored : SECTIONS.filter((s) => s.items).map((s) => s.title));
-    setOpen(next);
     setHydrated(true);
   }, []);
 
-  // Always keep the active section expanded as the route changes.
+  // Automatically open the group containing the active page
   useEffect(() => {
-    if (!activeSection?.items) return;
-    setOpen((prev) => (prev.has(activeSection.title) ? prev : new Set(prev).add(activeSection.title)));
+    if (activeSection?.items && activeSection.title !== openGroup) {
+      setOpenGroup(activeSection.title);
+    }
   }, [activeSection]);
 
+  // Persist to local storage
   useEffect(() => {
     if (!hydrated) return;
     try {
-      localStorage.setItem(OPEN_KEY, JSON.stringify([...open]));
+      if (openGroup) {
+        localStorage.setItem(OPEN_KEY, openGroup);
+      } else {
+        localStorage.removeItem(OPEN_KEY);
+      }
     } catch {
-      /* private mode — fine */
+      // Ignore private mode errors
     }
-  }, [open, hydrated]);
+  }, [openGroup, hydrated]);
 
-  // Close the mobile drawer on navigation.
+  // Close mobile nav on route change
   useEffect(() => {
     setNavOpen(false);
   }, [pathname, setNavOpen]);
 
-  const toggle = (title) =>
-    setOpen((prev) => {
-      const next = new Set(prev);
-      next.has(title) ? next.delete(title) : next.add(title);
-      return next;
-    });
+  // Accordion toggle: if clicked tab is already open, close it. Otherwise, open it (closing others automatically)
+  const toggle = (title) => {
+    setOpenGroup((prev) => (prev === title ? null : title));
+  };
 
   const userName = session?.user?.name || session?.user?.email || "Owner";
   const initials = userName.slice(0, 2).toUpperCase();
@@ -179,6 +179,7 @@ export default function OwnerSidebar() {
   return (
     <>
       {navOpen && <div className="scrim" onClick={() => setNavOpen(false)} />}
+
       <aside className={`sidebar${navOpen ? " open" : ""}`}>
         <div className="brand">
           <div className="logo" aria-hidden="true">◈</div>
@@ -191,7 +192,9 @@ export default function OwnerSidebar() {
         <nav>
           {SECTIONS.map((section) => {
             const sectionActive = activeSection?.title === section.title;
+            const isOpen = openGroup === section.title;
 
+            // Single link (no sub-items)
             if (!section.items) {
               return (
                 <Link
@@ -206,13 +209,13 @@ export default function OwnerSidebar() {
               );
             }
 
-            const isOpen = open.has(section.title);
+            // Grouped link (accordion)
             return (
               <div key={section.title} className="nav-group">
                 <div className={`nav-group-head${sectionActive ? " active" : ""}`}>
                   <Link
                     href={section.href}
-                    aria-current={pathname === section.href ? "page" : undefined}
+                    aria-current={sectionActive ? "page" : undefined}
                     className="nav-group-link"
                   >
                     <span className="nav-ico" aria-hidden="true">{section.icon}</span>
@@ -225,7 +228,7 @@ export default function OwnerSidebar() {
                     aria-label={`${isOpen ? "Collapse" : "Expand"} ${section.title}`}
                     onClick={() => toggle(section.title)}
                   >
-                    <span aria-hidden="true">{isOpen ? "▾" : "▸"}</span>
+                    {isOpen ? "▾" : "▸"}
                   </button>
                 </div>
 
@@ -253,11 +256,13 @@ export default function OwnerSidebar() {
         </nav>
 
         <div className="side-foot">
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-            <div className="avatar">{initials}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-3)", marginBottom: "var(--sp-3)" }}>
+            <div className="avatar" aria-hidden="true">{initials}</div>
             <div style={{ minWidth: 0 }}>
-              <strong style={{ display: "block", fontSize: 13, fontWeight: 600 }}>{userName}</strong>
-              <span style={{ fontSize: 12, color: "var(--ink-muted)" }}>Owner</span>
+              <strong style={{ display: "block", fontSize: "var(--fs-14)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {userName}
+              </strong>
+              <span className="muted" style={{ fontSize: "var(--fs-12)" }}>Owner</span>
             </div>
           </div>
           <LogoutButton className="danger-btn" />

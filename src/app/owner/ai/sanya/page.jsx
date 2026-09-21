@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, Badge, InlineNotice } from "@/components/owner";
-import { ownerFetch } from "@/lib/ownerFetch";
+import { useOwnerData } from "@/lib/owner/useOwnerData";
 
 // Sanya — tool-calling assistant over the Owner panel's own aggregations.
 // Everything shown here is generated; every number links to the page it can
@@ -83,20 +83,12 @@ function renderMarkdown(text) {
 }
 
 export default function SanyaAssistantPage() {
-  const [meta, setMeta] = useState(null);
+  const { data: meta } = useOwnerData("/api/owner/ai/sanya");
   const [messages, setMessages] = useState([]); // { role, content, tools:[], verify:[], usage, error, streaming }
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const abortRef = useRef(null);
   const endRef = useRef(null);
-
-  useEffect(() => {
-    const ctrl = new AbortController();
-    ownerFetch("/api/owner/ai/sanya", { signal: ctrl.signal }).then((r) => {
-      if (!r.aborted && r.ok) setMeta(r.data);
-    });
-    return () => ctrl.abort();
-  }, []);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });

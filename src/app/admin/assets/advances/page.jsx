@@ -11,15 +11,7 @@ import LedgerScopeBar from "@/components/finance/LedgerScopeBar";
 import LedgerExportButton from "@/components/finance/LedgerExportButton";
 import LedgerMetrics from "@/components/finance/LedgerMetrics";
 import { useLedgerScope } from "@/components/finance/LedgerScopeProvider";
-
-const useDebounced = (value, delay = 300) => {
-  const [v, setV] = useState(value);
-  useEffect(() => {
-    const t = setTimeout(() => setV(value), delay);
-    return () => clearTimeout(t);
-  }, [value, delay]);
-  return v;
-};
+import { useDebounced } from "@/lib/useDebounced";
 
 export default function AssetsAdvancesPage() {
   const { scope, scopeQS } = useLedgerScope();

@@ -91,7 +91,7 @@ export async function poorPerformers({ from, to }) {
   const periodDays = daysInPeriod(period.from, period.to);
 
   const employees = await Employee.find({ isactive: true, mergedInto: null })
-    .select("name role branch tlName callbyUserId")
+    .select("name role branch tlName callbyUserId employeeId")
     .lean();
 
   const bySection = new Map();

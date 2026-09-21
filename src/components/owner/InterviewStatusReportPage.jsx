@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import OwnerTopbar from "./OwnerTopbar";
 import Card from "./Card";
@@ -10,6 +10,7 @@ import KpiRow from "./KpiRow";
 import ErrorState from "./ErrorState";
 import InlineNotice from "./InlineNotice";
 import { ownerFetch } from "@/lib/ownerFetch";
+import { useOwnerData } from "@/lib/owner/useOwnerData";
 
 // Shared shell for the Selected/Rejected interview pages (Owner Panel v2,
 // Part 5) — same "config object, one component" pattern as Part 2's
@@ -23,40 +24,23 @@ export default function InterviewStatusReportPage({ config }) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
 
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [notice, setNotice] = useState(null);
 
-  const load = useCallback(
-    async ({ signal } = {}) => {
-      if (!filterState) return;
-      setLoading(true);
-      setError(null);
-      const params = new URLSearchParams();
-      params.set("preset", config.preset);
-      params.set("dateFrom", filterState.range.from);
-      params.set("dateTo", filterState.range.to);
-      if (search) params.set("search", search);
-      params.set("sortBy", sortKey);
-      params.set("sortDir", sortDir);
-      params.set("page", String(page));
-      params.set("pageSize", String(pageSize));
+  const url = useMemo(() => {
+    if (!filterState) return null;
+    const params = new URLSearchParams();
+    params.set("preset", config.preset);
+    params.set("dateFrom", filterState.range.from);
+    params.set("dateTo", filterState.range.to);
+    if (search) params.set("search", search);
+    params.set("sortBy", sortKey);
+    params.set("sortDir", sortDir);
+    params.set("page", String(page));
+    params.set("pageSize", String(pageSize));
+    return `/api/owner/hr/by-status?${params.toString()}`;
+  }, [filterState, search, sortKey, sortDir, page, pageSize, config.preset]);
 
-      const r = await ownerFetch(`/api/owner/hr/by-status?${params.toString()}`, { signal });
-      if (r.aborted) return;
-      if (r.ok) setData(r.data);
-      else setError(r.error);
-      setLoading(false);
-    },
-    [filterState, search, sortKey, sortDir, page, pageSize, config.preset],
-  );
-
-  useEffect(() => {
-    const ctrl = new AbortController();
-    load({ signal: ctrl.signal });
-    return () => ctrl.abort();
-  }, [load]);
+  const { data, loading, error, mutate: load } = useOwnerData(url);
 
   const handleSort = (key) => {
     setPage(1);

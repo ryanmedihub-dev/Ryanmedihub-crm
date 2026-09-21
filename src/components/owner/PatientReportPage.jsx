@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import OwnerTopbar from "./OwnerTopbar";
@@ -10,7 +10,7 @@ import ReportTable from "./ReportTable";
 import KpiRow from "./KpiRow";
 import ErrorState from "./ErrorState";
 import TrendChart from "./TrendChart";
-import { ownerFetch } from "@/lib/ownerFetch";
+import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { num } from "@/lib/owner/format";
 import { usePagedList } from "@/lib/owner/usePagedList";
 
@@ -35,45 +35,26 @@ export default function PatientReportPage({ config }) {
     dirForKey,
   });
 
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
   const extras = config.extras || [];
 
-  const load = useCallback(
-    async ({ signal } = {}) => {
-      if (!filterState) return;
-      setLoading(true);
-      setError(null);
+  const url = useMemo(() => {
+    if (!filterState) return null;
+    const params = new URLSearchParams(list.query);
+    params.set("preset", config.preset);
+    params.set("dateFrom", filterState.range.from);
+    params.set("dateTo", filterState.range.to);
+    if (filterState.filters.branch && filterState.filters.branch !== "All") {
+      params.set("branch", filterState.filters.branch);
+    }
+    if (filterState.filters.q) params.set("search", filterState.filters.q);
+    for (const ex of extras) {
+      const v = filterState.filters[ex.key];
+      if (v && v !== "all") params.set(ex.key, v);
+    }
+    return `/api/owner/patients?${params.toString()}`;
+  }, [filterState, list.query, config.preset, extras]);
 
-      const params = new URLSearchParams(list.query);
-      params.set("preset", config.preset);
-      params.set("dateFrom", filterState.range.from);
-      params.set("dateTo", filterState.range.to);
-      if (filterState.filters.branch && filterState.filters.branch !== "All") {
-        params.set("branch", filterState.filters.branch);
-      }
-      if (filterState.filters.q) params.set("search", filterState.filters.q);
-      for (const ex of extras) {
-        const v = filterState.filters[ex.key];
-        if (v && v !== "all") params.set(ex.key, v);
-      }
-
-      const r = await ownerFetch(`/api/owner/patients?${params.toString()}`, { signal });
-      if (r.aborted) return;
-      if (r.ok) setData(r.data);
-      else setError(r.error);
-      setLoading(false);
-    },
-    [filterState, list.query, config.preset, extras],
-  );
-
-  useEffect(() => {
-    const ctrl = new AbortController();
-    load({ signal: ctrl.signal });
-    return () => ctrl.abort();
-  }, [load]);
+  const { data, loading, error, isValidating, mutate: load } = useOwnerData(url);
 
   const kpis = useMemo(() => (data ? config.kpis(data) : []), [data, config]);
   const rows = data?.rows || [];
@@ -98,8 +79,8 @@ export default function PatientReportPage({ config }) {
           title={config.title}
           subtitle={config.subtitle}
           controls={
-            <button className="icon-btn" onClick={() => load()} disabled={loading} title="Refresh">
-              {loading ? "…" : "⟳"}
+            <button className="icon-btn" onClick={() => load()} disabled={isValidating} title="Refresh">
+              {isValidating ? "…" : "⟳"}
             </button>
           }
         />

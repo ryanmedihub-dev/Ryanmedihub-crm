@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, FilterBar, DataTable, KpiRow, ErrorState, ProgressBar, Badge } from "@/components/owner";
-import { ownerFetch } from "@/lib/ownerFetch";
+import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { num, fmtDateTime } from "@/lib/owner/format";
 
 // Per-employee call summary for the period. "Active Call Window" (first call
@@ -12,34 +12,19 @@ import { num, fmtDateTime } from "@/lib/owner/format";
 // Decision #2).
 export default function CallsEmployeeReportPage() {
   const [filterState, setFilterState] = useState(null);
-  const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [sortKey, setSortKey] = useState("totalCalls");
   const [sortDir, setSortDir] = useState("desc");
 
-  const load = useCallback(
-    async ({ signal } = {}) => {
-      if (!filterState) return;
-      setLoading(true);
-      setError(null);
-      const params = new URLSearchParams();
-      params.set("dateFrom", filterState.range.from);
-      params.set("dateTo", filterState.range.to);
-      const r = await ownerFetch(`/api/owner/calls/employee-report?${params.toString()}`, { signal });
-      if (r.aborted) return;
-      if (r.ok) setRows(r.data?.rows || []);
-      else setError(r.error);
-      setLoading(false);
-    },
-    [filterState],
-  );
+  const url = useMemo(() => {
+    if (!filterState) return null;
+    const params = new URLSearchParams();
+    params.set("dateFrom", filterState.range.from);
+    params.set("dateTo", filterState.range.to);
+    return `/api/owner/calls/employee-report?${params.toString()}`;
+  }, [filterState]);
 
-  useEffect(() => {
-    const ctrl = new AbortController();
-    load({ signal: ctrl.signal });
-    return () => ctrl.abort();
-  }, [load]);
+  const { data, loading, error, mutate: load } = useOwnerData(url);
+  const rows = data?.rows || [];
 
   const handleSort = (key) => {
     if (key === sortKey) setSortDir((d) => (d === "asc" ? "desc" : "asc"));

@@ -28,10 +28,13 @@ import { CONVERTED_STATUSES } from "@/lib/owner/patientStatus";
 //     surgery done) so marketing CAC/ROAS agree with every other page.
 //
 // PER-CAMPAIGN LIMIT: Leads.tag only distinguishes platform (Meta/Google/
-// Form/Collab), never campaign. Per-platform lead/conversion/revenue
-// attribution works; per-campaign does NOT and never will until campaign is
-// captured on the lead itself. Campaign-scoped spend/clicks/CPC still work
-// (that's local to AdSpend) — see computeCampaignSpend below.
+// Form/Collab), never campaign — the per-platform attribution below still can't go finer
+// than that. Per-campaign attribution NOW EXISTS via a different path: CampaignLead
+// (src/models/CampaignLead.js) is uploaded against a specific campaign, so campaign is
+// captured on the lead itself. See src/lib/owner/campaignAttribution.js — a separate
+// implementation, not an extension of this one, because CampaignLead and Leads are
+// different intake sources with different lifecycles. Campaign-scoped spend/clicks/CPC
+// here (computeCampaignSpend below) is reused by that implementation rather than rebuilt.
 
 export const TAG_BY_PLATFORM = { Meta: "Meta Leads", Google: "Google Leads" };
 export const MARKETING_CONVERTED_STATUSES = CONVERTED_STATUSES;

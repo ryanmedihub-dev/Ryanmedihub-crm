@@ -309,6 +309,10 @@ patientSchema.index({ "personal.branch": 1, "personal.visitDate": -1 });
 patientSchema.index({ "surgery.surgeryDate": -1 });
 patientSchema.index({ "counselling.counsellor": 1 });
 patientSchema.index({ "personal.reference": 1 });
+// Backs the Owner Employees pages: group referred patients by their referring employee,
+// bounded by visit date, counting by status. The existing { "personal.reference": 1 } is only
+// a prefix and leaves the status/date work to a fetch-and-filter.
+patientSchema.index({ "personal.reference": 1, "ops.status": 1, "personal.visitDate": -1 });
 patientSchema.index({ "personal.name": 1 });
 patientSchema.index({ "incentives.employee": 1, "incentives.isCancelled": 1 });
 patientSchema.index({

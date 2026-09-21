@@ -9,6 +9,9 @@ import DeleteLog from "@/models/DeleteLog";
 // Registers the Vendor schema so the transaction log's .populate("vendor") resolves.
 import "@/models/Vendor";
 import { getISTStartOfDay, getISTEndOfDay } from "@/lib/dateHelpers";
+import { cacheKey, cached } from "@/lib/cache";
+
+const LOG_TYPES = ["patient-changes-log", "transaction-changes-log", "stock-changes-log", "delete-log"];
 
 function fmtDate(d) {
   if (!d) return "";
@@ -120,6 +123,35 @@ export async function GET(request) {
     const dateFrom = from ? getISTStartOfDay(from) : null;
     const dateTo = to ? getISTEndOfDay(to) : null;
 
+    if (!LOG_TYPES.includes(type)) {
+      return NextResponse.json(
+        { success: false, message: "Invalid log type" },
+        { status: 400 }
+      );
+    }
+
+    const meta = {};
+    const key = cacheKey("admin-logs", { type, hasBranch, branch, from, to });
+    const { data, truncated } = await cached(key, 30, () => computeLogs({ type, hasBranch, branch, dateFrom, dateTo }), meta);
+
+    const res = NextResponse.json({
+      success: true,
+      data,
+      truncated,
+      ...(truncated ? { docLimit: TX_LOG_DOC_LIMIT } : {}),
+    });
+    res.headers.set("X-Cache", meta.status);
+    return res;
+  } catch (err) {
+    console.error("Admin logs API error:", err);
+    return NextResponse.json(
+      { success: false, message: err.message },
+      { status: 500 }
+    );
+  }
+}
+
+async function computeLogs({ type, hasBranch, branch, dateFrom, dateTo }) {
     let data = [];
     let truncated = false;
 
@@ -383,25 +415,7 @@ export async function GET(request) {
         }));
         break;
       }
-
-      default:
-        return NextResponse.json(
-          { success: false, message: "Invalid log type" },
-          { status: 400 }
-        );
     }
 
-    return NextResponse.json({
-      success: true,
-      data,
-      truncated,
-      ...(truncated ? { docLimit: TX_LOG_DOC_LIMIT } : {}),
-    });
-  } catch (err) {
-    console.error("Admin logs API error:", err);
-    return NextResponse.json(
-      { success: false, message: err.message },
-      { status: 500 }
-    );
-  }
+    return { data, truncated };
 }

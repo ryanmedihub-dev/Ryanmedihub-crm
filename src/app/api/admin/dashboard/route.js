@@ -5,6 +5,7 @@ import Transactions from "@/models/Transactions";
 import { ALL_BRANCHES } from "@/lib/branches";
 import { SETTLEMENT_EXCLUSION } from "@/constants/bankRouting";
 import { unsettledMethodsSync } from "@/lib/masterData";
+import { cacheKey, cached } from "@/lib/cache";
 const VALID_BRANCHES = ["All", ...ALL_BRANCHES];
 
 const handler = async (req) => {
@@ -335,6 +336,25 @@ const handler = async (req) => {
       return result[0];
     };
 
+    const meta = {};
+    const key = cacheKey("finance", { route: "admin-dashboard", branch, from, to });
+    const payload = await cached(key, 30, () => computeDashboardPayload({
+      getPatientStats, getRevenueStats, fromDate, toDate, yesterdayStart, yesterdayEnd, branch,
+    }), meta);
+
+    const res = NextResponse.json(payload);
+    res.headers.set("X-Cache", meta.status);
+    return res;
+  } catch (error) {
+    console.error("Dashboard analytics error:", error);
+    return NextResponse.json(
+      { error: "Internal server error", details: error.message },
+      { status: 500 }
+    );
+  }
+};
+
+async function computeDashboardPayload({ getPatientStats, getRevenueStats, fromDate, toDate, yesterdayStart, yesterdayEnd, branch }) {
     const [patientStats, revenueStats] = await Promise.all([
       getPatientStats(),
       getRevenueStats(),
@@ -361,7 +381,7 @@ const handler = async (req) => {
     const currentRevenue = revenueStats.currentTotal[0]?.total || 0;
     const comparisonRevenue = revenueStats.comparisonTotal[0]?.total || 0;
 
-    return NextResponse.json({
+    return {
       dateRange: {
         from: fromDate.toISOString(),
         to: toDate.toISOString(),
@@ -437,14 +457,7 @@ const handler = async (req) => {
           totalRevenue:  (prpRow?.total || 0) + (gfcRow?.total || 0),
         };
       })(),
-    });
-  } catch (error) {
-    console.error("Dashboard analytics error:", error);
-    return NextResponse.json(
-      { error: "Internal server error", details: error.message },
-      { status: 500 }
-    );
-  }
-};
+    };
+}
 
 export const POST = withDB(handler);

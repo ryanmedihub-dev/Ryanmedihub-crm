@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import {
   OwnerTopbar, Card, ReportTable, Badge, FilterBar, KpiRow, ErrorState, InlineNotice, Modal,
 } from "@/components/owner";
 import { ownerFetch } from "@/lib/ownerFetch";
+import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { rupee, num } from "@/lib/owner/format";
 
 const BAND_KIND = { Excellent: "good", Good: "info", Average: "warn", Bad: "bad" };
@@ -31,10 +32,6 @@ const partialTitle = (t) =>
 export default function LeadershipPage() {
   const router = useRouter();
   const [filterState, setFilterState] = useState(null);
-  const [teams, setTeams] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [callbyError, setCallbyError] = useState(null);
 
   const [editing, setEditing] = useState(null); // { tlNameKey, tlName, managerName }
   const [managerInput, setManagerInput] = useState("");
@@ -44,36 +41,21 @@ export default function LeadershipPage() {
   const [sortKey, setSortKey] = useState("teamTotalCalls");
   const [sortDir, setSortDir] = useState("desc");
 
-  const load = useCallback(
-    async ({ signal } = {}) => {
-      if (!filterState) return;
-      setLoading(true);
-      setError(null);
-      const params = new URLSearchParams();
-      params.set("dateFrom", filterState.range.from);
-      params.set("dateTo", filterState.range.to);
-      if (filterState.filters.branch && filterState.filters.branch !== "All") {
-        params.set("branch", filterState.filters.branch);
-      }
-      if (filterState.filters.isactive) params.set("isactive", filterState.filters.isactive);
-      const r = await ownerFetch(`/api/owner/employees/leadership?${params.toString()}`, { signal });
-      if (r.aborted) return;
-      if (r.ok) {
-        setTeams(r.data?.teams || []);
-        setCallbyError(r.data?.callbyError || null);
-      } else {
-        setError(r.error);
-      }
-      setLoading(false);
-    },
-    [filterState],
-  );
+  const url = useMemo(() => {
+    if (!filterState) return null;
+    const params = new URLSearchParams();
+    params.set("dateFrom", filterState.range.from);
+    params.set("dateTo", filterState.range.to);
+    if (filterState.filters.branch && filterState.filters.branch !== "All") {
+      params.set("branch", filterState.filters.branch);
+    }
+    if (filterState.filters.isactive) params.set("isactive", filterState.filters.isactive);
+    return `/api/owner/employees/leadership?${params.toString()}`;
+  }, [filterState]);
 
-  useEffect(() => {
-    const ctrl = new AbortController();
-    load({ signal: ctrl.signal });
-    return () => ctrl.abort();
-  }, [load]);
+  const { data, loading, error, mutate: load } = useOwnerData(url);
+  const teams = data?.teams || [];
+  const callbyError = data?.callbyError || null;
 
   const openEdit = (team) => {
     setEditing(team);
@@ -159,7 +141,7 @@ export default function LeadershipPage() {
       csv: (t) => t.teamSize,
     },
     { key: "teamTotalCalls", label: "Total Calls", align: "right", sortable: true, render: (t) => <span title={partialTitle(t)}>{num(t.teamTotalCalls)}</span> },
-    { key: "teamTotalLeads", label: "Leads (now)", align: "right", sortable: true, render: (t) => <span title={partialTitle(t)}>{num(t.teamTotalLeads)}</span> },
+    { key: "teamInterested", label: "Interested (engagement)", align: "right", sortable: true, render: (t) => <span title={partialTitle(t)}>{num(t.teamInterested)}</span> },
     { key: "teamPatientsVisited", label: "Patients Visited", align: "right", sortable: true, render: (t) => num(t.teamPatientsVisited) },
     { key: "teamConverted", label: "Converted", align: "right", sortable: true, render: (t) => num(t.teamConverted) },
     { key: "teamPerformance", label: "Team Performance", sortable: true, render: (t) => performanceCell(t.teamPerformance), csv: (t) => t.teamPerformance?.score ?? "" },

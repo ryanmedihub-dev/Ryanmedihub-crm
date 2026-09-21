@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, FilterBar, KpiRow, DataTable, ErrorState, Badge } from "@/components/owner";
-import { ownerFetch } from "@/lib/ownerFetch";
+import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { rupee, num, fmtDate } from "@/lib/owner/format";
 
 const STATUS_KIND = { Paid: "good", "Partially Paid": "info", Pending: "warn", Overdue: "bad" };
@@ -13,32 +13,17 @@ const STATUS_KIND = { Paid: "good", "Partially Paid": "info", Pending: "warn", O
 // client-side by payee.label/branch (Owner Panel v2, Part 5).
 export default function FinanceRentPage() {
   const [filterState, setFilterState] = useState(null);
-  const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  const load = useCallback(
-    async ({ signal } = {}) => {
-      if (!filterState) return;
-      setLoading(true);
-      setError(null);
-      const branch = filterState.filters.branch && filterState.filters.branch !== "All" ? filterState.filters.branch : "";
-      const params = new URLSearchParams({ groupBy: "party", purpose: "RENT", page: "1", limit: "200" });
-      if (branch) params.set("branch", branch);
-      const r = await ownerFetch(`/api/payables/grouped?${params.toString()}`, { signal });
-      if (r.aborted) return;
-      if (r.ok) setRows(r.data?.rows || []);
-      else setError(r.error);
-      setLoading(false);
-    },
-    [filterState],
-  );
+  const url = useMemo(() => {
+    if (!filterState) return null;
+    const branch = filterState.filters.branch && filterState.filters.branch !== "All" ? filterState.filters.branch : "";
+    const params = new URLSearchParams({ groupBy: "party", purpose: "RENT", page: "1", limit: "200" });
+    if (branch) params.set("branch", branch);
+    return `/api/payables/grouped?${params.toString()}`;
+  }, [filterState]);
 
-  useEffect(() => {
-    const ctrl = new AbortController();
-    load({ signal: ctrl.signal });
-    return () => ctrl.abort();
-  }, [load]);
+  const { data, loading, error, isValidating, mutate: load } = useOwnerData(url);
+  const rows = data?.rows || [];
 
   const byProperty = {};
   for (const r of rows) {
@@ -66,8 +51,8 @@ export default function FinanceRentPage() {
           title="Rent"
           subtitle="Payable purpose: RENT — per property, from the existing payables data"
           controls={
-            <button className="icon-btn" onClick={() => load()} disabled={loading} title="Refresh">
-              {loading ? "…" : "⟳"}
+            <button className="icon-btn" onClick={() => load()} disabled={isValidating} title="Refresh">
+              {isValidating ? "…" : "⟳"}
             </button>
           }
         />

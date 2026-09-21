@@ -3,6 +3,7 @@ import { withDB } from "@/lib/withDB";
 import Patient from "@/models/Patient";
 import Employee from "@/models/Employee";
 import Transactions from "@/models/Transactions.js";
+import { cacheKey, cached } from "@/lib/cache";
 
 const handler = async (req) => {
     try {
@@ -19,7 +20,9 @@ const handler = async (req) => {
             );
         }
 
-        const patient = await Patient.findById(id)
+        const meta = {};
+        const key = cacheKey("patients", { route: "admin-patient-data", id });
+        const patient = await cached(key, 30, () => Patient.findById(id)
             .populate({
                 path: 'personal.reference',
                 select: 'name',
@@ -59,12 +62,13 @@ const handler = async (req) => {
                 path: 'surgery.helper',
                 select: 'name',
                 model: 'Employee'
-            })              
+            })
             .populate({
                 path: 'payments.transactions',
                 select: 'date branch paymentType procedure method amount',
                 model: 'Transactions'
-            });
+            })
+            .lean(), meta);
 
         if (!patient) {
             return NextResponse.json(
@@ -76,10 +80,12 @@ const handler = async (req) => {
             );
         }
 
-        return NextResponse.json({ 
-            patient, 
+        const res = NextResponse.json({
+            patient,
             success: true,
         }, { status: 200 });
+        res.headers.set("X-Cache", meta.status);
+        return res;
 
     } catch (error) {
         console.error("Error fetching patient data:", error);

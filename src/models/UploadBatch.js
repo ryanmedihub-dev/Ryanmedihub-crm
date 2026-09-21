@@ -5,12 +5,13 @@ import mongoose from "mongoose";
 const uploadBatchSchema = new mongoose.Schema(
   {
     batchNo: { type: Number, index: true }, // human-friendly running number
-    kind: { type: String, enum: ["PAYABLE"], default: "PAYABLE" },
+    kind: { type: String, enum: ["PAYABLE", "CAMPAIGN_LEAD"], default: "PAYABLE" },
     label: String, // user-typed, e.g. "Sept 2026 salaries"
     fileName: String,
     totalRows: Number,
 
     createdPayables: [{ type: mongoose.Schema.Types.ObjectId, ref: "Payable" }],
+    createdCampaignLeads: [{ type: mongoose.Schema.Types.ObjectId, ref: "CampaignLead" }],
     failedRows: [{ rowNumber: Number, error: String }],
     rowHashes: [String],
 

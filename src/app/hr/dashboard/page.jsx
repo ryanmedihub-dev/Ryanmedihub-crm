@@ -34,7 +34,6 @@ function buildRange(preset, custom = {}) {
 }
 
 const fmtDay  = (d) => new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
-const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 
 const STATUS_COLORS = {
   Selected:              "#10b981",

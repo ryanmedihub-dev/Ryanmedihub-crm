@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
-const formatCurrency = (amount) => `₹${Number(amount || 0).toLocaleString("en-IN")}`;
+import { formatCurrency } from "@/lib/financeUI";
 
 const PURPOSE_LABELS = {
   PATIENT_DUE: "Patient Due",

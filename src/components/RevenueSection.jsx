@@ -11,8 +11,8 @@ import SearchableSelect from "@/components/SearchableSelect";
 import TransactionSummaryPanel from "@/components/TransactionSummaryPanel";
 import { ALL_BRANCHES } from "@/lib/branches";
 import { Scissors, Heart, Pill, Wallet, Save, Loader2 } from "lucide-react";
+import { formatCurrency } from "@/lib/financeUI";
 
-const formatCurrency = (amount) => `₹${Number(amount || 0).toLocaleString("en-IN")}`;
 const SERVICE_PROCEDURES = ["PRP", "GFC", "Alopecia", "Canacot", "Headwash", "Other"];
 
 const CATEGORY_META = {

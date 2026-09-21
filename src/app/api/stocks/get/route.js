@@ -4,6 +4,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import dbConnect from "@/lib/db";
 import Stock from "@/models/Stock";
 import { NAME_COLLATION } from "@/lib/sortOptions";
+import { cacheKey, cached } from "@/lib/cache";
 
 // Everything below used to run as two Stock.find({}).lean() passes — one for the
 // filtered list, one unfiltered across the WHOLE collection just to sum things up in
@@ -126,12 +127,20 @@ export async function GET(req) {
     if (lowStock === "true") query.totalQuantity = { $lte: threshold };
     if (expired  === "true") query.expiry        = { $lte: new Date() };
 
-    const { stocks, statistics, locationStats } = await buildResponse(query, threshold, branchRestricted ? userBranch : null);
+    const meta = {};
+    const key = cacheKey("finance", { route: "stocks-get", location, search, lowStock, expired, threshold }, session);
+    const { stocks, statistics, locationStats } = await cached(
+      key, 30,
+      () => buildResponse(query, threshold, branchRestricted ? userBranch : null),
+      meta,
+    );
 
-    return NextResponse.json(
+    const res = NextResponse.json(
       { success: true, data: stocks, statistics, locationStats, userBranch: userBranch || null, branchRestricted: !!branchRestricted },
       { status: 200 }
     );
+    res.headers.set("X-Cache", meta.status);
+    return res;
   } catch (error) {
     console.error("Error fetching stocks:", error);
     return NextResponse.json(
@@ -192,12 +201,20 @@ export async function POST(req) {
     if (lowStock === true) query.totalQuantity = { $lte: threshold };
     if (expired  === true) query.expiry        = { $lte: new Date() };
 
-    const { stocks, statistics, locationStats } = await buildResponse(query, threshold, branchRestricted ? userBranch : null);
+    const meta = {};
+    const key = cacheKey("finance", { route: "stocks-get", location, search, lowStock, expired, threshold }, session);
+    const { stocks, statistics, locationStats } = await cached(
+      key, 30,
+      () => buildResponse(query, threshold, branchRestricted ? userBranch : null),
+      meta,
+    );
 
-    return NextResponse.json(
+    const res = NextResponse.json(
       { success: true, data: stocks, statistics, locationStats, userBranch: userBranch || null, branchRestricted: !!branchRestricted },
       { status: 200 }
     );
+    res.headers.set("X-Cache", meta.status);
+    return res;
   } catch (error) {
     console.error("Error fetching stocks:", error);
     return NextResponse.json(

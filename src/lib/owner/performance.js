@@ -20,8 +20,10 @@ export const ROLE_PERFORMANCE_CONFIG = {
   Agent: {
     minSample: 5,
     // Must match a key buildAgentMetrics emits (src/lib/owner/employeeReportQuery.js).
-    sampleField: "totalLeads",
-    sampleLabel: "leads assigned",
+    // Was "totalLeads" — dropped along with every other lead-status metric in the
+    // engagement-metrics rework, so the sample is now call volume instead of lead count.
+    sampleField: "totalCalls",
+    sampleLabel: "calls made",
     metrics: [
       { key: "connectRate", label: "Connect rate", weight: 0.35 },
       { key: "conversionRate", label: "Conversion rate", weight: 0.4 },

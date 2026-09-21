@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useState, useMemo } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import {
   OwnerTopbar, Card, DataTable, Badge, KpiRow,
   DrillSeam, InlineNotice, ErrorState, EmptyState, AttentionRamp, priorityToLevel,
 } from "@/components/owner";
-import { ownerFetch } from "@/lib/ownerFetch";
+import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { fmtDateTime } from "@/lib/owner/format";
 
 // Retry-lanes half of the old combined "Live Workforce & Queue" page — moved
@@ -37,37 +37,14 @@ const RETRY_SORT = {
 };
 
 export default function RetryQueuePage() {
-  const [queue, setQueue] = useState({ P0: [], P1: [], P2: [], P3: [], P4: [] });
-  const [byPriority, setByPriority] = useState({});
-  const [truncated, setTruncated] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [reloadTick, setReloadTick] = useState(0);
-
   const [seamLane, setSeamLane] = useState(null); // "P0".."P4" | "ALL" | null
   const [sortKey, setSortKey] = useState("priority");
   const [sortDir, setSortDir] = useState("asc");
 
-  useEffect(() => {
-    const ctrl = new AbortController();
-    setLoading(true);
-    setError(null);
-    (async () => {
-      const r = await ownerFetch("/api/owner/leads/retry", { signal: ctrl.signal });
-      if (ctrl.signal.aborted || r.aborted) return;
-      if (r.ok) {
-        setQueue(r.data?.queue || { P0: [], P1: [], P2: [], P3: [], P4: [] });
-        setByPriority(r.data?.byPriority || {});
-        setTruncated(!!r.data?.truncated);
-      } else {
-        setError(r.error || "Failed to load");
-      }
-      setLoading(false);
-    })();
-    return () => ctrl.abort();
-  }, [reloadTick]);
-
-  const refresh = useCallback(() => setReloadTick((t) => t + 1), []);
+  const { data, loading, error, mutate: refresh } = useOwnerData("/api/owner/leads/retry");
+  const queue = data?.queue || { P0: [], P1: [], P2: [], P3: [], P4: [] };
+  const byPriority = data?.byPriority || {};
+  const truncated = !!data?.truncated;
 
   const retryItems = useMemo(() => Object.values(queue).flat(), [queue]);
 
@@ -108,7 +85,7 @@ export default function RetryQueuePage() {
           title="Retry & Recovery"
           subtitle="Prioritized P0–P4 retry queue, live from callby"
           controls={
-            <button className="icon-btn" onClick={refresh} disabled={loading} title="Refresh">
+            <button className="icon-btn" onClick={() => refresh()} disabled={loading} title="Refresh">
               {loading ? "…" : "⟳"}
             </button>
           }

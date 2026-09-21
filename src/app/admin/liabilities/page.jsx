@@ -1,5 +1,3 @@
-"use client";
-
 import LedgerOverview from "@/components/finance/LedgerOverview";
 
 export default function LiabilitiesOverviewPage() {

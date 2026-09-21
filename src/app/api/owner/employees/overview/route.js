@@ -36,7 +36,7 @@ export async function GET(req) {
     const key = cacheKey("owner", { route: "employees-overview", ...Object.fromEntries(searchParams) }, session);
     const data = await cached(key, 120, async () => {
     const allEmployees = await Employee.find({ mergedInto: null })
-      .select("name role branch isactive callbyUserId tlName salaryStructure incentiveRate")
+      .select("name role branch isactive callbyUserId employeeId tlName salaryStructure incentiveRate")
       .lean();
 
     const scoped = branch && branch !== "All" ? allEmployees.filter((e) => e.branch === branch) : allEmployees;

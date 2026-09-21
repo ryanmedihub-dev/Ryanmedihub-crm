@@ -7,6 +7,7 @@ import { COLLAB_BRANCHES } from "@/lib/branches";
 import { deriveCrystallisation } from "@/lib/collabFormula";
 import { REVENUE_METHODS } from "@/constants/paymentMethods";
 import { Building2, Loader2, TrendingDown, TrendingUp } from "lucide-react";
+import { formatCurrency } from "@/lib/financeUI";
 
 const PROCEDURE_OPTIONS = [
   "Sapphire FUE",
@@ -29,7 +30,6 @@ const PAYMENT_SOURCES = [
   { id: "clinic", label: "Patient paid the clinic" },
 ];
 
-const formatCurrency = (amount) => `₹${Number(amount || 0).toLocaleString("en-IN")}`;
 
 const getTodayIST = () =>
   new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });

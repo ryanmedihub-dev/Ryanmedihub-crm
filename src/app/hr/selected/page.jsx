@@ -8,9 +8,9 @@ import {
   ChevronLeft, ChevronRight, User, QrCode, Globe,
 } from "lucide-react";
 import CandidateEditModal from "@/components/hr/CandidateEditModal";
+import { formatDate as fmtDate } from "@/lib/financeUI";
 
 const fmt     = (n) => n ? `₹${Number(n).toLocaleString("en-IN")}` : "—";
-const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 const avgRating = (c) => {
   const vals = [c.communication, c.technicalKnowledge, c.personality, c.motivation, c.stability]
     .map(Number).filter((v) => !isNaN(v) && v > 0);

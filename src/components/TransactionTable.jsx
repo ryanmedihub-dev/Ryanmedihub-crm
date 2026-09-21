@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useDebounced } from "@/lib/useDebounced";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { maskPhone } from "@/utils/phoneUtils";
@@ -286,7 +287,6 @@ export default function TransactionTable({ config = {} }) {
 
   const [activeTab, setActiveTab]     = useState(visibleCategories[0]);
   const [search, setSearch]           = useState("");
-  const [debSearch, setDebSearch]     = useState("");
   const [page, setPage]               = useState(1);
   const [pageSize, setPageSize]       = useState(defaultPageSize);
   const [filterOpen, setFilterOpen]   = useState(false);
@@ -298,12 +298,7 @@ export default function TransactionTable({ config = {} }) {
   const [fPaymentType, setFPaymentType] = useState("");
   const [fBranch,      setFBranch]      = useState("");
 
-  const timer = useRef(null);
-  const handleSearch = (v) => {
-    setSearch(v);
-    clearTimeout(timer.current);
-    timer.current = setTimeout(() => setDebSearch(v), 300);
-  };
+  const debSearch = useDebounced(search, 300);
 
   useEffect(() => {
     setLoading(true);
@@ -540,7 +535,7 @@ export default function TransactionTable({ config = {} }) {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <input
                     value={search}
-                    onChange={(e) => handleSearch(e.target.value)}
+                    onChange={(e) => setSearch(e.target.value)}
                     placeholder="Search transactions..."
                     className="pl-9 pr-3 py-1.5 text-sm border border-gray-200 rounded-xl w-52 outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300 bg-gray-50"
                   />

@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, FilterBar, ReportTable, KpiRow, ErrorState } from "@/components/owner";
-import { ownerFetch } from "@/lib/ownerFetch";
+import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { num } from "@/lib/owner/format";
 import { INTERVIEW_BASE_COLUMNS } from "@/lib/owner/interviewColumns";
 
@@ -29,40 +29,22 @@ export default function HrInterviewsPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
 
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const url = useMemo(() => {
+    if (!filterState) return null;
+    const params = new URLSearchParams();
+    params.set("dateFrom", filterState.range.from);
+    params.set("dateTo", filterState.range.to);
+    if (filterState.filters.status) params.set("status", filterState.filters.status);
+    if (filterState.filters.experienceType) params.set("experienceType", filterState.filters.experienceType);
+    if (search) params.set("search", search);
+    params.set("sortBy", sortKey);
+    params.set("sortDir", sortDir);
+    params.set("page", String(page));
+    params.set("pageSize", String(pageSize));
+    return `/api/owner/hr/interviews?${params.toString()}`;
+  }, [filterState, search, sortKey, sortDir, page, pageSize]);
 
-  const load = useCallback(
-    async ({ signal } = {}) => {
-      if (!filterState) return;
-      setLoading(true);
-      setError(null);
-      const params = new URLSearchParams();
-      params.set("dateFrom", filterState.range.from);
-      params.set("dateTo", filterState.range.to);
-      if (filterState.filters.status) params.set("status", filterState.filters.status);
-      if (filterState.filters.experienceType) params.set("experienceType", filterState.filters.experienceType);
-      if (search) params.set("search", search);
-      params.set("sortBy", sortKey);
-      params.set("sortDir", sortDir);
-      params.set("page", String(page));
-      params.set("pageSize", String(pageSize));
-
-      const r = await ownerFetch(`/api/owner/hr/interviews?${params.toString()}`, { signal });
-      if (r.aborted) return;
-      if (r.ok) setData(r.data);
-      else setError(r.error);
-      setLoading(false);
-    },
-    [filterState, search, sortKey, sortDir, page, pageSize],
-  );
-
-  useEffect(() => {
-    const ctrl = new AbortController();
-    load({ signal: ctrl.signal });
-    return () => ctrl.abort();
-  }, [load]);
+  const { data, loading, error, mutate: load } = useOwnerData(url);
 
   const handleSort = (key) => {
     setPage(1);

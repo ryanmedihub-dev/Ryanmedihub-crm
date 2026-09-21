@@ -9,6 +9,7 @@ import Transactions from "@/models/Transactions";
 import { buildPayableAggregationStages } from "@/lib/payableAggregation";
 import { buildReceivableAggregationStages } from "@/lib/receivableAggregation";
 import { COLLAB_BRANCHES } from "@/lib/branches";
+import { cacheKey, cached } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["collab", "admin", "super-admin"];
 
@@ -33,6 +34,20 @@ export async function GET(request) {
     const clinicMatch = clinicParam ? clinicParam : { $in: COLLAB_BRANCHES };
     const txCollection = Transactions.collection.name;
 
+    const meta = {};
+    const key = cacheKey("finance", { route: "collab-balances", clinic: clinicParam }, session);
+    const { balances, totals } = await cached(key, 30, () => computeBalances(clinicMatch, txCollection), meta);
+
+    const res = NextResponse.json({ success: true, balances, ...totals });
+    res.headers.set("X-Cache", meta.status);
+    return res;
+  } catch (error) {
+    console.error("Error building collab balances:", error);
+    return NextResponse.json({ error: "Failed to fetch collab balances" }, { status: 500 });
+  }
+}
+
+async function computeBalances(clinicMatch, txCollection) {
     const [receivableRows, payableRows, caseRows] = await Promise.all([
       Receivable.aggregate([
         {
@@ -134,9 +149,5 @@ export async function GET(request) {
       { totalReceivable: 0, totalPayable: 0 },
     );
 
-    return NextResponse.json({ success: true, balances, ...totals });
-  } catch (error) {
-    console.error("Error building collab balances:", error);
-    return NextResponse.json({ error: "Failed to fetch collab balances" }, { status: 500 });
-  }
+    return { balances, totals };
 }

@@ -11,6 +11,7 @@ import {
   Users, Briefcase, CalendarDays, IndianRupee, Building2,
   SlidersHorizontal, CheckCircle, UserCog, User, QrCode, Globe,
 } from "lucide-react";
+import { formatDate as fmtDate } from "@/lib/financeUI";
 
 const STATUSES  = ["Applied", "Interview Scheduled", "Selected", "Rejected", "On Hold"];
 const EXP_TYPES = ["Fresher", "Experienced"];
@@ -47,7 +48,6 @@ const EMPTY = {
 };
 
 const fmt     = (n) => n ? `₹${Number(n).toLocaleString("en-IN")}` : "—";
-const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 const avgRating = (c) => {
   const vals = [c.communication, c.technicalKnowledge, c.personality, c.motivation, c.stability]
     .map(Number).filter((v) => !isNaN(v) && v > 0);

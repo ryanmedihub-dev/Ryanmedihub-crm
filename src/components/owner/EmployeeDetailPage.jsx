@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
@@ -14,7 +14,7 @@ import ErrorState from "./ErrorState";
 import InlineNotice from "./InlineNotice";
 import TrendChart from "./TrendChart";
 import Skeleton, { KpiSkeleton } from "./Skeleton";
-import { ownerFetch } from "@/lib/ownerFetch";
+import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { rupee, num, fmtDate, fmtDateTime } from "@/lib/owner/format";
 import { performanceCell } from "@/lib/owner/employeeColumns";
 import { usePagedList } from "@/lib/owner/usePagedList";
@@ -35,6 +35,27 @@ const RECENT_ACTIVITY_COLUMNS = [
   { key: "when", label: "When" },
 ];
 
+const LINKED_PATIENTS_COLUMNS = [
+  { key: "name", label: "Name", render: (r) => r.name },
+  { key: "phone", label: "Phone", render: (r) => r.phone || "—" },
+  { key: "branch", label: "Branch", render: (r) => r.branch || "—" },
+  { key: "visitDate", label: "Visit Date", render: (r) => fmtDate(r.visitDate) },
+  { key: "status", label: "Status", render: (r) => r.status || "—" },
+  { key: "totalAmount", label: "Total Amount", align: "right", render: (r) => rupee(r.totalAmount) },
+  { key: "amountReceived", label: "Amount Received", align: "right", render: (r) => rupee(r.amountReceived) },
+  { key: "pendingAmount", label: "Pending Amount", align: "right", render: (r) => rupee(r.pendingAmount) },
+  {
+    key: "roles",
+    label: "Linked As",
+    render: (r) => (
+      <div className="entity-badges">
+        {(r.roles || []).map((role) => <Badge key={role} kind="info">{role}</Badge>)}
+      </div>
+    ),
+    csv: (r) => (r.roles || []).join(", "),
+  },
+];
+
 // Generic shell behind all six Employees detail pages. `rowsColumns` is the
 // only per-role piece; KPIs, rows, trend and compensation all come from
 // /api/owner/employees/[id] for the same date window.
@@ -44,33 +65,23 @@ export default function EmployeeDetailPage({ section, listHref, rowsColumns, def
   const employeeId = params.employeeId;
 
   const [filterState, setFilterState] = useState(null);
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const list = usePagedList({ defaultSort, defaultDir: "desc" });
 
-  const load = useCallback(
-    async ({ signal } = {}) => {
-      if (!filterState) return;
-      setLoading(true);
-      setError(null);
-      const qs = new URLSearchParams(list.query);
-      qs.set("dateFrom", filterState.range.from);
-      qs.set("dateTo", filterState.range.to);
-      const r = await ownerFetch(`/api/owner/employees/${employeeId}?${qs.toString()}`, { signal });
-      if (r.aborted) return;
-      if (r.ok) setData(r.data);
-      else setError(r.error);
-      setLoading(false);
-    },
-    [filterState, employeeId, list.query],
-  );
+  // All patients linked to this employee in ANY role (Employee.patient), independent of the
+  // role-specific rows above — own pagination, own fetch, own request.
+  const linkedList = usePagedList({ defaultSort: "visitDate", pageSize: 10 });
 
-  useEffect(() => {
-    const ctrl = new AbortController();
-    load({ signal: ctrl.signal });
-    return () => ctrl.abort();
-  }, [load]);
+  const detailUrl = useMemo(() => {
+    if (!filterState) return null;
+    const qs = new URLSearchParams(list.query);
+    qs.set("dateFrom", filterState.range.from);
+    qs.set("dateTo", filterState.range.to);
+    return `/api/owner/employees/${employeeId}?${qs.toString()}`;
+  }, [filterState, employeeId, list.query]);
+  const { data, loading, error, mutate: load } = useOwnerData(detailUrl);
+
+  const linkedUrl = `/api/owner/employees/${employeeId}/linked-patients?page=${linkedList.page}&pageSize=${linkedList.pageSize}`;
+  const { data: linked, loading: linkedLoading } = useOwnerData(linkedUrl);
 
   const emp = data?.employee;
 
@@ -209,6 +220,25 @@ export default function EmployeeDetailPage({ section, listHref, rowsColumns, def
                     <div className="metric-pair"><span>Incentive Paid</span><span className="readout">{rupee(data.compensation?.incentivePaid)}</span></div>
                   </div>
                 </div>
+              </Card>
+
+              <Card
+                title="All Linked Patients"
+                subtitle={linkedLoading ? "Loading…" : `${num(linked?.total || 0)} patient(s) linked in any role — referred, counselled or surgery-side`}
+              >
+                <ReportTable
+                  tableId="employee-detail-linked-patients"
+                  columns={LINKED_PATIENTS_COLUMNS}
+                  rows={linked?.rows || []}
+                  loading={linkedLoading}
+                  page={linkedList.page}
+                  pageSize={linkedList.pageSize}
+                  total={linked?.total || 0}
+                  onPageChange={linkedList.tableProps.onPageChange}
+                  onPageSizeChange={linkedList.tableProps.onPageSizeChange}
+                  emptyMessage="No linked patients."
+                  csvFilename={`${emp.name || "employee"}-linked-patients.csv`}
+                />
               </Card>
 
               {emp.section === "Agent" && recentRows.length > 0 && (

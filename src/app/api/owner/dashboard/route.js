@@ -139,7 +139,7 @@ async function topBottomPerformers() {
   const from = new Date(to.getTime() - 30 * DAY_MS);
   const periodDays = daysInPeriod(from.toISOString(), to.toISOString());
 
-  const employees = await Employee.find({ isactive: true, mergedInto: null }).select("name role branch callbyUserId").lean();
+  const employees = await Employee.find({ isactive: true, mergedInto: null }).select("name role branch callbyUserId employeeId").lean();
   const bySection = new Map();
   for (const e of employees) {
     const section = employeeSection(e.role);

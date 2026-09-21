@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, FilterBar, ReportTable, KpiRow, ErrorState, InlineNotice } from "@/components/owner";
 import { ownerFetch } from "@/lib/ownerFetch";
+import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { num, fmtDateTime } from "@/lib/owner/format";
 import { callTypeBadge } from "@/lib/owner/callsColumns";
 
@@ -15,38 +16,21 @@ export default function UntrackedCallsPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
 
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [creating, setCreating] = useState(null); // callId currently being turned into a lead
   const [notice, setNotice] = useState(null);
 
-  const load = useCallback(
-    async ({ signal } = {}) => {
-      if (!filterState) return;
-      setLoading(true);
-      setError(null);
-      const params = new URLSearchParams();
-      params.set("dateFrom", filterState.range.from);
-      params.set("dateTo", filterState.range.to);
-      if (search) params.set("search", search);
-      params.set("page", String(page));
-      params.set("pageSize", String(pageSize));
+  const url = useMemo(() => {
+    if (!filterState) return null;
+    const params = new URLSearchParams();
+    params.set("dateFrom", filterState.range.from);
+    params.set("dateTo", filterState.range.to);
+    if (search) params.set("search", search);
+    params.set("page", String(page));
+    params.set("pageSize", String(pageSize));
+    return `/api/owner/calls/untracked?${params.toString()}`;
+  }, [filterState, search, page, pageSize]);
 
-      const r = await ownerFetch(`/api/owner/calls/untracked?${params.toString()}`, { signal });
-      if (r.aborted) return;
-      if (r.ok) setData(r.data);
-      else setError(r.error);
-      setLoading(false);
-    },
-    [filterState, search, page, pageSize],
-  );
-
-  useEffect(() => {
-    const ctrl = new AbortController();
-    load({ signal: ctrl.signal });
-    return () => ctrl.abort();
-  }, [load]);
+  const { data, loading, error, mutate: load } = useOwnerData(url);
 
   const createLead = async (call) => {
     setCreating(call._id);

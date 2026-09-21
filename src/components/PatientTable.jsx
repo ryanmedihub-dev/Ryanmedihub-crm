@@ -14,8 +14,9 @@ import {
   Eye, SquarePen, Search, Calendar,
   Download, Plus, Phone, MapPin, Users, Scissors,
 } from "lucide-react";
+import { formatDate as fmtDate } from "@/lib/financeUI";
 
-const STATUS_OPTIONS = ["NEW","NOT_VISITED","CONSULTED","NOT_CONVERTED","BOOKING_DONE","SURGERY_BOOKED","CLOSED"];
+const STATUS_OPTIONS =["NEW","NOT_VISITED","CONSULTED","NOT_CONVERTED","BOOKING_DONE","SURGERY_BOOKED","CLOSED"];
 
 const STATUS_COLORS = {
   NEW:            "bg-blue-50 text-blue-700 border-blue-200",
@@ -43,9 +44,6 @@ const COL_DEFS = {
   reference:   { label: "Reference" },
   status:      { label: "Status" },
 };
-
-const fmtDate = (d) =>
-  d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 
 const fmtRupee = (n) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n || 0);

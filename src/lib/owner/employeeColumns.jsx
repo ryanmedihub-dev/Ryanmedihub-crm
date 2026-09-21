@@ -19,9 +19,19 @@ export function performanceCell(row) {
   );
 }
 
-/** A callby-sourced value — flags "Not linked" instead of showing a misleading zero. */
+/**
+ * A callby-sourced value — three degradation states before ever showing a raw number:
+ *   1. row.callbyLinked false        -> "Not linked" (no employeeId or callbyUserId set)
+ *   2. row.callbyMatched === false   -> "No callby record" (code/id set, but callby has no
+ *      such agent — only meaningful on sections that set callbyMatched, i.e. Agent)
+ *   3. value === null/undefined      -> "—" (linked and matched, but this specific field
+ *      wasn't computable — e.g. callby hasn't shipped byEngagement yet)
+ * Never render a bare 0 for data that could not be fetched.
+ */
 export function callbyValue(row, value) {
   if (!row.callbyLinked) return <Badge kind="warn">Not linked</Badge>;
+  if (row.callbyMatched === false) return <Badge kind="warn">No callby record</Badge>;
+  if (value === null || value === undefined) return <span className="muted">—</span>;
   return num(value);
 }
 
@@ -32,7 +42,11 @@ export function callbyColumn(key, label, extra = {}) {
     align: "right",
     sortable: true,
     render: (r) => callbyValue(r, r[key]),
-    csv: (r) => (r.callbyLinked ? r[key] ?? 0 : "Not linked"),
+    csv: (r) => {
+      if (!r.callbyLinked) return "Not linked";
+      if (r.callbyMatched === false) return "No callby record";
+      return r[key] ?? "—";
+    },
     ...extra,
   };
 }
@@ -60,6 +74,20 @@ export const SHARED_COLUMNS = {
   // keyed by period, not by when they were raised). "Earned" = payables raised
   // for the employee; "Paid" = what has actually been settled against them.
   salary: { key: "salary", label: "Base Salary", align: "right", sortable: true, render: (r) => rupee(r.salary) },
+  salaryPayable: { key: "salaryPayable", label: "Salary Due", align: "right", sortable: true, render: (r) => rupee(r.salaryPayable), csv: (r) => r.salaryPayable ?? 0 },
+  salaryPending: {
+    key: "salaryPending",
+    label: "Salary Pending",
+    align: "right",
+    // Not a real backend field — derived here from salaryPayable - salaryPaid, so it
+    // can't go through the DB sort/$facet path like the others.
+    sortable: false,
+    render: (r) => {
+      const pending = (r.salaryPayable || 0) - (r.salaryPaid || 0);
+      return pending ? <Badge kind="warn">{rupee(pending)}</Badge> : rupee(0);
+    },
+    csv: (r) => (r.salaryPayable || 0) - (r.salaryPaid || 0),
+  },
   salaryPaid: {
     key: "salaryPaid",
     label: "Salary Paid",

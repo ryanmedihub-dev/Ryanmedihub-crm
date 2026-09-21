@@ -39,7 +39,7 @@ export async function GET(req) {
     const key = cacheKey("owner", { route: "employees-leadership", ...Object.fromEntries(searchParams) }, session);
     const data = await cached(key, 120, async () => {
       const allEmployees = await Employee.find({ mergedInto: null })
-        .select("name role branch isactive callbyUserId tlName salaryStructure incentiveRate")
+        .select("name role branch isactive callbyUserId employeeId tlName salaryStructure incentiveRate")
         .lean();
 
       let agents = allEmployees.filter((e) => employeeSection(e.role) === "Agent");
@@ -87,11 +87,11 @@ export async function GET(req) {
           const teamTotals = memberMetrics.reduce(
             (acc, m) => ({
               totalCalls: acc.totalCalls + (m.totalCalls || 0),
-              totalLeads: acc.totalLeads + (m.totalLeads || 0),
-              totalPatients: acc.totalPatients + (m.totalPatients || 0),
+              interested: acc.interested + (m.interested || 0),
+              visited: acc.visited + (m.visited || 0),
               converted: acc.converted + (m.converted || 0),
             }),
-            { totalCalls: 0, totalLeads: 0, totalPatients: 0, converted: 0 },
+            { totalCalls: 0, interested: 0, visited: 0, converted: 0 },
           );
 
           // Best-effort: the TL's own Employee record, matched by name — there is
@@ -105,13 +105,15 @@ export async function GET(req) {
             distinctSpellings: [...g.rawNames],
             branch: [...new Set(g.members.map((m) => m.branch).filter(Boolean))].join(", ") || "—",
             teamSize: g.members.length,
-            // Call/lead totals below are summed only from linked members — an
+            // Call/engagement totals below are summed only from linked members — an
             // unlinked member contributes silent zeros, not "we don't know". Carry
             // the coverage count so the UI can flag a team whose total is partial.
-            teamLinkedCount: g.members.filter((m) => m.callbyUserId).length,
+            // Linked = employeeId OR callbyUserId (see buildAgentMetrics's join priority),
+            // not just callbyUserId — an employeeId-only link must count as linked here too.
+            teamLinkedCount: memberIds.filter((id) => metricsById.get(id)?.callbyLinked).length,
             teamTotalCalls: teamTotals.totalCalls,
-            teamTotalLeads: teamTotals.totalLeads,
-            teamPatientsVisited: teamTotals.totalPatients,
+            teamInterested: teamTotals.interested,
+            teamPatientsVisited: teamTotals.visited,
             teamConverted: teamTotals.converted,
             teamPerformance: teamPerformanceFromMembers(memberPerf),
             managerName: managerByKey.get(tlNameKey) || null,

@@ -13,7 +13,8 @@ import { scoreCohort, ROLE_PERFORMANCE_CONFIG, PERFORMANCE_BANDS } from "@/lib/o
 import { parsePageParams, parseEmployeeFilters, pageMeta } from "@/lib/owner/pagination";
 import { daysInPeriod, periodBounds, istMonthKeys } from "@/lib/owner/dates";
 import { getISTStartOfDay, getISTEndOfDay } from "@/lib/dateHelpers";
-import { CONVERTED_STATUSES } from "@/lib/owner/patientStatus";
+import { CONVERTED_STATUSES, VISITED_EXCLUDED_STATUSES } from "@/lib/owner/patientStatus";
+import { sumInterestedBands } from "@/lib/owner/engagementBands";
 import { cacheKey, cached } from "@/lib/cache";
 
 // Leadership groups agents with no TL under this key; the roster route pins
@@ -53,6 +54,17 @@ export { daysInPeriod };
 const round = (n) => Math.round((Number(n) || 0) * 100) / 100;
 const rupee0 = (n) => `₹${new Intl.NumberFormat("en-IN").format(Math.round(Number(n) || 0))}`;
 
+// Join key, in priority order:
+//   1. Employee.employeeId  <->  agent.ryanEmployeeCode   — the business's own code, the key
+//      the owner actually thinks in and the one they can fix themselves in the HR screen.
+//   2. Employee.callbyUserId <-> agent.employeeId          — the original link, kept as a
+//      fallback so the employees already linked through /owner/employees/links do not
+//      regress to "Not linked" the moment this ships.
+// Codes in the wild are inconsistent ("541", "RM-0099", "RC-014"), so both sides are
+// normalized the same way before comparison. Normalizing on only one side is how a join
+// silently matches nothing.
+export const codeKey = (v) => String(v ?? "").trim().toUpperCase().replace(/\s+/g, "");
+
 // ---------------------------------------------------------------------------
 // Section-specific metric builders. Each returns { metricsById, callbyError }.
 // metricsById: Map<employeeIdString, { ...raw section metrics }>.
@@ -63,39 +75,62 @@ export async function buildAgentMetrics(employees, { from, to }) {
   for (const e of employees) {
     metricsById.set(String(e._id), {
       totalCalls: 0, connected: 0, dailyTarget: 100,
-      totalLeads: 0, interested: 0, notInterested: 0, followUps: 0, unattemptedLeads: 0,
-      totalPatients: 0, converted: 0, nonConverted: 0, amountReceived: 0,
+      notConnected: null, interested: null, avgCallSeconds: null,
+      referred: 0, visited: 0, converted: 0, nonConverted: 0, amountReceived: 0,
+      // "Has a way to link" (employeeId or callbyUserId set), independent of whether
+      // callby actually returned a row for it — see callbyMatched below.
+      callbyLinked: !!e.employeeId || !!e.callbyUserId,
+      callbyMatched: false,
     });
   }
 
   let callbyError = null;
   try {
     // callby reads dateFrom/dateTo (not from/to) and silently defaults to the
-    // last 30 days when they're absent. Call figures are period-scoped; the
-    // lead figures from this endpoint are a present-moment snapshot.
+    // last 30 days when they're absent. Call figures are period-scoped.
     const params = {};
     if (from) params.dateFrom = from;
     if (to) params.dateTo = to;
     const result = await fetchCallbyCached("/api/leads/workforce-summary", { params });
     const agents = result?.data?.agents || result?.agents || [];
-    const byCallbyId = new Map(
-      agents.map((a) => [String(a?.employeeId ?? a?.userId ?? a?.id ?? a?._id ?? ""), a]),
-    );
+
+    const byCode = new Map();
+    const byUserId = new Map();
+    for (const a of agents) {
+      const code = codeKey(a?.ryanEmployeeCode);
+      if (code) byCode.set(code, a);
+      const uid = String(a?.employeeId ?? a?.userId ?? a?.id ?? a?._id ?? "");
+      if (uid) byUserId.set(uid, a);
+    }
+
     for (const e of employees) {
-      if (!e.callbyUserId) continue;
-      const a = byCallbyId.get(String(e.callbyUserId));
-      if (!a) continue;
       const m = metricsById.get(String(e._id));
+      let a = null;
+      const empCode = codeKey(e.employeeId);
+      if (empCode && byCode.has(empCode)) {
+        a = byCode.get(empCode);
+      } else if (e.callbyUserId) {
+        a = byUserId.get(String(e.callbyUserId)) || null;
+      }
+      if (!a) continue;
+
+      m.callbyMatched = true;
       m.totalCalls = a.calls?.total || 0;
       m.connected = a.calls?.connected || 0;
       m.dailyTarget = a.dailyTarget || 100;
-      m.totalLeads = a.leads?.assigned || 0;
-      m.interested = a.leads?.byStatus?.interested || 0;
-      m.notInterested = a.leads?.byStatus?.not_interested || 0;
-      m.followUps = a.leads?.byStatus?.follow_up || 0;
-      // No `attempts` field confirmed anywhere callby returns today — this is a
-      // documented proxy (never-contacted), not a literal "attempts: 0" count.
-      m.unattemptedLeads = a.leads?.byStatus?.new || 0;
+
+      // Why notConnected is a band count and not (total - connected): `connected` counts
+      // any call with duration > 0, so a 2-second misdial counts as connected. The
+      // NOT_CONNECTED band is the honest zero-duration/missed/rejected count. The two
+      // definitions disagree by design and both are shown; do not "reconcile" them by
+      // deriving one from the other.
+      const byEngagement = a.calls?.byEngagement;
+      m.notConnected = byEngagement ? (byEngagement.NOT_CONNECTED || 0) : null;
+      // `interested` is a DURATION signal, not a Lead.status — sum of bands scoring >=
+      // INTEREST_MIN_SCORE. A lead an agent spoke to for three minutes is behaving like an
+      // interested lead whether or not anyone tagged it.
+      m.interested = byEngagement ? sumInterestedBands(byEngagement) : null;
+      m.avgCallSeconds = a.calls?.total ? Math.round((a.calls?.totalDurationSeconds || 0) / a.calls.total) : null;
     }
   } catch (err) {
     callbyError = err instanceof CallbyError ? err.message : "Failed to load callby data";
@@ -110,7 +145,11 @@ export async function buildAgentMetrics(employees, { from, to }) {
     {
       $group: {
         _id: "$personal.reference",
-        totalPatients: { $sum: 1 },
+        referred: { $sum: 1 },
+        // Visited = the patient actually turned up. "status is not NEW and not
+        // NOT_VISITED" rather than matching CONSULTED, which the Patient pre-save hook
+        // never assigns (see patientStatus.js).
+        visited: { $sum: { $cond: [{ $in: ["$ops.status", VISITED_EXCLUDED_STATUSES] }, 0, 1] } },
         converted: { $sum: { $cond: [{ $in: ["$ops.status", CONVERTED_STATUSES] }, 1, 0] } },
         amountReceived: { $sum: { $ifNull: ["$payments.amountReceived", 0] } },
       },
@@ -119,9 +158,12 @@ export async function buildAgentMetrics(employees, { from, to }) {
   for (const r of rows) {
     const m = metricsById.get(String(r._id));
     if (!m) continue;
-    m.totalPatients = r.totalPatients;
+    m.referred = r.referred;
+    m.visited = r.visited;
     m.converted = r.converted;
-    m.nonConverted = r.totalPatients - r.converted;
+    // Drop-off vs. visited, not vs. referred — a patient who never showed up isn't a
+    // "non-conversion", they're a no-visit, already visible via referred - visited.
+    m.nonConverted = r.visited - r.converted;
     m.amountReceived = round(r.amountReceived);
   }
 
@@ -333,9 +375,10 @@ export function derivePerfMetrics(section, m, periodDays) {
     case "Agent":
       return {
         connectRate: m.totalCalls ? m.connected / m.totalCalls : 0,
-        // Both sides from Patient (referred → converted) — callby's lead count
-        // is a present snapshot, not the period, so it can't be the denominator.
-        conversionRate: m.totalPatients ? m.converted / m.totalPatients : 0,
+        // Denominator is `visited`, not `referred` — a patient who never showed up isn't
+        // a missed conversion, they're a no-visit. Both sides come from Patient; callby's
+        // lead count is a present-moment snapshot, not period-scoped, so it can't be used.
+        conversionRate: m.visited ? m.converted / m.visited : 0,
         targetAttainment: m.dailyTarget ? m.totalCalls / (m.dailyTarget * periodDays) : 0,
       };
     case "Counsellor":
@@ -374,10 +417,26 @@ function buildKpis(section, t) {
   const scoredCount = t?.scoredCount || 0;
   const avgScore = scoredCount ? Math.round((t.scoreSum || 0) / scoredCount) : null;
 
+  // Agent has a 3-state breakdown (linked-and-matched / code-set-but-no-callby-row /
+  // no-code) because it's the one section that actually joins to callby by code. Every
+  // other section only knows "callbyUserId is set or not" — the original boolean.
+  const linkedTile = section === "Agent" && t
+    ? (() => {
+        const matched = t.callbyMatched || 0;
+        const hasCodeNoRow = t.callbyHasCodeNoRow || 0;
+        const noCode = headcount - matched - hasCodeNoRow;
+        return {
+          label: "Linked to callby", value: matched,
+          sub: `${hasCodeNoRow} code set, no callby row · ${noCode} no code`,
+          kind: matched === headcount ? "good" : "warn",
+        };
+      })()
+    : { label: "Linked to callby", value: linked, sub: `${headcount - linked} not linked`, kind: linked === headcount ? "good" : "warn" };
+
   const base = [
     { label: "Headcount", value: headcount, sub: `${SECTION_LABELS[section]} in view`, kind: "info" },
     { label: "Active", value: active, sub: `${headcount - active} inactive`, kind: "good" },
-    { label: "Linked to callby", value: linked, sub: `${headcount - linked} not linked`, kind: linked === headcount ? "good" : "warn" },
+    linkedTile,
     { label: "Salary Paid", value: round(t?.salaryPaid), sub: `of ${rupee0(t?.salaryPayable)} due · pay months in range`, kind: "info", format: "currency" },
     { label: "Incentive Earned", value: round(t?.incentivePayable), sub: `${rupee0(t?.incentivePaid)} paid · pay months in range`, kind: "good", format: "currency" },
     { label: "Avg. Performance", value: avgScore == null ? "—" : `${avgScore}`, sub: `${scoredCount} scored`, kind: "good" },
@@ -385,7 +444,6 @@ function buildKpis(section, t) {
 
   if (section === "Agent") {
     base.push({ label: "Total Calls", value: t?.totalCalls || 0, sub: "This period", kind: "info" });
-    base.push({ label: "Total Leads", value: t?.totalLeads || 0, sub: "Currently assigned (snapshot)", kind: "info" });
   } else if (section === "Counsellor") {
     base.push({ label: "Patients Consulted", value: t?.patientsConsulted || 0, sub: "This period", kind: "info" });
   } else if (section === "Surgery") {
@@ -420,7 +478,7 @@ function resolveSortPath(section, sortBy) {
 // Metric keys each section's builder emits — derived from the builders' own
 // zero-rows so the sort whitelist can't drift from what they actually return.
 const SECTION_METRIC_KEYS = {
-  Agent: new Set(["totalCalls", "connected", "dailyTarget", "totalLeads", "interested", "notInterested", "followUps", "unattemptedLeads", "totalPatients", "converted", "nonConverted", "amountReceived"]),
+  Agent: new Set(["totalCalls", "connected", "dailyTarget", "notConnected", "interested", "avgCallSeconds", "referred", "visited", "converted", "nonConverted", "amountReceived"]),
   Counsellor: new Set(["patientsConsulted", "converted", "nonConverted", "amountReceived", "avgDiscount", "packageBeforeConsult", "packageAfterConsult"]),
   Surgery: new Set(["patientsOperated", "graftsImplanted", "surgeriesAttempted"]),
   HR: new Set(["totalInterviews", "selected", "rejected", "hold"]),
@@ -429,7 +487,7 @@ const SECTION_METRIC_KEYS = {
 
 // Per-section KPI accumulators for the $facet totals branch.
 const SECTION_KPI_SUMS = {
-  Agent: { totalCalls: "$_m.totalCalls", totalLeads: "$_m.totalLeads" },
+  Agent: { totalCalls: "$_m.totalCalls" },
   Counsellor: { patientsConsulted: "$_m.patientsConsulted" },
   Surgery: { patientsOperated: "$_m.patientsOperated", graftsImplanted: "$_m.graftsImplanted" },
   HR: { totalInterviews: "$_m.totalInterviews", selected: "$_m.selected" },
@@ -538,7 +596,7 @@ export async function queryEmployeeSection({ section, filters, page, pageSize, s
   // The cohort's ids (+ callby link) — the only thing the metric builders need.
   // A projection of two fields over a few hundred docs; the full rows are read
   // by the paginated aggregation below, one page at a time.
-  const cohort = await Employee.find(match).select("_id callbyUserId").lean();
+  const cohort = await Employee.find(match).select("_id callbyUserId employeeId").lean();
 
   const meta = pageMeta({ page, pageSize, total: 0 });
   const period = { from: filters.dateFrom || "", to: filters.dateTo || "" };
@@ -582,6 +640,14 @@ export async function queryEmployeeSection({ section, filters, page, pageSize, s
     };
   });
 
+  // For every one of the N cohort documents, Mongo re-scans the whole metricRows array
+  // (also size N) via $filter — O(N^2) inside the aggregation. Fine at a few hundred
+  // employees (the documented bound); this guard just makes the ceiling visible in logs
+  // rather than silently getting slower as headcount grows.
+  if (cohort.length > 1000) {
+    console.warn(`queryEmployeeSection: cohort of ${cohort.length} exceeds 1000 — the $literal/$filter metricRows join in employeeReportQuery.js is O(cohort^2) and needs restructuring before this grows further.`);
+  }
+
   const [result] = await Employee.aggregate([
     { $match: match },
     {
@@ -620,7 +686,12 @@ export async function queryEmployeeSection({ section, filters, page, pageSize, s
               _id: null,
               headcount: { $sum: 1 },
               active: { $sum: { $cond: ["$isactive", 1, 0] } },
-              linked: { $sum: { $cond: ["$callbyLinked", 1, 0] } },
+              // Section-aware: Agent rows carry their own callbyLinked on _m (computed
+              // from employeeId OR callbyUserId in buildAgentMetrics); every other section
+              // falls back to the document-level boolean (callbyUserId presence only).
+              linked: { $sum: { $cond: [{ $ifNull: ["$_m.callbyLinked", "$callbyLinked"] }, 1, 0] } },
+              callbyMatched: { $sum: { $cond: [{ $eq: ["$_m.callbyMatched", true] }, 1, 0] } },
+              callbyHasCodeNoRow: { $sum: { $cond: [{ $and: [{ $eq: ["$_m.callbyLinked", true] }, { $eq: ["$_m.callbyMatched", false] }] }, 1, 0] } },
               salaryPaid: { $sum: { $ifNull: ["$_m.salaryPaid", 0] } },
               salaryPayable: { $sum: { $ifNull: ["$_m.salaryPayable", 0] } },
               incentivePayable: { $sum: { $ifNull: ["$_m.incentivePayable", 0] } },

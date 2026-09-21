@@ -7,14 +7,12 @@ import {
   MapPin, Package, AlertTriangle, Clock, IndianRupee,
   Search, X, Plus, ShoppingCart, Eye, Pencil, RefreshCw, ChevronRight, Boxes,
 } from "lucide-react";
+import { formatDate as fmtDate } from "@/lib/financeUI";
 
 const BRANCHES = ["All", "Delhi", "Mumbai", "Hyderabad", "Noida"];
 
 const fmt = (n) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n || 0);
-
-const fmtDate = (d) =>
-  d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 
 export default function StockDashboard({ config = {} }) {
   const {

@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import {
-  Landmark, ScrollText, Scale, AlertTriangle, ArrowRight, ArrowUpRight, Filter, HandCoins,
+  Landmark, ScrollText, Scale, ArrowUpRight, Filter, HandCoins,
   Wallet, HelpCircle, TrendingUp, TrendingDown, RefreshCw, X, CreditCard,
 } from "lucide-react";
 import AccountMultiSelect from "@/components/finance/AccountMultiSelect";
@@ -11,15 +11,9 @@ import MetricDrillPanel from "@/components/finance/MetricDrillPanel";
 import { formatCurrency } from "@/lib/financeUI";
 import { ACCOUNTS } from "@/constants/bankRouting";
 import { ALL_BRANCHES } from "@/lib/branches";
-
-const LOAN_ACCOUNTS = ["Bajaj Loan", "Fibe Loan"];
-
-// Written out in full — Tailwind can't see class names built by string interpolation.
-const CASH_TONES = {
-  emerald: { box: "border-emerald-100 bg-emerald-50/40", label: "text-emerald-700", icon: "text-emerald-300" },
-  rose: { box: "border-rose-100 bg-rose-50/40", label: "text-rose-700", icon: "text-rose-300" },
-  indigo: { box: "border-indigo-100 bg-indigo-50/40", label: "text-indigo-700", icon: "text-indigo-300" },
-};
+import { AGEING_BUCKET_ORDER, CASH_TONES, iso, periodRange } from "./dashboardMath";
+import { AttentionRow, BasisTag, DashboardCard } from "./DashboardCards";
+import { useDashboardData } from "./useDashboardData";
 
 const DashboardCharts = dynamic(() => import("@/components/finance/DashboardCharts"), {
   ssr: false,
@@ -34,113 +28,6 @@ const DashboardCharts = dynamic(() => import("@/components/finance/DashboardChar
     </div>
   ),
 });
-
-function periodRange(preset, custom) {
-  let to = new Date();
-  to.setHours(23, 59, 59, 999);
-  let from;
-  if (preset === "custom" && custom?.from) {
-    from = new Date(custom.from);
-    from.setHours(0, 0, 0, 0);
-    to = custom.to ? new Date(custom.to) : new Date(custom.from);
-    to.setHours(23, 59, 59, 999);
-  } else if (preset === "30") {
-    from = new Date();
-    from.setDate(from.getDate() - 29);
-    from.setHours(0, 0, 0, 0);
-  } else if (preset === "90") {
-    from = new Date();
-    from.setDate(from.getDate() - 89);
-    from.setHours(0, 0, 0, 0);
-  } else {
-    from = new Date(to.getFullYear(), to.getMonth(), 1);
-    from.setHours(0, 0, 0, 0);
-  }
-  const lengthMs = Math.max(to.getTime() - from.getTime(), 0);
-  const priorTo = new Date(from.getTime() - 1);
-  const priorFrom = new Date(priorTo.getTime() - lengthMs);
-  return { from, to, priorFrom, priorTo };
-}
-
-const iso = (d) => d.toISOString().slice(0, 10);
-
-const AGEING_BUCKET_ORDER = ["current", "1-30", "31-60", "61-90", "90+"];
-
-const bucketMap = (rows) => {
-  const map = {};
-  (rows || []).forEach((r) => {
-    if (r._id) map[r._id] = (map[r._id] || 0) + (r.totalPending || 0);
-  });
-  return map;
-};
-const overdueAmount = (rows) =>
-  (rows || []).filter((r) => r._id && r._id !== "current").reduce((s, r) => s + (r.totalPending || 0), 0);
-const overdueCount = (rows) =>
-  (rows || []).filter((r) => r._id && r._id !== "current").reduce((s, r) => s + (r.count || 0), 0);
-
-function BasisTag({ children }) {
-  return (
-    <span className="inline-block text-[10px] font-semibold uppercase tracking-wide text-gray-400 bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5">
-      {children}
-    </span>
-  );
-}
-
-function DashboardCard({ onDrill, title, basis, value, icon: Icon, color, subtitle, status = "ready", onRetry }) {
-  const body = (
-    <div
-      className={`group relative bg-white rounded-2xl shadow-sm p-4 sm:p-6 transition-all duration-200 h-full text-left ${
-        onDrill ? "hover:shadow-md hover:-translate-y-0.5" : ""
-      }`}
-    >
-      <div className="flex items-center justify-between mb-3">
-        <div className={`p-2.5 rounded-lg bg-linear-to-r ${color}`}>
-          <Icon className="w-5 h-5 text-white" />
-        </div>
-        {onDrill && (
-          <ArrowUpRight className="w-4 h-4 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" />
-        )}
-      </div>
-      <div className="flex items-center gap-2 mb-1">
-        <p className="text-gray-600 text-sm font-medium">{title}</p>
-        {basis && <BasisTag>{basis}</BasisTag>}
-      </div>
-      {status === "loading" ? (
-        <div className="h-7 w-28 bg-gray-100 rounded animate-pulse mt-1" />
-      ) : status === "error" ? (
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-rose-600">Failed to load</span>
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onRetry?.();
-            }}
-            className="text-xs font-semibold text-indigo-600 hover:underline"
-          >
-            Retry
-          </button>
-        </div>
-      ) : (
-        <p className="text-xl font-bold text-gray-900">
-          {value === null || value === undefined ? "No data for this period" : value}
-        </p>
-      )}
-      {subtitle && <p className="text-xs text-gray-400 mt-1.5">{subtitle}</p>}
-    </div>
-  );
-  return onDrill ? (
-    <button
-      type="button"
-      onClick={onDrill}
-      className="block h-full w-full rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
-    >
-      {body}
-    </button>
-  ) : (
-    body
-  );
-}
 
 export default function AdminDashboard() {
   const [draftPreset, setDraftPreset] = useState("month");
@@ -185,20 +72,11 @@ export default function AdminDashboard() {
     [appliedPreset, appliedCustomRange],
   );
 
-  const [assets, setAssets] = useState(null);
-  const [liabilities, setLiabilities] = useState(null);
-  const [cashFlow, setCashFlow] = useState(null);
-  const [pnl, setPnl] = useState(null);
-  const [priorPnl, setPriorPnl] = useState(null);
-  const [grossSales, setGrossSales] = useState(null);
-  const [expenseByHead, setExpenseByHead] = useState([]);
-  const [expenseHeadMeta, setExpenseHeadMeta] = useState(null);
-  const [monthlyTrend, setMonthlyTrend] = useState([]);
-  const [ageing, setAgeing] = useState({ payables: {}, receivables: {} });
-  const [attention, setAttention] = useState(null);
-  const [batchStatus, setBatchStatus] = useState("loading");
-  const [lastRefreshed, setLastRefreshed] = useState(null);
-  const [refreshNonce, setRefreshNonce] = useState(0);
+  const {
+    assets, liabilities, cashFlow, pnl, priorPnl, grossSales,
+    expenseByHead, expenseHeadMeta, monthlyTrend, ageing, attention,
+    batchStatus, lastRefreshed, refresh,
+  } = useDashboardData({ from, to, priorFrom, priorTo, customReady, appliedAccounts, appliedBranch });
 
   // the card whose underlying rows are open in the drill panel
   const [drill, setDrill] = useState(null);
@@ -214,127 +92,6 @@ export default function AdminDashboard() {
     }),
     [appliedBranch, from, to, accountFilterActive, appliedAccounts],
   );
-
-  useEffect(() => {
-    if (!customReady) return;
-    let cancelled = false;
-    async function run() {
-      setBatchStatus("loading");
-      try {
-        const accountsQS =
-          appliedAccounts.length < ACCOUNTS.length ? `&accounts=${appliedAccounts.join(",")}` : "";
-        const branchQS = appliedBranch ? `&branch=${appliedBranch}` : "";
-
-        const [
-          cashJson, suspenseJson,
-          pnlJson, priorPnlJson, headJson, ageingPayJson, ageingRecJson, unattributedJson, cashFlowJson,
-          salesJson,
-        ] = await Promise.all([
-          fetch(`/api/close-book/accounts?to=${iso(to)}${accountsQS}${branchQS}`).then((r) => r.json()),
-          fetch(`/api/suspense?groupBy=account&to=${iso(to)}${accountsQS}${branchQS}`).then((r) => r.json()),
-          fetch(`/api/close-book/pnl?from=${iso(from)}&to=${iso(to)}${accountsQS}${branchQS}`).then((r) => r.json()),
-          fetch(`/api/close-book/pnl?from=${iso(priorFrom)}&to=${iso(priorTo)}${accountsQS}${branchQS}`).then((r) => r.json()),
-          fetch(`/api/admin/expense-by-head?from=${iso(from)}&to=${iso(to)}${accountsQS}${branchQS}`).then((r) => r.json()),
-          fetch(`/api/payables/summary?ageing=1${appliedBranch ? `&branch=${appliedBranch}` : ""}`).then((r) => r.json()),
-          fetch(`/api/receivables/summary?ageing=1${appliedBranch ? `&branch=${appliedBranch}` : ""}`).then((r) => r.json()),
-          fetch(`/api/close-book/balance-sheet?from=1970-01-01&to=${iso(to)}${branchQS}`).then((r) => r.json()),
-          fetch(`/api/close-book/cash-flow?from=${iso(from)}&to=${iso(to)}${accountsQS}${branchQS}`).then((r) => r.json()),
-          fetch(`/api/admin/sales-summary?from=${iso(from)}&to=${iso(to)}${branchQS}`).then((r) => r.json()),
-        ]);
-        if (cancelled) return;
-
-        // Bajaj/Fibe are financing lines, not cash — they're split out of Cash & Bank so
-        // this card agrees with the cash-balance trend, which has always excluded them.
-        const allRows = cashJson.rows || [];
-        const cashTotal = allRows
-          .filter((r) => !LOAN_ACCOUNTS.includes(r.key))
-          .reduce((s, r) => s + (r.closing || 0), 0);
-        const loanTotal = allRows
-          .filter((r) => LOAN_ACCOUNTS.includes(r.key))
-          .reduce((s, r) => s + (r.closing || 0), 0);
-
-        // Receivables/payables use per-document `pending` (floored at 0) — the same basis
-        // as the ageing buckets and the overdue rows below, so the card is now exactly the
-        // sum of the bars beside it.
-        const receivablesTotal = ageingRecJson.overall?.totalPending || 0;
-        const payablesTotal = ageingPayJson.overall?.totalPending || 0;
-        const suspenseTotal = (suspenseJson.rows || []).reduce((s, r) => s + (r.closing || 0), 0);
-
-        setAssets({ cashTotal, loanTotal, receivablesTotal, total: cashTotal + receivablesTotal });
-        setLiabilities({ payablesTotal, suspenseTotal, total: payablesTotal + suspenseTotal });
-        setCashFlow({
-          receipts: cashFlowJson.receipts || 0,
-          payments: cashFlowJson.payments || 0,
-          balanceLeft: cashFlowJson.balanceLeft || 0,
-        });
-        setPnl({ income: pnlJson.income || 0, expense: pnlJson.expense || 0 });
-        setPriorPnl({ income: priorPnlJson.income || 0, expense: priorPnlJson.expense || 0 });
-        setGrossSales(salesJson?.success ? { total: salesJson.total || 0, byCategory: salesJson.byCategory || {} } : null);
-
-        setExpenseByHead(headJson.rows || []);
-        setExpenseHeadMeta({
-          shownTotal: headJson.shownTotal ?? null,
-          grandTotal: headJson.grandTotal ?? null,
-        });
-
-        setAgeing({ payables: bucketMap(ageingPayJson.byBucket), receivables: bucketMap(ageingRecJson.byBucket) });
-
-        setAttention({
-          overduePayables: { amount: overdueAmount(ageingPayJson.byBucket), count: overdueCount(ageingPayJson.byBucket) },
-          overdueReceivables: { amount: overdueAmount(ageingRecJson.byBucket), count: overdueCount(ageingRecJson.byBucket) },
-          suspenseCount: (suspenseJson.rows || []).reduce((s, r) => s + (r.count || 0), 0),
-          unattributed: unattributedJson.unattributed || { count: 0, amount: 0 },
-        });
-
-        setLastRefreshed(new Date());
-        setBatchStatus("ready");
-      } catch (error) {
-        if (!cancelled) {
-          console.error("Dashboard fetch failed:", error);
-          setBatchStatus("error");
-        }
-      }
-    }
-    run();
-    return () => { cancelled = true; };
-  }, [from, to, priorFrom, priorTo, customReady, appliedAccounts, appliedBranch, refreshNonce]);
-
-  // Six-month trend, computed from the same accrual P&L endpoint as the card above, so the
-  // chart and the card describe the same quantity. (It previously read transaction stats,
-  // a cash-basis figure, while being labelled "Accrual".)
-  useEffect(() => {
-    let cancelled = false;
-    async function run() {
-      const now = new Date();
-      const months = [];
-      for (let i = 5; i >= 0; i--) {
-        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const start = new Date(d.getFullYear(), d.getMonth(), 1);
-        const end = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
-        months.push({ label: d.toLocaleDateString("en-IN", { month: "short" }), start, end });
-      }
-      const accountsQS =
-        appliedAccounts.length < ACCOUNTS.length ? `&accounts=${appliedAccounts.join(",")}` : "";
-      const branchQS = appliedBranch ? `&branch=${appliedBranch}` : "";
-      const results = await Promise.all(
-        months.map((m) =>
-          fetch(`/api/close-book/pnl?from=${iso(m.start)}&to=${iso(m.end)}${accountsQS}${branchQS}`)
-            .then((r) => r.json())
-            .catch(() => ({})),
-        ),
-      );
-      if (cancelled) return;
-      setMonthlyTrend(
-        months.map((m, i) => ({
-          month: m.label,
-          Income: results[i]?.income || 0,
-          Expense: results[i]?.expense || 0,
-        })),
-      );
-    }
-    run();
-    return () => { cancelled = true; };
-  }, [appliedBranch, appliedAccounts, refreshNonce]);
 
   const netPosition = assets && liabilities ? assets.total - liabilities.total : null;
   const profit = pnl ? pnl.income - pnl.expense : null;
@@ -441,7 +198,7 @@ export default function AdminDashboard() {
                 <Filter className="w-3.5 h-3.5" /> Apply
               </button>
               <button
-                onClick={() => setRefreshNonce((n) => n + 1)}
+                onClick={refresh}
                 title="Refresh"
                 className="p-2 border border-gray-200 rounded-xl bg-white shadow-sm hover:bg-gray-50"
               >
@@ -481,7 +238,7 @@ export default function AdminDashboard() {
             color="from-emerald-500 to-emerald-600"
             subtitle="Cash & bank + receivables outstanding"
             status={batchStatus}
-            onRetry={() => setRefreshNonce((n) => n + 1)}
+            onRetry={refresh}
           />
           <DashboardCard
             onDrill={() => openDrill("liabilities", "Total Liabilities", liabilities?.total)}
@@ -492,7 +249,7 @@ export default function AdminDashboard() {
             color="from-rose-500 to-rose-600"
             subtitle="Payables outstanding + open suspense"
             status={batchStatus}
-            onRetry={() => setRefreshNonce((n) => n + 1)}
+            onRetry={refresh}
           />
           <DashboardCard
             onDrill={() => openDrill("net-position", "Net Position", netPosition)}
@@ -502,7 +259,7 @@ export default function AdminDashboard() {
             icon={Scale}
             color={netPosition >= 0 ? "from-indigo-500 to-indigo-600" : "from-red-500 to-red-600"}
             status={batchStatus}
-            onRetry={() => setRefreshNonce((n) => n + 1)}
+            onRetry={refresh}
           />
         </div>
 
@@ -744,28 +501,5 @@ export default function AdminDashboard() {
         />
       )}
     </div>
-  );
-}
-
-function AttentionRow({ label, count, amount, onDrill }) {
-  if (!count) return null;
-  return (
-    <button
-      type="button"
-      onClick={onDrill}
-      className="flex items-center justify-between w-full p-3 rounded-xl hover:bg-gray-50 border border-gray-100 transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
-    >
-      <div className="flex items-center gap-2">
-        <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
-        <span className="text-sm text-gray-700">{label}</span>
-      </div>
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-semibold text-gray-900">
-          {count}
-          {amount != null ? ` · ${formatCurrency(amount)}` : ""}
-        </span>
-        <ArrowRight className="w-3.5 h-3.5 text-gray-400" />
-      </div>
-    </button>
   );
 }

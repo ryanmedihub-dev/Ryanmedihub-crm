@@ -1,5 +1,3 @@
-"use client";
-
 import { Suspense } from "react";
 import CollabSidebar from "@/components/Sidebars/CollabSidebar";
 import PatientTable from "@/components/PatientTable";

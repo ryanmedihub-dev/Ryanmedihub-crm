@@ -1,37 +1,16 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, DataTable, Badge, KpiRow, ErrorState, EmptyState } from "@/components/owner";
-import { ownerFetch } from "@/lib/ownerFetch";
+import { useOwnerData } from "@/lib/owner/useOwnerData";
 
 // Agent-status half of the old combined "Live Workforce & Queue" page — the
 // P0-P4 retry lanes moved to /owner/leads/retry (Owner Panel v2, Part 2),
 // since they're lead-priority queues, not call/agent data. Each page now
 // fetches only what it renders.
 export default function LiveAgentStatusPage() {
-  const [agents, setAgents] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [reloadTick, setReloadTick] = useState(0);
-
-  const load = useCallback(async ({ signal } = {}) => {
-    setLoading(true);
-    setError(null);
-    const r = await ownerFetch("/api/owner/calls/live", { signal });
-    if (r.aborted) return;
-    if (r.ok) setAgents(r.data?.agents || []);
-    else setError(r.error);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    const ctrl = new AbortController();
-    load({ signal: ctrl.signal });
-    return () => ctrl.abort();
-  }, [load, reloadTick]);
-
-  const refresh = () => setReloadTick((t) => t + 1);
+  const { data, loading, error, mutate: refresh } = useOwnerData("/api/owner/calls/live");
+  const agents = data?.agents || [];
 
   const totalCalls = agents.reduce((s, a) => s + (a.calls?.total || 0), 0);
   const totalConnected = agents.reduce((s, a) => s + (a.calls?.connected || 0), 0);

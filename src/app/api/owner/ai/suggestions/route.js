@@ -157,7 +157,7 @@ function attentionRollupObservation(rules) {
 
 async function performanceDistributionObservation(period) {
   const periodDays = daysInPeriod(period.from.toISOString(), period.to.toISOString());
-  const employees = await Employee.find({ isactive: true, mergedInto: null }).select("name role branch callbyUserId").lean();
+  const employees = await Employee.find({ isactive: true, mergedInto: null }).select("name role branch callbyUserId employeeId").lean();
 
   const bySection = new Map();
   for (const e of employees) {

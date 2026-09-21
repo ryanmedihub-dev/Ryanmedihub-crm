@@ -1,4 +1,3 @@
-"use client";
 import StockDashboard from "@/components/StockDashboard";
 
 const CONFIG = {

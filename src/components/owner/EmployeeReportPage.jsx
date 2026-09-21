@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import OwnerTopbar from "./OwnerTopbar";
@@ -8,7 +8,7 @@ import ReportPanel from "./ReportPanel";
 import KpiRow from "./KpiRow";
 import ErrorState from "./ErrorState";
 import InlineNotice from "./InlineNotice";
-import { ownerFetch } from "@/lib/ownerFetch";
+import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { rupee, num } from "@/lib/owner/format";
 import { usePagedList } from "@/lib/owner/usePagedList";
 
@@ -94,48 +94,27 @@ export default function EmployeeReportPage({ config }) {
     dirForKey,
   });
 
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const url = useMemo(() => {
+    if (!filterState) return null;
+    const params = new URLSearchParams(list.query);
+    params.set("dateFrom", filterState.range.from);
+    params.set("dateTo", filterState.range.to);
+    if (filterState.filters.branch && filterState.filters.branch !== "All") {
+      params.set("branch", filterState.filters.branch);
+    }
+    if (filterState.filters.isactive)
+      params.set("isactive", filterState.filters.isactive);
+    if (filterState.filters.callbyLinked)
+      params.set("callbyLinked", filterState.filters.callbyLinked);
+    if (filterState.filters.q) params.set("search", filterState.filters.q);
+    for (const ex of ADVANCED_EXTRAS) {
+      const v = filterState.filters[ex.key];
+      if (v) params.set(ex.key, v);
+    }
+    return `${config.endpoint}?${params.toString()}`;
+  }, [filterState, list.query, config.endpoint]);
 
-  const load = useCallback(
-    async ({ signal } = {}) => {
-      if (!filterState) return;
-      setLoading(true);
-      setError(null);
-
-      const params = new URLSearchParams(list.query);
-      params.set("dateFrom", filterState.range.from);
-      params.set("dateTo", filterState.range.to);
-      if (filterState.filters.branch && filterState.filters.branch !== "All") {
-        params.set("branch", filterState.filters.branch);
-      }
-      if (filterState.filters.isactive)
-        params.set("isactive", filterState.filters.isactive);
-      if (filterState.filters.callbyLinked)
-        params.set("callbyLinked", filterState.filters.callbyLinked);
-      if (filterState.filters.q) params.set("search", filterState.filters.q);
-      for (const ex of ADVANCED_EXTRAS) {
-        const v = filterState.filters[ex.key];
-        if (v) params.set(ex.key, v);
-      }
-
-      const r = await ownerFetch(`${config.endpoint}?${params.toString()}`, {
-        signal,
-      });
-      if (r.aborted) return;
-      if (r.ok) setData(r.data);
-      else setError(r.error);
-      setLoading(false);
-    },
-    [filterState, list.query, config.endpoint],
-  );
-
-  useEffect(() => {
-    const ctrl = new AbortController();
-    load({ signal: ctrl.signal });
-    return () => ctrl.abort();
-  }, [load]);
+  const { data, loading, error, isValidating, mutate: load } = useOwnerData(url);
 
   const kpis = useMemo(
     () =>
@@ -178,10 +157,10 @@ export default function EmployeeReportPage({ config }) {
             <button
               className="icon-btn"
               onClick={() => load()}
-              disabled={loading}
+              disabled={isValidating}
               title="Refresh"
             >
-              {loading ? "…" : "⟳"}
+              {isValidating ? "…" : "⟳"}
             </button>
           }
         />

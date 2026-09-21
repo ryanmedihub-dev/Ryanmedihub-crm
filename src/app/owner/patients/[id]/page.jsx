@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, DataTable, Badge, InlineNotice, Skeleton, ErrorState } from "@/components/owner";
-import { ownerFetch } from "@/lib/ownerFetch";
+import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { rupee, fmtDate } from "@/lib/owner/format";
 
 // Moved from /owner/patients/journey (Owner Panel v2, Part 3) — the canonical
@@ -75,28 +74,9 @@ export default function PatientDetailPage() {
   const id = params.id;
   const backHref = useBackHref();
 
-  const [patient, setPatient] = useState(null);
-  const [statusExplanation, setStatusExplanation] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    const ctrl = new AbortController();
-    (async () => {
-      setLoading(true);
-      setError(null);
-      const r = await ownerFetch(`/api/owner/patients/${id}`, { signal: ctrl.signal });
-      if (r.aborted) return;
-      if (r.ok) {
-        setPatient(r.data?.patient || null);
-        setStatusExplanation(r.data?.statusExplanation || null);
-      } else {
-        setError(r.error);
-      }
-      setLoading(false);
-    })();
-    return () => ctrl.abort();
-  }, [id]);
+  const { data, loading, error } = useOwnerData(`/api/owner/patients/${id}`);
+  const patient = data?.patient || null;
+  const statusExplanation = data?.statusExplanation || null;
 
   return (
     <div className="app">

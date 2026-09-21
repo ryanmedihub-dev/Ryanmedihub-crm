@@ -2,9 +2,7 @@
 
 import SearchableSelect from "@/components/SearchableSelect";
 import { Plus, Trash2 } from "lucide-react";
-
-const formatCurrency = (amount) =>
-  `₹${Number(amount || 0).toLocaleString("en-IN")}`;
+import { formatCurrency } from "@/lib/financeUI";
 
 const SERVICE_PROCEDURES = ["PRP", "GFC", "Alopecia", "Canacot", "Headwash", "Other"];
 const SERVICE_LABELS = { PRP: "PRP", GFC: "GFC", Alopecia: "ALOPECIA", Canacot: "CANACOT", Headwash: "HEADWASH", Other: "OTHER" };
