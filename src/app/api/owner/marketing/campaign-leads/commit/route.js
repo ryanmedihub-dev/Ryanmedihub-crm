@@ -7,6 +7,8 @@ import AdCampaign from "@/models/AdCampaign";
 import CampaignLead from "@/models/CampaignLead";
 import UploadBatch from "@/models/UploadBatch";
 import { runValidateCampaignLeads, MAX_ROWS } from "@/lib/uploads/validateCampaignLeads";
+import { syncCampaignSource } from "@/lib/owner/campaignSourceSync";
+import { campaignSourceLabel } from "@/lib/owner/campaignSource";
 import { cacheInvalidate } from "@/lib/cache";
 
 export const dynamic = "force-dynamic";
@@ -129,6 +131,19 @@ export async function POST(req) {
     batch.status = status;
     await batch.save();
 
+    // Send every valid phone in the confirmed rows, including ones skipped as "already
+    // exists for this campaign" — a lead re-labelled by a different campaign's upload since
+    // the last time gets this campaign's label restored. "Last upload wins."
+    const label = campaignSourceLabel(campaign);
+    const syncPhones = results
+      .filter((r) => confirmedHashes.has(r.rowHash) && r.status !== "error" && r.payload)
+      .map((r) => r.payload.phoneNormalized);
+
+    batch.sourceSync = { status: "pending", label };
+    await batch.save();
+    batch.sourceSync = await syncCampaignSource({ phones: syncPhones, label, ref: `ryan-upload-batch-${batch.batchNo}` });
+    await batch.save();
+
     await cacheInvalidate("owner");
     return NextResponse.json({
       batchId: String(batch._id),
@@ -137,6 +152,7 @@ export async function POST(req) {
       failed: failedRows.length,
       docsCreated: createdIds.length,
       results: outcomes,
+      sourceSync: batch.sourceSync,
     });
   } catch (error) {
     console.error("campaign-lead commit failed:", error);

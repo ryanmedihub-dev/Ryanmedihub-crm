@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Upload, Download, FileSpreadsheet, Loader2, ArrowLeft, Undo2 } from "lucide-react";
+import { Upload, Download, FileSpreadsheet, Loader2, ArrowLeft, Undo2, RefreshCw } from "lucide-react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar } from "@/components/owner";
 import { useToast } from "@/components/Toast";
@@ -157,7 +157,12 @@ export default function CampaignLeadsPage() {
 
   const revertBatch = async () => {
     if (!commitResult?.batchId) return;
-    if (!window.confirm(`Revert batch #${commitResult.batchNo}? This permanently deletes the ${commitResult.docsCreated} campaign lead(s) it created.`)) return;
+    if (
+      !window.confirm(
+        `Revert batch #${commitResult.batchNo}? This permanently deletes the ${commitResult.docsCreated} campaign lead(s) it created.\n\nSource labels already written to callby are not reverted. To correct them, upload the list against the right campaign.`,
+      )
+    )
+      return;
     setReverting(true);
     const r = await ownerFetch(`/api/owner/marketing/campaign-leads/${commitResult.batchId}/revert`, { method: "POST" });
     setReverting(false);
@@ -171,13 +176,31 @@ export default function CampaignLeadsPage() {
   };
 
   const revertHistoryBatch = async (batch) => {
-    if (!window.confirm(`Revert batch #${batch.batchNo}? This permanently deletes the ${batch.created} campaign lead(s) it created.`)) return;
+    if (
+      !window.confirm(
+        `Revert batch #${batch.batchNo}? This permanently deletes the ${batch.created} campaign lead(s) it created.\n\nSource labels already written to callby are not reverted. To correct them, upload the list against the right campaign.`,
+      )
+    )
+      return;
     const r = await ownerFetch(`/api/owner/marketing/campaign-leads/${batch.id}/revert`, { method: "POST" });
     if (!r.ok) {
       toast.error(r.error || "Revert failed");
       return;
     }
     toast.success(r.data?.message || "Batch reverted");
+    loadBatches();
+  };
+
+  const [retryingId, setRetryingId] = useState(null);
+  const retrySourceSync = async (batch) => {
+    setRetryingId(batch.id);
+    const r = await ownerFetch(`/api/owner/marketing/campaign-leads/${batch.id}/sync-source`, { method: "POST" });
+    setRetryingId(null);
+    if (!r.ok) {
+      toast.error(r.error || "Source sync failed");
+      return;
+    }
+    toast.success(`Source sync: ${r.data?.sourceSync?.status}`);
     loadBatches();
   };
 
@@ -260,6 +283,19 @@ export default function CampaignLeadsPage() {
 
               {(phase === "preview" || phase === "committing") && validation && (
                 <section className="space-y-4">
+                  {validation.sourcePreview && (
+                    <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm">
+                      {validation.sourcePreview.status === "failed" ? (
+                        <p className="text-slate-500">Couldn&apos;t check callby — the upload will still work; the source sync can be retried after.</p>
+                      ) : (
+                        <p className="text-slate-700">
+                          <strong>{validation.sourcePreview.matched}</strong> of {validation.summary.total} leads found in callby — source will change for{" "}
+                          <strong>{validation.sourcePreview.wouldUpdate}</strong>, <strong>{validation.sourcePreview.alreadySet}</strong> already set,{" "}
+                          <strong>{validation.sourcePreview.unmatched}</strong> not in callby.
+                        </p>
+                      )}
+                    </div>
+                  )}
                   <CampaignLeadPreviewTable summary={validation.summary} results={validation.results} />
 
                   <div className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white p-4">
@@ -310,6 +346,7 @@ export default function CampaignLeadsPage() {
                           <th className="px-3 py-2 text-right">Created</th>
                           <th className="px-3 py-2 text-right">Failed</th>
                           <th className="px-3 py-2">Status</th>
+                          <th className="px-3 py-2">Source Sync</th>
                           <th className="px-3 py-2">By</th>
                           <th className="px-3 py-2"></th>
                         </tr>
@@ -322,6 +359,37 @@ export default function CampaignLeadsPage() {
                             <td className="px-3 py-2 text-right tabular-nums">{b.created}</td>
                             <td className="px-3 py-2 text-right tabular-nums text-slate-500">{b.failed}</td>
                             <td className="px-3 py-2 text-slate-600">{b.status}</td>
+                            <td className="px-3 py-2">
+                              {b.sourceSync ? (
+                                <div className="flex items-center gap-1.5">
+                                  <span
+                                    title={`matched ${b.sourceSync.matched} · updated ${b.sourceSync.updated} · already set ${b.sourceSync.alreadySet} · unmatched ${b.sourceSync.unmatched}${b.sourceSync.error ? ` · ${b.sourceSync.error}` : ""}`}
+                                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
+                                      b.sourceSync.status === "done"
+                                        ? "bg-emerald-100 text-emerald-700"
+                                        : b.sourceSync.status === "partial"
+                                          ? "bg-amber-100 text-amber-700"
+                                          : b.sourceSync.status === "failed"
+                                            ? "bg-rose-100 text-rose-700"
+                                            : "bg-slate-100 text-slate-600"
+                                    }`}
+                                  >
+                                    {b.sourceSync.status === "done" ? "Done" : b.sourceSync.status === "partial" ? "Partial" : b.sourceSync.status === "failed" ? "Failed" : "Pending"}
+                                  </span>
+                                  {(b.sourceSync.status === "failed" || b.sourceSync.status === "partial") && b.status !== "reverted" && (
+                                    <button
+                                      onClick={() => retrySourceSync(b)}
+                                      disabled={retryingId === b.id}
+                                      className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                                    >
+                                      {retryingId === b.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />} Retry
+                                    </button>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-slate-400">—</span>
+                              )}
+                            </td>
                             <td className="px-3 py-2 text-slate-500">{b.createdBy}</td>
                             <td className="px-3 py-2 text-right">
                               {b.status !== "reverted" && b.created > 0 && (

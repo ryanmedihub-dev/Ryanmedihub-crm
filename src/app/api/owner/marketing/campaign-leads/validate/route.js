@@ -5,6 +5,8 @@ import mongoose from "mongoose";
 import connectDB from "@/lib/db";
 import AdCampaign from "@/models/AdCampaign";
 import { runValidateCampaignLeads, MAX_ROWS } from "@/lib/uploads/validateCampaignLeads";
+import { syncCampaignSource } from "@/lib/owner/campaignSourceSync";
+import { campaignSourceLabel } from "@/lib/owner/campaignSource";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -40,7 +42,13 @@ export async function POST(req) {
 
     const { summary, results } = await runValidateCampaignLeads(rows, campaign);
 
-    return NextResponse.json({ summary, results });
+    // syncCampaignSource never throws — a callby outage shows up as status:"failed" below,
+    // which is information for the preview card, not a reason to fail validation.
+    const validPhones = results.filter((r) => r.status !== "error" && r.payload).map((r) => r.payload.phoneNormalized);
+    const dry = await syncCampaignSource({ phones: validPhones, label: campaignSourceLabel(campaign), dryRun: true });
+    const sourcePreview = { status: dry.status, label: dry.label, matched: dry.matched, wouldUpdate: dry.wouldUpdate, alreadySet: dry.alreadySet, unmatched: dry.unmatched, error: dry.error };
+
+    return NextResponse.json({ summary, results, sourcePreview });
   } catch (error) {
     console.error("campaign-lead validate failed:", error);
     return NextResponse.json({ error: "Validation failed" }, { status: 500 });

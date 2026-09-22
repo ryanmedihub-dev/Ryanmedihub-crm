@@ -5,16 +5,16 @@ import mongoose from "mongoose";
 import connectDB from "@/lib/db";
 import UploadBatch from "@/models/UploadBatch";
 import CampaignLead from "@/models/CampaignLead";
+import { syncCampaignSource } from "@/lib/owner/campaignSourceSync";
 import { cacheInvalidate } from "@/lib/cache";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
 const ALLOWED_ROLES = ["owner", "super-admin"];
-const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
-// Hard delete is correct here (unlike payables, which are soft-cancelled because money may
-// reference them) — nothing else in the system points at a CampaignLead by id.
+// Retries the source-sync step of a commit — re-reads the batch's CampaignLead phones rather
+// than trusting anything from the client.
 export async function POST(req, { params }) {
   try {
     const session = await getServerSession(authOptions);
@@ -36,29 +36,28 @@ export async function POST(req, { params }) {
       return NextResponse.json({ error: "This batch is not a campaign-lead upload." }, { status: 400 });
     }
     if (batch.status === "reverted") {
-      return NextResponse.json({ error: "This batch has already been reverted." }, { status: 400 });
+      return NextResponse.json({ error: "This batch has been reverted — its leads no longer exist." }, { status: 400 });
     }
-    if (batch.status === "processing") {
-      return NextResponse.json({ error: "This batch is still importing." }, { status: 400 });
-    }
-    if (Date.now() - new Date(batch.createdAt).getTime() > THIRTY_DAYS_MS) {
-      return NextResponse.json({ error: "This batch is more than 30 days old and can no longer be reverted." }, { status: 400 });
+    if (!batch.sourceSync?.label) {
+      return NextResponse.json({ error: "This batch has no source-sync label to retry." }, { status: 400 });
     }
 
-    // Source labels already written to callby are not reverted. To correct them, upload the
-    // list against the right campaign.
-    const ids = batch.createdCampaignLeads || [];
-    const { deletedCount } = ids.length ? await CampaignLead.deleteMany({ _id: { $in: ids } }) : { deletedCount: 0 };
+    const leads = await CampaignLead.find({ uploadBatch: batch._id }).select("phoneNormalized").lean();
+    const phones = leads.map((l) => l.phoneNormalized);
 
-    batch.status = "reverted";
-    batch.revertedAt = new Date();
-    batch.revertedBy = { name: session.user.name, email: session.user.email };
+    batch.sourceSync = { status: "pending", label: batch.sourceSync.label };
+    await batch.save();
+    batch.sourceSync = await syncCampaignSource({
+      phones,
+      label: batch.sourceSync.label,
+      ref: `ryan-upload-batch-${batch.batchNo}`,
+    });
     await batch.save();
 
     await cacheInvalidate("owner");
-    return NextResponse.json({ deleted: deletedCount, message: `${deletedCount} campaign lead(s) deleted.` });
+    return NextResponse.json({ sourceSync: batch.sourceSync });
   } catch (error) {
-    console.error("campaign-lead revert failed:", error);
-    return NextResponse.json({ error: "Revert failed" }, { status: 500 });
+    console.error("campaign-lead sync-source failed:", error);
+    return NextResponse.json({ error: "Source sync failed" }, { status: 500 });
   }
 }

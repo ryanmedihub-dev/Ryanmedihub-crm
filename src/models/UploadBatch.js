@@ -30,6 +30,18 @@ const uploadBatchSchema = new mongoose.Schema(
     },
     revertedAt: Date,
     revertedBy: { name: String, email: String },
+
+    // CAMPAIGN_LEAD batches only: result of pushing the campaign label onto callby Lead.source.
+    sourceSync: {
+      status:      { type: String, enum: ["pending", "done", "partial", "failed", "skipped"], default: undefined },
+      label:       String,
+      matched:     { type: Number, default: 0 },
+      updated:     { type: Number, default: 0 },
+      alreadySet:  { type: Number, default: 0 },
+      unmatched:   { type: Number, default: 0 },
+      error:       String,
+      syncedAt:    Date,
+    },
   },
   { timestamps: true },
 );

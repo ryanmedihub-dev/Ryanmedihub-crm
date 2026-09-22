@@ -23,7 +23,7 @@ export async function GET() {
   const batches = await UploadBatch.find({ kind: "CAMPAIGN_LEAD" })
     .sort({ createdAt: -1 })
     .limit(50)
-    .select("batchNo label fileName totalRows status createdBy createdAt revertedAt createdCampaignLeads failedRows")
+    .select("batchNo label fileName totalRows status createdBy createdAt revertedAt createdCampaignLeads failedRows sourceSync")
     .lean();
 
   return NextResponse.json({
@@ -39,6 +39,7 @@ export async function GET() {
       createdBy: b.createdBy?.name || "",
       createdAt: b.createdAt,
       revertedAt: b.revertedAt || null,
+      sourceSync: b.sourceSync || null,
     })),
   });
 }
