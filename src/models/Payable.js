@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { ALL_BRANCHES } from "@/lib/branches";
+import { fireSheetWebhook } from "@/lib/sheetsWebhook";
 
 const PAYABLE_KINDS = [
   "EMPLOYEE",
@@ -51,7 +52,7 @@ const payableSchema = new mongoose.Schema(
 
     totalAmount: { type: Number, required: true, min: 0 },
     dueDate: Date,
-    branch: { type: String, enum: ALL_BRANCHES },
+    branch: { type: String, enum: ALL_BRANCHES, required: true },
     remarks: String,
     isCancelled: { type: Boolean, default: false },
 
@@ -132,6 +133,16 @@ payableSchema.index({
   expenseSubType: 1,
   "period.month": 1,
   "period.year": 1,
+});
+
+// Google Sheets finance webhook — fires once per newly-created payable, never on edits.
+// $locals is the mongoose-blessed scratch space for passing state from pre to post hooks.
+payableSchema.pre("save", function (next) {
+  this.$locals.wasNew = this.isNew;
+  next();
+});
+payableSchema.post("save", function (doc) {
+  if (doc.$locals.wasNew) fireSheetWebhook("Payable", doc);
 });
 
 export const PAYABLE_KIND_VALUES = PAYABLE_KINDS;

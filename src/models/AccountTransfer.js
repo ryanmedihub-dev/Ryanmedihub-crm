@@ -32,7 +32,7 @@ const accountTransferSchema = new mongoose.Schema(
     branch: {
       type: String,
       enum: ALL_BRANCHES,
-      default: null,
+      required: true,
       index: true,
     },
     reference: String,

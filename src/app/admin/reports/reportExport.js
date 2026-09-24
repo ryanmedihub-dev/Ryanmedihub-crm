@@ -142,12 +142,6 @@ export async function downloadReport(report, { datePreset, customDates, filters 
       : []),
     { Field: "Total Records", Value: result.data.length },
     { Field: "Generated At", Value: new Date().toLocaleString("en-IN") },
-    ...(result.truncated
-      ? [{
-          Field: "⚠ Truncated",
-          Value: `Capped at the ${result.docLimit} most recent records — narrow the date range for a complete export.`,
-        }]
-      : []),
   ];
   const metaWs = utils.json_to_sheet(meta);
   metaWs["!cols"] = [{ wch: 22 }, { wch: 46 }];
@@ -163,5 +157,5 @@ export async function downloadReport(report, { datePreset, customDates, filters 
 
   writeFile(wb, fileName);
 
-  return { rowCount: result.data.length, truncated: !!result.truncated, docLimit: result.docLimit, fileName };
+  return { rowCount: result.data.length, fileName };
 }

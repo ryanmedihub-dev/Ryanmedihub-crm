@@ -1,6 +1,8 @@
 import mongoose from "mongoose";
 import { ALL_BRANCHES, COLLAB_BRANCHES } from "@/lib/branches";
 import { masterDataEnum } from "@/lib/masterData/validator";
+import { NON_CASH_METHODS } from "@/constants/bankRouting";
+import { fireSheetWebhook } from "@/lib/sheetsWebhook";
 import "@/models/Patient";
 
 const transactionSchema = new mongoose.Schema(
@@ -184,7 +186,17 @@ const transactionSchema = new mongoose.Schema(
     },
 
     receiptMode: { type: String, default: "" },
-    furtherMode: { type: String, default: "" },
+    // Account the money actually moved through. Required for every real cash movement;
+    // exempt only for the non-cash methods (money never touches one of our own accounts —
+    // paid by/to an external party, or netted off against a package/settlement).
+    furtherMode: {
+      type: String,
+      default: "",
+      required: [
+        function () { return !NON_CASH_METHODS.includes(this.method); },
+        "Account (furtherMode) is required",
+      ],
+    },
 
     patient: {
       type: mongoose.Schema.Types.ObjectId,
@@ -218,6 +230,7 @@ const transactionSchema = new mongoose.Schema(
     branch: {
       type: String,
       enum: ALL_BRANCHES,
+      required: true,
     },
 
     expense: String,
@@ -468,6 +481,15 @@ transactionSchema.index(
 
 // collabRef.caseId already carries `index: true` on the field itself (see the collabRef
 // sub-schema above) — no separate schema.index() call needed; adding one duplicates it.
+
+// Google Sheets finance webhook — fires once per newly-created transaction, never on edits.
+transactionSchema.pre("save", function (next) {
+  this.$locals.wasNew = this.isNew;
+  next();
+});
+transactionSchema.post("save", function (doc) {
+  if (doc.$locals.wasNew) fireSheetWebhook("Transactions", doc);
+});
 
 export default mongoose.models.Transactions ||
   mongoose.model("Transactions", transactionSchema);

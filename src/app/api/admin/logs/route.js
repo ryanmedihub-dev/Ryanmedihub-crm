@@ -25,10 +25,6 @@ function inRange(date, dateFrom, dateTo) {
   return d >= dateFrom && d <= dateTo;
 }
 
-// A single edited transaction can emit one row per changed field, so cap the documents
-// pulled rather than the rows emitted — the caller is told when this bites.
-const TX_LOG_DOC_LIMIT = 5000;
-
 const fmtDay = (d) => (d ? new Date(d).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" }) : "");
 const id = (v) => (v ? String(v?._id ?? v) : "");
 
@@ -132,14 +128,9 @@ export async function GET(request) {
 
     const meta = {};
     const key = cacheKey("admin-logs", { type, hasBranch, branch, from, to });
-    const { data, truncated } = await cached(key, 30, () => computeLogs({ type, hasBranch, branch, dateFrom, dateTo }), meta);
+    const { data } = await cached(key, 30, () => computeLogs({ type, hasBranch, branch, dateFrom, dateTo }), meta);
 
-    const res = NextResponse.json({
-      success: true,
-      data,
-      truncated,
-      ...(truncated ? { docLimit: TX_LOG_DOC_LIMIT } : {}),
-    });
+    const res = NextResponse.json({ success: true, data });
     res.headers.set("X-Cache", meta.status);
     return res;
   } catch (err) {
@@ -153,7 +144,6 @@ export async function GET(request) {
 
 async function computeLogs({ type, hasBranch, branch, dateFrom, dateTo }) {
     let data = [];
-    let truncated = false;
 
     switch (type) {
       case "patient-changes-log": {
@@ -238,10 +228,7 @@ async function computeLogs({ type, hasBranch, branch, dateFrom, dateTo }) {
           .populate("vendor", "name")
           .populate("stock", "name")
           .sort({ createdAt: -1 })
-          .limit(TX_LOG_DOC_LIMIT)
           .lean();
-
-        truncated = transactions.length >= TX_LOG_DOC_LIMIT;
 
         for (const tx of transactions) {
           // Every audit row repeats this block, so the sheet is self-contained: you can
@@ -417,5 +404,5 @@ async function computeLogs({ type, hasBranch, branch, dateFrom, dateTo }) {
       }
     }
 
-    return { data, truncated };
+    return { data };
 }

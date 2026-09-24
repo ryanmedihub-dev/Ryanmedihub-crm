@@ -13,6 +13,8 @@ import {
 import { resolveReceivableAllocations } from "@/lib/receivableAllocation";
 import { backDateGuard } from "@/lib/backDateGuard";
 import { cacheInvalidate } from "@/lib/cache";
+import { ALL_BRANCHES } from "@/lib/branches";
+import { nonCashMethodsSync } from "@/lib/masterData";
 
 export async function POST(req) {
   try {
@@ -105,6 +107,16 @@ export async function POST(req) {
     const totalDiscount = discount || 0;
     const finalTotal = subtotal - totalDiscount;
     const resolvedBranch = branch || session.user.branch;
+    if (!resolvedBranch || !ALL_BRANCHES.includes(resolvedBranch)) {
+      return NextResponse.json({ error: "Branch is required" }, { status: 400 });
+    }
+    if (!furtherMode && !nonCashMethodsSync().includes(method)) {
+      return NextResponse.json(
+        { error: "Account (received-in account) is required" },
+        { status: 400 }
+      );
+    }
+
     const createdBy = {
       name: session.user.name,
       email: session.user.email,

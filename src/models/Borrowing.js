@@ -43,7 +43,7 @@ const borrowingSchema = new mongoose.Schema(
       index: true,
     },
 
-    branch: { type: String, enum: ALL_BRANCHES, default: null, index: true },
+    branch: { type: String, enum: ALL_BRANCHES, required: true, index: true },
 
     reference: String,
     remarks: String,

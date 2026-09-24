@@ -118,15 +118,7 @@ export default function AdminReportsPage() {
         return;
       }
 
-      if (result.truncated) {
-        showToast(
-          "Downloaded — but truncated",
-          `${result.rowCount} rows saved. Capped at the ${result.docLimit} most recent records; narrow the date range for a complete export.`,
-          "error",
-        );
-      } else {
-        showToast("Report Downloaded!", `${result.rowCount} records saved as ${result.fileName}`);
-      }
+      showToast("Report Downloaded!", `${result.rowCount} records saved as ${result.fileName}`);
     } catch (err) {
       console.error(err);
       showToast("Download Failed", err.message, "error");

@@ -354,7 +354,6 @@ async function generateComprehensivePatientReport(filters) {
     .populate("surgery.seniorTech", "name")
     .populate("surgery.implanterRight", "name")
     .populate("surgery.implanterLeft", "name")
-    .limit(5000)
     .lean();
 
   if (filters.staffFilter) {
@@ -429,7 +428,7 @@ async function generateDemographicsReport(filters) {
     "personal.branch": 1,
     "personal.address": 1,
     "personal.visitDate": 1,
-  }).limit(5000).lean();
+  }).lean();
 
   return patients.map((p) => ({
     "Patient ID": p._id?.toString() || "",
@@ -461,7 +460,6 @@ async function generateStatusReport(filters) {
     "updatedAt": 1,
   })
     .populate("personal.reference", "name")
-    .limit(5000)
     .lean();
 
   return patients.map((p) => ({
@@ -490,7 +488,7 @@ async function generateMedicalHistoryReport(filters) {
     "personal.age": 1,
     "personal.gender": 1,
     "medical": 1,
-  }).limit(5000).lean();
+  }).lean();
 
   return patients.map((p) => ({
     "Patient ID": p._id?.toString() || "",
@@ -523,7 +521,6 @@ async function generateCounsellorReport(filters) {
     "counselling.finlpackage": 1,
   })
     .populate("counselling.counsellor", "name")
-    .limit(5000)
     .lean();
 
   const counsellorStats = {};
@@ -589,7 +586,6 @@ async function generateAgentReport(filters) {
     "payments.amountReceived": 1,
   })
     .populate("personal.reference", "name")
-    .limit(5000)
     .lean();
 
   const agentStats = {};
@@ -652,7 +648,6 @@ async function generateDoctorReport(filters) {
     "surgery.graftsImplanted": 1,
   })
     .populate("surgery.doctor", "name")
-    .limit(5000)
     .lean();
 
   const doctorStats = {};
@@ -721,7 +716,6 @@ async function generateImplanterReport(filters) {
   })
     .populate("surgery.implanterRight", "name")
     .populate("surgery.implanterLeft", "name")
-    .limit(5000)
     .lean();
 
   const implanterStats = {};
@@ -782,7 +776,6 @@ async function generateTechnicianReport(filters) {
     .populate("surgery.seniorTech", "name")
     .populate("surgery.graftingPerson", "name")
     .populate("surgery.helpers", "name")
-    .limit(5000)
     .lean();
 
   const techStats = {};
@@ -840,7 +833,7 @@ async function generateTechniqueReport(filters) {
     "surgery.surgeryDate": 1,
     "surgery.graftsImplanted": 1,
     "payments.amountReceived": 1,
-  }).limit(5000).lean();
+  }).lean();
 
   const techniques = {};
 
@@ -908,7 +901,6 @@ async function generateSurgeryScheduleReport(filters) {
     .populate("surgery.implanterRight", "name")
     .populate("surgery.implanterLeft", "name")
     .sort({ "surgery.surgeryDate": 1 })
-    .limit(5000)
     .lean();
 
   return patients.map((p) => ({
@@ -947,7 +939,7 @@ async function generateGraftsAnalysisReport(filters) {
     "surgery.graftsneed": 1,
     "surgery.graftsImplanted": 1,
     "counselling.graftsSuggested": 1,
-  }).limit(5000).lean();
+  }).lean();
 
   return patients.map((p) => ({
     "Patient Name": p.personal?.name || "",
@@ -981,7 +973,6 @@ async function generateCounsellingOutcomesReport(filters) {
     "ops.status": 1,
   })
     .populate("counselling.counsellor", "name")
-    .limit(5000)
     .lean();
 
   return patients.map((p) => ({
@@ -1014,7 +1005,6 @@ async function generateRevenueReport(filters) {
   const transactions = await Transactions.find(query)
     .populate("patient", "personal.name personal.phone")
     .sort({ date: -1 })
-    .limit(5000)
     .lean();
 
   return transactions.map((t) => ({
@@ -1037,7 +1027,7 @@ async function generateExpensesReport(filters) {
   };
   if (filters.branch) query.branch = filters.branch;
 
-  const transactions = await Transactions.find(query).sort({ date: -1 }).limit(5000).lean();
+  const transactions = await Transactions.find(query).sort({ date: -1 }).lean();
 
   const empCodes = await employeeCodeMap(
     transactions.filter((t) => t.expenseGiver?.type === "EMPLOYEE").map((t) => t.expenseGiver?.refId),
@@ -1066,7 +1056,6 @@ async function generateTransactionsReport(filters) {
   const transactions = await Transactions.find(query)
     .populate("patient", "personal.name personal.phone")
     .sort({ date: -1 })
-    .limit(5000)
     .lean();
 
   return transactions.map((t) => ({
@@ -1106,7 +1095,6 @@ async function generateOutstandingPaymentsReport(filters) {
   })
     .populate("counselling.counsellor", "name")
     .sort({ "payments.pendingAmount": -1 })
-    .limit(5000)
     .lean();
 
   const patientIds = patients.map((p) => p._id);
@@ -1194,7 +1182,6 @@ async function generatePaymentCollectionReport(filters) {
       path: "patient",
       populate: { path: "counselling.counsellor", select: "name" },
     })
-    .limit(5000)
     .lean();
 
   const collectionData = {};
@@ -1251,7 +1238,7 @@ async function generateProcedureRevenueReport(filters) {
   if (filters.branch) query.branch = filters.branch;
   if (filters.procedureFilter) query.procedure = filters.procedureFilter;
 
-  const transactions = await Transactions.find(query).limit(5000).lean();
+  const transactions = await Transactions.find(query).lean();
 
   const procedureData = {};
 
@@ -1307,7 +1294,6 @@ async function generatePayablesAllReport(filters) {
     ...buildPayableAggregationStages(txCollection),
     // Grouped so every payable for one payee sits together, newest obligation first.
     { $sort: { purpose: 1, "payee.label": 1, createdAt: -1 } },
-    { $limit: 5000 },
   ]);
 
   if (payables.length === 0) return [];
@@ -1496,7 +1482,6 @@ async function generateReceivablesAllReport(filters) {
     { $match: match },
     ...buildReceivableAggregationStages(txCollection),
     { $sort: { revenueCategory: 1, "payer.label": 1, createdAt: -1 } },
-    { $limit: 5000 },
   ]);
 
   if (receivables.length === 0) return [];
@@ -1752,13 +1737,11 @@ async function generatePartyNetBalanceReport({ dateFilter, branch }) {
       { $match: payableMatch },
       ...buildPayableAggregationStages(txCollection),
       { $sort: { "payee.refId": 1, createdAt: -1 } },
-      { $limit: 5000 },
     ]),
     Receivable.aggregate([
       { $match: receivableMatch },
       ...buildReceivableAggregationStages(txCollection),
       { $sort: { "payer.refId": 1, createdAt: -1 } },
-      { $limit: 5000 },
     ]),
   ]);
   if (payables.length === 0 && receivables.length === 0) return [];
@@ -1946,7 +1929,6 @@ async function generateSuspenseReport({ from, to, branch }) {
 
   const rows = await SuspenseEntry.find(match)
     .sort({ date: -1, createdAt: -1 })
-    .limit(10000)
     .lean();
 
   return rows.map((s) => ({
@@ -1982,7 +1964,6 @@ async function generateContraReport({ from, to, branch }) {
 
   const transfers = await AccountTransfer.find(match)
     .sort({ date: -1, createdAt: -1 })
-    .limit(10000)
     .lean();
 
   const KIND_LABEL = {
@@ -2041,17 +2022,15 @@ async function generateFinanceDaybookReport({ from, to, branch }) {
     if (branch) q.branch = branch;
     return q;
   };
-  const CAP = 20000;
-
   const [payables, receivables, advances, borrowings, txns, transfers, suspense] =
     await Promise.all([
-      Payable.find(withBranch()).sort({ createdAt: 1 }).limit(CAP).lean(),
-      Receivable.find(withBranch()).sort({ createdAt: 1 }).limit(CAP).lean(),
-      Advance.find(withBranch()).sort({ createdAt: 1 }).limit(CAP).lean(),
-      Borrowing.find(withBranch()).sort({ createdAt: 1 }).limit(CAP).lean(),
-      Transactions.find(withBranch()).sort({ createdAt: 1 }).limit(CAP).lean(),
-      AccountTransfer.find(withBranch()).sort({ createdAt: 1 }).limit(CAP).lean(),
-      SuspenseEntry.find(withBranch()).sort({ createdAt: 1 }).limit(CAP).lean(),
+      Payable.find(withBranch()).sort({ createdAt: 1 }).lean(),
+      Receivable.find(withBranch()).sort({ createdAt: 1 }).lean(),
+      Advance.find(withBranch()).sort({ createdAt: 1 }).lean(),
+      Borrowing.find(withBranch()).sort({ createdAt: 1 }).lean(),
+      Transactions.find(withBranch()).sort({ createdAt: 1 }).lean(),
+      AccountTransfer.find(withBranch()).sort({ createdAt: 1 }).lean(),
+      SuspenseEntry.find(withBranch()).sort({ createdAt: 1 }).lean(),
     ]);
 
   const CONTRA_KIND = {
@@ -2349,7 +2328,7 @@ async function generateBranchRevenueReport(filters) {
   };
   if (filters.branch) query.branch = filters.branch;
 
-  const transactions = await Transactions.find(query).limit(5000).lean();
+  const transactions = await Transactions.find(query).lean();
 
   const branchData = {};
 
@@ -2459,7 +2438,7 @@ async function generateEmployeesAllReport() {
 }
 
 async function generateStocksAllReport() {
-  const stocks = await Stock.find({}).limit(5000).lean();
+  const stocks = await Stock.find({}).lean();
 
   return stocks.map((s) => ({
     "Stock Name": s.name || "",
@@ -2478,7 +2457,7 @@ async function generateStocksAllReport() {
 }
 
 async function generateVendorsAllReport() {
-  const vendors = await Vendor.find({}).limit(5000).lean();
+  const vendors = await Vendor.find({}).lean();
 
   return vendors.map((v) => ({
     "Vendor Name": v.name || "",

@@ -5,6 +5,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
 import Advance from "@/models/Advance";
 import Employee from "@/models/Employee";
+import Receivable from "@/models/Receivable";
 import { resolveBranchFilter } from "@/lib/branches";
 import { settledTotalExpr } from "@/lib/advanceSettlements";
 import { cacheKey, cached } from "@/lib/cache";
@@ -82,6 +83,18 @@ async function computeAdvancesList({
     // cashRecovered = IN advances against this OUT advance's own receivable.
     // remaining = amount − settled − cashRecovered  (floored at 0).
     const computeStages = [
+      {
+        // Advance Type (e.g. "Advance Salary") lives on the backing Receivable's
+        // revenueSubType, not on the Advance doc itself — join it in for display/export.
+        $lookup: {
+          from: Receivable.collection.name,
+          localField: "receivableId",
+          foreignField: "_id",
+          as: "_receivable",
+        },
+      },
+      { $addFields: { advanceType: { $arrayElemAt: ["$_receivable.revenueSubType", 0] } } },
+      { $project: { _receivable: 0 } },
       {
         $lookup: {
           from: Advance.collection.name,

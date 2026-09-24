@@ -21,7 +21,7 @@ const suspenseEntrySchema = new mongoose.Schema(
     amount: { type: Number, required: true, min: 0 },
     date: { type: Date, default: Date.now, index: true },
 
-    branch: { type: String, enum: ALL_BRANCHES, default: null, index: true },
+    branch: { type: String, enum: ALL_BRANCHES, required: true, index: true },
 
     reference: String,
     remarks: String,

@@ -867,6 +867,7 @@ function AdvancesTab({ branch, includeCancelled, toast }) {
   const rowColumnsForExport = [
     { key: "date", label: "Date", csv: (r) => formatDate(r.date) },
     { key: "direction", label: "Direction", csv: (r) => (r.direction === "OUT" ? "Advanced" : "Recovered") },
+    { key: "advanceType", label: "Advance Type", csv: (r) => r.advanceType || "" },
     { key: "party", label: "Party", csv: (r) => r.party?.label || "" },
     { key: "amount", label: "Amount", csv: (r) => r.amount },
     { key: "account", label: "Account" },

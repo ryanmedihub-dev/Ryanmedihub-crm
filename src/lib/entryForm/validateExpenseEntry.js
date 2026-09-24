@@ -59,15 +59,12 @@ export function validateExpenseEntry({
   const sectionError = validateExpenseSection({ expenseData, payableAction, selectedPayableId });
   if (sectionError) return sectionError;
 
-  // Mirrors expense/create/route.js's server-side guard: paying against a payable always
-  // records which account the money left from, unless the method itself carries no cash
-  // movement (offset settlement, paid-by-other, etc).
-  if (
-    payableAction === "pay" &&
-    selectedPayableId &&
-    !expenseData.furtherMode &&
-    !nonCashMethods.includes(expenseData.method)
-  ) {
+  if (!expenseData.branch) return "Select a branch";
+
+  // Mirrors expense/create/route.js's server-side guard: every real cash movement records
+  // which account the money left from, unless the method itself carries no cash movement
+  // (offset settlement, paid-by-other, etc).
+  if (!expenseData.furtherMode && !nonCashMethods.includes(expenseData.method)) {
     return "Select which account this payment left from";
   }
 

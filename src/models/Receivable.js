@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { ALL_BRANCHES } from "@/lib/branches";
+import { fireSheetWebhook } from "@/lib/sheetsWebhook";
 
 const RECEIVABLE_KINDS = ["PATIENT", "COLLAB_CLINIC", "VENDOR", "EMPLOYEE", "OTHER"];
 
@@ -31,7 +32,7 @@ const receivableSchema = new mongoose.Schema(
 
     totalAmount: { type: Number, required: true, min: 0 },
     dueDate: Date,
-    branch: { type: String, enum: ALL_BRANCHES },
+    branch: { type: String, enum: ALL_BRANCHES, required: true },
     remarks: String,
     isCancelled: { type: Boolean, default: false },
 
@@ -80,6 +81,15 @@ receivableSchema.index({ "payer.kind": 1, "payer.refId": 1 });
 receivableSchema.index({ purpose: 1, "period.year": 1, "period.month": 1 });
 receivableSchema.index({ branch: 1, isCancelled: 1 });
 receivableSchema.index({ dueDate: 1 });
+
+// Google Sheets finance webhook — fires once per newly-created receivable, never on edits.
+receivableSchema.pre("save", function (next) {
+  this.$locals.wasNew = this.isNew;
+  next();
+});
+receivableSchema.post("save", function (doc) {
+  if (doc.$locals.wasNew) fireSheetWebhook("Receivable", doc);
+});
 
 export const RECEIVABLE_KIND_VALUES = RECEIVABLE_KINDS;
 export const RECEIVABLE_PURPOSE_VALUES = RECEIVABLE_PURPOSES;

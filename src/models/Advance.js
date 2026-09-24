@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { masterDataEnum } from "@/lib/masterData/validator";
 import { ALL_BRANCHES } from "@/lib/branches";
+import { fireSheetWebhook } from "@/lib/sheetsWebhook";
 
 const receiptSchema = new mongoose.Schema(
   { url: String, publicId: String, fileName: String, fileType: String },
@@ -71,7 +72,7 @@ const advanceSchema = new mongoose.Schema(
       default: [],
     },
 
-    branch: { type: String, enum: ALL_BRANCHES, default: null, index: true },
+    branch: { type: String, enum: ALL_BRANCHES, required: true, index: true },
 
     reference: String,
     remarks: String,
@@ -122,6 +123,15 @@ advanceSchema.index(
 
 // Same lookup cost for the multi-settlement array's per-line payableId.
 advanceSchema.index({ "settlements.payableId": 1, isCancelled: 1, direction: 1 });
+
+// Google Sheets finance webhook — fires once per newly-created advance, never on edits.
+advanceSchema.pre("save", function (next) {
+  this.$locals.wasNew = this.isNew;
+  next();
+});
+advanceSchema.post("save", function (doc) {
+  if (doc.$locals.wasNew) fireSheetWebhook("Advance", doc);
+});
 
 export const ADVANCE_PARTY_KINDS = PARTY_KINDS;
 
