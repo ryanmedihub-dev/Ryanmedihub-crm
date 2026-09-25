@@ -12,6 +12,7 @@ const config = {
   subtitle: "No dedicated \"lost reason\" field exists in callby — Last Note is the closest real data",
   defaultSort: "createdAt",
   defaultSortDir: "desc",
+  aiFeature: "leads.status",
   columns: [...LEAD_BASE_COLUMNS, LAST_NOTE_COLUMN],
   kpis: (data) => [
     { label: "Total Not Interested / Lost", value: num(data.total), sub: "This period", kind: "info" },

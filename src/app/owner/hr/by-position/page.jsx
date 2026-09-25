@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, FilterBar, ReportTable, KpiRow, ErrorState } from "@/components/owner";
+import { AiBriefPanel } from "@/components/owner/ai";
+import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { rupee, num } from "@/lib/owner/format";
 import { usePagedList } from "@/lib/owner/usePagedList";
@@ -10,6 +12,8 @@ import { usePagedList } from "@/lib/owner/usePagedList";
 export default function HrByPositionPage() {
   const [filterState, setFilterState] = useState(null);
   const list = usePagedList({ defaultSort: "interviews", defaultDir: "desc" });
+
+  const aiScope = useMemo(() => (filterState ? { dateFrom: filterState.range.from, dateTo: filterState.range.to } : {}), [filterState]);
 
   const url = useMemo(() => {
     if (!filterState) return null;
@@ -20,6 +24,7 @@ export default function HrByPositionPage() {
   }, [filterState, list.query]);
 
   const { data, loading, error, isValidating, mutate: load } = useOwnerData(url);
+  const byPositionAi = useAiInsight("hr.byPosition", aiScope, { kind: "brief", enabled: !!filterState });
 
   const summary = data?.summary;
 
@@ -30,6 +35,7 @@ export default function HrByPositionPage() {
         <OwnerTopbar
           title="By Position"
           subtitle="Which roles are hard to hire — selection rate, salary gap, time to fill"
+          aiState={byPositionAi}
           controls={
             <button className="icon-btn" onClick={() => load()} disabled={isValidating} title="Refresh">
               {isValidating ? "…" : "⟳"}
@@ -38,6 +44,8 @@ export default function HrByPositionPage() {
         />
 
         <div className="content">
+          <AiBriefPanel feature="hr.byPosition" scope={aiScope} title="By Position" enabled={!!filterState} aiState={byPositionAi} />
+
           <FilterBar show={["date"]} onChange={({ filters, range }) => { list.resetPage(); setFilterState({ filters, range }); }} />
 
           {error ? (

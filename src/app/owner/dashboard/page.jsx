@@ -11,6 +11,8 @@ import {
   OwnerTopbar, KpiRow, Card, Funnel, DataTable, ErrorState, EmptyState,
   AttentionRamp, Skeleton, Badge,
 } from "@/components/owner";
+import { AiBriefPanel, AiFeedTicker } from "@/components/owner/ai";
+import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { rupee, num as fmt } from "@/lib/owner/format";
 import { OWNER_BRANCHES as BRANCHES, DATE_RANGES, buildDateRange } from "@/lib/owner/filters";
@@ -37,11 +39,13 @@ export default function OwnerDashboard() {
   const bq = branch !== "All" ? `&branch=${encodeURIComponent(branch)}` : "";
   const bqOnly = branch !== "All" ? `?branch=${encodeURIComponent(branch)}` : "";
 
+  const resolvedDates = useMemo(() => (dateReady ? buildDateRange(dateRange, custom) : null), [dateReady, dateRange, custom]);
+
   const dashUrl = useMemo(() => {
-    if (!dateReady) return null;
-    const { from, to } = buildDateRange(dateRange, custom);
+    if (!resolvedDates) return null;
+    const { from, to } = resolvedDates;
     return `/api/owner/dashboard?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}${bq}`;
-  }, [dateReady, dateRange, custom, bq]);
+  }, [resolvedDates, bq]);
   const { data, loading, error, isValidating: dashValidating, mutate: loadDash } = useOwnerData(dashUrl);
 
   const recUrl = dateReady ? `/api/receivables/summary${bqOnly}` : null;
@@ -53,6 +57,14 @@ export default function OwnerDashboard() {
   const financeLoading = recLoading || payLoading;
   const isValidating = dashValidating || recValidating || payValidating;
   const fetchAll = () => { loadDash(); loadRec(); loadPay(); };
+
+  // Feature key dashboard.command — same guard as the three GETs above; the
+  // brief must not run before a custom range has a "from" either.
+  const aiScope = useMemo(
+    () => (resolvedDates ? { branch, from: resolvedDates.from, to: resolvedDates.to } : {}),
+    [resolvedDates, branch],
+  );
+  const dashboardAi = useAiInsight("dashboard.command", aiScope, { kind: "brief", enabled: !!resolvedDates });
 
   const revenue = data?.revenue || {};
   const surgeries = data?.surgeries || {};
@@ -71,20 +83,22 @@ export default function OwnerDashboard() {
     {
       label: "Total Revenue",
       value: loading ? "—" : rupee(revenue.current),
+      rawValue: loading ? null : revenue.current, format: "rupee",
       sub: loading ? "" : revenueChange == null ? `${dateRange}${branch !== "All" ? ` · ${branch}` : ""}` : `${revenueChange >= 0 ? "▲" : "▼"} ${Math.abs(revenueChange)}% vs previous period`,
       kind: revenueChange == null ? "good" : revenueChange >= 0 ? "good" : "bad",
       onDrill: () => router.push("/owner/finance/transactions"),
     },
-    { label: "Leads Created", value: loading ? "—" : fmt(leadsCreated?.value), sub: dateRange, kind: "info" },
+    { label: "Leads Created", value: loading ? "—" : fmt(leadsCreated?.value), rawValue: loading ? null : leadsCreated?.value, format: "num", sub: dateRange, kind: "info" },
     { label: "Conversion Rate", value: loading ? "—" : conversionPct == null ? "—" : `${conversionPct}%`, sub: "Leads → Converted (see Statistics)", kind: conversionPct >= 20 ? "good" : "warn" },
     {
       label: "Surgeries Done",
       value: loading ? "—" : fmt(surgeries.current),
+      rawValue: loading ? null : surgeries.current, format: "num",
       sub: loading || surgeriesChange == null ? "This period" : `${surgeriesChange >= 0 ? "▲" : "▼"} ${Math.abs(surgeriesChange)}% vs previous period`,
       kind: "good",
     },
-    { label: "Pending Receivable", value: financeLoading ? "—" : rupee(finance?.receivable?.totalPending), sub: financeLoading ? "" : `${fmt(finance?.receivable?.count ?? 0)} open`, kind: "info" },
-    { label: "Pending Payable", value: financeLoading ? "—" : rupee(finance?.payable?.totalPending), sub: financeLoading ? "" : `${fmt(finance?.payable?.count ?? 0)} open`, kind: finance?.payable?.totalPending > 0 ? "bad" : "good" },
+    { label: "Pending Receivable", value: financeLoading ? "—" : rupee(finance?.receivable?.totalPending), rawValue: financeLoading ? null : finance?.receivable?.totalPending, format: "rupee", sub: financeLoading ? "" : `${fmt(finance?.receivable?.count ?? 0)} open`, kind: "info" },
+    { label: "Pending Payable", value: financeLoading ? "—" : rupee(finance?.payable?.totalPending), rawValue: financeLoading ? null : finance?.payable?.totalPending, format: "rupee", sub: financeLoading ? "" : `${fmt(finance?.payable?.count ?? 0)} open`, kind: finance?.payable?.totalPending > 0 ? "bad" : "good" },
   ];
 
   const attentionRules = attention.rules || [];
@@ -99,6 +113,7 @@ export default function OwnerDashboard() {
         <OwnerTopbar
           title="Dashboard"
           subtitle={`Everything below links deeper · ${branch === "All" ? "All branches" : branch}`}
+          aiState={dashboardAi}
           controls={
             <>
               <select className="control" value={branch} onChange={(e) => setBranch(e.target.value)} aria-label="Branch">
@@ -121,6 +136,16 @@ export default function OwnerDashboard() {
         />
 
         <div className="content">
+          <AiBriefPanel
+            feature="dashboard.command"
+            scope={aiScope}
+            title="Dashboard"
+            variant="hero"
+            enabled={!!resolvedDates}
+            aiState={dashboardAi}
+          />
+          <AiFeedTicker />
+
           {error ? (
             <ErrorState message={error} onRetry={fetchAll} />
           ) : (
@@ -166,15 +191,18 @@ export default function OwnerDashboard() {
                       <AreaChart data={revenue.perDay} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                         <defs>
                           <linearGradient id="ownerRevGrad2" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="var(--info)" stopOpacity={0.22} />
-                            <stop offset="95%" stopColor="var(--info)" stopOpacity={0} />
+                            <stop offset="5%" stopColor="var(--ai-cyan)" stopOpacity={0.28} />
+                            <stop offset="95%" stopColor="var(--ai-cyan)" stopOpacity={0} />
                           </linearGradient>
+                          <filter id="ownerRevGlow" x="-20%" y="-40%" width="140%" height="180%">
+                            <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="var(--ai-cyan)" floodOpacity="0.5" />
+                          </filter>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" vertical={false} />
                         <XAxis dataKey="date" tickFormatter={fmtChartDate} tick={{ fontSize: 12, fill: "var(--ink-muted)" }} axisLine={false} tickLine={false} />
                         <YAxis tickFormatter={(v) => (v >= 100000 ? `₹${(v / 100000).toFixed(1)}L` : `₹${(v / 1000).toFixed(0)}k`)} tick={{ fontSize: 12, fill: "var(--ink-muted)" }} axisLine={false} tickLine={false} width={54} />
                         <Tooltip formatter={(v) => [rupee(v), "Revenue"]} labelFormatter={(l) => new Date(l).toLocaleDateString("en-IN", { weekday: "long", day: "2-digit", month: "long" })} contentStyle={{ borderRadius: "12px", border: "1px solid var(--line)", fontSize: "13px", background: "var(--surface)", color: "var(--ink)" }} />
-                        <Area type="monotone" dataKey="total" stroke="var(--info)" strokeWidth={2.5} fill="url(#ownerRevGrad2)" dot={{ r: 3, fill: "var(--info)", strokeWidth: 0 }} activeDot={{ r: 5, fill: "var(--info)" }} />
+                        <Area type="monotone" dataKey="total" stroke="var(--ai-cyan)" strokeWidth={2.5} fill="url(#ownerRevGrad2)" filter="url(#ownerRevGlow)" isAnimationActive dot={{ r: 3, fill: "var(--ai-cyan)", strokeWidth: 0 }} activeDot={{ r: 5, fill: "var(--ai-cyan)" }} />
                       </AreaChart>
                     </ResponsiveContainer>
                   ) : (

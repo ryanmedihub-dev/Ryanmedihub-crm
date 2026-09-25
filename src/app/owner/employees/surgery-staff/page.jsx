@@ -11,6 +11,7 @@ const config = {
   detailBase: "/owner/employees/surgery-staff",
   tableId: "employees-surgery-staff",
   defaultSort: "patientsOperated",
+  aiFeature: "employees.surgery",
   columns: [
     SHARED_COLUMNS.name,
     SHARED_COLUMNS.phone,

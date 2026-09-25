@@ -13,6 +13,8 @@ const config = {
   tableId: "patients-booking-done",
   defaultSort: "createdAt",
   defaultSortDir: "asc", // oldest registrations first, so the ones going stale surface
+  aiFeature: "patients.preset",
+  aiVerdicts: true,
   columns: [...PATIENT_SHARED_COLUMNS, DAYS_SINCE_BOOKING_COLUMN, SURGERY_DATE_IF_SET_COLUMN],
   kpis: (data) => [
     { label: "Booking Done", value: num(data.total), sub: "Registered this period", kind: "info" },

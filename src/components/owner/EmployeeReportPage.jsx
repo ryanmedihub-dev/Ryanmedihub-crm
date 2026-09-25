@@ -8,6 +8,9 @@ import ReportPanel from "./ReportPanel";
 import KpiRow from "./KpiRow";
 import ErrorState from "./ErrorState";
 import InlineNotice from "./InlineNotice";
+import { AiBriefPanel, AiScanOverlay, aiVerdictColumn } from "./ai";
+import { useAiInsight } from "@/lib/ai/client/useAiInsight";
+import { useAiVerdicts } from "@/lib/ai/client/useAiVerdicts";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { rupee, num } from "@/lib/owner/format";
 import { usePagedList } from "@/lib/owner/usePagedList";
@@ -94,27 +97,41 @@ export default function EmployeeReportPage({ config }) {
     dirForKey,
   });
 
-  const url = useMemo(() => {
+  // The table's own filters, without page/pageSize/sort — this is the scope
+  // an AI brief analyses (the whole filtered cohort), and the base every
+  // verdicts request extends with the table's current page/sort.
+  const tableScope = useMemo(() => {
     if (!filterState) return null;
-    const params = new URLSearchParams(list.query);
-    params.set("dateFrom", filterState.range.from);
-    params.set("dateTo", filterState.range.to);
-    if (filterState.filters.branch && filterState.filters.branch !== "All") {
-      params.set("branch", filterState.filters.branch);
-    }
-    if (filterState.filters.isactive)
-      params.set("isactive", filterState.filters.isactive);
-    if (filterState.filters.callbyLinked)
-      params.set("callbyLinked", filterState.filters.callbyLinked);
-    if (filterState.filters.q) params.set("search", filterState.filters.q);
+    const s = { dateFrom: filterState.range.from, dateTo: filterState.range.to, ...(config.aiExtraScope || {}) };
+    if (filterState.filters.branch && filterState.filters.branch !== "All") s.branch = filterState.filters.branch;
+    if (filterState.filters.isactive) s.isactive = filterState.filters.isactive;
+    if (filterState.filters.callbyLinked) s.callbyLinked = filterState.filters.callbyLinked;
+    if (filterState.filters.q) s.search = filterState.filters.q;
     for (const ex of ADVANCED_EXTRAS) {
       const v = filterState.filters[ex.key];
-      if (v) params.set(ex.key, v);
+      if (v) s[ex.key] = v;
     }
+    return s;
+  }, [filterState, config.aiExtraScope]);
+
+  const url = useMemo(() => {
+    if (!tableScope) return null;
+    const params = new URLSearchParams(list.query);
+    for (const [k, v] of Object.entries(tableScope)) params.set(k, v);
     return `${config.endpoint}?${params.toString()}`;
-  }, [filterState, list.query, config.endpoint]);
+  }, [tableScope, list.query, config.endpoint]);
 
   const { data, loading, error, isValidating, mutate: load } = useOwnerData(url);
+
+  const aiFeature = config.aiFeature || null;
+  const aiVerdictsEnabled = aiFeature && config.aiVerdicts !== false;
+  const pageAi = useAiInsight(aiFeature, tableScope || {}, { kind: "brief", enabled: !!aiFeature && !!tableScope });
+  const verdicts = useAiVerdicts(
+    aiFeature,
+    { ...(tableScope || {}), page: list.page, pageSize: list.pageSize, sortBy: list.sortKey, sortDir: list.sortDir },
+    { enabled: !!aiVerdictsEnabled && !!tableScope },
+  );
+  const [aiSort, setAiSort] = useState(false);
 
   const kpis = useMemo(
     () =>
@@ -130,8 +147,17 @@ export default function EmployeeReportPage({ config }) {
     [data],
   );
 
-  const rows = data?.rows || [];
+  const baseRows = data?.rows || [];
+  // "Sort by AI score" is client-side, current page only — the server sort is
+  // untouched (re-sorting server-side would mean a second, larger AI request).
+  const rows = aiSort
+    ? [...baseRows].sort((a, b) => (verdicts.byId?.[b.id]?.score ?? -1) - (verdicts.byId?.[a.id]?.score ?? -1))
+    : baseRows;
   const total = data?.total || 0;
+
+  const columns = aiVerdictsEnabled
+    ? [config.columns[0], aiVerdictColumn({ byId: verdicts.byId, loading: verdicts.loading }), ...config.columns.slice(1)]
+    : config.columns;
 
   // Carry the active date preset into the detail page via the same URL
   // vocabulary its own FilterBar reads (range / from / to).
@@ -153,6 +179,7 @@ export default function EmployeeReportPage({ config }) {
         <OwnerTopbar
           title={config.title}
           subtitle={config.subtitle}
+          aiState={aiFeature ? pageAi : undefined}
           controls={
             <button
               className="icon-btn"
@@ -166,6 +193,8 @@ export default function EmployeeReportPage({ config }) {
         />
 
         <div className="content">
+          {aiFeature && <AiBriefPanel feature={aiFeature} scope={tableScope || {}} title={config.title} enabled={!!tableScope} aiState={pageAi} />}
+
           {error ? (
             <ErrorState message={error} onRetry={load} />
           ) : (
@@ -185,55 +214,70 @@ export default function EmployeeReportPage({ config }) {
                 </InlineNotice>
               )}
 
-              <ReportPanel
-                title={`${config.title} list`}
-                subtitle={
-                  loading
-                    ? "Loading…"
-                    : `${num(total)} ${total === 1 ? "record" : "records"}`
-                }
-                show={["date", "branch"]}
-                extras={[
-                  {
-                    key: "isactive",
-                    label: "Status",
-                    options: STATUS_OPTIONS,
-                  },
-                  {
-                    key: "callbyLinked",
-                    label: "callby link",
-                    options: CALLBY_LINKED_OPTIONS,
-                  },
-                  {
-                    key: "q",
-                    label: "Search",
-                    type: "text",
-                    placeholder: "Name / phone / email / ID / TL / manager",
-                  },
-                ]}
-                advancedExtras={ADVANCED_EXTRAS}
-                defaults={{
-                  isactive: "true",
-                  callbyLinked: "",
-                  q: "",
-                  ...ADVANCED_DEFAULTS,
-                }}
-                onChange={({ filters, range }) => {
-                  list.resetPage();
-                  setFilterState({ filters, range });
-                }}
-                tableId={config.tableId}
-                columns={config.columns}
-                rows={rows}
-                loading={loading}
-                {...list.tableProps}
-                onSearchChange={undefined}
-                total={total}
-                onRowClick={(row) =>
-                  router.push(`${config.detailBase}/${row.id}${detailQuery}`)
-                }
-                csvFilename={`${config.tableId}.csv`}
-              />
+              <AiScanOverlay active={aiVerdictsEnabled && verdicts.loading}>
+                <ReportPanel
+                  title={`${config.title} list`}
+                  subtitle={
+                    loading
+                      ? "Loading…"
+                      : `${num(total)} ${total === 1 ? "record" : "records"}`
+                  }
+                  show={["date", "branch"]}
+                  extras={[
+                    {
+                      key: "isactive",
+                      label: "Status",
+                      options: STATUS_OPTIONS,
+                    },
+                    {
+                      key: "callbyLinked",
+                      label: "callby link",
+                      options: CALLBY_LINKED_OPTIONS,
+                    },
+                    {
+                      key: "q",
+                      label: "Search",
+                      type: "text",
+                      placeholder: "Name / phone / email / ID / TL / manager",
+                    },
+                  ]}
+                  advancedExtras={ADVANCED_EXTRAS}
+                  defaults={{
+                    ...(config.defaultRange ? { range: config.defaultRange } : {}),
+                    isactive: "true",
+                    callbyLinked: "",
+                    q: "",
+                    ...ADVANCED_DEFAULTS,
+                  }}
+                  onChange={({ filters, range }) => {
+                    list.resetPage();
+                    setFilterState({ filters, range });
+                  }}
+                  toolbar={
+                    aiVerdictsEnabled && (
+                      <button
+                        type="button"
+                        className={`ai-ghost-btn${aiSort ? " ai-cmdbar-item-active" : ""}`}
+                        onClick={() => setAiSort((s) => !s)}
+                        title="Sorts the rows on this page only by AI score — the server-side sort is unchanged"
+                      >
+                        ↕ Sort by AI score (this page)
+                      </button>
+                    )
+                  }
+                  tableId={config.tableId}
+                  columns={columns}
+                  rows={rows}
+                  loading={loading}
+                  {...list.tableProps}
+                  onSearchChange={undefined}
+                  total={total}
+                  onRowClick={(row) =>
+                    router.push(`${config.detailBase}/${row.id}${detailQuery}`)
+                  }
+                  csvFilename={`${config.tableId}.csv`}
+                />
+              </AiScanOverlay>
             </>
           )}
         </div>

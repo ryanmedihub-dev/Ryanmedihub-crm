@@ -5,9 +5,10 @@ export default function Card({
   className = "",
   style,
   children,
+  variant = "glass", // every owner Card is glass by default now — pass variant="" to opt out
 }) {
   return (
-    <div className={`card${className ? ` ${className}` : ""}`} style={style}>
+    <div className={`card${variant ? ` card-${variant}` : ""}${className ? ` ${className}` : ""}`} style={style}>
       {(title || subtitle || actions) && (
         <div className="card-title">
           <div>

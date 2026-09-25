@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
-export default function Modal({ open, onClose, title, subtitle, children }) {
+export default function Modal({ open, onClose, title, subtitle, children, variant = "center" }) {
   const panelRef = useRef(null);
   const lastFocused = useRef(null);
 
@@ -47,9 +47,9 @@ export default function Modal({ open, onClose, title, subtitle, children }) {
   if (!open) return null;
 
   return (
-    <div className="modal-wrap" onClick={onClose}>
+    <div className={`modal-wrap${variant !== "center" ? ` modal-wrap-${variant}` : ""}`} onClick={onClose}>
       <div
-        className="modal"
+        className={`modal${variant !== "center" ? ` modal-${variant}` : ""}`}
         role="dialog"
         aria-modal="true"
         aria-label={title || "Dialog"}

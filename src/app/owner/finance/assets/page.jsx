@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, FilterBar, KpiRow, DataTable, ErrorState, Badge } from "@/components/owner";
+import { AiBriefPanel } from "@/components/owner/ai";
+import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { rupee, num } from "@/lib/owner/format";
 
@@ -25,6 +27,9 @@ export default function FinanceAssetsPage() {
   const isValidating = summaryValidating || ageingValidating;
   const load = () => { loadSummary(); loadAgeing(); };
 
+  const aiScope = useMemo(() => ({ branch }), [branch]);
+  const assetsAi = useAiInsight("finance.assets", aiScope, { kind: "brief", enabled: !!filterState });
+
   return (
     <div className="app">
       <OwnerSidebar />
@@ -32,6 +37,7 @@ export default function FinanceAssetsPage() {
         <OwnerTopbar
           title="Assets"
           subtitle="Receivables outstanding — same data as /admin/assets, owner-level rollup"
+          aiState={assetsAi}
           controls={
             <button className="icon-btn" onClick={() => load()} disabled={isValidating} title="Refresh">
               {isValidating ? "…" : "⟳"}
@@ -40,6 +46,8 @@ export default function FinanceAssetsPage() {
         />
 
         <div className="content">
+          <AiBriefPanel feature="finance.assets" scope={aiScope} title="Assets" enabled={!!filterState} aiState={assetsAi} />
+
           <FilterBar show={["branch"]} onChange={({ filters, range }) => setFilterState({ filters, range })} />
 
           {error ? (
@@ -50,9 +58,9 @@ export default function FinanceAssetsPage() {
                 loading={loading || !overall}
                 primaryIndex={0}
                 items={[
-                  { label: "Total Owed", value: rupee(overall?.totalOwed), sub: `${num(overall?.count)} receivables`, kind: "info" },
-                  { label: "Received", value: rupee(overall?.totalPaid), sub: "So far", kind: "good" },
-                  { label: "Pending", value: rupee(overall?.totalPending), sub: "Outstanding", kind: overall?.totalPending > 0 ? "warn" : "good" },
+                  { label: "Total Owed", value: rupee(overall?.totalOwed), rawValue: overall?.totalOwed, format: "rupee", sub: `${num(overall?.count)} receivables`, kind: "info" },
+                  { label: "Received", value: rupee(overall?.totalPaid), rawValue: overall?.totalPaid, format: "rupee", sub: "So far", kind: "good" },
+                  { label: "Pending", value: rupee(overall?.totalPending), rawValue: overall?.totalPending, format: "rupee", sub: "Outstanding", kind: overall?.totalPending > 0 ? "warn" : "good" },
                 ]}
               />
 

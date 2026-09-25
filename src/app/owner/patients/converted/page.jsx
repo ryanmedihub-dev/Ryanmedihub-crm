@@ -14,6 +14,7 @@ const config = {
   tableId: "patients-converted",
   defaultSort: "createdAt",
   defaultSortDir: "desc",
+  aiFeature: "patients.preset",
   columns: [...PATIENT_SHARED_COLUMNS, ...REVENUE_COLUMNS],
   kpis: (data) => [
     { label: "Converted", value: num(data.total), sub: "Registered this period, fully paid", kind: "good" },

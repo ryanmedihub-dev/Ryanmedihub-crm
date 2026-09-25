@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, FilterBar, ReportTable, KpiRow, ErrorState } from "@/components/owner";
+import { AiBriefPanel } from "@/components/owner/ai";
+import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { num } from "@/lib/owner/format";
 import { INTERVIEW_BASE_COLUMNS } from "@/lib/owner/interviewColumns";
@@ -29,6 +31,11 @@ export default function HrInterviewsPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
 
+  const aiScope = useMemo(
+    () => (filterState ? { dateFrom: filterState.range.from, dateTo: filterState.range.to, status: filterState.filters.status || "", experienceType: filterState.filters.experienceType || "" } : {}),
+    [filterState],
+  );
+
   const url = useMemo(() => {
     if (!filterState) return null;
     const params = new URLSearchParams();
@@ -45,6 +52,7 @@ export default function HrInterviewsPage() {
   }, [filterState, search, sortKey, sortDir, page, pageSize]);
 
   const { data, loading, error, mutate: load } = useOwnerData(url);
+  const interviewsAi = useAiInsight("hr.interviews", aiScope, { kind: "brief", enabled: !!filterState });
 
   const handleSort = (key) => {
     setPage(1);
@@ -66,6 +74,7 @@ export default function HrInterviewsPage() {
         <OwnerTopbar
           title="All Interviews"
           subtitle="Full interview report"
+          aiState={interviewsAi}
           controls={
             <button className="icon-btn" onClick={() => load()} disabled={loading} title="Refresh">
               {loading ? "…" : "⟳"}
@@ -74,6 +83,8 @@ export default function HrInterviewsPage() {
         />
 
         <div className="content">
+          <AiBriefPanel feature="hr.interviews" scope={aiScope} title="All Interviews" enabled={!!filterState} aiState={interviewsAi} />
+
           <FilterBar
             show={["date"]}
             extras={[

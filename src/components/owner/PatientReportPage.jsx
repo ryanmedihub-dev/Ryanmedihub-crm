@@ -10,6 +10,9 @@ import ReportTable from "./ReportTable";
 import KpiRow from "./KpiRow";
 import ErrorState from "./ErrorState";
 import TrendChart from "./TrendChart";
+import { AiBriefPanel, AiScanOverlay, aiVerdictColumn } from "./ai";
+import { useAiInsight } from "@/lib/ai/client/useAiInsight";
+import { useAiVerdicts } from "@/lib/ai/client/useAiVerdicts";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { num } from "@/lib/owner/format";
 import { usePagedList } from "@/lib/owner/usePagedList";
@@ -37,28 +40,45 @@ export default function PatientReportPage({ config }) {
 
   const extras = config.extras || [];
 
-  const url = useMemo(() => {
+  // The table's filters minus page/pageSize/sort/search — what an AI brief
+  // analyses (the whole filtered cohort). Verdicts extend this with the
+  // table's exact visible page/sort, same pattern as Part 4's Employees.
+  const aiScope = useMemo(() => {
     if (!filterState) return null;
-    const params = new URLSearchParams(list.query);
-    params.set("preset", config.preset);
-    params.set("dateFrom", filterState.range.from);
-    params.set("dateTo", filterState.range.to);
-    if (filterState.filters.branch && filterState.filters.branch !== "All") {
-      params.set("branch", filterState.filters.branch);
-    }
-    if (filterState.filters.q) params.set("search", filterState.filters.q);
+    const s = { preset: config.preset, dateFrom: filterState.range.from, dateTo: filterState.range.to };
+    if (filterState.filters.branch && filterState.filters.branch !== "All") s.branch = filterState.filters.branch;
     for (const ex of extras) {
       const v = filterState.filters[ex.key];
-      if (v && v !== "all") params.set(ex.key, v);
+      if (v && v !== "all") s[ex.key] = v;
     }
+    return s;
+  }, [filterState, config.preset, extras]);
+
+  const url = useMemo(() => {
+    if (!filterState || !aiScope) return null;
+    const params = new URLSearchParams(list.query);
+    for (const [k, v] of Object.entries(aiScope)) params.set(k, v);
+    if (filterState.filters.q) params.set("search", filterState.filters.q);
     return `/api/owner/patients?${params.toString()}`;
-  }, [filterState, list.query, config.preset, extras]);
+  }, [filterState, aiScope, list.query]);
 
   const { data, loading, error, isValidating, mutate: load } = useOwnerData(url);
+
+  const aiFeature = config.aiFeature || null;
+  const aiVerdictsEnabled = aiFeature && config.aiVerdicts;
+  const pageAi = useAiInsight(aiFeature, aiScope || {}, { kind: "brief", enabled: !!aiFeature && !!aiScope });
+  const verdicts = useAiVerdicts(
+    aiFeature,
+    { ...(aiScope || {}), page: list.page, pageSize: list.pageSize, sortBy: list.sortKey, sortDir: list.sortDir },
+    { enabled: !!aiVerdictsEnabled && !!aiScope },
+  );
 
   const kpis = useMemo(() => (data ? config.kpis(data) : []), [data, config]);
   const rows = data?.rows || [];
   const total = data?.total || 0;
+  const columns = aiVerdictsEnabled
+    ? [config.columns[0], aiVerdictColumn({ byId: verdicts.byId, loading: verdicts.loading, labelSet: "followUp" }), ...config.columns.slice(1)]
+    : config.columns;
 
   // The detail page's "Back" returns to THIS preset with the same filters.
   const backQuery = useMemo(() => {
@@ -78,6 +98,7 @@ export default function PatientReportPage({ config }) {
         <OwnerTopbar
           title={config.title}
           subtitle={config.subtitle}
+          aiState={aiFeature ? pageAi : undefined}
           controls={
             <button className="icon-btn" onClick={() => load()} disabled={isValidating} title="Refresh">
               {isValidating ? "…" : "⟳"}
@@ -99,6 +120,8 @@ export default function PatientReportPage({ config }) {
             }}
           />
 
+          {aiFeature && <AiBriefPanel feature={aiFeature} scope={aiScope || {}} title={config.title} enabled={!!aiScope} aiState={pageAi} />}
+
           {error ? (
             <ErrorState message={error} onRetry={load} />
           ) : (
@@ -114,9 +137,10 @@ export default function PatientReportPage({ config }) {
               )}
 
               <Card title={`${config.title} list`} subtitle={loading ? "Loading…" : `${num(total)} ${total === 1 ? "patient" : "patients"}`}>
+                <AiScanOverlay active={aiVerdictsEnabled && verdicts.loading}>
                 <ReportTable
                   tableId={config.tableId}
-                  columns={config.columns}
+                  columns={columns}
                   rows={rows}
                   loading={loading}
                   {...list.tableProps}
@@ -125,6 +149,7 @@ export default function PatientReportPage({ config }) {
                   onRowClick={(row) => router.push(`/owner/patients/${row.id}${backQuery}`)}
                   csvFilename={`patients-${config.preset}.csv`}
                 />
+                </AiScanOverlay>
               </Card>
             </>
           )}

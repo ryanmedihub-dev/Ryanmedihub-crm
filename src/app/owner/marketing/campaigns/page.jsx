@@ -5,6 +5,9 @@ import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import {
   OwnerTopbar, Card, FilterBar, DataTable, Badge, Modal, ErrorState, EmptyState, ManualDataNotice,
 } from "@/components/owner";
+import { AiBriefPanel, AiScanOverlay, aiVerdictColumn } from "@/components/owner/ai";
+import { useAiInsight } from "@/lib/ai/client/useAiInsight";
+import { useAiVerdicts } from "@/lib/ai/client/useAiVerdicts";
 import { ownerFetch } from "@/lib/ownerFetch";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { ALL_BRANCHES } from "@/lib/branches";
@@ -45,16 +48,22 @@ export default function CampaignsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
+  const aiScope = useMemo(() => {
+    if (!filterState) return {};
+    const s = { dateFrom: filterState.range.from, dateTo: filterState.range.to };
+    if (filterState.filters.branch && filterState.filters.branch !== "All") s.branch = filterState.filters.branch;
+    if (filterState.filters.status) s.status = filterState.filters.status;
+    if (filterState.filters.platform) s.platform = filterState.filters.platform;
+    return s;
+  }, [filterState]);
+
   const url = useMemo(() => {
     if (!filterState) return null;
-    const params = new URLSearchParams();
-    params.set("dateFrom", filterState.range.from);
-    params.set("dateTo", filterState.range.to);
-    if (filterState.filters.branch && filterState.filters.branch !== "All") params.set("branch", filterState.filters.branch);
-    if (filterState.filters.status) params.set("status", filterState.filters.status);
-    if (filterState.filters.platform) params.set("platform", filterState.filters.platform);
-    return `/api/owner/marketing/campaigns?${params.toString()}`;
-  }, [filterState]);
+    return `/api/owner/marketing/campaigns?${new URLSearchParams(aiScope).toString()}`;
+  }, [filterState, aiScope]);
+
+  const campaignsAi = useAiInsight("marketing.campaigns", aiScope, { kind: "brief", enabled: !!filterState });
+  const verdicts = useAiVerdicts("marketing.campaigns", aiScope, { enabled: !!filterState });
 
   const { data, loading, error, mutate: load } = useOwnerData(url);
   const campaigns = data?.campaigns || [];
@@ -150,12 +159,15 @@ export default function CampaignsPage() {
         <OwnerTopbar
           title="Active Ads"
           subtitle="Hand-maintained campaign records — no Meta/Google API integration"
+          aiState={campaignsAi}
           controls={
             <button className="primary" onClick={openCreate}>+ New Campaign</button>
           }
         />
 
         <div className="content">
+          <AiBriefPanel feature="marketing.campaigns" scope={aiScope} title="Active Ads" enabled={!!filterState} aiState={campaignsAi} />
+
           <ManualDataNotice lastUpdatedAt={lastUpdated?.updatedAt} lastUpdatedBy={lastUpdated?.updatedBy?.name} />
 
           <FilterBar
@@ -172,12 +184,14 @@ export default function CampaignsPage() {
             <ErrorState message={error} onRetry={load} />
           ) : (
             <Card title="Campaigns" subtitle={loading ? "Loading…" : `${campaigns.length} campaigns · spend/clicks/CPC for the selected period`}>
+              <AiScanOverlay active={verdicts.loading}>
               <DataTable
                 tall
                 loading={loading}
                 emptyMessage={<EmptyState icon="◈" title="No campaigns" hint="Create one with the button above." />}
                 columns={[
                   { key: "name", label: "Name", render: (c) => c.name },
+                  aiVerdictColumn({ byId: verdicts.byId, loading: verdicts.loading, labelSet: "campaign" }),
                   { key: "platform", label: "Platform", render: (c) => <Badge kind={c.platform === "Meta" ? "purple" : "info"}>{c.platform}</Badge> },
                   { key: "status", label: "Status", render: (c) => <Badge kind={STATUS_KIND[c.status]}>{c.status}</Badge> },
                   { key: "branch", label: "Branch", render: (c) => c.branch },
@@ -207,6 +221,7 @@ export default function CampaignsPage() {
                 ]}
                 rows={campaigns.map((c) => ({ ...c, id: c._id }))}
               />
+              </AiScanOverlay>
               <p className="muted" style={{ marginTop: 10, fontSize: "var(--fs-12)" }}>
                 Leads / CPL / Converted / CAC aren&apos;t shown per campaign — the lead source tag only
                 distinguishes platform (Meta/Google), never campaign, so per-campaign attribution isn&apos;t

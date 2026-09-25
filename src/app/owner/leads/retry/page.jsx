@@ -6,6 +6,8 @@ import {
   OwnerTopbar, Card, DataTable, Badge, KpiRow,
   DrillSeam, InlineNotice, ErrorState, EmptyState, AttentionRamp, priorityToLevel,
 } from "@/components/owner";
+import { AiBriefPanel } from "@/components/owner/ai";
+import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { fmtDateTime } from "@/lib/owner/format";
 
@@ -42,6 +44,7 @@ export default function RetryQueuePage() {
   const [sortDir, setSortDir] = useState("asc");
 
   const { data, loading, error, mutate: refresh } = useOwnerData("/api/owner/leads/retry");
+  const retryAi = useAiInsight("leads.retry", {}, { kind: "brief" });
   const queue = data?.queue || { P0: [], P1: [], P2: [], P3: [], P4: [] };
   const byPriority = data?.byPriority || {};
   const truncated = !!data?.truncated;
@@ -84,6 +87,7 @@ export default function RetryQueuePage() {
         <OwnerTopbar
           title="Retry & Recovery"
           subtitle="Prioritized P0–P4 retry queue, live from callby"
+          aiState={retryAi}
           controls={
             <button className="icon-btn" onClick={() => refresh()} disabled={loading} title="Refresh">
               {loading ? "…" : "⟳"}
@@ -92,6 +96,8 @@ export default function RetryQueuePage() {
         />
 
         <div className="content">
+          <AiBriefPanel feature="leads.retry" scope={{}} title="Retry & Recovery" aiState={retryAi} />
+
           {error ? (
             <ErrorState message={error} onRetry={refresh} />
           ) : (

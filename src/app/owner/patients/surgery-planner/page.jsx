@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, DataTable, Badge, KpiRow, ErrorState, EmptyState, Skeleton } from "@/components/owner";
+import { AiBriefPanel } from "@/components/owner/ai";
+import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { ownerFetch } from "@/lib/ownerFetch";
 import { fmtDate, num } from "@/lib/owner/format";
+import { toISTDateKey } from "@/lib/owner/dates";
 import { OWNER_BRANCHES as BRANCHES, FORWARD_DATE_RANGES as DATE_RANGES, buildForwardDateRange as buildDateRange } from "@/lib/owner/filters";
 
 export default function SurgeryPlannerPage() {
@@ -16,6 +19,16 @@ export default function SurgeryPlannerPage() {
   const [capacity, setCapacity]   = useState([]);
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState(null);
+
+  const dateReady = !(dateRange === "Custom" && !custom.from);
+  const aiScope = useMemo(() => {
+    if (!dateReady) return {};
+    const { from, to } = buildDateRange(dateRange, custom);
+    return { branch, from, to };
+  }, [dateReady, dateRange, custom, branch]);
+  const plannerAi = useAiInsight("patients.surgeryPlanner", aiScope, { kind: "brief", enabled: dateReady });
+  const aiTopInsight = plannerAi.status === "ready" ? plannerAi.result?.insights?.[0] : null;
+  const aiFlaggedDay = aiTopInsight ? `${aiTopInsight.title || ""} ${aiTopInsight.detail || ""}`.toLowerCase() : "";
 
   const fetchData = useCallback(async ({ signal } = {}) => {
     if (dateRange === "Custom" && !custom.from) return;
@@ -63,6 +76,7 @@ export default function SurgeryPlannerPage() {
         <OwnerTopbar
           title="Surgery & OT Planner"
           subtitle="Scheduled surgeries and today's real OT load"
+          aiState={plannerAi}
           controls={
             <>
               <select className="control" value={branch} onChange={(e) => setBranch(e.target.value)}>
@@ -85,6 +99,8 @@ export default function SurgeryPlannerPage() {
         />
 
         <div className="content">
+          <AiBriefPanel feature="patients.surgeryPlanner" scope={aiScope} title="Surgery & OT Planner" enabled={dateReady} aiState={plannerAi} />
+
           {error ? (
             <ErrorState message={error} onRetry={fetchData} />
           ) : (
@@ -119,7 +135,20 @@ export default function SurgeryPlannerPage() {
                   columns={[
                     { key: "name", label: "Patient" },
                     { key: "branch", label: "Branch" },
-                    { key: "surgeryDate", label: "Date", render: (r) => fmtDate(r.surgeryDate) },
+                    {
+                      key: "surgeryDate", label: "Date",
+                      render: (r) => {
+                        const iso = r.surgeryDate ? toISTDateKey(r.surgeryDate) : "";
+                        const human = fmtDate(r.surgeryDate).toLowerCase();
+                        const flagged = aiFlaggedDay && ((iso && aiFlaggedDay.includes(iso)) || (human && aiFlaggedDay.includes(human)));
+                        return (
+                          <span>
+                            {fmtDate(r.surgeryDate)}
+                            {flagged && <span className="ai-stage-flag">✦ AI flagged</span>}
+                          </span>
+                        );
+                      },
+                    },
                     { key: "OT", label: "OT", render: (r) => (r.OT != null ? <Badge kind="info">OT {r.OT}</Badge> : "—") },
                     { key: "technique", label: "Technique" },
                     { key: "graftsneed", label: "Grafts needed", align: "right" },

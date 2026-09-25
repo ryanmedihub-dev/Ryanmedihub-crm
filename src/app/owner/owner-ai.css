@@ -1,0 +1,744 @@
+/* =============================================================================
+   Owner panel — "Neural Command Deck" AI layer
+   Everything here is scoped under .owner-app, layered on top of
+   owner-theme.css tokens. AI components (and only AI components) use the
+   --ai-* accent trio + conic gradient border — that visual distinction is how
+   the owner tells "this part is the AI talking" apart from plain data.
+   ========================================================================== */
+
+.owner-app {
+  --ai-violet: #8b5cf6;
+  --ai-cyan: #22d3ee;
+  --ai-pink: #f472b6;
+  --ai-grad: conic-gradient(from 0deg, var(--ai-violet), var(--ai-cyan), var(--ai-pink), var(--ai-violet));
+  --ai-grad-linear: linear-gradient(135deg, var(--ai-violet), var(--ai-cyan) 55%, var(--ai-pink));
+  --glass: rgba(22, 24, 40, 0.72);
+  --glass-border: rgba(148, 163, 255, 0.14);
+  --glow-ai: 0 0 0 1px rgba(139, 92, 246, 0.18), 0 8px 30px rgba(139, 92, 246, 0.16);
+}
+.owner-app[data-theme="light"] {
+  --glass: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(111, 82, 238, 0.14);
+  --glow-ai: 0 0 0 1px rgba(111, 82, 238, 0.12), 0 8px 24px rgba(111, 82, 238, 0.1);
+}
+/* Dark ships as the near-black indigo of the brief — a small, targeted tweak
+   over owner-theme.css's existing dark surfaces, not a full repaint. */
+.owner-app[data-theme="dark"] {
+  --bg: #0a0b14;
+}
+
+/* =============================================================================
+   Keyframes
+   ========================================================================== */
+@keyframes ai-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+@keyframes ai-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes ai-orbit {
+  to { transform: rotate(360deg); }
+}
+@keyframes ai-sweep {
+  0% { top: -10%; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+@keyframes ai-shimmer {
+  0% { background-position: -300px 0; }
+  100% { background-position: 300px 0; }
+}
+@keyframes ai-caret {
+  0%, 45% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+@keyframes ai-ripple {
+  0% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4); }
+  100% { box-shadow: 0 0 0 16px rgba(139, 92, 246, 0); }
+}
+@keyframes ai-travel {
+  0% { left: -20%; }
+  100% { left: 100%; }
+}
+@keyframes ai-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes ai-stagger-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes ai-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+/* =============================================================================
+   Neural backdrop
+   ========================================================================== */
+.ai-neural-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  display: block;
+}
+
+/* =============================================================================
+   AI Orb
+   ========================================================================== */
+.ai-orb {
+  --ai-orb-size: 56px;
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: var(--ai-orb-size);
+  height: var(--ai-orb-size);
+  flex-shrink: 0;
+}
+.ai-orb-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--ai-grad);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px));
+  opacity: 0.9;
+}
+.ai-orb-core {
+  position: relative;
+  width: 56%;
+  height: 56%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff, var(--ai-violet) 55%, var(--ai-cyan) 120%);
+  box-shadow: 0 0 14px rgba(139, 92, 246, 0.55);
+}
+.ai-orb-particles span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ai-cyan);
+  transform-origin: 0 0;
+}
+.ai-orb-particles span:nth-child(1) { animation: ai-orbit 1.4s linear infinite; transform: rotate(0deg) translateX(24px); }
+.ai-orb-particles span:nth-child(2) { animation: ai-orbit 1.4s linear infinite; animation-delay: -0.47s; transform: rotate(120deg) translateX(24px); }
+.ai-orb-particles span:nth-child(3) { animation: ai-orbit 1.4s linear infinite; animation-delay: -0.94s; transform: rotate(240deg) translateX(24px); }
+
+.ai-orb-idle .ai-orb-core { animation: ai-breathe 4s ease-in-out infinite; }
+.ai-orb-idle .ai-orb-ring { opacity: 0.4; }
+.ai-orb-thinking .ai-orb-ring { animation: ai-spin 1.2s linear infinite; }
+.ai-orb-speaking .ai-orb-ring { animation: ai-spin 2.4s linear infinite; }
+.ai-orb-speaking .ai-orb-core { animation: ai-ripple 0.5s ease-out; }
+.ai-orb-done .ai-orb-core { animation: ai-ripple 0.6s ease-out; }
+.ai-orb-error .ai-orb-ring,
+.ai-orb-paused .ai-orb-ring { background: none; border: 2px solid var(--crit); opacity: 0.6; }
+.ai-orb-paused .ai-orb-ring { border-color: var(--warn); }
+.ai-orb-error .ai-orb-core,
+.ai-orb-paused .ai-orb-core { background: var(--surface-3); box-shadow: none; filter: saturate(0.4); }
+
+/* =============================================================================
+   AI Pipeline stepper
+   ========================================================================== */
+.ai-pipeline {
+  display: flex;
+  gap: var(--sp-2);
+  margin: var(--sp-3) 0;
+}
+.ai-pipeline-node {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+  min-width: 0;
+}
+.ai-pipeline-connector {
+  position: absolute;
+  top: 5px;
+  left: -50%;
+  width: 100%;
+  height: 2px;
+  background: var(--line-strong);
+  z-index: 0;
+}
+.ai-pipeline-connector-lit {
+  background: linear-gradient(90deg, var(--ai-violet), var(--ai-cyan));
+}
+.ai-pipeline-node .ai-pipeline-dot {
+  position: relative;
+  z-index: 1;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--surface-3);
+  border: 2px solid var(--line-strong);
+}
+.ai-pipeline-node.ai-pipeline-done .ai-pipeline-dot { background: var(--ai-violet); border-color: var(--ai-violet); }
+.ai-pipeline-node.ai-pipeline-active .ai-pipeline-dot {
+  background: var(--ai-cyan);
+  border-color: var(--ai-cyan);
+  box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.2);
+}
+.ai-pipeline-label { font-size: var(--fs-12); color: var(--ink-muted); font-weight: 600; }
+.ai-pipeline-node.ai-pipeline-active .ai-pipeline-label,
+.ai-pipeline-node.ai-pipeline-done .ai-pipeline-label { color: var(--ink); }
+.ai-pipeline-ms { font-family: var(--font-readout); font-size: 11px; color: var(--ink-muted); min-height: 14px; }
+
+.ai-pipeline-compact { display: flex; align-items: center; gap: 5px; }
+.ai-pipeline-compact .ai-pipeline-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--line-strong); }
+.ai-pipeline-compact .ai-pipeline-done { background: var(--ai-violet); }
+.ai-pipeline-compact .ai-pipeline-active { background: var(--ai-cyan); box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.25); }
+
+/* =============================================================================
+   Stream text
+   ========================================================================== */
+.ai-stream-tail { animation: ai-fade-in 150ms ease-out; }
+.ai-caret {
+  display: inline-block;
+  width: 2px;
+  height: 0.9em;
+  margin-left: 2px;
+  background: var(--ai-cyan);
+  vertical-align: text-bottom;
+  animation: ai-caret 1s step-end infinite;
+}
+
+/* =============================================================================
+   Score ring
+   ========================================================================== */
+.ai-score-ring { position: relative; display: grid; place-items: center; width: var(--ai-ring-size); margin: 0 auto; }
+.ai-score-ring svg { transform: rotate(-90deg); }
+.ai-score-ring-track { fill: none; stroke: var(--line); stroke-width: 7; }
+.ai-score-ring-value { fill: none; stroke-width: 7; stroke-linecap: round; transition: stroke-dashoffset 700ms cubic-bezier(.2,.8,.2,1); }
+.ai-score-ring-center {
+  position: absolute;
+  top: 42%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-readout);
+  font-size: var(--fs-28);
+  font-weight: 600;
+}
+.ai-score-ring-label { margin-top: 6px; font-size: var(--fs-12); color: var(--ink-muted); text-align: center; }
+
+/* =============================================================================
+   AI Brief panel / Deep review
+   ========================================================================== */
+.ai-brief-panel {
+  position: relative;
+  background: var(--glass);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--glow-ai);
+  padding: var(--sp-4) var(--sp-5);
+  margin-bottom: var(--sp-4);
+}
+.ai-brief-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: var(--ai-grad);
+  opacity: 0.35;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+.ai-brief-header { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-3); flex-wrap: wrap; }
+.ai-brief-header-left { display: flex; align-items: center; gap: var(--sp-3); min-width: 0; }
+.ai-brief-eyebrow { font-size: var(--fs-13); font-weight: 600; letter-spacing: 0.02em; }
+.ai-brief-status { font-size: var(--fs-12); color: var(--ink-muted); }
+.ai-brief-header-right { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
+.ai-model-chip {
+  font-family: var(--font-readout);
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--ink-muted);
+}
+.ai-ghost-btn {
+  font-size: var(--fs-12);
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--glass-border);
+  background: transparent;
+  color: var(--ink-muted);
+  transition: background 150ms, color 150ms;
+}
+.ai-ghost-btn:hover:not(:disabled) { background: var(--surface-2); color: var(--ink); }
+.ai-ghost-btn:disabled { opacity: 0.5; cursor: default; }
+
+.ai-brief-body { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: var(--sp-5); margin-top: var(--sp-3); }
+.ai-brief-headline { font-size: var(--fs-20); font-weight: 600; margin: 0 0 6px; }
+.ai-brief-summary { color: var(--ink-muted); margin: 0 0 var(--sp-3); line-height: 1.6; }
+
+.ai-signal-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: var(--sp-3); }
+.ai-signal { display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-12); padding: 4px 10px; border-radius: var(--r-pill); background: var(--surface-2); border: 1px solid var(--line); }
+.ai-signal-good { color: var(--pos-fg); border-color: var(--pos-border); background: var(--pos-bg); }
+.ai-signal-warn { color: var(--warn-fg); border-color: var(--warn-border); background: var(--warn-bg); }
+.ai-signal-bad { color: var(--crit-fg); border-color: var(--crit-border); background: var(--crit-bg); }
+.ai-signal-info { color: var(--info-fg); border-color: var(--info-border); background: var(--info-bg); }
+
+.ai-insight-list { display: flex; flex-direction: column; gap: 8px; }
+.ai-insight-card { border-left: 3px solid var(--line-strong); background: var(--surface-2); border-radius: var(--r-sm); padding: 8px 12px; }
+.ai-insight-good { border-left-color: var(--pos); }
+.ai-insight-warn { border-left-color: var(--warn); }
+.ai-insight-bad { border-left-color: var(--crit); }
+.ai-insight-info { border-left-color: var(--info); }
+.ai-insight-title { font-weight: 600; font-size: var(--fs-13); }
+.ai-insight-detail { font-size: var(--fs-13); color: var(--ink-muted); margin-top: 2px; }
+
+.ai-brief-col-side { display: flex; flex-direction: column; gap: var(--sp-4); }
+.ai-confidence { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.ai-confidence-bars { display: flex; gap: 3px; }
+.ai-confidence-bar { width: 16px; height: 4px; border-radius: 2px; background: var(--line-strong); }
+.ai-confidence-lit { background: var(--ai-violet); }
+.ai-confidence-label { font-size: 11px; color: var(--ink-muted); text-transform: capitalize; }
+
+.ai-action-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.ai-action { border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--surface-2); padding: 8px 10px; }
+.ai-action-title { font-size: var(--fs-13); font-weight: 600; }
+.ai-action-detail { font-size: 12px; color: var(--ink-muted); margin-top: 2px; }
+.ai-action-link { display: inline-block; margin-top: 4px; font-size: 12px; font-weight: 600; color: var(--ai-violet); }
+.ai-action-high { border-left: 3px solid var(--crit); }
+.ai-action-medium { border-left: 3px solid var(--warn); }
+.ai-action-low { border-left: 3px solid var(--info); }
+
+.ai-brief-footer {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  margin-top: var(--sp-4);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--glass-border);
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+.ai-grounding-ok { color: var(--pos-fg); }
+.ai-grounding-warn { color: var(--warn-fg); }
+.ai-feedback { display: inline-flex; gap: 4px; margin-left: auto; }
+.ai-feedback button { background: none; border: none; font-size: 14px; padding: 2px 4px; opacity: 0.7; }
+.ai-feedback button:hover { opacity: 1; }
+.ai-usage-meta { font-family: var(--font-readout); font-size: 11px; }
+
+.ai-brief-compact {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-md);
+  padding: 8px 12px;
+  text-align: left;
+}
+.ai-brief-compact-headline { flex: 1; min-width: 0; font-size: var(--fs-13); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ai-brief-compact-score { font-family: var(--font-readout); font-size: 12px; color: var(--ink-muted); }
+.ai-brief-compact-chevron { color: var(--ink-muted); }
+
+.ai-deep-section { margin-top: var(--sp-4); }
+.ai-deep-section-title { font-size: var(--fs-13); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-muted); margin: 0 0 8px; }
+.ai-tone-good { color: var(--pos-fg); }
+.ai-tone-warn { color: var(--warn-fg); }
+.ai-plan-timeline { display: flex; flex-direction: column; gap: var(--sp-3); }
+.ai-plan-horizon { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-muted); margin-bottom: 6px; }
+.ai-plan-step { display: flex; gap: 10px; padding: 4px 0 4px 4px; border-left: 2px solid var(--line-strong); margin-left: 3px; }
+.ai-plan-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ai-violet); margin-top: 4px; margin-left: -9px; flex-shrink: 0; }
+.ai-plan-step-text { font-size: var(--fs-13); font-weight: 500; }
+.ai-plan-step-why { font-size: 12px; color: var(--ink-muted); }
+.ai-outlook { display: flex; align-items: center; gap: 8px; font-size: var(--fs-13); background: var(--surface-2); border-radius: var(--r-sm); padding: 10px; }
+.ai-outlook-arrow { font-size: 18px; color: var(--ai-violet); }
+
+/* =============================================================================
+   Facts drawer (Modal variant="drawer") + JSON tree
+   ========================================================================== */
+.modal-wrap-drawer { justify-content: flex-end; align-items: stretch; padding: 0; }
+.modal-drawer {
+  width: min(440px, 100vw);
+  height: 100vh;
+  max-height: 100vh;
+  border-radius: 0;
+  margin: 0;
+  animation: ai-drawer-in 220ms cubic-bezier(.2,.8,.2,1);
+  background: var(--glass);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  overflow-y: auto;
+}
+@keyframes ai-drawer-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+.ai-facts-meta { display: flex; flex-wrap: wrap; gap: 8px; font-family: var(--font-readout); font-size: 11px; color: var(--ink-muted); margin-bottom: var(--sp-3); }
+.ai-facts-meta span { background: var(--surface-2); border-radius: var(--r-pill); padding: 3px 8px; }
+.ai-facts-legend { margin-bottom: var(--sp-4); }
+.ai-facts-legend h4 { font-size: var(--fs-13); margin: 0 0 6px; }
+.ai-facts-legend-note { font-weight: 400; color: var(--ink-muted); font-size: 11px; }
+.ai-facts-legend-grid { display: flex; flex-direction: column; gap: 3px; }
+.ai-facts-legend-item { font-size: 12px; color: var(--ink-muted); }
+.ai-facts-legend-alias { font-family: var(--font-readout); font-weight: 600; color: var(--ai-violet); }
+.ai-json-tree { font-family: var(--font-readout); font-size: 12px; }
+.ai-json-row { display: flex; gap: 6px; padding: 2px 0; }
+.ai-json-toggle { display: flex; align-items: center; gap: 6px; background: none; border: none; width: 100%; text-align: left; padding: 2px 0; font-family: inherit; font-size: inherit; }
+.ai-json-caret { color: var(--ink-muted); width: 10px; }
+.ai-json-key { color: var(--ai-cyan); }
+.ai-json-value { color: var(--ink); word-break: break-all; }
+.ai-json-count { color: var(--ink-muted); }
+
+/* =============================================================================
+   Scan overlay
+   ========================================================================== */
+.ai-scan-overlay { position: relative; overflow: hidden; }
+.ai-scan-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--ai-cyan), var(--ai-violet), transparent);
+  filter: blur(1px);
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.6);
+  animation: ai-sweep 1.6s ease-in-out infinite;
+}
+
+/* =============================================================================
+   Verdict chip
+   ========================================================================== */
+.ai-verdict-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  cursor: default;
+}
+.ai-verdict-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.ai-verdict-score { font-family: var(--font-readout); opacity: 0.75; }
+.ai-verdict-good { color: var(--pos-fg); background: var(--pos-bg); border-color: var(--pos-border); }
+.ai-verdict-info { color: var(--info-fg); background: var(--info-bg); border-color: var(--info-border); }
+.ai-verdict-warn { color: var(--warn-fg); background: var(--warn-bg); border-color: var(--warn-border); }
+.ai-verdict-bad { color: var(--crit-fg); background: var(--crit-bg); border-color: var(--crit-border); }
+.ai-verdict-neutral { color: var(--neutral-fg); background: var(--neutral-bg); border-color: var(--neutral-border); }
+.ai-verdict-empty { color: var(--ink-muted); font-size: 12px; }
+.ai-verdict-loading { gap: 6px; }
+.ai-verdict-shimmer { width: 54px; height: 10px; border-radius: var(--r-sm); background: linear-gradient(90deg, var(--surface-2) 25%, color-mix(in srgb, var(--surface-2) 55%, var(--ai-violet)) 50%, var(--surface-2) 75%); background-size: 300px 100%; animation: ai-shimmer 1.4s ease-in-out infinite; }
+.ai-verdict-tooltip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  min-width: 180px;
+  max-width: 260px;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-2);
+  border-radius: var(--r-sm);
+  padding: 8px 10px;
+  font-weight: 400;
+  white-space: normal;
+}
+.ai-verdict-tooltip-line { display: block; font-size: 12px; color: var(--ink); margin-bottom: 4px; }
+.ai-verdict-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.ai-verdict-tag { font-size: 10px; background: var(--surface-2); border-radius: var(--r-pill); padding: 2px 6px; color: var(--ink-muted); }
+
+/* =============================================================================
+   Notice
+   ========================================================================== */
+.ai-notice { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: var(--sp-3); border-radius: var(--r-md); background: var(--surface-2); border: 1px solid var(--line); margin-top: var(--sp-3); font-size: var(--fs-13); }
+.ai-notice p { margin: 0; flex: 1; min-width: 200px; color: var(--ink-muted); }
+.ai-notice-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--info); flex-shrink: 0; }
+.ai-notice-budget_exceeded .ai-notice-dot,
+.ai-notice-rate_limited .ai-notice-dot { background: var(--warn); }
+.ai-notice-error .ai-notice-dot,
+.ai-notice-pii_blocked .ai-notice-dot,
+.ai-notice-timeout .ai-notice-dot,
+.ai-notice-schema_invalid .ai-notice-dot { background: var(--crit); }
+.ai-notice-link { font-size: 12px; font-weight: 600; color: var(--ai-violet); }
+.ai-notice-retry { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: var(--r-pill); border: 1px solid var(--line-strong); background: var(--surface); }
+
+/* =============================================================================
+   Status beacon
+   ========================================================================== */
+.ai-status-beacon { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: var(--r-pill); background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-muted); }
+.ai-status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--pos); animation: ai-breathe 2.4s ease-in-out infinite; }
+.ai-status-paused .ai-status-dot,
+.ai-status-degraded .ai-status-dot { background: var(--warn); }
+.ai-status-offline .ai-status-dot,
+.ai-status-unconfigured .ai-status-dot { background: var(--crit); animation: none; }
+.ai-status-disabled .ai-status-dot,
+.ai-status-idle .ai-status-dot { background: var(--ink-muted); animation: none; }
+
+/* =============================================================================
+   Feed ticker
+   ========================================================================== */
+.ai-feed-ticker { overflow: hidden; border-radius: var(--r-md); border: 1px solid var(--glass-border); background: var(--glass); backdrop-filter: blur(10px); padding: 8px 0; margin-bottom: var(--sp-4); }
+.ai-feed-ticker-track { display: flex; width: max-content; gap: var(--sp-5); animation: ai-marquee 40s linear infinite; }
+.ai-feed-ticker:hover .ai-feed-ticker-track { animation-play-state: paused; }
+.ai-feed-item { display: flex; align-items: center; gap: 8px; white-space: nowrap; font-size: 12px; padding: 0 var(--sp-3); }
+.ai-feed-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.ai-feed-dot-good { background: var(--pos); }
+.ai-feed-dot-info { background: var(--info); }
+.ai-feed-dot-warn { background: var(--warn); }
+.ai-feed-dot-bad { background: var(--crit); }
+.ai-feed-title { font-weight: 600; color: var(--ink-muted); }
+.ai-feed-headline { color: var(--ink); }
+
+/* =============================================================================
+   Command bar
+   ========================================================================== */
+.ai-cmdbar-overlay { position: fixed; inset: 0; z-index: 200; background: rgba(6, 7, 14, 0.55); backdrop-filter: blur(2px); display: flex; align-items: flex-start; justify-content: center; padding-top: 12vh; }
+.ai-cmdbar { width: min(560px, 92vw); background: var(--glass); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border: 1px solid var(--glass-border); border-radius: var(--r-lg); box-shadow: var(--shadow-2), var(--glow-ai); overflow: hidden; }
+.ai-cmdbar-input { width: 100%; border: none; background: transparent; padding: var(--sp-4); font-size: var(--fs-16); border-bottom: 1px solid var(--glass-border); outline: none; }
+.ai-cmdbar-results { max-height: 50vh; overflow-y: auto; padding: 6px; }
+.ai-cmdbar-group-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-muted); padding: 8px 10px 4px; }
+.ai-cmdbar-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; text-align: left; padding: 9px 10px; border-radius: var(--r-sm); background: none; border: none; font-size: var(--fs-14); }
+.ai-cmdbar-item-active { background: var(--surface-2); }
+.ai-cmdbar-item-href { font-family: var(--font-readout); font-size: 11px; color: var(--ink-muted); }
+
+/* =============================================================================
+   KPI glass + stagger (KpiRow.js upgrade)
+   ========================================================================== */
+.owner-app .kpi {
+  background: var(--glass);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: transform 180ms cubic-bezier(.2,.8,.2,1), box-shadow 180ms;
+}
+.owner-app .kpi:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--glow-ai);
+}
+.owner-app .kpi-lead { background: var(--grad-lead); }
+.owner-app .ai-kpi-in { animation: ai-stagger-in 400ms cubic-bezier(.2,.8,.2,1) backwards; animation-delay: calc(var(--ai-stagger-i, 0) * 40ms); }
+
+/* =============================================================================
+   Card glass variant
+   ========================================================================== */
+.owner-app .card-glass {
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-color: var(--glass-border);
+}
+
+/* =============================================================================
+   Skeleton — AI-tinted diagonal sweep
+   ========================================================================== */
+.owner-app .skeleton {
+  background: linear-gradient(135deg, var(--surface-2) 25%, color-mix(in srgb, var(--surface-2) 55%, var(--ai-violet)) 50%, var(--surface-2) 75%);
+  background-size: 400px 100%;
+  animation: ai-shimmer 1.4s ease-in-out infinite;
+}
+
+/* =============================================================================
+   ReportTable — sticky header blur
+   ========================================================================== */
+.owner-app .table-wrap thead th {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* =============================================================================
+   Part 3 — Shell (sidebar/topbar), Dashboard hero, Statistics
+   ========================================================================== */
+
+/* -- Sidebar: glass surface, brand orb, active rail, pinned AI Health --- */
+.owner-app .sidebar {
+  background: var(--glass);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-right: 1px solid var(--glass-border);
+}
+.owner-app .brand .ai-orb { flex: none; }
+.owner-app .nav-btn.active::before {
+  background: var(--ai-grad-linear);
+  box-shadow: 0 0 8px rgba(139, 92, 246, 0.5);
+}
+.owner-app .nav-btn.active {
+  background: color-mix(in srgb, var(--surface-2) 60%, var(--ai-violet) 8%);
+}
+.owner-app .nav-btn:hover span:not(.nav-ico):not(.nav-pin-dot) { color: var(--ai-violet); }
+.owner-app .nav-pin {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: 2px;
+}
+.owner-app .nav-pin-ico { color: var(--ai-violet); background: rgba(139, 92, 246, 0.14); }
+.owner-app .nav-pin-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--pos); margin-left: auto; animation: ai-breathe 2.4s ease-in-out infinite; }
+.owner-app .nav-pin-dot.ai-status-paused,
+.owner-app .nav-pin-dot.ai-status-degraded { background: var(--warn); }
+.owner-app .nav-pin-dot.ai-status-offline,
+.owner-app .nav-pin-dot.ai-status-unconfigured { background: var(--crit); animation: none; }
+.owner-app .nav-pin-dot.ai-status-disabled,
+.owner-app .nav-pin-dot.ai-status-idle { background: var(--ink-muted); animation: none; }
+.owner-app .nav-cmdk-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 6px 2px;
+  font-size: var(--fs-12);
+  color: var(--ink-muted);
+  text-align: left;
+}
+.owner-app .nav-cmdk-hint:hover { color: var(--ink); }
+.owner-app .nav-cmdk-hint kbd {
+  font-family: var(--font-readout);
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+}
+
+/* -- Topbar: AI status strip + gradient title in dark ------------------- */
+.owner-app[data-theme="dark"] .topbar h1 {
+  background: var(--ai-grad-linear);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.ai-topbar-status { font-size: 12px; color: var(--ink-muted); white-space: nowrap; }
+.ai-cmdk-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--glass-border);
+  background: var(--glass);
+  color: var(--ink-muted);
+  font-size: var(--fs-13);
+  font-weight: 600;
+}
+.ai-cmdk-btn:hover { color: var(--ink); background: var(--surface-2); }
+.ai-cmdk-btn kbd { font-family: var(--font-readout); font-size: 10px; }
+
+/* -- Section landing: glass cards with a subtle tilt on hover ----------- */
+.owner-app .section-landing-card {
+  transition: transform 150ms cubic-bezier(.2,.8,.2,1), box-shadow 150ms;
+  transform-style: preserve-3d;
+}
+.owner-app .section-landing-card:hover {
+  transform: perspective(600px) rotateX(1.5deg) rotateY(-1.5deg) translateY(-2px);
+  box-shadow: var(--glow-ai);
+}
+
+/* -- Dashboard hero variant of AiBriefPanel ------------------------------ */
+.ai-brief-hero { padding: var(--sp-5) var(--sp-6); }
+.ai-brief-headline-hero { font-size: var(--fs-32); }
+.ai-priorities-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--sp-3); margin-top: var(--sp-4); }
+.ai-priority-card { border-radius: var(--r-md); border: 1px solid var(--glass-border); background: var(--surface-2); padding: var(--sp-3); }
+.ai-priority-label { display: block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ai-violet); margin-bottom: 4px; }
+
+/* -- Statistics: AI-named stage gets a pulsing badge (see page.jsx) ----- */
+.ai-stage-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: var(--r-pill);
+  color: var(--ai-violet);
+  background: rgba(139, 92, 246, 0.14);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  animation: ai-ripple 1.8s ease-out infinite;
+}
+
+/* =============================================================================
+   Part 4 — Employees section
+   ========================================================================== */
+.owner-app .entity-avatar-ai-ring {
+  box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--ai-ring-tone, var(--ai-violet));
+}
+.owner-app .ai-cmdbar-item-active.ai-ghost-btn {
+  background: var(--surface-2);
+  color: var(--ink);
+  border-color: var(--ai-violet);
+}
+
+/* =============================================================================
+   Part 10 — mobile: AiBriefPanel's two-column body (facts + score ring
+   sidebar) never had a narrow-viewport override — found during the QA pass,
+   would have stayed a cramped two-column grid down to 0px instead of stacking.
+   ========================================================================== */
+@media (max-width: 640px) {
+  .ai-brief-body { grid-template-columns: 1fr; }
+}
+
+/* =============================================================================
+   Part 10 — stale/paused AI results (budget/rate-limit fallback to cache)
+   ========================================================================== */
+.ai-brief-stale { opacity: 0.62; filter: saturate(0.7); }
+.ai-brief-stale-banner {
+  font-size: var(--fs-12); color: var(--warn); background: color-mix(in srgb, var(--warn) 12%, transparent);
+  border: 1px solid var(--warn); border-radius: var(--r-sm); padding: 6px 10px; margin: 8px 0;
+}
+
+/* =============================================================================
+   Part 9 — Sanya tool-call chips
+   ========================================================================== */
+.ai-tool-chip {
+  display: inline-flex; align-items: center; font-size: 11px; color: var(--ink-muted);
+  background: var(--surface-3); border: 1px solid var(--line); border-radius: var(--r-pill);
+  padding: 2px 8px; white-space: nowrap;
+}
+.ai-tool-chip-error { color: var(--crit-fg); border-color: var(--crit); }
+
+/* =============================================================================
+   Part 9 — Neural Coverage Map
+   ========================================================================== */
+.ai-neural-map { display: flex; flex-direction: column; gap: 4px; }
+.ai-map-row { display: flex; align-items: center; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.ai-map-row:last-child { border-bottom: none; }
+.ai-map-hub {
+  flex: none; font-size: var(--fs-12); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--ink-muted); background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: var(--r-pill); padding: 5px 12px; min-width: 84px; text-align: center;
+}
+.ai-map-nodes { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 16px 20px; padding-left: 10px; flex: 1; min-height: 24px; }
+.ai-map-nodes::before { content: ""; position: absolute; left: -4px; right: 0; top: 50%; height: 1px; background: var(--line); z-index: 0; }
+.ai-map-node { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; color: var(--ink-muted); font-size: var(--fs-12); }
+.ai-map-node:hover { color: var(--ink); }
+.ai-map-node-dot {
+  width: 11px; height: 11px; border-radius: 50%; background: var(--ai-node-color); flex: none;
+  box-shadow: 0 0 7px var(--ai-node-color); border: 2px solid var(--surface);
+}
+.ai-neural-map-compact .ai-map-hub { min-width: 64px; font-size: 10px; padding: 4px 8px; }
+.ai-neural-map-compact .ai-map-node-dot { width: 8px; height: 8px; box-shadow: 0 0 5px var(--ai-node-color); }
+.ai-neural-map-compact .ai-map-nodes { gap: 8px 10px; }
+
+/* =============================================================================
+   Reduced motion — every .ai-* animation/transition off, instant states
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  [class*="ai-"] {
+    animation: none !important;
+    transition: none !important;
+  }
+}

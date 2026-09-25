@@ -11,6 +11,7 @@ const config = {
   detailBase: "/owner/employees/agents",
   tableId: "employees-agents",
   defaultSort: "totalCalls",
+  aiFeature: "employees.agent",
   columns: [
     SHARED_COLUMNS.name,
     SHARED_COLUMNS.phone,

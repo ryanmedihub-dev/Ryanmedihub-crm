@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, DataTable, KpiRow, ErrorState, EmptyState, InlineNotice, AttentionRamp } from "@/components/owner";
+import { AiBriefPanel } from "@/components/owner/ai";
+import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { rupee, num } from "@/lib/owner/format";
 
@@ -19,6 +21,7 @@ const ageCol = { key: "age", label: "Age", align: "right", render: (r) => (r.age
 export default function AttentionPage() {
   const router = useRouter();
   const { data, loading, error, isValidating, mutate: load } = useOwnerData("/api/owner/ai/attention");
+  const attentionAi = useAiInsight("ai.attention", {}, { kind: "brief" });
 
   const rules = data?.rules || [];
 
@@ -29,6 +32,7 @@ export default function AttentionPage() {
         <OwnerTopbar
           title="Attention"
           subtitle="Documented threshold rules over data you already have — no AI, no scoring model, no confidence percentages"
+          aiState={attentionAi}
           controls={
             <button className="icon-btn" onClick={() => load()} disabled={isValidating} title="Refresh">
               {isValidating ? "…" : "⟳"}
@@ -37,6 +41,8 @@ export default function AttentionPage() {
         />
 
         <div className="content">
+          <AiBriefPanel feature="ai.attention" scope={{}} title="Attention" aiState={attentionAi} />
+
           {error ? (
             <ErrorState message={error} onRetry={load} />
           ) : (

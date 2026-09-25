@@ -6,14 +6,20 @@ import dbConnect from "@/lib/db";
 import SanyaUsage from "@/models/SanyaUsage";
 import { SANYA_MODEL, SANYA_MONTHLY_BUDGET_USD, SANYA_RATE_LIMIT } from "@/lib/sanya/config";
 import { parseEmployeeFilters } from "@/lib/owner/pagination";
+import { computeLiteHealth, computeAiHealthReport, checkOpenAiConnectivity } from "@/lib/ai/health";
 
 const ALLOWED_ROLES = ["owner", "super-admin"];
 
-// /owner/ai/health — Sanya's operational picture, from SanyaUsage (one row per
-// turn). Everything here is a count/sum over that log: turn volume, tool-call
-// volume per tool, latency percentiles, error / refusal / blocked rates, token
-// and dollar cost, month-to-date against the ceiling. No question or answer
-// text is stored, so none is shown.
+// /owner/ai/health — two things in one route:
+// 1. Sanya's operational picture, from SanyaUsage (one row per turn) — turn
+//    volume, tool-call volume per tool, latency percentiles, error/refusal/
+//    blocked rates, token and dollar cost, month-to-date against the ceiling.
+//    No question or answer text is stored, so none is shown. (unchanged since
+//    the Sanya-only version of this page.)
+// 2. `insights` (Part 9) — the AI-Everywhere insight engine's own picture,
+//    from AiRun/AiInsight, built by src/lib/ai/health.js so this route and
+//    ai.selfDiagnosis's facts can never disagree. `?lite=1` is a fast path
+//    for AiStatusBeacon, cached 30s.
 export async function GET(req) {
   try {
     await dbConnect();
@@ -23,6 +29,12 @@ export async function GET(req) {
     }
 
     const { searchParams } = new URL(req.url);
+
+    if (searchParams.get("lite") === "1") {
+      const lite = await computeLiteHealth();
+      return NextResponse.json({ success: true, ...lite });
+    }
+
     const { dateFrom, dateTo } = parseEmployeeFilters(searchParams);
     const match = {};
     if (dateFrom || dateTo) {
@@ -109,6 +121,11 @@ export async function GET(req) {
     const mtd = result.monthToDate?.[0] || { costUsd: 0, turns: 0 };
     const percentiles = result.latencyP?.[0]?.p50 || [];
 
+    const [insights, connectivity] = await Promise.all([
+      computeAiHealthReport({ from: dateFrom, to: dateTo }),
+      checkOpenAiConnectivity(),
+    ]);
+
     return NextResponse.json({
       success: true,
       config: { model: SANYA_MODEL, monthlyBudgetUsd: SANYA_MONTHLY_BUDGET_USD, rateLimit: SANYA_RATE_LIMIT },
@@ -137,6 +154,8 @@ export async function GET(req) {
       byTool: (result.byTool || []).map((t) => ({ tool: t._id, calls: t.calls, failed: t.failed, avgMs: Math.round(t.avgMs || 0), maxMs: t.maxMs })),
       daily: (result.daily || []).map((d) => ({ date: d._id, turns: d.turns, errors: d.errors, costUsd: d.costUsd })),
       recentErrors: result.recentErrors || [],
+      insights,
+      connectivity,
     });
   } catch (err) {
     console.error("owner ai health error:", err);

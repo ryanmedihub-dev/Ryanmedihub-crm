@@ -24,6 +24,8 @@ export default function TeamRosterPage() {
     detailBase: "/owner/employees/agents",
     tableId: `employees-leadership-team-${tlNameKey}`,
     defaultSort: "totalCalls",
+    aiFeature: "employees.team",
+    aiExtraScope: { tlNameKey },
     columns: [
       SHARED_COLUMNS.name,
       SHARED_COLUMNS.phone,

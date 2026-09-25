@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import Link from "next/link";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, KpiRow, DataTable, ErrorState, EmptyState, TrendChart } from "@/components/owner";
+import { AiBriefPanel } from "@/components/owner/ai";
+import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { ownerFetch } from "@/lib/ownerFetch";
 import { rupee, num as fmt } from "@/lib/owner/format";
 import { OWNER_BRANCHES as BRANCHES, DATE_RANGES, buildDateRange } from "@/lib/owner/filters";
@@ -32,6 +34,13 @@ export default function OwnerFinancePage() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(null);
+
+  const aiScope = useMemo(() => {
+    if (dateRange === "Custom" && !custom.from) return {};
+    const { from, to } = buildDateRange(dateRange, custom);
+    return { from, to, branch };
+  }, [dateRange, custom, branch]);
+  const overviewAi = useAiInsight("finance.overview", aiScope, { kind: "brief", enabled: !!aiScope.from });
 
   const fetchData = useCallback(async ({ signal } = {}) => {
     if (dateRange === "Custom" && !custom.from) return;
@@ -91,6 +100,7 @@ export default function OwnerFinancePage() {
         <OwnerTopbar
           title="Accounts, P&L & Expenses"
           subtitle="Reuses the same close-book P&L / balance sheet / cash flow logic as /admin/close-book"
+          aiState={overviewAi}
           controls={
             <>
               <select className="control" value={branch} onChange={(e) => setBranch(e.target.value)}>
@@ -113,6 +123,8 @@ export default function OwnerFinancePage() {
         />
 
         <div className="content">
+          <AiBriefPanel feature="finance.overview" scope={aiScope} title="Finance" variant="hero" scoreLabel="Financial Health" enabled={!!aiScope.from} aiState={overviewAi} />
+
           {error ? (
             <ErrorState message={error} onRetry={fetchData} />
           ) : (
@@ -121,14 +133,14 @@ export default function OwnerFinancePage() {
                 primaryIndex={2}
                 loading={loading}
                 items={[
-                  { label: "Income", value: loading ? "—" : rupee(pnl?.income), sub: "Accrual", kind: "good" },
-                  { label: "Expense", value: loading ? "—" : rupee(pnl?.expense), sub: "Accrual", kind: "bad" },
-                  { label: "Profit", value: loading ? "—" : rupee(pnl?.profit), sub: dateRange, kind: pnl?.profit >= 0 ? "good" : "bad" },
-                  { label: "Receipts", value: loading ? "—" : rupee(cashFlow?.receipts), sub: "Cash-basis", kind: "info" },
-                  { label: "Payments", value: loading ? "—" : rupee(cashFlow?.payments), sub: "Cash-basis", kind: "info" },
-                  { label: "Balance Left", value: loading ? "—" : rupee(cashFlow?.balanceLeft), sub: "Receipts − payments", kind: cashFlow?.balanceLeft >= 0 ? "good" : "bad" },
-                  { label: "Pending Receivable", value: loading ? "—" : rupee(receivable?.totalPending), sub: `${fmt(receivable?.count ?? 0)} open`, kind: "info" },
-                  { label: "Pending Payable", value: loading ? "—" : rupee(payable?.totalPending), sub: `${fmt(payable?.count ?? 0)} open`, kind: payable?.totalPending > 0 ? "warn" : "good" },
+                  { label: "Income", value: loading ? "—" : rupee(pnl?.income), rawValue: loading ? null : pnl?.income, format: "rupee", sub: "Accrual", kind: "good" },
+                  { label: "Expense", value: loading ? "—" : rupee(pnl?.expense), rawValue: loading ? null : pnl?.expense, format: "rupee", sub: "Accrual", kind: "bad" },
+                  { label: "Profit", value: loading ? "—" : rupee(pnl?.profit), rawValue: loading ? null : pnl?.profit, format: "rupee", sub: dateRange, kind: pnl?.profit >= 0 ? "good" : "bad" },
+                  { label: "Receipts", value: loading ? "—" : rupee(cashFlow?.receipts), rawValue: loading ? null : cashFlow?.receipts, format: "rupee", sub: "Cash-basis", kind: "info" },
+                  { label: "Payments", value: loading ? "—" : rupee(cashFlow?.payments), rawValue: loading ? null : cashFlow?.payments, format: "rupee", sub: "Cash-basis", kind: "info" },
+                  { label: "Balance Left", value: loading ? "—" : rupee(cashFlow?.balanceLeft), rawValue: loading ? null : cashFlow?.balanceLeft, format: "rupee", sub: "Receipts − payments", kind: cashFlow?.balanceLeft >= 0 ? "good" : "bad" },
+                  { label: "Pending Receivable", value: loading ? "—" : rupee(receivable?.totalPending), rawValue: loading ? null : receivable?.totalPending, format: "rupee", sub: `${fmt(receivable?.count ?? 0)} open`, kind: "info" },
+                  { label: "Pending Payable", value: loading ? "—" : rupee(payable?.totalPending), rawValue: loading ? null : payable?.totalPending, format: "rupee", sub: `${fmt(payable?.count ?? 0)} open`, kind: payable?.totalPending > 0 ? "warn" : "good" },
                 ]}
               />
 

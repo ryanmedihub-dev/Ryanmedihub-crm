@@ -1,6 +1,7 @@
 import Link from "next/link";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import OwnerTopbar from "./OwnerTopbar";
+import AiBriefPanel from "./ai/AiBriefPanel";
 
 // Section landing / "dashboard page" for a top-level owner group (Owner Panel v2,
 // F8). Parts 1–6 replace each of these with a real summary dashboard; until then
@@ -16,13 +17,14 @@ import OwnerTopbar from "./OwnerTopbar";
 //     ]}
 //   />
 
-export default function SectionLanding({ title, subtitle, part, items = [] }) {
+export default function SectionLanding({ title, subtitle, part, items = [], feature }) {
   return (
     <div className="app">
       <OwnerSidebar />
       <div className="main">
         <OwnerTopbar title={title} subtitle={subtitle} />
         <div className="content">
+          {feature && <AiBriefPanel feature={feature} scope={{}} title={title} compact />}
           {part && (
             <p className="muted" style={{ fontSize: "var(--fs-13)" }}>
               This section is being built in <strong>{part}</strong>. The pages below are placeholders
@@ -31,7 +33,7 @@ export default function SectionLanding({ title, subtitle, part, items = [] }) {
           )}
           <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))" }}>
             {items.map((it) => (
-              <Link key={it.href} href={it.href} className="card" style={{ display: "block", textDecoration: "none" }}>
+              <Link key={it.href} href={it.href} className="card section-landing-card" style={{ display: "block", textDecoration: "none" }}>
                 <div className="card-title">
                   <div>
                     <h3>{it.label}</h3>

@@ -6,6 +6,9 @@ import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import {
   OwnerTopbar, Card, ReportTable, Badge, FilterBar, KpiRow, ErrorState, InlineNotice, Modal,
 } from "@/components/owner";
+import { AiBriefPanel, aiVerdictColumn } from "@/components/owner/ai";
+import { useAiInsight } from "@/lib/ai/client/useAiInsight";
+import { useAiVerdicts } from "@/lib/ai/client/useAiVerdicts";
 import { ownerFetch } from "@/lib/ownerFetch";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { rupee, num } from "@/lib/owner/format";
@@ -41,21 +44,25 @@ export default function LeadershipPage() {
   const [sortKey, setSortKey] = useState("teamTotalCalls");
   const [sortDir, setSortDir] = useState("desc");
 
+  const aiScope = useMemo(() => {
+    if (!filterState) return {};
+    const s = { dateFrom: filterState.range.from, dateTo: filterState.range.to };
+    if (filterState.filters.branch && filterState.filters.branch !== "All") s.branch = filterState.filters.branch;
+    if (filterState.filters.isactive) s.isactive = filterState.filters.isactive;
+    return s;
+  }, [filterState]);
+
   const url = useMemo(() => {
     if (!filterState) return null;
-    const params = new URLSearchParams();
-    params.set("dateFrom", filterState.range.from);
-    params.set("dateTo", filterState.range.to);
-    if (filterState.filters.branch && filterState.filters.branch !== "All") {
-      params.set("branch", filterState.filters.branch);
-    }
-    if (filterState.filters.isactive) params.set("isactive", filterState.filters.isactive);
-    return `/api/owner/employees/leadership?${params.toString()}`;
-  }, [filterState]);
+    return `/api/owner/employees/leadership?${new URLSearchParams(aiScope).toString()}`;
+  }, [filterState, aiScope]);
 
   const { data, loading, error, mutate: load } = useOwnerData(url);
   const teams = data?.teams || [];
   const callbyError = data?.callbyError || null;
+
+  const leadershipAi = useAiInsight("employees.leadership", aiScope, { kind: "brief", enabled: !!filterState });
+  const verdicts = useAiVerdicts("employees.leadership", aiScope, { enabled: !!filterState });
 
   const openEdit = (team) => {
     setEditing(team);
@@ -126,6 +133,7 @@ export default function LeadershipPage() {
       ),
       csv: (t) => t.tlName,
     },
+    aiVerdictColumn({ byId: verdicts.byId, loading: verdicts.loading }),
     { key: "branch", label: "Branch", sortable: true, render: (t) => t.branch || "—" },
     {
       key: "teamSize",
@@ -170,6 +178,7 @@ export default function LeadershipPage() {
         <OwnerTopbar
           title="TL & Manager"
           subtitle="Rows are teams, grouped by TL — click a row for the full roster"
+          aiState={leadershipAi}
           controls={
             <button className="icon-btn" onClick={() => load()} disabled={loading} title="Refresh">
               {loading ? "…" : "⟳"}
@@ -184,6 +193,8 @@ export default function LeadershipPage() {
             defaults={{ isactive: "true" }}
             onChange={({ filters, range }) => setFilterState({ filters, range })}
           />
+
+          <AiBriefPanel feature="employees.leadership" scope={aiScope} title="TL & Manager" enabled={!!filterState} aiState={leadershipAi} />
 
           {error ? (
             <ErrorState message={error} onRetry={load} />

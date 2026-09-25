@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, ErrorState, EmptyState, InlineNotice, Badge } from "@/components/owner";
+import { AiBriefPanel } from "@/components/owner/ai";
+import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { ownerFetch } from "@/lib/ownerFetch";
 import { fmtDate } from "@/lib/owner/format";
 
@@ -37,6 +39,7 @@ export default function SuggestionsPage() {
   }, [load]);
 
   const observations = data?.observations || [];
+  const suggestionsAi = useAiInsight("ai.suggestions", {}, { kind: "brief" });
 
   return (
     <div className="app">
@@ -45,6 +48,7 @@ export default function SuggestionsPage() {
         <OwnerTopbar
           title="Suggestions"
           subtitle="Rules-based observations, not an LLM — every line here cites a number computed fresh, never a recommendation"
+          aiState={suggestionsAi}
           controls={
             <button className="icon-btn" onClick={() => load()} disabled={loading} title="Refresh">
               {loading ? "…" : "⟳"}
@@ -53,12 +57,13 @@ export default function SuggestionsPage() {
         />
 
         <div className="content">
-          <InlineNotice kind="info" title="Why there's no AI on this page">
-            The plan for this page allowed either a rules-based "observations" engine or an LLM-based one — the
-            latter needs a model choice, an API key, and a monthly budget decided up front, so it was deferred.
-            What&apos;s below is the no-cost fallback: plain comparisons over the same aggregates Statistics,
-            Attention, Marketing, and Employees already compute, phrased as facts with numbers, never as
-            directives. Nothing here says what to do about a number — only what the number is.
+          <AiBriefPanel feature="ai.suggestions" scope={{}} title="Suggestions" aiState={suggestionsAi} />
+
+          <InlineNotice kind="info" title="Rule-based observations below — the AI strategist above reads them">
+            Every observation below is a plain comparison over the same aggregates Statistics, Attention,
+            Marketing, and Employees already compute, phrased as facts with numbers, never as directives — no
+            model call, no cost. The brief above is the one AI layer here: it reads these same facts and turns
+            the most relevant ones into prioritised, concrete actions.
           </InlineNotice>
 
           {error ? (
@@ -73,6 +78,7 @@ export default function SuggestionsPage() {
             </Card>
           ) : (
             <>
+              <h2 style={{ fontSize: "var(--fs-16)", margin: "4px 0 0" }}>Rule-based observations</h2>
               {data?.period && (
                 <div className="muted" style={{ marginBottom: 8 }}>
                   Period: {fmtDate(data.period.from)} – {fmtDate(data.period.to)} · compared against {fmtDate(data.previousPeriod.from)} – {fmtDate(data.previousPeriod.to)}

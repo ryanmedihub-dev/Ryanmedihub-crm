@@ -9,6 +9,8 @@ import ReportTable from "./ReportTable";
 import KpiRow from "./KpiRow";
 import ErrorState from "./ErrorState";
 import InlineNotice from "./InlineNotice";
+import { AiBriefPanel } from "./ai";
+import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { ownerFetch } from "@/lib/ownerFetch";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 
@@ -26,21 +28,24 @@ export default function InterviewStatusReportPage({ config }) {
 
   const [notice, setNotice] = useState(null);
 
+  const aiScope = useMemo(
+    () => (filterState ? { preset: config.preset, dateFrom: filterState.range.from, dateTo: filterState.range.to } : {}),
+    [filterState, config.preset],
+  );
+
   const url = useMemo(() => {
     if (!filterState) return null;
-    const params = new URLSearchParams();
-    params.set("preset", config.preset);
-    params.set("dateFrom", filterState.range.from);
-    params.set("dateTo", filterState.range.to);
+    const params = new URLSearchParams(aiScope);
     if (search) params.set("search", search);
     params.set("sortBy", sortKey);
     params.set("sortDir", sortDir);
     params.set("page", String(page));
     params.set("pageSize", String(pageSize));
     return `/api/owner/hr/by-status?${params.toString()}`;
-  }, [filterState, search, sortKey, sortDir, page, pageSize, config.preset]);
+  }, [filterState, aiScope, search, sortKey, sortDir, page, pageSize]);
 
   const { data, loading, error, mutate: load } = useOwnerData(url);
+  const statusAi = useAiInsight(config.aiFeature || null, aiScope, { kind: "brief", enabled: !!config.aiFeature && !!filterState });
 
   const handleSort = (key) => {
     setPage(1);
@@ -98,6 +103,7 @@ export default function InterviewStatusReportPage({ config }) {
         <OwnerTopbar
           title={config.title}
           subtitle={config.subtitle}
+          aiState={config.aiFeature ? statusAi : undefined}
           controls={
             <button className="icon-btn" onClick={() => load()} disabled={loading} title="Refresh">
               {loading ? "…" : "⟳"}
@@ -106,6 +112,8 @@ export default function InterviewStatusReportPage({ config }) {
         />
 
         <div className="content">
+          {config.aiFeature && <AiBriefPanel feature={config.aiFeature} scope={aiScope} title={config.title} enabled={!!filterState} aiState={statusAi} />}
+
           <FilterBar show={["date"]} onChange={({ filters, range }) => { setPage(1); setFilterState({ filters, range }); }} />
 
           {error ? (

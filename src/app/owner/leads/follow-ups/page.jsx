@@ -10,6 +10,7 @@ const config = {
   subtitle: "Sorted overdue-first — an overdue follow-up is unmistakable, not just a date column",
   defaultSort: "followUpDate",
   defaultSortDir: "asc",
+  aiFeature: "leads.status",
   columns: [...LEAD_BASE_COLUMNS, OVERDUE_BY_COLUMN],
   kpis: (data) => {
     const rows = data.rows || [];

@@ -3,6 +3,9 @@
 import { useMemo, useState } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, FilterBar, DataTable, KpiRow, ErrorState, ProgressBar, Badge } from "@/components/owner";
+import { AiBriefPanel, AiScanOverlay, aiVerdictColumn } from "@/components/owner/ai";
+import { useAiInsight } from "@/lib/ai/client/useAiInsight";
+import { useAiVerdicts } from "@/lib/ai/client/useAiVerdicts";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { num, fmtDateTime } from "@/lib/owner/format";
 
@@ -15,16 +18,18 @@ export default function CallsEmployeeReportPage() {
   const [sortKey, setSortKey] = useState("totalCalls");
   const [sortDir, setSortDir] = useState("desc");
 
+  const aiScope = useMemo(() => (filterState ? { dateFrom: filterState.range.from, dateTo: filterState.range.to } : {}), [filterState]);
+
   const url = useMemo(() => {
     if (!filterState) return null;
-    const params = new URLSearchParams();
-    params.set("dateFrom", filterState.range.from);
-    params.set("dateTo", filterState.range.to);
-    return `/api/owner/calls/employee-report?${params.toString()}`;
-  }, [filterState]);
+    return `/api/owner/calls/employee-report?${new URLSearchParams(aiScope).toString()}`;
+  }, [filterState, aiScope]);
 
   const { data, loading, error, mutate: load } = useOwnerData(url);
   const rows = data?.rows || [];
+
+  const reportAi = useAiInsight("calls.employeeReport", aiScope, { kind: "brief", enabled: !!filterState });
+  const verdicts = useAiVerdicts("calls.employeeReport", aiScope, { enabled: !!filterState });
 
   const handleSort = (key) => {
     if (key === sortKey) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -53,6 +58,7 @@ export default function CallsEmployeeReportPage() {
         <OwnerTopbar
           title="Employee Call Report"
           subtitle="Per-agent call summary, connect rate, and target attainment"
+          aiState={reportAi}
           controls={
             <button className="icon-btn" onClick={() => load()} disabled={loading} title="Refresh">
               {loading ? "…" : "⟳"}
@@ -62,6 +68,8 @@ export default function CallsEmployeeReportPage() {
 
         <div className="content">
           <FilterBar show={["date"]} onChange={({ filters, range }) => setFilterState({ filters, range })} />
+
+          <AiBriefPanel feature="calls.employeeReport" scope={aiScope} title="Employee Call Report" enabled={!!filterState} aiState={reportAi} />
 
           {error ? (
             <ErrorState message={error} onRetry={load} />
@@ -78,6 +86,7 @@ export default function CallsEmployeeReportPage() {
               />
 
               <Card title="Employees" subtitle={loading ? "Loading…" : `${rows.length} agents`}>
+                <AiScanOverlay active={verdicts.loading}>
                 <DataTable
                   tall
                   loading={loading}
@@ -95,6 +104,7 @@ export default function CallsEmployeeReportPage() {
                         </span>
                       ),
                     },
+                    aiVerdictColumn({ byId: verdicts.byId, loading: verdicts.loading }),
                     { key: "totalCalls", label: "Total Calls", align: "right", sortable: true, render: (r) => num(r.totalCalls) },
                     { key: "connectedCalls", label: "Connected", align: "right", sortable: true, render: (r) => num(r.connectedCalls) },
                     { key: "connectRate", label: "Connect Rate", align: "right", sortable: true, render: (r) => `${r.connectRate || 0}%` },
@@ -121,6 +131,7 @@ export default function CallsEmployeeReportPage() {
                   ]}
                   rows={sorted.map((r) => ({ ...r, id: r.employeeId }))}
                 />
+                </AiScanOverlay>
               </Card>
             </>
           )}

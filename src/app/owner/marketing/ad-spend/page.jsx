@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, DataTable, Modal, Badge, EmptyState, InlineNotice, KpiRow, ManualDataNotice } from "@/components/owner";
+import { AiBriefPanel } from "@/components/owner/ai";
+import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { ALL_BRANCHES } from "@/lib/branches";
 import { formatCurrency, formatDate } from "@/lib/financeUI";
 import { ownerFetch } from "@/lib/ownerFetch";
@@ -32,19 +34,25 @@ export default function AdSpendPage() {
 
   const [deleteTarget, setDeleteTarget] = useState(null);
 
+  const aiScope = useMemo(() => {
+    const s = {};
+    if (filters.branch !== "All") s.branch = filters.branch;
+    if (filters.platform !== "All") s.platform = filters.platform;
+    if (filters.from) s.from = filters.from;
+    if (filters.to) s.to = filters.to;
+    return s;
+  }, [filters]);
+
   const entriesUrl = useMemo(() => {
-    const params = new URLSearchParams();
-    if (filters.branch !== "All") params.set("branch", filters.branch);
-    if (filters.platform !== "All") params.set("platform", filters.platform);
-    if (filters.from) params.set("from", filters.from);
-    if (filters.to) params.set("to", filters.to);
+    const params = new URLSearchParams(aiScope);
     // Return picture (spend/leads/CPL/CPC/converted/revenue/CAC/ROAS) needs a
     // resolved range — only ask for it once both ends are set.
     if (filters.from && filters.to) params.set("withReturn", "true");
     return `/api/owner/ad-spend?${params.toString()}`;
-  }, [filters]);
+  }, [aiScope, filters.from, filters.to]);
 
   const { data: entriesData, loading, mutate: fetchEntries } = useOwnerData(entriesUrl);
+  const adSpendAi = useAiInsight("marketing.adSpend", aiScope, { kind: "brief" });
   const entries = entriesData?.entries || [];
   const returnByPlatform = entriesData?.returnByPlatform || null;
   const lastUpdated = entries.reduce((acc, e) => (!acc || new Date(e.createdAt) > new Date(acc.createdAt) ? e : acc), null);
@@ -143,6 +151,7 @@ export default function AdSpendPage() {
         <OwnerTopbar
           title="Ad Spend Entry"
           subtitle="Where the marketing number goes in — Meta & Google spend, entered by hand"
+          aiState={adSpendAi}
           controls={
             <button className="icon-btn" onClick={() => fetchEntries()} disabled={loading} title="Refresh">
               {loading ? "…" : "⟳"}
@@ -151,6 +160,8 @@ export default function AdSpendPage() {
         />
 
         <div className="content">
+          <AiBriefPanel feature="marketing.adSpend" scope={aiScope} title="Ad Spend Entry" aiState={adSpendAi} />
+
           <ManualDataNotice lastUpdatedAt={lastUpdated?.createdAt} lastUpdatedBy={lastUpdated?.enteredBy?.name} />
 
           <div className="grid cols-2">

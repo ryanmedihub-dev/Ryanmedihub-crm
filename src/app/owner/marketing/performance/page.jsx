@@ -3,6 +3,9 @@
 import { useMemo, useState } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, FilterBar, ReportTable, KpiRow, ErrorState, InlineNotice, Modal } from "@/components/owner";
+import { AiBriefPanel, AiScanOverlay, aiVerdictColumn } from "@/components/owner/ai";
+import { useAiInsight } from "@/lib/ai/client/useAiInsight";
+import { useAiVerdicts } from "@/lib/ai/client/useAiVerdicts";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { rupee, num } from "@/lib/owner/format";
 import { usePagedList } from "@/lib/owner/usePagedList";
@@ -68,18 +71,23 @@ export default function CampaignPerformancePage() {
     [templateData],
   );
 
-  const url = useMemo(() => {
-    if (!filterState) return null;
-    const params = new URLSearchParams();
-    params.set("from", filterState.range.from);
-    params.set("to", filterState.range.to);
-    if (filterState.filters.branch && filterState.filters.branch !== "All") params.set("branch", filterState.filters.branch);
-    if (filterState.filters.platform) params.set("platform", filterState.filters.platform);
-    if (filterState.filters.campaignId) params.set("campaignId", filterState.filters.campaignId);
-    return `/api/owner/marketing/campaign-performance?${params.toString()}`;
+  const aiScope = useMemo(() => {
+    if (!filterState) return {};
+    const s = { from: filterState.range.from, to: filterState.range.to };
+    if (filterState.filters.branch && filterState.filters.branch !== "All") s.branch = filterState.filters.branch;
+    if (filterState.filters.platform) s.platform = filterState.filters.platform;
+    if (filterState.filters.campaignId) s.campaignId = filterState.filters.campaignId;
+    return s;
   }, [filterState]);
 
+  const url = useMemo(() => {
+    if (!filterState) return null;
+    return `/api/owner/marketing/campaign-performance?${new URLSearchParams(aiScope).toString()}`;
+  }, [filterState, aiScope]);
+
   const { data, loading, error, mutate: load } = useOwnerData(url);
+  const performanceAi = useAiInsight("marketing.performance", aiScope, { kind: "brief", enabled: !!filterState });
+  const verdicts = useAiVerdicts("marketing.performance", aiScope, { enabled: !!filterState });
 
   const campaigns = data?.campaigns || [];
   const sortedCampaigns = useMemo(() => {
@@ -123,9 +131,11 @@ export default function CampaignPerformancePage() {
     <div className="app">
       <OwnerSidebar />
       <div className="main">
-        <OwnerTopbar title="Campaign Performance" subtitle="Spend, calls and outcomes per campaign — from uploaded campaign leads" />
+        <OwnerTopbar title="Campaign Performance" subtitle="Spend, calls and outcomes per campaign — from uploaded campaign leads" aiState={performanceAi} />
 
         <div className="content">
+          <AiBriefPanel feature="marketing.performance" scope={aiScope} title="Campaign Performance" enabled={!!filterState} aiState={performanceAi} />
+
           <FilterBar
             show={["date", "branch"]}
             extras={[
@@ -155,10 +165,12 @@ export default function CampaignPerformancePage() {
               </Card>
 
               <Card title="Campaigns" subtitle={loading ? "Loading…" : `${campaigns.length} campaign(s) · click a row for lead-level detail`}>
+                <AiScanOverlay active={verdicts.loading}>
                 <ReportTable
                   tableId="campaign-performance"
                   columns={[
                     { key: "campaignName", label: "Campaign", sortable: true, render: (c) => c.campaignName },
+                    aiVerdictColumn({ byId: verdicts.byId, loading: verdicts.loading, labelSet: "campaign" }),
                     { key: "platform", label: "Platform", render: (c) => c.platform },
                     { key: "branch", label: "Branch", render: (c) => c.branch },
                     { key: "spend", label: "Spend", align: "right", sortable: true, render: (c) => rupee(c.spend) },
@@ -179,7 +191,7 @@ export default function CampaignPerformancePage() {
                     { key: "roas", label: "ROAS", align: "right", render: (c) => (c.roas == null ? "—" : `${c.roas.toFixed(2)}x`) },
                     { key: "sharedWithCampaigns", label: "Shared w/ other campaigns", align: "right", defaultHidden: true, render: (c) => num(c.sharedWithCampaigns) },
                   ]}
-                  rows={sortedCampaigns}
+                  rows={sortedCampaigns.map((c) => ({ ...c, id: c.campaignId }))}
                   loading={loading}
                   sortKey={sort.key}
                   sortDir={sort.dir}
@@ -191,6 +203,7 @@ export default function CampaignPerformancePage() {
                   emptyMessage="No campaigns match these filters."
                   csvFilename="campaign-performance.csv"
                 />
+                </AiScanOverlay>
               </Card>
             </>
           )}

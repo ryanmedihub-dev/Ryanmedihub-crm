@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, FilterBar, KpiRow, DataTable, ErrorState, TrendChart } from "@/components/owner";
+import { AiBriefPanel } from "@/components/owner/ai";
+import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { num } from "@/lib/owner/format";
 
@@ -19,6 +21,8 @@ const LINKS = [
 export default function HrLanding() {
   const [filterState, setFilterState] = useState(null);
 
+  const aiScope = useMemo(() => (filterState ? { dateFrom: filterState.range.from, dateTo: filterState.range.to } : {}), [filterState]);
+
   const url = useMemo(() => {
     if (!filterState) return null;
     const params = new URLSearchParams();
@@ -28,6 +32,7 @@ export default function HrLanding() {
   }, [filterState]);
 
   const { data, loading, error, isValidating, mutate: load } = useOwnerData(url);
+  const overviewAi = useAiInsight("hr.overview", aiScope, { kind: "brief", enabled: !!filterState });
 
   return (
     <div className="app">
@@ -36,6 +41,7 @@ export default function HrLanding() {
         <OwnerTopbar
           title="HR"
           subtitle="Interviews, outcomes and hiring demand — links into every HR page"
+          aiState={overviewAi}
           controls={
             <button className="icon-btn" onClick={() => load()} disabled={isValidating} title="Refresh">
               {isValidating ? "…" : "⟳"}
@@ -44,6 +50,8 @@ export default function HrLanding() {
         />
 
         <div className="content">
+          <AiBriefPanel feature="hr.overview" scope={aiScope} title="HR" enabled={!!filterState} aiState={overviewAi} />
+
           <FilterBar show={["date"]} onChange={({ filters, range }) => setFilterState({ filters, range })} />
 
           {error ? (

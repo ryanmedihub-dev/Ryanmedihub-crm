@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, FilterBar, ReportTable, KpiRow, ErrorState, InlineNotice } from "@/components/owner";
+import { AiBriefPanel } from "@/components/owner/ai";
+import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { ownerFetch } from "@/lib/ownerFetch";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { num, fmtDateTime } from "@/lib/owner/format";
@@ -19,18 +21,19 @@ export default function UntrackedCallsPage() {
   const [creating, setCreating] = useState(null); // callId currently being turned into a lead
   const [notice, setNotice] = useState(null);
 
+  const aiScope = useMemo(() => (filterState ? { dateFrom: filterState.range.from, dateTo: filterState.range.to } : {}), [filterState]);
+
   const url = useMemo(() => {
     if (!filterState) return null;
-    const params = new URLSearchParams();
-    params.set("dateFrom", filterState.range.from);
-    params.set("dateTo", filterState.range.to);
+    const params = new URLSearchParams(aiScope);
     if (search) params.set("search", search);
     params.set("page", String(page));
     params.set("pageSize", String(pageSize));
     return `/api/owner/calls/untracked?${params.toString()}`;
-  }, [filterState, search, page, pageSize]);
+  }, [filterState, aiScope, search, page, pageSize]);
 
   const { data, loading, error, mutate: load } = useOwnerData(url);
+  const untrackedAi = useAiInsight("calls.untracked", aiScope, { kind: "brief", enabled: !!filterState });
 
   const createLead = async (call) => {
     setCreating(call._id);
@@ -64,6 +67,7 @@ export default function UntrackedCallsPage() {
         <OwnerTopbar
           title="Untracked Calls"
           subtitle="Calls to numbers that never matched a lead — business happening outside the CRM"
+          aiState={untrackedAi}
           controls={
             <button className="icon-btn" onClick={() => load()} disabled={loading} title="Refresh">
               {loading ? "…" : "⟳"}
@@ -72,6 +76,8 @@ export default function UntrackedCallsPage() {
         />
 
         <div className="content">
+          <AiBriefPanel feature="calls.untracked" scope={aiScope} title="Untracked Calls" enabled={!!filterState} aiState={untrackedAi} />
+
           <FilterBar show={["date"]} onChange={({ filters, range }) => { setPage(1); setFilterState({ filters, range }); }} />
 
           {error ? (

@@ -3,6 +3,8 @@
 import { useEffect, useState, useCallback } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, KpiRow, DataTable, Badge, ErrorState, EmptyState, InlineNotice, ManualDataNotice } from "@/components/owner";
+import { AiBriefPanel } from "@/components/owner/ai";
+import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { ownerFetch } from "@/lib/ownerFetch";
 import { rupee, num as fmt, roasFmt } from "@/lib/owner/format";
 import { OWNER_BRANCHES as BRANCHES, DATE_RANGES, buildDateRange } from "@/lib/owner/filters";
@@ -45,6 +47,10 @@ export default function MarketingProfitabilityPage() {
   const [lastUpdatedBy, setLastUpdatedBy] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(null);
+
+  const dateReady = !(dateRange === "Custom" && !custom.from);
+  const aiScope = dateReady ? { branch, ...buildDateRange(dateRange, custom) } : {};
+  const platformsAi = useAiInsight("marketing.platforms", aiScope, { kind: "brief", enabled: dateReady });
 
   const fetchSummary = useCallback(async ({ signal } = {}) => {
     if (dateRange === "Custom" && !custom.from) return;
@@ -94,6 +100,7 @@ export default function MarketingProfitabilityPage() {
         <OwnerTopbar
           title="Meta & Google"
           subtitle="What the ad spend bought — CPL, CAC, ROAS by platform and campaign"
+          aiState={platformsAi}
           controls={
             <>
               <select className="control" value={branch} onChange={(e) => setBranch(e.target.value)}>
@@ -126,6 +133,8 @@ export default function MarketingProfitabilityPage() {
         />
 
         <div className="content">
+          <AiBriefPanel feature="marketing.platforms" scope={aiScope} title="Meta & Google" enabled={dateReady} aiState={platformsAi} />
+
           {error ? (
             <ErrorState message={error} onRetry={fetchSummary} />
           ) : (

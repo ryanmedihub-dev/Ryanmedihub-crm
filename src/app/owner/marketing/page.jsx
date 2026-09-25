@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, FilterBar, KpiRow, TrendChart, ErrorState, ManualDataNotice } from "@/components/owner";
+import { AiBriefPanel } from "@/components/owner/ai";
+import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { ownerFetch } from "@/lib/ownerFetch";
 import { rupee, num, roasFmt } from "@/lib/owner/format";
 
@@ -21,6 +23,9 @@ export default function MarketingLanding() {
   const [notice, setNotice] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const aiScope = filterState ? { branch: filterState.filters.branch || "All", from: filterState.range.from, to: filterState.range.to } : {};
+  const overviewAi = useAiInsight("marketing.overview", aiScope, { kind: "brief", enabled: !!filterState });
 
   const load = useCallback(
     async ({ signal } = {}) => {
@@ -77,6 +82,7 @@ export default function MarketingLanding() {
         <OwnerTopbar
           title="Marketing"
           subtitle="Spend, leads, CPL, CAC and ROAS by platform — links into every marketing page"
+          aiState={overviewAi}
           controls={
             <button className="icon-btn" onClick={() => load()} disabled={loading} title="Refresh">
               {loading ? "…" : "⟳"}
@@ -85,6 +91,8 @@ export default function MarketingLanding() {
         />
 
         <div className="content">
+          <AiBriefPanel feature="marketing.overview" scope={aiScope} title="Marketing" enabled={!!filterState} aiState={overviewAi} />
+
           <ManualDataNotice lastUpdatedAt={notice?.lastUpdatedAt} lastUpdatedBy={notice?.lastUpdatedBy} />
 
           <FilterBar show={["date", "branch"]} onChange={({ filters, range }) => setFilterState({ filters, range })} />

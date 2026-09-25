@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, FilterBar, ReportTable, KpiRow, Badge, ErrorState } from "@/components/owner";
+import { AiBriefPanel } from "@/components/owner/ai";
+import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { rupee, num, fmtDate } from "@/lib/owner/format";
 import { toISTDateKey } from "@/lib/owner/dates";
@@ -27,6 +29,15 @@ export default function FinanceTransactionsPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
 
+  const aiScope = useMemo(
+    () => (filterState ? {
+      dateFrom: toISTDateKey(filterState.range.from), dateTo: toISTDateKey(filterState.range.to),
+      branch: filterState.filters.branch && filterState.filters.branch !== "All" ? filterState.filters.branch : "",
+      category: filterState.filters.category && filterState.filters.category !== "ALL" ? filterState.filters.category : "",
+    } : {}),
+    [filterState],
+  );
+
   const url = useMemo(() => {
     if (!filterState) return null;
     const params = new URLSearchParams();
@@ -44,6 +55,7 @@ export default function FinanceTransactionsPage() {
   }, [filterState, search, sortKey, sortDir, page, pageSize]);
 
   const { data, loading, error, isValidating, mutate: load } = useOwnerData(url);
+  const transactionsAi = useAiInsight("finance.transactions", aiScope, { kind: "brief", enabled: !!filterState });
 
   const handleSort = (key) => {
     setPage(1);
@@ -66,6 +78,7 @@ export default function FinanceTransactionsPage() {
         <OwnerTopbar
           title="All Transactions"
           subtitle="Full transaction report — same data and query as /admin/transactions"
+          aiState={transactionsAi}
           controls={
             <button className="icon-btn" onClick={() => load()} disabled={isValidating} title="Refresh">
               {isValidating ? "…" : "⟳"}
@@ -74,6 +87,8 @@ export default function FinanceTransactionsPage() {
         />
 
         <div className="content">
+          <AiBriefPanel feature="finance.transactions" scope={aiScope} title="All Transactions" enabled={!!filterState} aiState={transactionsAi} />
+
           <FilterBar
             show={["date", "branch"]}
             extras={[{ key: "category", label: "Category", options: CATEGORY_OPTIONS }]}
@@ -89,11 +104,11 @@ export default function FinanceTransactionsPage() {
                 loading={loading || !data}
                 primaryIndex={0}
                 items={[
-                  { label: "Total", value: rupee(grandTotal), sub: `${num(total)} rows · excludes settlements & external methods`, kind: "info" },
-                  { label: "Transplant", value: rupee(stats.TRANSPLANT?.total), sub: `${num(stats.TRANSPLANT?.count)} txns`, kind: "good" },
-                  { label: "Service", value: rupee(stats.SERVICE?.total), sub: `${num(stats.SERVICE?.count)} txns`, kind: "info" },
-                  { label: "Medicine", value: rupee(stats.MEDICINE?.total), sub: `${num(stats.MEDICINE?.count)} txns`, kind: "info" },
-                  { label: "Expense", value: rupee(stats.EXPENSE?.total), sub: `${num(stats.EXPENSE?.count)} txns`, kind: "bad" },
+                  { label: "Total", value: rupee(grandTotal), rawValue: grandTotal, format: "rupee", sub: `${num(total)} rows · excludes settlements & external methods`, kind: "info" },
+                  { label: "Transplant", value: rupee(stats.TRANSPLANT?.total), rawValue: stats.TRANSPLANT?.total, format: "rupee", sub: `${num(stats.TRANSPLANT?.count)} txns`, kind: "good" },
+                  { label: "Service", value: rupee(stats.SERVICE?.total), rawValue: stats.SERVICE?.total, format: "rupee", sub: `${num(stats.SERVICE?.count)} txns`, kind: "info" },
+                  { label: "Medicine", value: rupee(stats.MEDICINE?.total), rawValue: stats.MEDICINE?.total, format: "rupee", sub: `${num(stats.MEDICINE?.count)} txns`, kind: "info" },
+                  { label: "Expense", value: rupee(stats.EXPENSE?.total), rawValue: stats.EXPENSE?.total, format: "rupee", sub: `${num(stats.EXPENSE?.count)} txns`, kind: "bad" },
                 ]}
               />
 

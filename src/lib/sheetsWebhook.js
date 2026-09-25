@@ -23,7 +23,7 @@ const shape = ({
   "Entry Date": fmtDay(entryDate),
   "Party": party || "",
   "Employee ID": employeeIdCode || "",
-  "Purpose / Category": purpose || "",
+  "Purpose  Category": purpose || "",
   "Sub-type": subType || "",
   "Direction": direction || "",
   "Amount": Number(amount) || 0,

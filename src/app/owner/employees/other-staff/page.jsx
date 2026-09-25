@@ -13,6 +13,7 @@ const config = {
   detailBase: "/owner/employees/other-staff",
   tableId: "employees-other-staff",
   defaultSort: "name",
+  aiFeature: "employees.other",
   columns: [
     SHARED_COLUMNS.name,
     SHARED_COLUMNS.phone,

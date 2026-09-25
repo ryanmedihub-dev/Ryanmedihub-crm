@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, FilterBar, KpiRow, DataTable, ErrorState, TrendChart } from "@/components/owner";
+import { AiBriefPanel } from "@/components/owner/ai";
+import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { num } from "@/lib/owner/format";
 
@@ -20,15 +22,15 @@ const LINKS = [
 export default function LeadsLanding() {
   const [filterState, setFilterState] = useState(null);
 
+  const aiScope = useMemo(() => (filterState ? { dateFrom: filterState.range.from, dateTo: filterState.range.to } : {}), [filterState]);
+
   const url = useMemo(() => {
     if (!filterState) return null;
-    const params = new URLSearchParams();
-    params.set("dateFrom", filterState.range.from);
-    params.set("dateTo", filterState.range.to);
-    return `/api/owner/leads/overview?${params.toString()}`;
-  }, [filterState]);
+    return `/api/owner/leads/overview?${new URLSearchParams(aiScope).toString()}`;
+  }, [filterState, aiScope]);
 
   const { data, loading, error, isValidating, mutate: load } = useOwnerData(url);
+  const leadsAi = useAiInsight("leads.overview", aiScope, { kind: "brief", enabled: !!filterState });
 
   const s = data?.summary?.total || {};
   const sidebar = data?.sidebarStats || {};
@@ -40,6 +42,7 @@ export default function LeadsLanding() {
         <OwnerTopbar
           title="Leads"
           subtitle="Pipeline health by status and source — links into every leads page"
+          aiState={leadsAi}
           controls={
             <button className="icon-btn" onClick={() => load()} disabled={isValidating} title="Refresh">
               {isValidating ? "…" : "⟳"}
@@ -49,6 +52,8 @@ export default function LeadsLanding() {
 
         <div className="content">
           <FilterBar show={["date"]} onChange={({ filters, range }) => setFilterState({ filters, range })} />
+
+          <AiBriefPanel feature="leads.overview" scope={aiScope} title="Leads" enabled={!!filterState} aiState={leadsAi} />
 
           {error ? (
             <ErrorState message={error} onRetry={load} />

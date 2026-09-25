@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, FilterBar, ReportTable, KpiRow, ErrorState } from "@/components/owner";
+import { AiBriefPanel } from "@/components/owner/ai";
+import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { num } from "@/lib/owner/format";
 import { LEAD_BASE_COLUMNS } from "@/lib/owner/leadsColumns";
@@ -28,21 +30,26 @@ export default function LeadsReportPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
 
+  const aiScope = useMemo(() => {
+    if (!filterState) return {};
+    const s = { dateFrom: filterState.range.from, dateTo: filterState.range.to };
+    if (filterState.filters.status) s.status = filterState.filters.status;
+    return s;
+  }, [filterState]);
+
   const url = useMemo(() => {
     if (!filterState) return null;
-    const params = new URLSearchParams();
-    params.set("dateFrom", filterState.range.from);
-    params.set("dateTo", filterState.range.to);
-    if (filterState.filters.status) params.set("status", filterState.filters.status);
+    const params = new URLSearchParams(aiScope);
     if (search) params.set("search", search);
     params.set("sortBy", sortKey);
     params.set("sortDir", sortDir);
     params.set("page", String(page));
     params.set("pageSize", String(pageSize));
     return `/api/owner/leads/report?${params.toString()}`;
-  }, [filterState, search, sortKey, sortDir, page, pageSize]);
+  }, [filterState, aiScope, search, sortKey, sortDir, page, pageSize]);
 
   const { data, loading, error, mutate: load } = useOwnerData(url);
+  const reportAi = useAiInsight("leads.report", aiScope, { kind: "brief", enabled: !!filterState });
 
   const handleSort = (key) => {
     setPage(1);
@@ -63,6 +70,7 @@ export default function LeadsReportPage() {
         <OwnerTopbar
           title="Lead Report"
           subtitle="Full lead report — mirrors callby's own Lead Reports page"
+          aiState={reportAi}
           controls={
             <button className="icon-btn" onClick={() => load()} disabled={loading} title="Refresh">
               {loading ? "…" : "⟳"}
@@ -71,6 +79,8 @@ export default function LeadsReportPage() {
         />
 
         <div className="content">
+          <AiBriefPanel feature="leads.report" scope={aiScope} title="Lead Report" enabled={!!filterState} aiState={reportAi} />
+
           <FilterBar
             show={["date"]}
             extras={[{ key: "status", label: "Status", options: STATUS_OPTIONS }]}

@@ -2,8 +2,11 @@
 
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { m } from "framer-motion";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, DataTable, Badge, InlineNotice, Skeleton, ErrorState } from "@/components/owner";
+import { AiDeepReview } from "@/components/owner/ai";
+import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { rupee, fmtDate } from "@/lib/owner/format";
 
@@ -39,13 +42,16 @@ function JourneyStrip({ status }) {
     <>
       <div className="journey" style={{ gridTemplateColumns: `repeat(${JOURNEY_STEPS.length}, 1fr)` }}>
         {JOURNEY_STEPS.map((step, i) => (
-          <div
+          <m.div
             key={step}
             className={`journey-step${i < currentIndex ? " done" : ""}${i === currentIndex && !exited ? " current" : ""}`}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: i * 0.08, ease: [0.2, 0.8, 0.2, 1] }}
           >
             <strong>{STEP_LABEL[step]}</strong>
             <span>{i === currentIndex && !exited ? "Current" : i < currentIndex ? "Passed" : ""}</span>
-          </div>
+          </m.div>
         ))}
       </div>
       {exited && (
@@ -78,6 +84,8 @@ export default function PatientDetailPage() {
   const patient = data?.patient || null;
   const statusExplanation = data?.statusExplanation || null;
 
+  const deepAi = useAiInsight("patient.deep", { id }, { kind: "deep", enabled: !!id });
+
   return (
     <div className="app">
       <OwnerSidebar />
@@ -105,6 +113,8 @@ export default function PatientDetailPage() {
               <Card title={patient.personal?.name || "Patient"} subtitle={patient.personal?.phone}>
                 <JourneyStrip status={patient.ops?.status} />
               </Card>
+
+              <AiDeepReview feature="patient.deep" scope={{ id }} title={patient.personal?.name || "Patient"} aiState={deepAi} />
 
               {statusExplanation && (
                 <InlineNotice kind="info" title={STEP_LABEL[patient.ops?.status] || patient.ops?.status}>

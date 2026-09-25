@@ -17,6 +17,7 @@ const config = {
   tableId: "patients-all",
   defaultSort: "createdAt",
   defaultSortDir: "desc",
+  aiFeature: "patients.preset",
   columns: PATIENT_SHARED_COLUMNS,
   extras: [{ key: "status", label: "Status", options: STATUS_OPTIONS, defaultValue: "all" }],
   kpis: (data) => [

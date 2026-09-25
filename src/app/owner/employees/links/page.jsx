@@ -5,6 +5,8 @@ import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import {
   OwnerTopbar, Card, DataTable, Badge, EmptyState, ErrorState, InlineNotice,
 } from "@/components/owner";
+import { AiBriefPanel } from "@/components/owner/ai";
+import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { ownerFetch } from "@/lib/ownerFetch";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 
@@ -25,6 +27,7 @@ export default function CallbyLinksPage() {
   const [notice, setNotice] = useState(null);
 
   const { data, loading, error, isValidating, mutate: load } = useOwnerData("/api/owner/callby-links");
+  const linksAi = useAiInsight("employees.links", {}, { kind: "brief" });
 
   const unlinkedEmployees = data?.unlinkedEmployees || [];
   const unlinkedCallbyAgents = data?.unlinkedCallbyAgents || [];
@@ -91,6 +94,7 @@ export default function CallbyLinksPage() {
         <OwnerTopbar
           title="callby Links"
           subtitle="Pair the employees the reconciliation script couldn't match to a callby user"
+          aiState={linksAi}
           controls={
             <button className="icon-btn" onClick={() => load()} disabled={isValidating} title="Refresh">
               {isValidating ? "…" : "⟳"}
@@ -99,6 +103,8 @@ export default function CallbyLinksPage() {
         />
 
         <div className="content">
+          <AiBriefPanel feature="employees.links" scope={{}} title="callby Links" aiState={linksAi} />
+
           {error ? (
             <ErrorState message={error} onRetry={load} />
           ) : (

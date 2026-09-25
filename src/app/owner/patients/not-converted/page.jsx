@@ -15,6 +15,8 @@ const config = {
   tableId: "patients-not-converted",
   defaultSort: "createdAt",
   defaultSortDir: "desc",
+  aiFeature: "patients.preset",
+  aiVerdicts: true,
   columns: [...PATIENT_SHARED_COLUMNS, LAST_CONTACT_COLUMN, DAYS_SINCE_ACTIVITY_COLUMN],
   kpis: (data) => [
     { label: "Not Converted", value: num(data.total), sub: "Registered this period", kind: "bad" },

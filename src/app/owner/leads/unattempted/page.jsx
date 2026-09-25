@@ -12,6 +12,7 @@ const config = {
   subtitle: "attempts: 0 — sorted oldest-first; an old unattempted lead is the most wasteful thing in the system",
   defaultSort: "createdAt",
   defaultSortDir: "asc",
+  aiFeature: "leads.status",
   columns: [...LEAD_BASE_COLUMNS, POOL_STATE_COLUMN],
   kpis: (data) => {
     const rows = data.rows || [];

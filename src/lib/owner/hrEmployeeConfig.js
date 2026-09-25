@@ -10,6 +10,12 @@ export const hrEmployeeConfig = {
   detailBase: "/owner/employees/hr",
   tableId: "employees-hr",
   defaultSort: "totalInterviews",
+  // Salary/incentive payables are raised weeks after the pay period they're
+  // for (see buildCompensationMetrics) — "Today" as the default window hides
+  // almost all of them. Widen the default so the salary columns aren't blank
+  // on first load; interview counts read fine over this range too.
+  defaultRange: "Last 30 Days",
+  aiFeature: "employees.hr",
   columns: [
     SHARED_COLUMNS.name,
     SHARED_COLUMNS.phone,

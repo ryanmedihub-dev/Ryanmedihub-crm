@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, FilterBar, KpiRow, DataTable, ErrorState, InlineNotice } from "@/components/owner";
+import { AiBriefPanel } from "@/components/owner/ai";
+import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { rupee, num } from "@/lib/owner/format";
 import { SECTION_LABELS } from "@/lib/owner/employeeSections";
@@ -21,16 +23,21 @@ export default function EmployeesLanding() {
   const router = useRouter();
   const [filterState, setFilterState] = useState(null);
 
-  const url = useMemo(() => {
-    if (!filterState) return null;
-    const params = new URLSearchParams();
-    params.set("dateFrom", filterState.range.from);
-    params.set("dateTo", filterState.range.to);
-    if (filterState.filters.branch && filterState.filters.branch !== "All") params.set("branch", filterState.filters.branch);
-    return `/api/owner/employees/overview?${params.toString()}`;
+  const aiScope = useMemo(() => {
+    if (!filterState) return {};
+    const s = { dateFrom: filterState.range.from, dateTo: filterState.range.to };
+    if (filterState.filters.branch && filterState.filters.branch !== "All") s.branch = filterState.filters.branch;
+    return s;
   }, [filterState]);
 
+  const url = useMemo(() => {
+    if (!filterState) return null;
+    const params = new URLSearchParams(aiScope);
+    return `/api/owner/employees/overview?${params.toString()}`;
+  }, [filterState, aiScope]);
+
   const { data, loading, error, isValidating, mutate: load } = useOwnerData(url);
+  const overviewAi = useAiInsight("employees.overview", aiScope, { kind: "brief", enabled: !!filterState });
 
   const headcount = data?.headcount || [];
   const totalHeadcount = headcount.reduce((s, h) => s + h.total, 0);
@@ -43,6 +50,7 @@ export default function EmployeesLanding() {
         <OwnerTopbar
           title="Employees"
           subtitle="Headcount, pay and performance across every role — links to each sub-page below"
+          aiState={overviewAi}
           controls={
             <button className="icon-btn" onClick={() => load()} disabled={isValidating} title="Refresh">
               {isValidating ? "…" : "⟳"}
@@ -52,6 +60,8 @@ export default function EmployeesLanding() {
 
         <div className="content">
           <FilterBar show={["date", "branch"]} onChange={({ filters, range }) => setFilterState({ filters, range })} />
+
+          <AiBriefPanel feature="employees.overview" scope={aiScope} title="Employees" enabled={!!filterState} aiState={overviewAi} />
 
           {error ? (
             <ErrorState message={error} onRetry={load} />

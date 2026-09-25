@@ -10,6 +10,7 @@ const config = {
   subtitle: "Sorted by staleness by default — anything past 2 days since the last call is flagged",
   defaultSort: "lastCallAt",
   defaultSortDir: "asc", // oldest last-call first = most stale
+  aiFeature: "leads.status",
   columns: [...LEAD_BASE_COLUMNS, DAYS_SINCE_LAST_CALL_COLUMN],
   kpis: (data) => {
     const rows = data.rows || [];

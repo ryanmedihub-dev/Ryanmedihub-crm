@@ -125,9 +125,8 @@ advanceSchema.index(
 advanceSchema.index({ "settlements.payableId": 1, isCancelled: 1, direction: 1 });
 
 // Google Sheets finance webhook — fires once per newly-created advance, never on edits.
-advanceSchema.pre("save", function (next) {
+advanceSchema.pre("save", function () {
   this.$locals.wasNew = this.isNew;
-  next();
 });
 advanceSchema.post("save", function (doc) {
   if (doc.$locals.wasNew) fireSheetWebhook("Advance", doc);

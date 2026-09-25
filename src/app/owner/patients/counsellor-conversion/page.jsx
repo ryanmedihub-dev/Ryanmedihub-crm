@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, DataTable, KpiRow, ErrorState, EmptyState } from "@/components/owner";
+import { AiBriefPanel, AiScanOverlay, aiVerdictColumn } from "@/components/owner/ai";
+import { useAiInsight } from "@/lib/ai/client/useAiInsight";
+import { useAiVerdicts } from "@/lib/ai/client/useAiVerdicts";
 import { ownerFetch } from "@/lib/ownerFetch";
 import { rupee, num as fmt } from "@/lib/owner/format";
 import { OWNER_BRANCHES as BRANCHES, DATE_RANGES, buildDateRange } from "@/lib/owner/filters";
@@ -15,6 +18,15 @@ export default function CounsellorConversionPage() {
   const [rows, setRows]     = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(null);
+
+  const dateReady = !(dateRange === "Custom" && !custom.from);
+  const aiScope = useMemo(() => {
+    if (!dateReady) return {};
+    const { from, to } = buildDateRange(dateRange, custom);
+    return { branch, from, to };
+  }, [dateReady, dateRange, custom, branch]);
+  const convAi = useAiInsight("patients.counsellorConversion", aiScope, { kind: "brief", enabled: dateReady });
+  const verdicts = useAiVerdicts("patients.counsellorConversion", aiScope, { enabled: dateReady });
 
   const fetchData = useCallback(async ({ signal } = {}) => {
     if (dateRange === "Custom" && !custom.from) return;
@@ -58,6 +70,7 @@ export default function CounsellorConversionPage() {
         <OwnerTopbar
           title="Counsellor Conversion"
           subtitle="Per-counsellor pipeline: visits, plans, tokens, surgeries, revenue, discounting"
+          aiState={convAi}
           controls={
             <>
               <select className="control" value={branch} onChange={(e) => setBranch(e.target.value)}>
@@ -80,6 +93,8 @@ export default function CounsellorConversionPage() {
         />
 
         <div className="content">
+          <AiBriefPanel feature="patients.counsellorConversion" scope={aiScope} title="Counsellor Conversion" enabled={dateReady} aiState={convAi} />
+
           {error ? (
             <ErrorState message={error} onRetry={fetchData} />
           ) : (
@@ -98,12 +113,14 @@ export default function CounsellorConversionPage() {
               />
 
               <Card title="Counsellor breakdown" subtitle={loading ? "Loading…" : `${rows.length} counsellors`}>
+                <AiScanOverlay active={verdicts.loading}>
                 <DataTable
                   tall
                   loading={loading}
                   emptyMessage={<EmptyState icon="❝" title="No counselling activity" hint="No visits, plans or tokens recorded in this period." />}
                   columns={[
                     { key: "counsellorName", label: "Counsellor" },
+                    aiVerdictColumn({ byId: verdicts.byId, loading: verdicts.loading }),
                     { key: "visits", label: "Visits", align: "right" },
                     { key: "plans", label: "Plans", align: "right" },
                     { key: "tokens", label: "Tokens", align: "right" },
@@ -113,6 +130,7 @@ export default function CounsellorConversionPage() {
                   ]}
                   rows={loading ? [] : rows.map((r) => ({ ...r, id: r.counsellorId }))}
                 />
+                </AiScanOverlay>
               </Card>
             </>
           )}

@@ -83,9 +83,8 @@ receivableSchema.index({ branch: 1, isCancelled: 1 });
 receivableSchema.index({ dueDate: 1 });
 
 // Google Sheets finance webhook — fires once per newly-created receivable, never on edits.
-receivableSchema.pre("save", function (next) {
+receivableSchema.pre("save", function () {
   this.$locals.wasNew = this.isNew;
-  next();
 });
 receivableSchema.post("save", function (doc) {
   if (doc.$locals.wasNew) fireSheetWebhook("Receivable", doc);

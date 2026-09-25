@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, FilterBar, ReportTable, KpiRow, ErrorState } from "@/components/owner";
+import { AiBriefPanel } from "@/components/owner/ai";
+import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { num } from "@/lib/owner/format";
 import { CALL_REPORT_COLUMNS } from "@/lib/owner/callsColumns";
@@ -27,22 +29,27 @@ export default function CallsReportPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
 
+  const aiScope = useMemo(() => {
+    if (!filterState) return {};
+    const s = { dateFrom: filterState.range.from, dateTo: filterState.range.to };
+    if (filterState.filters.callType) s.callType = filterState.filters.callType;
+    if (filterState.filters.connectedOnly) s.connectedOnly = filterState.filters.connectedOnly;
+    return s;
+  }, [filterState]);
+
   const url = useMemo(() => {
     if (!filterState) return null;
-    const params = new URLSearchParams();
-    params.set("dateFrom", filterState.range.from);
-    params.set("dateTo", filterState.range.to);
-    if (filterState.filters.callType) params.set("callType", filterState.filters.callType);
-    if (filterState.filters.connectedOnly) params.set("connectedOnly", filterState.filters.connectedOnly);
+    const params = new URLSearchParams(aiScope);
     if (search) params.set("search", search);
     params.set("sortBy", sortKey);
     params.set("sortDir", sortDir);
     params.set("page", String(page));
     params.set("pageSize", String(pageSize));
     return `/api/owner/calls/report?${params.toString()}`;
-  }, [filterState, search, sortKey, sortDir, page, pageSize]);
+  }, [filterState, aiScope, search, sortKey, sortDir, page, pageSize]);
 
   const { data, loading, error, mutate: load } = useOwnerData(url);
+  const reportAi = useAiInsight("calls.report", aiScope, { kind: "brief", enabled: !!filterState });
 
   const handleSort = (key) => {
     setPage(1);
@@ -63,6 +70,7 @@ export default function CallsReportPage() {
         <OwnerTopbar
           title="Call Report"
           subtitle="Full call log — mirrors callby's own Call History report"
+          aiState={reportAi}
           controls={
             <button className="icon-btn" onClick={() => load()} disabled={loading} title="Refresh">
               {loading ? "…" : "⟳"}
@@ -71,6 +79,8 @@ export default function CallsReportPage() {
         />
 
         <div className="content">
+          <AiBriefPanel feature="calls.report" scope={aiScope} title="Call Report" enabled={!!filterState} aiState={reportAi} />
+
           <FilterBar
             show={["date"]}
             extras={[

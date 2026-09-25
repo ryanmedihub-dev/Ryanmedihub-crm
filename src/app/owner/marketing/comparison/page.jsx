@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, FilterBar, DataTable, Badge, ErrorState, TrendChart, InlineNotice, ManualDataNotice } from "@/components/owner";
+import { AiBriefPanel } from "@/components/owner/ai";
+import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { rupee, num, roasFmt } from "@/lib/owner/format";
 
@@ -42,16 +44,33 @@ const LOWER_IS_BETTER = new Set(["spend", "cpl", "cpc", "cac"]);
 export default function MarketingComparisonPage() {
   const [filterState, setFilterState] = useState(null);
 
-  const url = useMemo(() => {
-    if (!filterState) return null;
-    const params = new URLSearchParams();
-    params.set("dateFrom", filterState.range.from);
-    params.set("dateTo", filterState.range.to);
-    if (filterState.filters.branch && filterState.filters.branch !== "All") params.set("branch", filterState.filters.branch);
-    return `/api/owner/marketing/comparison?${params.toString()}`;
+  const aiScope = useMemo(() => {
+    if (!filterState) return {};
+    const s = { dateFrom: filterState.range.from, dateTo: filterState.range.to };
+    if (filterState.filters.branch && filterState.filters.branch !== "All") s.branch = filterState.filters.branch;
+    return s;
   }, [filterState]);
 
+  const url = useMemo(() => {
+    if (!filterState) return null;
+    return `/api/owner/marketing/comparison?${new URLSearchParams(aiScope).toString()}`;
+  }, [filterState, aiScope]);
+
   const { data, loading, error, isValidating, mutate: load } = useOwnerData(url);
+  const comparisonAi = useAiInsight("marketing.comparison", aiScope, { kind: "brief", enabled: !!filterState });
+
+  // "AI pick" crown — only if the brief's headline explicitly names a
+  // platform, never inferred from the numbers ourselves. A head-to-head
+  // headline often names both ("Google is outpacing Meta on ROAS"); the one
+  // named FIRST is read as the subject/favoured platform. Neither or both
+  // absent (or a tie in position) → no badge.
+  const aiPickHeadline = comparisonAi.status === "ready" ? (comparisonAi.result?.headline || "").toLowerCase() : "";
+  const metaAt = aiPickHeadline.indexOf("meta");
+  const googleAt = aiPickHeadline.indexOf("google");
+  const aiPickPlatform = metaAt === -1 && googleAt === -1 ? null
+    : metaAt === -1 ? "Google"
+    : googleAt === -1 ? "Meta"
+    : metaAt < googleAt ? "Meta" : "Google";
 
   return (
     <div className="app">
@@ -60,6 +79,7 @@ export default function MarketingComparisonPage() {
         <OwnerTopbar
           title="Meta vs Google"
           subtitle="Side-by-side comparison for the period — evidence only, no recommendation"
+          aiState={comparisonAi}
           controls={
             <button className="icon-btn" onClick={() => load()} disabled={isValidating} title="Refresh">
               {isValidating ? "…" : "⟳"}
@@ -68,6 +88,8 @@ export default function MarketingComparisonPage() {
         />
 
         <div className="content">
+          <AiBriefPanel feature="marketing.comparison" scope={aiScope} title="Meta vs Google" enabled={!!filterState} aiState={comparisonAi} />
+
           <ManualDataNotice />
 
           <FilterBar show={["date", "branch"]} onChange={({ filters, range }) => setFilterState({ filters, range })} />
@@ -91,6 +113,7 @@ export default function MarketingComparisonPage() {
                       <div key={platform}>
                         <p style={{ fontWeight: 700, marginBottom: 8 }}>
                           <Badge kind={platform === "Meta" ? "purple" : "info"}>{platform}</Badge>
+                          {aiPickPlatform === platform && <span className="ai-model-chip" style={{ marginLeft: 8 }}>👑 AI pick</span>}
                         </p>
                         {METRICS.map((m) => (
                           <div key={m.key} className="metric-row">

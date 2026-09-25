@@ -137,9 +137,8 @@ payableSchema.index({
 
 // Google Sheets finance webhook — fires once per newly-created payable, never on edits.
 // $locals is the mongoose-blessed scratch space for passing state from pre to post hooks.
-payableSchema.pre("save", function (next) {
+payableSchema.pre("save", function () {
   this.$locals.wasNew = this.isNew;
-  next();
 });
 payableSchema.post("save", function (doc) {
   if (doc.$locals.wasNew) fireSheetWebhook("Payable", doc);

@@ -4,9 +4,13 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { m, AnimatePresence } from "framer-motion";
 import LogoutButton from "../LogoutButton";
 import { useShell } from "@/components/owner/ShellContext";
+import AiOrb from "@/components/owner/ai/AiOrb";
+import { useAiHealthBeacon } from "@/lib/ai/client/useAiHealthBeacon";
 
+// AI action links are validated against src/lib/ai/links.js — update both.
 const SECTIONS = [
   { title: "Dashboard", href: "/owner/dashboard", icon: "◎" },
   {
@@ -123,7 +127,9 @@ const OPEN_KEY = "owner-nav-open-group";
 export default function OwnerSidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const { navOpen, setNavOpen } = useShell();
+  const { navOpen, setNavOpen, openCommandBar } = useShell();
+  const healthBeacon = useAiHealthBeacon();
+  const aiHealthActive = pathname === "/owner/ai/health";
 
   const inTrail = (href) => pathname === href || pathname.startsWith(href + "/");
   const activeSection = SECTIONS.find((s) => inTrail(s.href));
@@ -182,36 +188,55 @@ export default function OwnerSidebar() {
 
       <aside className={`sidebar${navOpen ? " open" : ""}`}>
         <div className="brand">
-          <div className="logo" aria-hidden="true">◈</div>
+          <AiOrb state="idle" size={40} />
           <div>
             <strong>RyanCRM</strong>
-            <small>Owner command</small>
+            <small>Neural Command</small>
           </div>
         </div>
 
         <nav>
-          {SECTIONS.map((section) => {
+          {SECTIONS.map((section, sectionIndex) => {
             const sectionActive = activeSection?.title === section.title;
             const isOpen = openGroup === section.title;
+
+            // Pinned "AI Health" sits right under Dashboard (index 0) — not a
+            // SECTIONS entry, so it never shifts the per-section nav-ico colours
+            // below (those are nth-child-indexed against SECTIONS' own order).
+            const pin = sectionIndex === 1 && (
+              <Link
+                key="ai-health-pin"
+                href="/owner/ai/health"
+                aria-current={aiHealthActive ? "page" : undefined}
+                className={`nav-btn nav-pin${aiHealthActive ? " active" : ""}`}
+              >
+                <span className="nav-ico nav-pin-ico" aria-hidden="true">◆</span>
+                <span>AI Health</span>
+                {healthBeacon && <span className={`nav-pin-dot ai-status-${healthBeacon.tone}`} aria-hidden="true" />}
+              </Link>
+            );
 
             // Single link (no sub-items)
             if (!section.items) {
               return (
-                <Link
-                  key={section.title}
-                  href={section.href}
-                  aria-current={sectionActive ? "page" : undefined}
-                  className={`nav-btn${sectionActive ? " active" : ""}`}
-                >
-                  <span className="nav-ico" aria-hidden="true">{section.icon}</span>
-                  <span>{section.title}</span>
-                </Link>
+                <div key={section.title} className="nav-group">
+                  <Link
+                    href={section.href}
+                    aria-current={sectionActive ? "page" : undefined}
+                    className={`nav-btn${sectionActive ? " active" : ""}`}
+                  >
+                    <span className="nav-ico" aria-hidden="true">{section.icon}</span>
+                    <span>{section.title}</span>
+                  </Link>
+                  {pin}
+                </div>
               );
             }
 
-            // Grouped link (accordion)
+            // Grouped link (accordion) — sub-nav height-animates via AnimatePresence.
             return (
               <div key={section.title} className="nav-group">
+                {pin}
                 <div className={`nav-group-head${sectionActive ? " active" : ""}`}>
                   <Link
                     href={section.href}
@@ -232,24 +257,33 @@ export default function OwnerSidebar() {
                   </button>
                 </div>
 
-                {isOpen && (
-                  <div className="nav-sub">
-                    {section.items.map((item) => {
-                      const itemActive = inTrail(item.href);
-                      return (
-                        <Link
-                          key={item.href}
-                          href={item.href}
-                          aria-current={itemActive ? "page" : undefined}
-                          className={`nav-btn nav-sub-btn${itemActive ? " active" : ""}`}
-                        >
-                          <span>{item.label}</span>
-                          {item.soon && <span className="nav-soon">Soon</span>}
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
+                <AnimatePresence initial={false}>
+                  {isOpen && (
+                    <m.div
+                      className="nav-sub"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.18, ease: [0.2, 0.8, 0.2, 1] }}
+                      style={{ overflow: "hidden" }}
+                    >
+                      {section.items.map((item) => {
+                        const itemActive = inTrail(item.href);
+                        return (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            aria-current={itemActive ? "page" : undefined}
+                            className={`nav-btn nav-sub-btn${itemActive ? " active" : ""}`}
+                          >
+                            <span>{item.label}</span>
+                            {item.soon && <span className="nav-soon">Soon</span>}
+                          </Link>
+                        );
+                      })}
+                    </m.div>
+                  )}
+                </AnimatePresence>
               </div>
             );
           })}
@@ -265,6 +299,9 @@ export default function OwnerSidebar() {
               <span className="muted" style={{ fontSize: "var(--fs-12)" }}>Owner</span>
             </div>
           </div>
+          <button type="button" className="nav-cmdk-hint" onClick={openCommandBar}>
+            <kbd>⌘K</kbd> Ask AI
+          </button>
           <LogoutButton className="danger-btn" />
         </div>
       </aside>

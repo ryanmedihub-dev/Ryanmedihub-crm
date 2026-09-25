@@ -1,8 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, FilterBar, ReportTable, KpiRow, ErrorState, InlineNotice, Badge } from "@/components/owner";
+import { AiBriefPanel } from "@/components/owner/ai";
+import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { ownerFetch } from "@/lib/ownerFetch";
 import { usePagedList } from "@/lib/owner/usePagedList";
 import { num, fmtTime } from "@/lib/owner/format";
@@ -60,6 +62,9 @@ export default function AttendancePage() {
 
   const rows = data?.rows || [];
 
+  const aiScope = useMemo(() => ({ date, branch: filterState?.filters?.branch && filterState.filters.branch !== "All" ? filterState.filters.branch : "" }), [date, filterState]);
+  const attendanceAi = useAiInsight("ai.attendance", aiScope, { kind: "brief" });
+
   const mark = async (employeeId, status, note, source) => {
     setSaving(employeeId);
     const r = await ownerFetch("/api/owner/ai/attendance", {
@@ -83,6 +88,7 @@ export default function AttendancePage() {
         <OwnerTopbar
           title="Attendance"
           subtitle="Call activity is a signal, not a verdict — every status here was set or confirmed by a person"
+          aiState={attendanceAi}
           controls={
             <button className="icon-btn" onClick={() => load()} disabled={loading} title="Refresh">
               {loading ? "…" : "⟳"}
@@ -91,6 +97,8 @@ export default function AttendancePage() {
         />
 
         <div className="content">
+          <AiBriefPanel feature="ai.attendance" scope={aiScope} title="Attendance" aiState={attendanceAi} />
+
           <InlineNotice kind="info" title="Why this isn't automatic">
             There is no punch-in system and no login/logout tracking in either callby or ryan-crm today — call
             activity is the only signal available, and it's a proxy at best (an employee on a field visit,
@@ -100,7 +108,7 @@ export default function AttendancePage() {
             integration — worth deciding on separately from this page.
           </InlineNotice>
 
-          <div className="filter-bar">
+          <FilterBar show={["branch"]} onChange={(s) => { list.resetPage(); setFilterState(s); }}>
             <input
               type="date"
               className="control"
@@ -109,8 +117,7 @@ export default function AttendancePage() {
               max={todayIso()}
               onChange={(e) => { list.resetPage(); setDate(e.target.value); }}
             />
-          </div>
-          <FilterBar show={["branch"]} onChange={(s) => { list.resetPage(); setFilterState(s); }} />
+          </FilterBar>
 
           {error ? (
             <ErrorState message={error} onRetry={load} />

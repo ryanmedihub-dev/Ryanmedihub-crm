@@ -2,10 +2,22 @@
 
 import { useTheme } from "./ThemeContext";
 import { useShell } from "./ShellContext";
+import AiStatusBeacon from "./ai/AiStatusBeacon";
+import { relativeTime } from "@/lib/ai/client/aiLabels";
 
-export default function OwnerTopbar({ title, subtitle, controls }) {
+// `aiState` is a page's own useAiInsight(...) result, passed down — this
+// never starts a second stream, it just reads the one the page already has.
+function aiStatusText(aiState) {
+  if (!aiState) return null;
+  if (aiState.status === "running") return "AI analyzing…";
+  if (aiState.status === "ready") return `AI analyzed ${relativeTime(aiState.generatedAt)}`;
+  return null;
+}
+
+export default function OwnerTopbar({ title, subtitle, controls, aiState }) {
   const { theme, toggleTheme } = useTheme();
-  const { setNavOpen } = useShell();
+  const { setNavOpen, openCommandBar } = useShell();
+  const aiText = aiStatusText(aiState);
 
   return (
     <div className="topbar">
@@ -21,9 +33,14 @@ export default function OwnerTopbar({ title, subtitle, controls }) {
         <div style={{ minWidth: 0 }}>
           {title && <h1>{title}</h1>}
           {subtitle && <p>{subtitle}</p>}
+          {aiText && <span className="ai-topbar-status">{aiText}</span>}
         </div>
       </div>
       <div className="top-actions">
+        <AiStatusBeacon />
+        <button type="button" className="ai-cmdk-btn" onClick={openCommandBar}>
+          <kbd>⌘K</kbd> Ask AI
+        </button>
         {controls}
         <button
           className="icon-btn"

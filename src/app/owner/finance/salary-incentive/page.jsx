@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, FilterBar, ReportTable, KpiRow, DataTable, ErrorState, InlineNotice } from "@/components/owner";
+import { AiBriefPanel } from "@/components/owner/ai";
+import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { usePagedList } from "@/lib/owner/usePagedList";
 import { rupee, num } from "@/lib/owner/format";
@@ -14,6 +16,11 @@ export default function FinanceSalaryIncentivePage() {
   const [filterState, setFilterState] = useState(null);
   const list = usePagedList({ defaultSort: "name", defaultDir: "asc" });
 
+  const aiScope = useMemo(
+    () => (filterState ? { dateFrom: filterState.range.from, dateTo: filterState.range.to, branch: filterState.filters.branch && filterState.filters.branch !== "All" ? filterState.filters.branch : "" } : {}),
+    [filterState],
+  );
+
   const url = useMemo(() => {
     if (!filterState) return null;
     const params = new URLSearchParams();
@@ -24,6 +31,7 @@ export default function FinanceSalaryIncentivePage() {
   }, [filterState, list.query]);
 
   const { data, loading, error, isValidating, mutate: load } = useOwnerData(url);
+  const salaryAi = useAiInsight("finance.salaryIncentive", aiScope, { kind: "brief", enabled: !!filterState });
 
   const totals = data?.totals;
 
@@ -34,6 +42,7 @@ export default function FinanceSalaryIncentivePage() {
         <OwnerTopbar
           title="Salary & Incentive"
           subtitle="Payable purpose: SALARY, joined to Employee — same source as Part 1's Employees pages"
+          aiState={salaryAi}
           controls={
             <button className="icon-btn" onClick={() => load()} disabled={isValidating} title="Refresh">
               {isValidating ? "…" : "⟳"}
@@ -42,7 +51,13 @@ export default function FinanceSalaryIncentivePage() {
         />
 
         <div className="content">
-          <FilterBar show={["date", "branch"]} onChange={({ filters, range }) => { list.resetPage(); setFilterState({ filters, range }); }} />
+          <AiBriefPanel feature="finance.salaryIncentive" scope={aiScope} title="Salary & Incentive" enabled={!!filterState} aiState={salaryAi} />
+
+          <FilterBar
+            show={["date", "branch"]}
+            defaults={{ range: "Last 30 Days" }}
+            onChange={({ filters, range }) => { list.resetPage(); setFilterState({ filters, range }); }}
+          />
 
           {error ? (
             <ErrorState message={error} onRetry={load} />
@@ -52,10 +67,10 @@ export default function FinanceSalaryIncentivePage() {
                 loading={loading || !data}
                 primaryIndex={0}
                 items={[
-                  { label: "Salary Due", value: rupee(totals?.salaryDue), sub: `${num(totals?.employees)} employees`, kind: "info" },
-                  { label: "Salary Paid", value: rupee(totals?.salaryPaid), sub: "This period", kind: "good" },
-                  { label: "Incentive Due", value: rupee(totals?.incentiveDue), sub: "This period", kind: "info" },
-                  { label: "Incentive Paid", value: rupee(totals?.incentivePaid), sub: "This period", kind: "good" },
+                  { label: "Salary Due", value: rupee(totals?.salaryDue), rawValue: totals?.salaryDue, format: "rupee", sub: `${num(totals?.employees)} employees`, kind: "info" },
+                  { label: "Salary Paid", value: rupee(totals?.salaryPaid), rawValue: totals?.salaryPaid, format: "rupee", sub: "This period", kind: "good" },
+                  { label: "Incentive Due", value: rupee(totals?.incentiveDue), rawValue: totals?.incentiveDue, format: "rupee", sub: "This period", kind: "info" },
+                  { label: "Incentive Paid", value: rupee(totals?.incentivePaid), rawValue: totals?.incentivePaid, format: "rupee", sub: "This period", kind: "good" },
                 ]}
               />
 

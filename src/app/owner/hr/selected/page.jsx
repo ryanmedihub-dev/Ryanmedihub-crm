@@ -6,6 +6,7 @@ import { num } from "@/lib/owner/format";
 
 const config = {
   preset: "selected",
+  aiFeature: "hr.status",
   title: "Selected",
   subtitle: "Selected candidates — mark whether they actually joined",
   defaultSort: "date",

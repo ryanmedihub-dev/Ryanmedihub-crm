@@ -14,6 +14,9 @@ import ErrorState from "./ErrorState";
 import InlineNotice from "./InlineNotice";
 import TrendChart from "./TrendChart";
 import Skeleton, { KpiSkeleton } from "./Skeleton";
+import { AiDeepReview } from "./ai";
+import { useAiInsight } from "@/lib/ai/client/useAiInsight";
+import { SENTIMENT_TONE } from "@/lib/ai/client/aiLabels";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { rupee, num, fmtDate, fmtDateTime } from "@/lib/owner/format";
 import { performanceCell } from "@/lib/owner/employeeColumns";
@@ -34,6 +37,8 @@ const RECENT_ACTIVITY_COLUMNS = [
   { key: "type", label: "Type" },
   { key: "when", label: "When" },
 ];
+
+const TONE_VAR = { good: "var(--pos)", info: "var(--info)", warn: "var(--warn)", bad: "var(--crit)" };
 
 const LINKED_PATIENTS_COLUMNS = [
   { key: "name", label: "Name", render: (r) => r.name },
@@ -84,6 +89,13 @@ export default function EmployeeDetailPage({ section, listHref, rowsColumns, def
   const { data: linked, loading: linkedLoading } = useOwnerData(linkedUrl);
 
   const emp = data?.employee;
+
+  const deepScope = useMemo(
+    () => (filterState ? { id: employeeId, dateFrom: filterState.range.from, dateTo: filterState.range.to } : {}),
+    [filterState, employeeId],
+  );
+  const deepAi = useAiInsight("employee.deep", deepScope, { kind: "deep", enabled: !!filterState });
+  const aiReady = deepAi.status === "ready";
 
   // A URL under the wrong section for this employee → go to the right one.
   useEffect(() => {
@@ -141,7 +153,11 @@ export default function EmployeeDetailPage({ section, listHref, rowsColumns, def
         />
 
         <div className="content">
-          <FilterBar show={["date"]} onChange={({ filters, range }) => { list.resetPage(); setFilterState({ filters, range }); }} />
+          <FilterBar
+            show={["date"]}
+            defaults={{ range: "Last 30 Days" }}
+            onChange={({ filters, range }) => { list.resetPage(); setFilterState({ filters, range }); }}
+          />
 
           {error ? (
             <ErrorState message={error} onRetry={load} />
@@ -154,7 +170,11 @@ export default function EmployeeDetailPage({ section, listHref, rowsColumns, def
           ) : (
             <>
               <Card className="entity-header">
-                <div className="entity-avatar" aria-hidden="true">
+                <div
+                  className={`entity-avatar${aiReady ? " entity-avatar-ai-ring" : ""}`}
+                  aria-hidden="true"
+                  style={aiReady ? { "--ai-ring-tone": TONE_VAR[SENTIMENT_TONE[deepAi.result?.sentiment]] || TONE_VAR.info } : undefined}
+                >
                   {(emp.name || "?").slice(0, 2).toUpperCase()}
                 </div>
                 <div className="entity-main">
@@ -171,9 +191,17 @@ export default function EmployeeDetailPage({ section, listHref, rowsColumns, def
                   <div><dt>Joined</dt><dd>{fmtDate(emp.dateOfJoining)}</dd></div>
                   <div><dt>TL</dt><dd>{emp.tlName || "—"}</dd></div>
                   <div><dt>Manager</dt><dd>{emp.managerName || "— (unmapped)"}</dd></div>
-                  <div><dt>Performance</dt><dd>{performanceCell({ performance: emp.performance })}</dd></div>
+                  <div>
+                    <dt>Performance</dt>
+                    <dd>
+                      {performanceCell({ performance: emp.performance })}
+                      {aiReady && deepAi.result?.healthScore != null && <span className="ai-model-chip" style={{ marginLeft: 6 }}>AI {deepAi.result.healthScore}</span>}
+                    </dd>
+                  </div>
                 </dl>
               </Card>
+
+              <AiDeepReview feature="employee.deep" scope={deepScope} title={emp.name || "Employee"} enabled={!!filterState} aiState={deepAi} />
 
               {data.callbyError && (
                 <InlineNotice kind="error" title="callby data unavailable for this employee">
@@ -186,7 +214,7 @@ export default function EmployeeDetailPage({ section, listHref, rowsColumns, def
               {rowsColumns.length > 0 && (
                 <>
                   <Card title="Trend" subtitle={`${trendLabel} · selected period`}>
-                    <TrendChart data={data.trend} label={trendLabel} />
+                    <TrendChart data={data.trend} label={trendLabel} stroke="var(--ai-cyan)" glow />
                   </Card>
 
                   <Card

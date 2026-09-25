@@ -18,6 +18,7 @@ const config = {
   tableId: "patients-surgery-done",
   defaultSort: "surgeryDate",
   defaultSortDir: "desc",
+  aiFeature: "patients.preset",
   columns: [
     ...PATIENT_SHARED_COLUMNS.filter((c) => c.key !== "visitDate"),
     ...SURGERY_CLINICAL_COLUMNS,

@@ -483,9 +483,8 @@ transactionSchema.index(
 // sub-schema above) — no separate schema.index() call needed; adding one duplicates it.
 
 // Google Sheets finance webhook — fires once per newly-created transaction, never on edits.
-transactionSchema.pre("save", function (next) {
+transactionSchema.pre("save", function () {
   this.$locals.wasNew = this.isNew;
-  next();
 });
 transactionSchema.post("save", function (doc) {
   if (doc.$locals.wasNew) fireSheetWebhook("Transactions", doc);

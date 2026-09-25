@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, FilterBar, KpiRow, DataTable, ErrorState, TrendChart, Funnel } from "@/components/owner";
+import { AiBriefPanel } from "@/components/owner/ai";
+import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { num, rupee } from "@/lib/owner/format";
 import { PATIENT_STATUS_LABELS } from "@/lib/owner/patientStatus";
@@ -22,16 +24,20 @@ const LINKS = [
 export default function PatientsLanding() {
   const [filterState, setFilterState] = useState(null);
 
-  const url = useMemo(() => {
-    if (!filterState) return null;
-    const params = new URLSearchParams();
-    params.set("dateFrom", filterState.range.from);
-    params.set("dateTo", filterState.range.to);
-    if (filterState.filters.branch && filterState.filters.branch !== "All") params.set("branch", filterState.filters.branch);
-    return `/api/owner/patients/overview?${params.toString()}`;
+  const aiScope = useMemo(() => {
+    if (!filterState) return {};
+    const s = { dateFrom: filterState.range.from, dateTo: filterState.range.to };
+    if (filterState.filters.branch && filterState.filters.branch !== "All") s.branch = filterState.filters.branch;
+    return s;
   }, [filterState]);
 
+  const url = useMemo(() => {
+    if (!filterState) return null;
+    return `/api/owner/patients/overview?${new URLSearchParams(aiScope).toString()}`;
+  }, [filterState, aiScope]);
+
   const { data, loading, error, isValidating, mutate: load } = useOwnerData(url);
+  const overviewAi = useAiInsight("patients.overview", aiScope, { kind: "brief", enabled: !!filterState });
 
   const breakdownByStatus = Object.fromEntries((data?.statusBreakdown || []).map((s) => [s.status, s.count]));
   const funnelStages = STATUS_ORDER.map((status) => ({ label: PATIENT_STATUS_LABELS[status], value: breakdownByStatus[status] || 0 }));
@@ -43,6 +49,7 @@ export default function PatientsLanding() {
         <OwnerTopbar
           title="Patients"
           subtitle="Status funnel, revenue and branch split — pure ryan-crm data, no external system"
+          aiState={overviewAi}
           controls={
             <button className="icon-btn" onClick={() => load()} disabled={isValidating} title="Refresh">
               {isValidating ? "…" : "⟳"}
@@ -52,6 +59,8 @@ export default function PatientsLanding() {
 
         <div className="content">
           <FilterBar show={["date", "branch"]} onChange={({ filters, range }) => setFilterState({ filters, range })} />
+
+          <AiBriefPanel feature="patients.overview" scope={aiScope} title="Patients" enabled={!!filterState} aiState={overviewAi} />
 
           {error ? (
             <ErrorState message={error} onRetry={load} />

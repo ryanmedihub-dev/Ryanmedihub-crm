@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { Upload, Download, FileSpreadsheet, Loader2, ArrowLeft, Undo2, RefreshCw } from "lucide-react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar } from "@/components/owner";
+import { AiBriefPanel } from "@/components/owner/ai";
+import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useToast } from "@/components/Toast";
 import { ownerFetch } from "@/lib/ownerFetch";
 import UploadDropzone from "@/components/uploads/UploadDropzone";
@@ -35,6 +37,10 @@ export default function CampaignLeadsPage() {
 
   const [batches, setBatches] = useState([]);
   const [batchesLoading, setBatchesLoading] = useState(true);
+
+  // No AI anywhere in the validate/commit path itself — only a brief that
+  // reads the batch history, re-checked after a successful import.
+  const campaignLeadsAi = useAiInsight("marketing.campaignLeads", {}, { kind: "brief" });
 
   const loadBatches = useCallback(async () => {
     setBatchesLoading(true);
@@ -153,6 +159,7 @@ export default function CampaignLeadsPage() {
     setPhase("done");
     toast.success(`Imported ${r.data.created} lead(s).`);
     loadBatches();
+    campaignLeadsAi.refresh(); // re-analyse now that a new batch exists — not part of the commit itself
   };
 
   const revertBatch = async () => {
@@ -212,11 +219,13 @@ export default function CampaignLeadsPage() {
     <div className="app">
       <OwnerSidebar />
       <div className="main">
-        <OwnerTopbar title="Campaign Leads" subtitle="Upload each morning's ad-platform lead export against a campaign" />
+        <OwnerTopbar title="Campaign Leads" subtitle="Upload each morning's ad-platform lead export against a campaign" aiState={campaignLeadsAi} />
 
         <div className="content">
-          <div className="min-h-screen bg-slate-50 -m-4">
-            <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 space-y-8">
+          <AiBriefPanel feature="marketing.campaignLeads" scope={{}} title="Campaign Leads" aiState={campaignLeadsAi} />
+
+          <div className="card">
+            <div className="mx-auto max-w-6xl space-y-8">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
                   <Upload className="h-5 w-5" />

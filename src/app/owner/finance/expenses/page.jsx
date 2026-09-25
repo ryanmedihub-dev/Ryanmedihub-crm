@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, FilterBar, KpiRow, ReportTable, ErrorState, InlineNotice } from "@/components/owner";
+import { AiBriefPanel } from "@/components/owner/ai";
+import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { usePagedList } from "@/lib/owner/usePagedList";
 import { rupee, num } from "@/lib/owner/format";
@@ -10,6 +12,11 @@ import { rupee, num } from "@/lib/owner/format";
 export default function FinanceExpensesPage() {
   const [filterState, setFilterState] = useState(null);
   const list = usePagedList({ defaultSort: "total", defaultDir: "desc" });
+
+  const aiScope = useMemo(
+    () => (filterState ? { dateFrom: filterState.range.from, dateTo: filterState.range.to, branch: filterState.filters.branch && filterState.filters.branch !== "All" ? filterState.filters.branch : "" } : {}),
+    [filterState],
+  );
 
   const url = useMemo(() => {
     if (!filterState) return null;
@@ -21,6 +28,7 @@ export default function FinanceExpensesPage() {
   }, [filterState, list.query]);
 
   const { data, loading, error, isValidating, mutate: load } = useOwnerData(url);
+  const expensesAi = useAiInsight("finance.expenses", aiScope, { kind: "brief", enabled: !!filterState });
 
   const recon = data?.marketingReconciliation;
   const deltaBad = recon && Math.abs(recon.delta) > 1;
@@ -32,6 +40,7 @@ export default function FinanceExpensesPage() {
         <OwnerTopbar
           title="Expenses"
           subtitle="By head and sub-type — actuals only, no budget data exists to compare against"
+          aiState={expensesAi}
           controls={
             <button className="icon-btn" onClick={() => load()} disabled={isValidating} title="Refresh">
               {isValidating ? "…" : "⟳"}
@@ -40,6 +49,8 @@ export default function FinanceExpensesPage() {
         />
 
         <div className="content">
+          <AiBriefPanel feature="finance.expenses" scope={aiScope} title="Expenses" enabled={!!filterState} aiState={expensesAi} />
+
           <FilterBar show={["date", "branch"]} onChange={({ filters, range }) => { list.resetPage(); setFilterState({ filters, range }); }} />
 
           {error ? (
@@ -50,8 +61,8 @@ export default function FinanceExpensesPage() {
                 loading={loading || !data}
                 primaryIndex={0}
                 items={[
-                  { label: "Total Expense", value: rupee(data?.totalExpense), sub: "This period", kind: "bad" },
-                  { label: "Entries", value: num(data?.entries), sub: "Expense transactions", kind: "info" },
+                  { label: "Total Expense", value: rupee(data?.totalExpense), rawValue: data?.totalExpense, format: "rupee", sub: "This period", kind: "bad" },
+                  { label: "Entries", value: num(data?.entries), rawValue: data?.entries, format: "num", sub: "Expense transactions", kind: "info" },
                 ]}
               />
 

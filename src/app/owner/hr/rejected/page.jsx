@@ -8,6 +8,7 @@ import { num } from "@/lib/owner/format";
 
 const config = {
   preset: "rejected",
+  aiFeature: "hr.status",
   title: "Rejected",
   subtitle: "Rejected candidates, with a position-wise rejection breakdown",
   defaultSort: "date",

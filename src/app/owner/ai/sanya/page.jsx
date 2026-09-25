@@ -2,8 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, Badge, InlineNotice } from "@/components/owner";
+import AiOrb from "@/components/owner/ai/AiOrb";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 
 // Sanya — tool-calling assistant over the Owner panel's own aggregations.
@@ -18,7 +20,14 @@ const STARTERS = [
   "What needs attention right now?",
   "How are the Agents doing this month?",
   "Lead funnel for the last 7 days",
+  "Which marketing platform has the best ROAS this month?",
 ];
+
+// A tool event's `name` back into a short human label for the chip — same
+// de-snake-casing the "What Sanya can look up" card already does.
+function toolLabel(name) {
+  return String(name || "").replace(/^get_/, "").replace(/_/g, " ");
+}
 
 function fmtDateArg(a) {
   if (!a) return "";
@@ -175,6 +184,22 @@ export default function SanyaAssistantPage() {
   const stop = () => abortRef.current?.abort();
   const clear = () => { if (!busy) setMessages([]); };
 
+  // Prefill + auto-send once from a "?q=" (AiCommandBar's "Ask Sanya" hands
+  // off here). Guarded by a ref, not state, so React's dev-mode double-invoke
+  // of effects can never send the question twice.
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const autoSentRef = useRef(false);
+  useEffect(() => {
+    const q = searchParams.get("q");
+    if (!q || autoSentRef.current) return;
+    autoSentRef.current = true;
+    setInput(q);
+    send(q);
+    router.replace("/owner/ai/sanya");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
   return (
     <div className="app">
       <OwnerSidebar />
@@ -209,59 +234,79 @@ export default function SanyaAssistantPage() {
                     ))}
                   </div>
                 )}
-                {messages.map((m, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      alignSelf: m.role === "user" ? "flex-end" : "stretch",
-                      maxWidth: m.role === "user" ? "80%" : "100%",
-                      background: m.role === "user" ? "var(--accent-bg)" : "var(--surface-2)",
-                      border: `1px solid ${m.role === "user" ? "var(--accent-border)" : "var(--line)"}`,
-                      borderRadius: "var(--r-md)",
-                      padding: "10px 14px",
-                      fontSize: "var(--fs-14)",
-                      lineHeight: 1.5,
-                    }}
-                  >
-                    {m.role === "user" ? (
-                      <div style={{ whiteSpace: "pre-wrap" }}>{m.content}</div>
-                    ) : (
-                      <>
-                        <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 6, flexWrap: "wrap" }}>
-                          <Badge kind="info" dot>AI generated</Badge>
-                          {m.refused && <Badge kind="neutral">no data</Badge>}
-                          {m.tools.map((t, j) => (
-                            <span key={j} className="muted" style={{ fontSize: "var(--fs-12)" }}>
-                              {t.ok ? "✓" : "✕"} {t.name.replace(/_/g, " ")}{t.args ? ` (${fmtDateArg(t.args)})` : ""}{t.ok ? "" : ` — ${t.error}`}
-                            </span>
-                          ))}
+                {messages.map((m, i) => {
+                  const orbState = m.error ? "error" : m.streaming ? (m.tools.length && !m.content ? "thinking" : "speaking") : "idle";
+                  return (
+                    <div
+                      key={i}
+                      style={{
+                        display: "flex", gap: 10, alignItems: "flex-start",
+                        alignSelf: m.role === "user" ? "flex-end" : "stretch",
+                        maxWidth: m.role === "user" ? "80%" : "100%",
+                      }}
+                    >
+                      {m.role === "assistant" && (
+                        <div style={{ flex: "none", paddingTop: 2 }}>
+                          <AiOrb state={orbState} size={28} pulseKey={m.content.length} />
                         </div>
-                        {m.error ? (
-                          <div style={{ color: "var(--crit-fg)" }}>{m.error}</div>
-                        ) : m.content ? (
-                          <div>{renderMarkdown(m.content)}</div>
+                      )}
+                      <div
+                        style={{
+                          flex: 1, minWidth: 0,
+                          background: m.role === "user" ? "var(--accent-bg)" : "var(--surface-2)",
+                          border: `1px solid ${m.role === "user" ? "var(--accent-border)" : "var(--line)"}`,
+                          borderRadius: "var(--r-md)",
+                          padding: "10px 14px",
+                          fontSize: "var(--fs-14)",
+                          lineHeight: 1.5,
+                        }}
+                      >
+                        {m.role === "user" ? (
+                          <div style={{ whiteSpace: "pre-wrap" }}>{m.content}</div>
                         ) : (
-                          <span className="muted">{m.tools.length ? "Reading…" : "Thinking…"}</span>
+                          <>
+                            <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 6, flexWrap: "wrap" }}>
+                              <Badge kind="info" dot>AI generated</Badge>
+                              {m.refused && <Badge kind="neutral">no data</Badge>}
+                            </div>
+                            {m.tools.length > 0 && (
+                              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 6 }}>
+                                {m.tools.map((t, j) => (
+                                  <span key={j} className={`ai-tool-chip${t.ok ? "" : " ai-tool-chip-error"}`}>
+                                    ▸ {t.ok ? "Checked" : "Failed"} {toolLabel(t.name)}{t.args ? ` (${fmtDateArg(t.args)})` : ""}
+                                    {Number.isFinite(t.ms) ? ` · ${t.ms}ms` : ""}{t.ok ? "" : ` — ${t.error}`}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                            {m.error ? (
+                              <div style={{ color: "var(--crit-fg)" }}>{m.error}</div>
+                            ) : m.content ? (
+                              <div>{renderMarkdown(m.content)}</div>
+                            ) : (
+                              <span className="muted">{m.tools.length ? "Reading…" : "Thinking…"}</span>
+                            )}
+                            {!!m.verify?.length && (
+                              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8, paddingTop: 8, borderTop: "1px solid var(--line)" }}>
+                                <span className="muted" style={{ fontSize: "var(--fs-12)" }}>Verify:</span>
+                                {m.verify.map((v) => (
+                                  <Link key={v.href} href={v.href} className="btn" style={{ fontSize: "var(--fs-12)", padding: "2px 8px" }}>
+                                    {v.label} ↗
+                                  </Link>
+                                ))}
+                              </div>
+                            )}
+                            {m.usage && (
+                              <div className="muted" style={{ fontSize: "var(--fs-12)", marginTop: 6 }}>
+                                {m.usage.toolCalls} tool call{m.usage.toolCalls === 1 ? "" : "s"} · {m.usage.promptTokens + m.usage.completionTokens} tokens · ${m.usage.costUsd.toFixed(4)} · {(m.usage.latencyMs / 1000).toFixed(1)}s
+                              </div>
+                            )}
+                          </>
                         )}
-                        {!!m.verify?.length && (
-                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8, paddingTop: 8, borderTop: "1px solid var(--line)" }}>
-                            <span className="muted" style={{ fontSize: "var(--fs-12)" }}>Verify:</span>
-                            {m.verify.map((v) => (
-                              <Link key={v.href} href={v.href} className="btn" style={{ fontSize: "var(--fs-12)", padding: "2px 8px" }}>
-                                {v.label} ↗
-                              </Link>
-                            ))}
-                          </div>
-                        )}
-                        {m.usage && (
-                          <div className="muted" style={{ fontSize: "var(--fs-12)", marginTop: 6 }}>
-                            {m.usage.toolCalls} tool call{m.usage.toolCalls === 1 ? "" : "s"} · {m.usage.promptTokens + m.usage.completionTokens} tokens · ${m.usage.costUsd.toFixed(4)} · {(m.usage.latencyMs / 1000).toFixed(1)}s
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                ))}
+                      </div>
+                    </div>
+                  );
+                })}
                 <div ref={endRef} />
               </div>
 

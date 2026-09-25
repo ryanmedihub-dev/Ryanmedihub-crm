@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, FilterBar, DataTable, KpiRow, ErrorState, TrendChart, InlineNotice, Badge } from "@/components/owner";
+import { AiBriefPanel } from "@/components/owner/ai";
+import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { num } from "@/lib/owner/format";
 
@@ -42,6 +44,30 @@ export default function StatisticsPage() {
 
   const { data, loading, error, isValidating, mutate: load } = useOwnerData(url);
 
+  const aiScope = useMemo(() => {
+    if (!filterState) return {};
+    const s = { dateFrom: filterState.range.from, dateTo: filterState.range.to };
+    if (filterState.filters.breakdownBy && filterState.filters.breakdownBy !== "none") s.breakdownBy = filterState.filters.breakdownBy;
+    return s;
+  }, [filterState]);
+  const statsAi = useAiInsight("statistics.funnel", aiScope, { kind: "brief", enabled: !!filterState });
+
+  // Statistics C: the stage the AI names in its top insight gets a pulsing
+  // badge — match by stage label appearing in insights[0].title/detail,
+  // case-insensitive; no match, no highlight.
+  const aiTopInsight = statsAi.status === "ready" ? statsAi.result?.insights?.[0] : null;
+  const aiFlaggedStageKey = useMemo(() => {
+    if (!aiTopInsight) return null;
+    const haystack = `${aiTopInsight.title || ""} ${aiTopInsight.detail || ""}`.toLowerCase();
+    const hit = (data?.stages || []).find((s) => {
+      const def = data?.stageDefinitions?.find((d) => d.key === s.key);
+      const label = def?.label || s.key;
+      return label && haystack.includes(label.toLowerCase());
+    });
+    return hit?.key || null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aiTopInsight, data?.stages, data?.stageDefinitions]);
+
   const goToStage = (key) => {
     const base = STAGE_LINKS[key];
     if (!base) return;
@@ -65,6 +91,7 @@ export default function StatisticsPage() {
         <OwnerTopbar
           title="Statistics"
           subtitle="Leads created → surgery done — the full conversion story, click a stage to drill in"
+          aiState={statsAi}
           controls={
             <button className="icon-btn" onClick={() => load()} disabled={isValidating} title="Refresh">
               {isValidating ? "…" : "⟳"}
@@ -79,6 +106,8 @@ export default function StatisticsPage() {
             defaults={{ breakdownBy: "none" }}
             onChange={({ filters, range }) => setFilterState({ filters, range })}
           />
+
+          <AiBriefPanel feature="statistics.funnel" scope={aiScope} title="Statistics" enabled={!!filterState} aiState={statsAi} />
 
           {error ? (
             <ErrorState message={error} onRetry={load} />
@@ -123,6 +152,7 @@ export default function StatisticsPage() {
                         <span>
                           {s.label}
                           <span className="muted" style={{ marginLeft: 6, fontSize: "var(--fs-12)" }}>{s.source}</span>
+                          {s.key === aiFlaggedStageKey && <span className="ai-stage-flag">✦ AI: biggest leak</span>}
                         </span>
                       ),
                     },

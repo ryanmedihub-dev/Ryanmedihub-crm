@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar, Card, InlineNotice, Funnel, Badge, ProgressBar } from "@/components/owner";
+import { AiBriefPanel } from "@/components/owner/ai";
+import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { rupee } from "@/lib/owner/format";
 
@@ -31,6 +33,7 @@ export default function ForecastStaffingPage() {
 
   const { data: seedData, loading: seedLoading, error: seedError } = useOwnerData("/api/owner/forecast");
   const note = seedData?.note ?? null;
+  const forecastAi = useAiInsight("calls.forecast", {}, { kind: "brief" });
 
   // Sliders are free-edit after the first load — only seed them once, not on every revalidation.
   const seeded = useRef(false);
@@ -65,9 +68,12 @@ export default function ForecastStaffingPage() {
         <OwnerTopbar
           title="Forecast & Staffing"
           subtitle="Adjust the assumptions below — defaults are seeded from real 30-day figures where available"
+          aiState={forecastAi}
         />
 
         <div className="content">
+          <AiBriefPanel feature="calls.forecast" scope={{}} title="Forecast & Staffing" aiState={forecastAi} />
+
           {seedError && (
             <InlineNotice kind="warn" title="Couldn't seed real defaults">
               {seedError} — the sliders below start from generic assumptions.

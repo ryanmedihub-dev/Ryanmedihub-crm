@@ -44,6 +44,7 @@ const config = {
   tableId: "patients-direct",
   defaultSort: "createdAt",
   defaultSortDir: "desc",
+  aiFeature: "patients.preset",
   columns: PATIENT_SHARED_COLUMNS.filter((c) => c.key !== "reference"),
   kpis: (data) => [
     { label: "Direct Patients", value: num(data.total), sub: "Registered this period", kind: "info" },
