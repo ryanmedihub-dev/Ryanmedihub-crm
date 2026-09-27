@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import SearchableSelect from "@/components/SearchableSelect";
 import { useToast } from "@/components/Toast";
+import { ALL_BRANCHES } from "@/lib/branches";
 import { Target, Loader2, User } from "lucide-react";
 import { formatCurrency } from "@/lib/financeUI";
 
@@ -20,6 +22,7 @@ const labelCls = "block text-sm font-medium text-gray-700 mb-1.5";
  */
 export default function TargetIncentiveForm() {
   const toast = useToast();
+  const { data: session } = useSession();
 
   const [employeeOptions, setEmployeeOptions] = useState([]);
   const [employeeSearching, setEmployeeSearching] = useState(false);
@@ -29,11 +32,20 @@ export default function TargetIncentiveForm() {
   const [target, setTarget] = useState("");
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(getTodayIST());
+  const [branch, setBranch] = useState(
+    ALL_BRANCHES.includes(session?.user?.branch) ? session.user.branch : "",
+  );
   const [remarks, setRemarks] = useState("");
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [recent, setRecent] = useState([]);
+
+  useEffect(() => {
+    if (!branch && ALL_BRANCHES.includes(session?.user?.branch)) {
+      setBranch(session.user.branch);
+    }
+  }, [session?.user?.branch]);
 
   const searchEmployees = async (term) => {
     setEmployeeSearching(true);
@@ -50,7 +62,7 @@ export default function TargetIncentiveForm() {
   };
 
   const canSubmit =
-    employeeId && target.trim() && parseFloat(amount) > 0 && !submitting;
+    employeeId && target.trim() && branch && parseFloat(amount) > 0 && !submitting;
 
   const handleSubmit = async () => {
     setError("");
@@ -65,6 +77,7 @@ export default function TargetIncentiveForm() {
           target: target.trim(),
           amount: parseFloat(amount),
           date,
+          branch,
           remarks,
         }),
       });
@@ -165,6 +178,24 @@ export default function TargetIncentiveForm() {
             onChange={(e) => setDate(e.target.value)}
             className={inputCls}
           />
+        </div>
+
+        <div>
+          <label className={labelCls}>
+            Branch <span className="text-red-500">*</span>
+          </label>
+          <select
+            value={branch}
+            onChange={(e) => setBranch(e.target.value)}
+            className={inputCls}
+          >
+            <option value="">Select</option>
+            {ALL_BRANCHES.map((b) => (
+              <option key={b} value={b}>
+                {b}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="md:col-span-2">

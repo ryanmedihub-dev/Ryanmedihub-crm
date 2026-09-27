@@ -5,6 +5,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
 import { recordPatientIncentive, IncentiveError } from "@/lib/incentiveDerivation";
 import { cacheInvalidate } from "@/lib/cache";
+import { ALL_BRANCHES } from "@/lib/branches";
 
 // Open incentive entry point used by the "Incentive" panel on the role transaction-create
 // pages. Any authenticated staff member may record a per-patient incentive here — it tops up
@@ -23,6 +24,9 @@ export async function POST(req) {
 
     if (!patient || !mongoose.Types.ObjectId.isValid(patient)) {
       return NextResponse.json({ error: "Select a patient" }, { status: 400 });
+    }
+    if (!branch || !ALL_BRANCHES.includes(branch)) {
+      return NextResponse.json({ error: "Select a valid branch" }, { status: 400 });
     }
 
     const actor = { name: session.user.name, email: session.user.email, branch: session.user.branch };

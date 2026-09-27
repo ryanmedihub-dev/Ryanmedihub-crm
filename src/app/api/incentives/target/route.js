@@ -42,8 +42,11 @@ export async function POST(req) {
     if (!parsedAmount || parsedAmount <= 0) {
       return NextResponse.json({ error: "Amount must be greater than 0" }, { status: 400 });
     }
+    if (!branch || !ALL_BRANCHES.includes(branch)) {
+      return NextResponse.json({ error: "Select a valid branch" }, { status: 400 });
+    }
 
-    const employeeDoc = await Employee.findById(employee).select("name branch").lean();
+    const employeeDoc = await Employee.findById(employee).select("name").lean();
     if (!employeeDoc) {
       return NextResponse.json({ error: "Employee not found" }, { status: 404 });
     }
@@ -59,8 +62,6 @@ export async function POST(req) {
       return NextResponse.json({ error: lockReason, periodLocked: true }, { status: 423 });
     }
 
-    const candidateBranch = branch || employeeDoc.branch || undefined;
-    const resolvedBranch = ALL_BRANCHES.includes(candidateBranch) ? candidateBranch : undefined;
     const actor = { name: session.user.name, email: session.user.email, branch: session.user.branch };
     const performedBy = { name: session.user.name, email: session.user.email };
     const note = remarks ? `${targetText} — ${remarks}` : targetText;
@@ -73,7 +74,7 @@ export async function POST(req) {
         expenseSubType: "Target Incentive",
         period,
         totalAmount: parsedAmount,
-        branch: resolvedBranch,
+        branch,
         costAlreadyRecognised: false,
         remarks: `Target incentive — ${note}`,
         createdBy: { ...actor, date: new Date() },
