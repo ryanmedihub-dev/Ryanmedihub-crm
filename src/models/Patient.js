@@ -255,13 +255,13 @@ patientSchema.pre("save", async function () {
   if (patient.counselling?.finlpackage) {
     patient.payments = patient.payments || {};
 
-    // On a brand-new document Mongoose reports every path — defaults included — as
-    // modified, so `isModified("payments.totalAmount")` is true even when the caller
-    // never set it (it just carries the schema default of 0). That made the collab
-    // book-consult flow save a final package that never reached payments.totalAmount,
-    // which is the figure the collab case / "Total Package" reads. For new docs fall
-    // back to inspecting the value itself; keep the isModified guard for updates so a
-    // deliberately revised package still flows through.
+    
+    
+    
+    
+    
+    
+    
     const totalSetDeliberately = patient.isNew
       ? (patient.payments.totalAmount || 0) > 0
       : patient.isModified("payments.totalAmount");
@@ -300,18 +300,13 @@ patientSchema.pre("save", async function () {
 });
 
 patientSchema.index({ "personal.branch": 1, "ops.status": 1 });
-// Owner Panel v2 Part 3: every one of the six Patients report pages filters
-// branch + status and sorts/ranges on createdAt — the index above has no sort
-// key, so it can't serve the sort without an in-memory step once the match set
-// is more than a handful of rows.
+
 patientSchema.index({ "personal.branch": 1, "ops.status": 1, createdAt: -1 });
 patientSchema.index({ "personal.branch": 1, "personal.visitDate": -1 });
 patientSchema.index({ "surgery.surgeryDate": -1 });
 patientSchema.index({ "counselling.counsellor": 1 });
 patientSchema.index({ "personal.reference": 1 });
-// Backs the Owner Employees pages: group referred patients by their referring employee,
-// bounded by visit date, counting by status. The existing { "personal.reference": 1 } is only
-// a prefix and leaves the status/date work to a fetch-and-filter.
+
 patientSchema.index({ "personal.reference": 1, "ops.status": 1, "personal.visitDate": -1 });
 patientSchema.index({ "personal.name": 1 });
 patientSchema.index({ "incentives.employee": 1, "incentives.isCancelled": 1 });

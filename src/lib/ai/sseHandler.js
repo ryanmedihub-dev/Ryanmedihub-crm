@@ -4,17 +4,6 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import dbConnect from "@/lib/db";
 import { runInsight } from "@/lib/ai/engine";
 
-// Shared body behind both /api/owner/ai/insight/[feature] (maxDuration 60)
-// and /api/owner/ai/insight-long/[feature] (maxDuration 300, for the handful
-// of features backed by a slow source route — see featureMeta.js) — same
-// SSE contract either way, only the route's own maxDuration differs, and
-// that has to be a static per-file export, so it can't be the shared part.
-//
-// GET ?kind=brief&force=1&...scope — Server-Sent Events. Each event:
-// `data: ${JSON.stringify(evt)}\n\n`, types: status | stage | delta | done |
-// error. A `: ping` comment every 10s keeps proxies from closing the
-// connection early. Aborts the engine on client disconnect.
-
 const ALLOWED_ROLES = ["owner", "super-admin"];
 
 export async function handleInsightSSE(req, { params }) {
@@ -43,14 +32,14 @@ export async function handleInsightSSE(req, { params }) {
         try {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
         } catch {
-          /* client went away */
+          
         }
       };
       pingTimer = setInterval(() => {
         try {
           controller.enqueue(encoder.encode(": ping\n\n"));
         } catch {
-          /* client went away */
+          
         }
       }, 10_000);
 
@@ -60,7 +49,7 @@ export async function handleInsightSSE(req, { params }) {
       try {
         controller.close();
       } catch {
-        /* already closed */
+        
       }
     },
     cancel() {

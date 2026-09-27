@@ -6,15 +6,6 @@ import {
   SANYA_MAX_OUTPUT_TOKENS, SANYA_MAX_QUESTION_CHARS, REFUSAL_PHRASE, SANYA_LOG_PAYLOADS, costUsd,
 } from "./config";
 
-// The Sanya turn engine: guards → tool-calling loop → streamed final answer →
-// usage log. HTTP-free so the route stays thin and the bench harness can
-// drive it. Talks to OpenAI with plain fetch (chat/completions), the same way
-// the original /api/saniya route did — no SDK dependency.
-//
-// What the model sees: the system prompt, the owner's own messages, the tool
-// catalogue, and the tool RESULTS (aggregates, PII-checked twice — see pii.js).
-// What the model never sees: a database, a query it wrote, a name, a phone.
-
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
 
 function istToday() {
@@ -53,7 +44,7 @@ async function turnsInWindow(userEmail) {
 }
 
 async function openai(body, { signal } = {}) {
-  assertRequestBodyClean(body); // fails closed — see pii.js
+  assertRequestBodyClean(body); 
   if (SANYA_LOG_PAYLOADS) console.log("[sanya] outgoing payload:\n" + JSON.stringify(body, null, 2));
   const res = await fetch(OPENAI_URL, {
     method: "POST",
@@ -68,11 +59,6 @@ async function openai(body, { signal } = {}) {
   return res;
 }
 
-/**
- * Run one chat turn.
- * @param {{ user: {email, role}, messages: [{role, content}], signal?: AbortSignal, emit: (event) => void }}
- *   emit receives: {type:"tool", ...} | {type:"delta", text} | {type:"done", ...} | {type:"error", message}
- */
 export async function runSanyaTurn({ user, messages, emit, signal }) {
   const startedAt = Date.now();
   const log = {
@@ -95,7 +81,7 @@ export async function runSanyaTurn({ user, messages, emit, signal }) {
   try {
     if (!process.env.OPENAI_API_KEY) throw new Error("OPENAI_API_KEY is not configured");
 
-    // --- input shaping -------------------------------------------------------------
+    
     const history = (Array.isArray(messages) ? messages : [])
       .filter((m) => (m?.role === "user" || m?.role === "assistant") && typeof m?.content === "string" && m.content.trim())
       .map((m) => ({ role: m.role, content: m.content.slice(0, SANYA_MAX_QUESTION_CHARS) }))
@@ -105,7 +91,7 @@ export async function runSanyaTurn({ user, messages, emit, signal }) {
     log.questionChars = last.content.length;
     log.historyTurns = history.length - 1;
 
-    // --- guards --------------------------------------------------------------------
+    
     const turns = await turnsInWindow(user.email);
     if (turns >= SANYA_RATE_LIMIT.turns) {
       const msg = `Rate limit: ${SANYA_RATE_LIMIT.turns} questions per ${SANYA_RATE_LIMIT.windowMs / 60000} minutes. Try again shortly.`;
@@ -121,12 +107,12 @@ export async function runSanyaTurn({ user, messages, emit, signal }) {
       return;
     }
 
-    // --- tool loop (every round streamed) -----------------------------------------
-    // Each round is a streamed chat/completions call. Content deltas are
-    // forwarded to the client as they arrive; tool-call fragments are
-    // accumulated by index. A round that ends with tool calls runs them and
-    // loops; a round that ends with plain content IS the final answer — so the
-    // answer streams and no extra completion is paid for.
+    
+    
+    
+    
+    
+    
     const convo = [{ role: "system", content: systemPrompt() }, ...history];
     const verify = [];
     let answer = "";
@@ -134,8 +120,8 @@ export async function runSanyaTurn({ user, messages, emit, signal }) {
 
     for (;;) {
       if (rounds >= SANYA_MAX_TOOL_ROUNDS) {
-        // Tool budget spent — one last round with tools disabled so the model
-        // must answer from what it has.
+        
+        
         rounds += 1;
         log.modelRounds += 1;
         const res = await openai({
@@ -178,7 +164,7 @@ export async function runSanyaTurn({ user, messages, emit, signal }) {
           log.toolCalls.push({ name, args, ms: Date.now() - t0, ok: true, error: null });
           emit({ type: "tool", name, args, verifyAt: result.verifyAt, ms: Date.now() - t0, ok: true });
         } catch (err) {
-          if (err instanceof PIIError) throw err; // never send; fail the whole turn
+          if (err instanceof PIIError) throw err; 
           const message = err?.message || "tool failed";
           content = JSON.stringify({ error: message });
           log.toolCalls.push({ name, args, ms: Date.now() - t0, ok: false, error: message });
@@ -213,9 +199,6 @@ function addUsage(log, usage) {
   log.completionTokens += usage?.completion_tokens || 0;
 }
 
-// Parse an OpenAI SSE stream: forward content deltas as they arrive, and
-// accumulate tool-call fragments (id/name/arguments arrive in pieces, keyed by
-// index). Resolves to { text, toolCalls }.
 async function pumpStream(res, onDelta, onUsage) {
   const reader = res.body.getReader();
   const decoder = new TextDecoder();

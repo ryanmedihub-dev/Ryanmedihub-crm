@@ -12,7 +12,6 @@ function easeOutCubic(t) {
   return 1 - Math.pow(1 - t, 3);
 }
 
-/** Animates between numeric values with requestAnimationFrame; instant under reduced-motion. */
 export default function CountUp({ value, format = "num", duration = 600 }) {
   const target = Number(value) || 0;
   const [display, setDisplay] = useState(target);

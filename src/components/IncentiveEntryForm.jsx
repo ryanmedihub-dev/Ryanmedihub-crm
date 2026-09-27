@@ -16,13 +16,6 @@ const inputCls =
   "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100";
 const labelCls = "block text-sm font-medium text-gray-700 mb-1.5";
 
-/**
- * Shared "Incentive" panel for the role transaction-create pages. Records a per-patient
- * incentive against an employee, which tops up that employee's monthly Incentive payable.
- *
- * `picker` is the patient picker object the page already owns:
- *   { options, searching, onSearch, addToCache }
- */
 export default function IncentiveEntryForm({ picker }) {
   const toast = useToast();
   const { data: session } = useSession();
@@ -104,7 +97,7 @@ export default function IncentiveEntryForm({ picker }) {
         ...prev,
       ]);
       toast.success(`Incentive of ${formatCurrency(amount)} recorded for ${employeeLabel}`);
-      // Keep employee + purpose for fast repeat entry; clear the per-patient bits.
+      
       setPatientId("");
       setPatientLabel("");
       setAmount("");

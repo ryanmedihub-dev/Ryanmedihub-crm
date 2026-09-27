@@ -6,7 +6,6 @@ import { useToast } from "@/components/Toast";
 import { useLedgerScope } from "@/components/finance/LedgerScopeProvider";
 import { exportLedgerPage } from "@/lib/finance/ledgerExport";
 
-/** Download-Excel button for a ledger inner page. Disables + spins while the workbook builds. */
 export default function LedgerExportButton({ pageKey, extraParams }) {
   const toast = useToast();
   const { scope } = useLedgerScope();

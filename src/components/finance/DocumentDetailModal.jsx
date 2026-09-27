@@ -19,9 +19,9 @@ export default function DocumentDetailModal({ documentId, kind, onClose, onChang
   const [entryBusy, setEntryBusy] = useState(false);
   const [entryError, setEntryError] = useState(null);
 
-  // Re-invoked after an incentive-entry edit/cancel to pull the recomputed total — kept
-  // separate from the loading flag below so a refresh doesn't blank the whole modal back to
-  // a spinner while the row edit the user just made is still visible underneath.
+  
+  
+  
   const load = useCallback(() => {
     setError(null);
     return fetch(isPayable ? `/api/payables/${documentId}` : `/api/receivables/${documentId}`)

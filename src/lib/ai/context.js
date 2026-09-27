@@ -1,6 +1,4 @@
-// Shared business glossary injected into every AI feature's system prompt
-// (see engine.js). One definition, so "converted" or "connected" can never
-// drift between a dashboard brief and a patients-page brief.
+
 
 export const BUSINESS_CONTEXT = `Ryan Clinic is a hair-transplant clinic chain; branches Delhi, Mumbai, Hyderabad, Noida plus several collab cities. Currency is INR; format with Indian digit grouping (e.g. ₹12,34,567).
 

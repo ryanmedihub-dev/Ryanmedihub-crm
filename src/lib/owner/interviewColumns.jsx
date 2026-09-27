@@ -1,9 +1,6 @@
 import Badge from "@/components/owner/Badge";
 import { rupee, fmtDate } from "@/lib/owner/format";
 
-// Interview-report columns (Owner Panel v2, Part 5) — shared by the full HR
-// interviews report and the Selected/Rejected status-preset pages.
-
 const STATUS_KIND = {
   Applied: "neutral", "Interview Scheduled": "info", Selected: "good", Rejected: "bad", "On Hold": "warn",
 };

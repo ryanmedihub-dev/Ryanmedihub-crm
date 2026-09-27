@@ -97,9 +97,9 @@ export default function EmployeeReportPage({ config }) {
     dirForKey,
   });
 
-  // The table's own filters, without page/pageSize/sort — this is the scope
-  // an AI brief analyses (the whole filtered cohort), and the base every
-  // verdicts request extends with the table's current page/sort.
+  
+  
+  
   const tableScope = useMemo(() => {
     if (!filterState) return null;
     const s = { dateFrom: filterState.range.from, dateTo: filterState.range.to, ...(config.aiExtraScope || {}) };
@@ -148,8 +148,8 @@ export default function EmployeeReportPage({ config }) {
   );
 
   const baseRows = data?.rows || [];
-  // "Sort by AI score" is client-side, current page only — the server sort is
-  // untouched (re-sorting server-side would mean a second, larger AI request).
+  
+  
   const rows = aiSort
     ? [...baseRows].sort((a, b) => (verdicts.byId?.[b.id]?.score ?? -1) - (verdicts.byId?.[a.id]?.score ?? -1))
     : baseRows;
@@ -159,8 +159,8 @@ export default function EmployeeReportPage({ config }) {
     ? [config.columns[0], aiVerdictColumn({ byId: verdicts.byId, loading: verdicts.loading }), ...config.columns.slice(1)]
     : config.columns;
 
-  // Carry the active date preset into the detail page via the same URL
-  // vocabulary its own FilterBar reads (range / from / to).
+  
+  
   const detailQuery = useMemo(() => {
     const f = filterState?.filters;
     if (!f || !f.range || f.range === "Today") return "";

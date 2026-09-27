@@ -1,10 +1,6 @@
 import Badge from "@/components/owner/Badge";
 import { fmtDate, fmtTime, fmtDurationShort } from "@/lib/owner/format";
 
-// Call-report columns (Owner Panel v2, Part 2) — mirrors callby's own
-// dashboard "Call History" tab (dashboard/src/app/(protected)/reports/calllogs/page.js)
-// column-for-column, so the owner sees the same numbers/shape in both places.
-
 const CALL_TYPE_KIND = { incoming: "good", outgoing: "info", missed: "bad", rejected: "neutral" };
 
 export function callTypeBadge(type) {

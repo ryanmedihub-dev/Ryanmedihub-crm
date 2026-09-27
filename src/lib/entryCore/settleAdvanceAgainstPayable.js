@@ -1,10 +1,4 @@
-// Extracted verbatim from advances/[id]/route.js's PATCH handler (action "settle" / "unsettle"),
-// so the double-sided update — payable toward Paid, advance-receivable toward Recovered — lives
-// in one reusable place. Same pattern as createPayable.js / createExpense.js: returns
-// { error, status } or { data }, never throws for a validation failure...
-//   ...EXCEPT when `dbSession` is passed. Then the caller owns a `withTransaction`, and a
-//   validation failure must ABORT it — so we throw an Error carrying `.settleResult` for the
-//   caller to translate. The standalone (PATCH-route) path still just returns { error, status }.
+
 
 import mongoose from "mongoose";
 import Advance from "@/models/Advance";
@@ -26,15 +20,6 @@ function abortableError(result, joiningCallerTx) {
   return result;
 }
 
-/**
- * @param advanceId  the OUT advance to draw from
- * @param payableId  the payable it settles (required — settling with no target is meaningless)
- * @param amount     how much of the advance to apply; omitted ⇒ whatever's left on the advance
- * @param note       optional log note pushed onto both documents
- * @param session    the NextAuth session (for performedBy)
- * @param dbSession  when passed, join the caller's mongoose transaction (don't start/end one)
- * @returns { data: { advanceId, payableId, settlementId, amount }, status } | { error, status }
- */
 export async function settleAdvanceAgainstPayable({
   advanceId,
   payableId,
@@ -68,7 +53,7 @@ export async function settleAdvanceAgainstPayable({
     if (!target) return void (result = { error: "Payable not found", status: 404 });
     if (target.isCancelled) return void (result = { error: "This payable has been cancelled", status: 400 });
 
-    // Ceiling 1 — what's left on the advance after every existing settlement (legacy pair + array).
+    
     const alreadySettled = totalSettledAmount(advance);
     const remainingOnAdvance = round2(round2(advance.amount) - alreadySettled);
 
@@ -87,7 +72,7 @@ export async function settleAdvanceAgainstPayable({
       });
     }
 
-    // Ceiling 2 — payable pending (buildPayableAggregationStages already nets advance settlements).
+    
     const txCollection = Transactions.collection.name;
     const [payableAgg] = await Payable.aggregate([
       { $match: { _id: target._id } },
@@ -101,7 +86,7 @@ export async function settleAdvanceAgainstPayable({
       });
     }
 
-    // Ceiling 3 — the advance's own receivable netPending.
+    
     const [receivableAgg] = await Receivable.aggregate([
       { $match: { _id: advance.receivableId } },
       ...buildReceivableAggregationStages(txCollection),
@@ -167,12 +152,6 @@ export async function settleAdvanceAgainstPayable({
   return result;
 }
 
-/**
- * Removes one settlement line — the rollback partner of settleAdvanceAgainstPayable, and the
- * "unsettle" action of the PATCH route. Ported verbatim from advances/[id]/route.js.
- * @param settlementId  the settlements[]._id to remove. Omitted, it only works when the advance
- *                      has exactly one settlement total (legacy pair, or a single array line).
- */
 export async function unsettleAdvanceFromPayable({
   advanceId,
   settlementId,

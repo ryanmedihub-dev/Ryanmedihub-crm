@@ -5,9 +5,6 @@ import dbConnect from "@/lib/db";
 import AiInsight from "@/models/AiInsight";
 import { getFeature } from "@/lib/ai/features";
 
-// GET /api/owner/ai/feed?limit=12 — latest brief insights across every
-// feature, no OpenAI call. Feeds the dashboard ticker and the AI landing page.
-
 const ALLOWED_ROLES = ["owner", "super-admin"];
 
 export async function GET(req) {

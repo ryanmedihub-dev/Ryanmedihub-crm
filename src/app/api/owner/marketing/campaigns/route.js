@@ -40,9 +40,6 @@ function validatePayload(body) {
   return null;
 }
 
-// GET — list campaigns, with computed spend/clicks/CPC for the period.
-// Leads/CPL/Converted/CAC are NOT computed per campaign — Leads.tag only
-// distinguishes platform, never campaign (see marketingAttribution.js).
 const getHandler = async (req) => {
   const { session, error } = await requireSession();
   if (error) return error;
@@ -82,7 +79,6 @@ const getHandler = async (req) => {
   return res;
 };
 
-// POST — create a campaign.
 const postHandler = async (req) => {
   const { session, error } = await requireSession();
   if (error) return error;

@@ -8,10 +8,6 @@ const LINK_DIST = 140;
 const FPS = 30;
 const FRAME_MS = 1000 / FPS;
 
-// Full-viewport canvas of drifting nodes + connecting lines behind the owner
-// app's content. Pure canvas, no libraries — cheap enough at 60 nodes/30fps,
-// and switched off entirely on reduced-motion or a weak device so it never
-// competes with the actual page for a frame budget.
 export default function NeuralBackdrop() {
   const canvasRef = useRef(null);
   const { theme } = useTheme();
@@ -109,7 +105,7 @@ export default function NeuralBackdrop() {
       ro.disconnect();
       document.removeEventListener("visibilitychange", onVisibility);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [theme]);
 
   return <canvas ref={canvasRef} className="ai-neural-backdrop" aria-hidden="true" />;

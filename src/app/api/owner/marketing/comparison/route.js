@@ -11,20 +11,6 @@ import { cacheKey, cached } from "@/lib/cache";
 const ALLOWED_ROLES = ["owner", "super-admin"];
 const PLATFORMS = ["Meta", "Google"];
 
-// /owner/marketing/comparison — Meta vs Google, side by side, for the period.
-// Branch breakdown is spend-only: Leads (src/models/Leads.js) has no branch
-// field, so leads/converted/revenue can never be scoped to a branch — same
-// honest limitation the pre-existing marketing-summary note already states.
-// Trend is a real per-day SPEND line (the only thing that's actually daily —
-// conversions/revenue trickle in on their own schedule, see the attribution
-// window in marketingAttribution.js) plus a period-over-period comparison
-// (this period vs the immediately preceding, equal-length period) so
-// "improving or decaying" is answered without a misleading daily ROAS line.
-//
-// "Connect rate for platform-sourced leads" was asked for but is not built:
-// there is no callby endpoint that looks up calls by a list of phone numbers,
-// and building one is disproportionate to a hedge-worded ("if derivable")
-// ask — omitted, not faked.
 export async function GET(req) {
   try {
     const session = await getServerSession(authOptions);

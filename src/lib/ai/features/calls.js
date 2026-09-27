@@ -9,9 +9,6 @@ import { callRoute } from "../sources";
 import { AI_BRIEF_MODEL } from "../config";
 import { round, pct, topN, bottomN, sumBy, capPayload } from "./_helpers";
 
-// Sample cap for the two paginated callby routes (report/untracked) — a brief
-// reads the most-recent N, never the unbounded full log. Same disclosure
-// pattern as Parts 1/4: if total > sample, a dataErrors note says so.
 const SAMPLE_CAP = 200;
 
 function median(nums) {
@@ -23,7 +20,7 @@ function median(nums) {
 function avgBy(rows, key) {
   return rows.length ? sumBy(rows, key) / rows.length : 0;
 }
-/** Fraction of an IST calendar day elapsed right now — used to pace "expected calls by now" against a daily target. */
+
 function istDayFraction() {
   const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(new Date());
   const h = Number(parts.find((p) => p.type === "hour")?.value || 0);
@@ -133,10 +130,10 @@ const callsFeatures = {
   },
 
   "calls.employeeReport": {
-    // Not built on Part 4's employee-list factory — this route's shape has no
-    // performance score/band/bands/pagination, just a flat per-agent call
-    // summary (see src/app/api/owner/calls/employee-report/route.js) — a
-    // bespoke compute() is the honest fit, not a forced reuse.
+    
+    
+    
+    
     title: "Employee Call Report Intelligence", page: "/owner/calls/employee-report", kinds: ["brief", "verdicts"],
     model: { brief: AI_BRIEF_MODEL, verdicts: AI_BRIEF_MODEL }, ttlMin: { brief: 60, verdicts: 60 },
     scopeParams: ["dateFrom", "dateTo"],
@@ -220,10 +217,10 @@ const callsFeatures = {
     },
     compute(raw) {
       const d = raw.defaults || {};
-      // Same default the page's own slider starts at (Leads / Agent / Day) —
-      // the AI sees the same "agents needed" math the page shows, computed
-      // from the real seeded baseline, not the owner's live what-if sliders
-      // (those are ephemeral client state, never sent here).
+      
+      
+      
+      
       const assumedCapacityPerAgent = 15;
       const requiredAgents = assumedCapacityPerAgent > 0 ? Math.ceil((d.leadsPerDay || 0) / assumedCapacityPerAgent) : 0;
       const facts = capPayload({

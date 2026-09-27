@@ -13,8 +13,6 @@ export const maxDuration = 300;
 
 const ALLOWED_ROLES = ["owner", "super-admin"];
 
-// Retries the source-sync step of a commit — re-reads the batch's CampaignLead phones rather
-// than trusting anything from the client.
 export async function POST(req, { params }) {
   try {
     const session = await getServerSession(authOptions);

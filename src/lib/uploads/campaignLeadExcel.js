@@ -1,18 +1,10 @@
-// Client-side Excel handling for the campaign-lead upload (Owner > Marketing > Campaign
-// Leads). Mirrors src/lib/uploads/excelTemplate.js's shape but much simpler — one sheet, no
-// GST/TDS/category lists — reuses that file's downloadBytes() rather than duplicating it.
+
 
 import { HEADERS, EXAMPLE_ROWS } from "@/lib/uploads/campaignLeadRowMapper";
 export { downloadBytes } from "@/lib/uploads/excelTemplate";
 
 const SHEET = "Campaign Leads";
 
-/**
- * @returns {{ rows, missingHeaders: string[] }}
- *   rows — array of {header: string} objects, strings trimmed, all-blank rows dropped.
- *   Extra columns (not in HEADERS) are kept on each row object — the server maps them to
- *   extraDetails, they're never an error here.
- */
 export async function readCampaignLeadWorkbook(file) {
   const XLSX = await import("xlsx");
   const wb = XLSX.read(await file.arrayBuffer(), { cellDates: true });
@@ -36,7 +28,6 @@ export async function readCampaignLeadWorkbook(file) {
   return { rows, missingHeaders };
 }
 
-/** @returns Uint8Array (xlsx bytes) */
 export async function buildCampaignLeadTemplateBytes({ withExamples = true } = {}) {
   const XLSX = await import("xlsx");
   const rows = withExamples ? EXAMPLE_ROWS : [];

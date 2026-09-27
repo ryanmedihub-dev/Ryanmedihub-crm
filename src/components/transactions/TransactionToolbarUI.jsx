@@ -16,10 +16,6 @@ import { formatCurrency } from "@/lib/financeUI";
 import { DATE_PRESETS, TRANSACTION_CATEGORIES } from "./transactionsHelpers";
 import { SectionLabel } from "./TransactionBadges";
 
-/* -------------------------------------------------------------------------- */
-/* Header                                                                     */
-/* -------------------------------------------------------------------------- */
-
 export function PageHeader({
   activeCategory,
   refreshing,
@@ -95,10 +91,6 @@ export function PageHeader({
     </header>
   );
 }
-
-/* -------------------------------------------------------------------------- */
-/* KPI strip                                                                  */
-/* -------------------------------------------------------------------------- */
 
 function KPIItem({
   label,
@@ -186,10 +178,6 @@ export function KPIBar({ stats }) {
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/* Category navigation                                                        */
-/* -------------------------------------------------------------------------- */
-
 export function CategoryNavigation({
   activeCategory,
   stats,
@@ -232,10 +220,6 @@ export function CategoryNavigation({
     </div>
   );
 }
-
-/* -------------------------------------------------------------------------- */
-/* Toolbar                                                                    */
-/* -------------------------------------------------------------------------- */
 
 export function TransactionToolbar({
   search,

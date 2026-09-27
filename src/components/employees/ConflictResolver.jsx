@@ -9,7 +9,6 @@ const RES_LABEL = {
   MANUAL: "I'll fix these by hand first (blocks the merge)",
 };
 
-/** One resolution radio group per conflict. `value` / `onChange` are the resolutions map. */
 export default function ConflictResolver({ conflicts = [], value = {}, onChange }) {
   if (conflicts.length === 0) {
     return (

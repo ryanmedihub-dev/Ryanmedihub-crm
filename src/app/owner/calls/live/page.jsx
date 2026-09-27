@@ -7,13 +7,9 @@ import { AiBriefPanel } from "@/components/owner/ai";
 import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 
-const POLL_MS = 60_000; // page data
-const AI_POLL_MS = 180_000; // brief re-check — server HIT if nothing changed
+const POLL_MS = 60_000; 
+const AI_POLL_MS = 180_000; 
 
-// Agent-status half of the old combined "Live Workforce & Queue" page — the
-// P0-P4 retry lanes moved to /owner/leads/retry (Owner Panel v2, Part 2),
-// since they're lead-priority queues, not call/agent data. Each page now
-// fetches only what it renders.
 export default function LiveAgentStatusPage() {
   const { data, loading, error, mutate: refresh } = useOwnerData("/api/owner/calls/live", { refreshInterval: POLL_MS });
   const agents = data?.agents || [];

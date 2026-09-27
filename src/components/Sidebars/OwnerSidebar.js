@@ -10,7 +10,6 @@ import { useShell } from "@/components/owner/ShellContext";
 import AiOrb from "@/components/owner/ai/AiOrb";
 import { useAiHealthBeacon } from "@/lib/ai/client/useAiHealthBeacon";
 
-// AI action links are validated against src/lib/ai/links.js — update both.
 const SECTIONS = [
   { title: "Dashboard", href: "/owner/dashboard", icon: "◎" },
   {
@@ -137,25 +136,25 @@ export default function OwnerSidebar() {
   const [openGroup, setOpenGroup] = useState(null);
   const [hydrated, setHydrated] = useState(false);
 
-  // Restore open group from localStorage
+  
   useEffect(() => {
     try {
       const stored = localStorage.getItem(OPEN_KEY);
       if (stored) setOpenGroup(stored);
     } catch {
-      // Ignore private mode errors
+      
     }
     setHydrated(true);
   }, []);
 
-  // Automatically open the group containing the active page
+  
   useEffect(() => {
     if (activeSection?.items && activeSection.title !== openGroup) {
       setOpenGroup(activeSection.title);
     }
   }, [activeSection]);
 
-  // Persist to local storage
+  
   useEffect(() => {
     if (!hydrated) return;
     try {
@@ -165,16 +164,16 @@ export default function OwnerSidebar() {
         localStorage.removeItem(OPEN_KEY);
       }
     } catch {
-      // Ignore private mode errors
+      
     }
   }, [openGroup, hydrated]);
 
-  // Close mobile nav on route change
+  
   useEffect(() => {
     setNavOpen(false);
   }, [pathname, setNavOpen]);
 
-  // Accordion toggle: if clicked tab is already open, close it. Otherwise, open it (closing others automatically)
+  
   const toggle = (title) => {
     setOpenGroup((prev) => (prev === title ? null : title));
   };
@@ -200,9 +199,9 @@ export default function OwnerSidebar() {
             const sectionActive = activeSection?.title === section.title;
             const isOpen = openGroup === section.title;
 
-            // Pinned "AI Health" sits right under Dashboard (index 0) — not a
-            // SECTIONS entry, so it never shifts the per-section nav-ico colours
-            // below (those are nth-child-indexed against SECTIONS' own order).
+            
+            
+            
             const pin = sectionIndex === 1 && (
               <Link
                 key="ai-health-pin"
@@ -216,7 +215,7 @@ export default function OwnerSidebar() {
               </Link>
             );
 
-            // Single link (no sub-items)
+            
             if (!section.items) {
               return (
                 <div key={section.title} className="nav-group">
@@ -233,7 +232,7 @@ export default function OwnerSidebar() {
               );
             }
 
-            // Grouped link (accordion) — sub-nav height-animates via AnimatePresence.
+            
             return (
               <div key={section.title} className="nav-group">
                 {pin}

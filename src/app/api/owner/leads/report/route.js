@@ -4,9 +4,6 @@ import { withCallbyRoute, toLeadDateParams } from "@/lib/owner/callbyRoute";
 import { parseEmployeeFilters, parsePageParams } from "@/lib/owner/pagination";
 import { cacheKey, cached } from "@/lib/cache";
 
-// /owner/leads/report — the full lead report, mirroring callby's own
-// /reports/lead page columns. Backed by callby's GET /api/leads (now with
-// Part 2's tlName/source/attempts additions), paginated in callby's Mongo query.
 export const GET = withCallbyRoute(async (req, session) => {
   const { searchParams } = new URL(req.url);
   const { dateFrom, dateTo, search } = parseEmployeeFilters(searchParams);

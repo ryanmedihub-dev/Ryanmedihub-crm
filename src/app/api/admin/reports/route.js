@@ -62,7 +62,7 @@ export async function GET(request) {
     const procedureFilter = searchParams.get("procedureFilter");
     const paymentTypeFilter = searchParams.get("paymentTypeFilter");
     const rawPayableType = searchParams.get("payableTypeFilter");
-    // Validated against the enum so an unknown value can't silently return everything.
+    
     const payableTypeFilter = PAYABLE_PURPOSES.includes(rawPayableType) ? rawPayableType : "";
     const revenueCategoryFilter = searchParams.get("revenueCategoryFilter") || "";
 
@@ -332,7 +332,6 @@ export async function GET(request) {
     );
   }
 }
-
 
 async function generateComprehensivePatientReport(filters) {
   const query = { ...filters.dateFilter };
@@ -1269,20 +1268,6 @@ async function generateProcedureRevenueReport(filters) {
   return Object.values(procedureData);
 }
 
-/**
- * Payables with the payments made against each one, as a readable statement.
- *
- * Every row carries the same key set so the sheet has one stable header. The `Row` column
- * marks whether a line is the obligation or a payment against it, which is what makes the
- * export both readable top-to-bottom AND filterable — set Row = "↳ Payment" for a payment
- * ledger, Row = "Payable" for the obligation list.
- *
- * A payable can be settled three ways (mirrors buildPayableAggregationStages, so the
- * payment lines always add up to the Paid figure on the payable line above them):
- *   - a Transaction carrying payableId
- *   - a Borrowing paid out against it
- *   - an Advance already held with the payee, applied to it
- */
 async function generatePayablesAllReport(filters) {
   const match = { isCancelled: { $ne: true }, ...filters.dateFilter };
   if (filters.branch) match.branch = filters.branch;
@@ -1292,7 +1277,7 @@ async function generatePayablesAllReport(filters) {
   const payables = await Payable.aggregate([
     { $match: match },
     ...buildPayableAggregationStages(txCollection),
-    // Grouped so every payable for one payee sits together, newest obligation first.
+    
     { $sort: { purpose: 1, "payee.label": 1, createdAt: -1 } },
   ]);
 
@@ -1354,8 +1339,8 @@ async function generatePayablesAllReport(filters) {
     }),
   );
   advancePayments.forEach((a) => {
-    // One advance can now settle several payables — emit one payment row per line, only
-    // for the ones targeting a payable actually in this report's set.
+    
+    
     settlementLinesFor(a)
       .filter((line) => idStrSet.has(String(line.payableId)))
       .forEach((line) => {
@@ -1379,8 +1364,8 @@ async function generatePayablesAllReport(filters) {
       (a, b) => new Date(a.date) - new Date(b.date),
     );
 
-    // Context repeated on the payment lines too, so filtering to payments alone still
-    // tells you whose payable each one settled.
+    
+    
     const context = {
       Payee: p.payee?.label || "",
       "Payee Type": p.payee?.kind || "",
@@ -1463,15 +1448,6 @@ async function generatePayablesAllReport(filters) {
   return out;
 }
 
-/**
- * Receivables with the receipts posted against each one — the mirror of
- * generatePayablesAllReport. Each receivable line (Row = "Receivable") is followed by its
- * receipt lines (Row = "  ↳ Receipt"), so the receipt amounts sum to the Received figure on
- * the line above. Receipts arrive three ways, matching buildReceivableAggregationStages:
- *   - a Transaction pointing straight at the receivable (receivableId)
- *   - a Transaction split across several receivables (receivableAllocations)
- *   - an Advance / Borrowing recorded IN against the receivable
- */
 async function generateReceivablesAllReport(filters) {
   const match = { isCancelled: { $ne: true }, ...filters.dateFilter };
   if (filters.branch) match.branch = filters.branch;
@@ -1580,8 +1556,8 @@ async function generateReceivablesAllReport(filters) {
     }),
   );
   advancePayableOut.forEach((a) => {
-    // Every settlement line on this advance nets its own receivable, regardless of which
-    // payable it targets — one report row per line.
+    
+    
     settlementLinesFor(a).forEach((line) => {
       push(a.receivableId, {
         source: "Advance applied to payable",
@@ -1688,8 +1664,6 @@ const fmtDay = (v) => (v ? new Date(v).toLocaleDateString("en-IN", { timeZone: "
 const fmtDateTime = (v) =>
   v ? new Date(v).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }) : "";
 
-// Human staff codes (Employee.employeeId) keyed by _id string, for the given ids. Lets the
-// payable / finance reports show an employee's code next to their name.
 async function employeeCodeMap(ids) {
   const uniq = [...new Set((ids || []).filter(Boolean).map(String))];
   if (!uniq.length) return new Map();
@@ -1703,12 +1677,6 @@ async function employeeCodeMap(ids) {
   return m;
 }
 
-/**
- * Net balance per party (EMPLOYEE + VENDOR) — Payable Pending − Receivable Pending — with a
- * full statement of every payable and receivable behind it and the transactions against each.
- * One flat sheet: a "Party" summary row, then its "  Payable" / "  Receivable" obligation rows,
- * each followed by "    ↳ Payment" / "    ↳ Receipt" detail lines that sum to the figure above.
- */
 async function generatePartyNetBalanceReport({ dateFilter, branch }) {
   const txCollection = Transactions.collection.name;
   const KINDS = ["EMPLOYEE", "VENDOR"];
@@ -1751,7 +1719,7 @@ async function generatePartyNetBalanceReport({ dateFilter, branch }) {
   const payIdSet = new Set(payableIds.map(String));
   const rcvIdSet = new Set(receivableIds.map(String));
 
-  // Payment lines per payable — Transaction, Borrowing OUT, Advance settlements.
+  
   const [txPay, borrowPay, advPay] = await Promise.all([
     Transactions.find({ payableId: { $in: payableIds }, approvalStatus: "APPROVED", method: { $nin: unsettledMethodsSync() } })
       .select("payableId date amount method furtherMode paymentId remarks").lean(),
@@ -1776,7 +1744,7 @@ async function generatePartyNetBalanceReport({ dateFilter, branch }) {
       .forEach((l) => pushPay(l.payableId, { source: "Advance applied", date: l.settledAt || a.date, amount: l.amount || 0, method: "advance", account: a.account || "", reference: a.reference || "", remarks: l.note || a.remarks || "" })),
   );
 
-  // Receipt lines per receivable — Transaction (direct + split), Advance IN, Borrowing IN, Advance→payable.
+  
   const [dirTx, splitTx, advIn, borrowIn, advOut] = await Promise.all([
     Transactions.find({ receivableId: { $in: receivableIds }, costType: "Revenue", approvalStatus: "APPROVED", method: { $nin: unsettledMethodsSync() } })
       .select("receivableId date amount method furtherMode paymentId remarks").lean(),
@@ -1806,7 +1774,7 @@ async function generatePartyNetBalanceReport({ dateFilter, branch }) {
   borrowIn.forEach((b) => pushRcp(b.settlesReceivableId, { source: "Borrowing", date: b.date, amount: b.amount || 0, method: "borrowing", account: b.account || "", reference: b.reference || "", remarks: b.remarks || "" }));
   advOut.forEach((a) => settlementLinesFor(a).forEach((l) => pushRcp(a.receivableId, { source: "Advance→payable", date: l.settledAt || a.date, amount: l.amount || 0, method: "advance→payable", account: a.account || "", reference: a.reference || "", remarks: l.note || a.remarks || "" })));
 
-  // Merge by party ref id.
+  
   const parties = new Map();
   const getParty = (kind, refId, label) => {
     const k = String(refId);
@@ -1916,8 +1884,6 @@ async function generatePartyNetBalanceReport({ dateFilter, branch }) {
   return out;
 }
 
-// Every unexplained credit/debit parked in a suspense account. `from`/`to` are already
-// IST-bracketed Date objects (getISTStartOfDay / getISTEndOfDay), or null.
 async function generateSuspenseReport({ from, to, branch }) {
   const match = {};
   if (branch) match.branch = branch;
@@ -1950,9 +1916,6 @@ async function generateSuspenseReport({ from, to, branch }) {
   }));
 }
 
-// Every internal transfer between our own accounts (contra). Two rows per transfer — one
-// from the paying account, one for the receiving account — so it reads as a ledger and
-// each side nets against its account.
 async function generateContraReport({ from, to, branch }) {
   const match = {};
   if (branch) match.branch = branch;
@@ -2006,10 +1969,6 @@ async function generateContraReport({ from, to, branch }) {
   return out;
 }
 
-// One flat "day book" of every finance entry CREATED in the range (filters on createdAt, not
-// the entry's own date) — payables, receivables, advances, borrowings, revenue & expense
-// transactions, contra transfers and suspense entries. Sorted oldest-created first so it
-// reads top to bottom as the day happened. `from`/`to` are IST-bracketed Date objects or null.
 async function generateFinanceDaybookReport({ from, to, branch }) {
   const createdRange = {};
   if (from) createdRange.$gte = from;
@@ -2171,8 +2130,6 @@ async function generateFinanceDaybookReport({ from, to, branch }) {
   return rows.map((r) => r.row);
 }
 
-// Every staff incentive recorded on a patient, grouped by employee, with whether it has
-// been rolled into an incentive payable and — for that payable — the live paid/pending.
 async function generateIncentivesReport({ from, to, branch }) {
   const rowMatch = { "incentives.isCancelled": { $ne: true } };
   if (branch) rowMatch["incentives.branch"] = branch;
@@ -2208,7 +2165,7 @@ async function generateIncentivesReport({ from, to, branch }) {
 
   if (rows.length === 0) return [];
 
-  // Live paid/pending for each distinct incentive payable, looked up once.
+  
   const payableIds = [...new Set(rows.map((r) => r.payableId).filter(Boolean).map(String))];
   const payableById = new Map();
   if (payableIds.length) {
@@ -2222,8 +2179,8 @@ async function generateIncentivesReport({ from, to, branch }) {
     payables.forEach((p) => payableById.set(String(p._id), p));
   }
 
-  // Resolve every referenced employee so each row can carry the staff code + a clean role,
-  // and so rows missing the denormalised name still get one.
+  
+  
   const empIds = [...new Set(rows.map((r) => r.employeeId).filter(Boolean).map(String))];
   const empById = new Map();
   if (empIds.length) {

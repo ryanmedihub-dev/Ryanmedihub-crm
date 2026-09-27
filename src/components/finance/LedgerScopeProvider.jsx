@@ -8,12 +8,6 @@ const LedgerScopeContext = createContext(null);
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-/**
- * Branch + date range for the /admin/assets and /admin/liabilities trees, held in the URL so
- * it survives tab switches and the back button with no duplicated useState mirror.
- *
- * Must be rendered inside a <Suspense> boundary — useSearchParams() forces one in App Router.
- */
 export function LedgerScopeProvider({ children }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -45,8 +39,8 @@ export function LedgerScopeProvider({ children }) {
     [scope, searchParams, router, pathname],
   );
 
-  // The query string every fetch on these pages uses: `to` defaults to today, `from` omitted
-  // means "since the beginning". Mirrors the old per-page `closingQS` helper exactly.
+  
+  
   const scopeQS = useCallback(
     (extra = {}) => {
       const p = new URLSearchParams();

@@ -126,8 +126,8 @@ export async function POST(req) {
         { $match: { receivableId: receivable._id, direction: "IN", isCancelled: { $ne: true } } },
         { $group: { _id: null, recovered: { $sum: "$amount" } } },
       ]);
-      // Amounts already applied to a payable are a non-cash recovery of this advance and
-      // reduce what's still owed back, exactly like a cash recovery.
+      
+      
       const [settledAgg] = await Advance.aggregate([
         { $match: { receivableId: receivable._id, direction: "OUT", isCancelled: { $ne: true } } },
         { $group: { _id: null, settled: { $sum: settledTotalExpr } } },

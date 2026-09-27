@@ -7,10 +7,6 @@ import { callRoute } from "../sources";
 import { AI_BRIEF_MODEL } from "../config";
 import { capPayload } from "./_helpers";
 
-// Lead rows carry name/phone — every compute() below aggregates (counts,
-// buckets, top-N by count) and never forwards a row. Where a name is needed
-// as a grouping key (source/team/agent), it goes through book.alias(), never
-// into facts directly.
 const SAMPLE_CAP = 200;
 
 function topEntries(map, n) {
@@ -104,8 +100,8 @@ const leadsFeatures = {
         if (scope.preset === "followUps" && r.followUpDate && new Date(r.followUpDate).getTime() < now) overdue++;
       }
 
-      // recovery.recovered carries name/phone (src/app/api/owner/leads/by-status/route.js)
-      // — only the aggregate status distribution ever reaches facts.
+      
+      
       let recovery = null;
       if (raw.recovery) {
         const byStatus = new Map();

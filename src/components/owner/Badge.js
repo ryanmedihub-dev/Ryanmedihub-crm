@@ -7,14 +7,13 @@ const DOT_COLOR = {
   neutral: "gray",
 };
 
-// Shape/text glyphs so severity never rests on hue alone.
 const GLYPH = {
-  good: "●", // ●
-  warn: "▲", // ▲ (attention)
-  bad: "▲", // ▲ (critical — same shape, red + context)
+  good: "●", 
+  warn: "▲", 
+  bad: "▲", 
   info: "●",
   purple: "●",
-  neutral: "○", // ○
+  neutral: "○", 
 };
 
 export default function Badge({ kind = "neutral", dot = false, glyph = false, children }) {

@@ -1,11 +1,6 @@
 import Badge from "@/components/owner/Badge";
 import { fmtDate, fmtDateTime, daysAgo } from "@/lib/owner/format";
 
-// Lead-report columns (Owner Panel v2, Part 2) — mirrors callby's own
-// dashboard lead report (dashboard/src/app/(protected)/reports/lead/page.js)
-// column set: created date, name, phone, status, source, assigned agent,
-// team, attempts, connected calls, last call at, follow-up date, age.
-
 const STATUS_KIND = {
   new: "neutral", contacted: "info", not_connected: "warn", interested: "good",
   not_interested: "bad", follow_up: "info", booking_done: "good", converted: "good", lost: "bad",
@@ -46,7 +41,6 @@ export const LEAD_BASE_COLUMNS = [
   },
 ];
 
-/** Interested preset: staleness signal — days since the last call, flagged past 2 days. */
 export const DAYS_SINCE_LAST_CALL_COLUMN = {
   key: "daysSinceLastCall",
   label: "Days Since Last Call",
@@ -59,7 +53,6 @@ export const DAYS_SINCE_LAST_CALL_COLUMN = {
   },
 };
 
-/** Follow-ups preset: overdue-by, unmistakable. */
 export const OVERDUE_BY_COLUMN = {
   key: "overdueBy",
   label: "Overdue By",
@@ -73,14 +66,12 @@ export const OVERDUE_BY_COLUMN = {
   },
 };
 
-/** Not-interested/lost preset: closest real "reason" data — no dedicated field exists. */
 export const LAST_NOTE_COLUMN = {
   key: "lastCallNote",
   label: "Last Note",
   render: (r) => r.lastCallNote || r.lastCallSummary || <span className="muted">—</span>,
 };
 
-/** Unattempted preset: pool state — never treat every zero-attempt lead alike. */
 export const POOL_STATE_COLUMN = {
   key: "poolState",
   label: "Pool State",

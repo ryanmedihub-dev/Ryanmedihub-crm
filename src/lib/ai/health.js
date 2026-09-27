@@ -7,11 +7,6 @@ import { AI_ENABLED, AI_BRIEF_MODEL, AI_DEEP_MODEL, AI_MONTHLY_BUDGET_USD, AI_DE
 import { SANYA_MODEL, SANYA_MONTHLY_BUDGET_USD } from "@/lib/sanya/config";
 import { cached } from "@/lib/cache";
 
-// Everything /owner/ai/health and ai.selfDiagnosis read comes from here — one
-// place computing the AI layer's own operational picture from AiRun/AiInsight
-// (insight engine) and SanyaUsage (chat assistant), so the page and the
-// self-diagnosis brief can never disagree about what "healthy" means.
-
 const round1 = (n) => Math.round((n || 0) * 10) / 10;
 const round2 = (n) => Math.round((n || 0) * 100) / 100;
 const pct = (a, b) => (b ? round1((a / b) * 100) : 0);
@@ -36,8 +31,6 @@ function percentileOf(sorted, p) {
   const idx = Math.min(sorted.length - 1, Math.floor(sorted.length * p));
   return sorted[idx];
 }
-
-// ---- lite (fast) path for AiStatusBeacon ----------------------------------
 
 async function computeLiteHealthUncached() {
   if (!AI_ENABLED) return { status: "disabled", lastOkAt: null, p50LatencyMs: null, budgetUsedPct: 0 };
@@ -78,8 +71,6 @@ export function computeLiteHealth() {
   return cached("ai:health:lite", 30, computeLiteHealthUncached);
 }
 
-// ---- OpenAI reachability (no tokens spent) ---------------------------------
-
 async function checkOpenAiConnectivityUncached() {
   if (!process.env.OPENAI_API_KEY) return { ok: false, ms: null, checkedAt: new Date().toISOString() };
   const started = Date.now();
@@ -101,8 +92,6 @@ async function checkOpenAiConnectivityUncached() {
 export function checkOpenAiConnectivity() {
   return cached("ai:health:connectivity", 300, checkOpenAiConnectivityUncached);
 }
-
-// ---- full report ------------------------------------------------------------
 
 function healthHeadline({ score, successPct, latencyScore, groundingPct, budgetHeadroom, feedbackScore, byFeature }) {
   if (!AI_ENABLED) return "AI is disabled (AI_ENABLED=0)";
@@ -240,7 +229,7 @@ export async function computeAiHealthReport({ from = "", to = "" } = {}) {
     };
   });
 
-  // Coverage: every registered feature, even one that has never run.
+  
   const coverage = Object.entries(FEATURES).map(([key, meta]) => {
     const lastGeneratedAt = insightLastMap.get(key) || null;
     const lastRun = globalLastRunMap.get(key) || null;
@@ -261,7 +250,7 @@ export async function computeAiHealthReport({ from = "", to = "" } = {}) {
     sanya: { mtdUsd: sanyaMtd, ceilingUsd: SANYA_MONTHLY_BUDGET_USD, usedPct: pct(sanyaMtd, SANYA_MONTHLY_BUDGET_USD), projectedUsd: sanyaProjected, projectedPct: pct(sanyaProjected, SANYA_MONTHLY_BUDGET_USD) },
   };
 
-  // Daily cost — two series merged on IST day.
+  
   const dailyMap = new Map();
   for (const d of facet.dailyCost || []) dailyMap.set(d._id, { date: d._id, insightsCost: round2(d.costUsd), sanyaCost: 0 });
   for (const d of sanyaDaily || []) {
@@ -274,7 +263,7 @@ export async function computeAiHealthReport({ from = "", to = "" } = {}) {
   const totalFeedbackUp = [...feedbackByFeatureMap.values()].reduce((s, f) => s + f.up, 0);
   const totalFeedbackDown = [...feedbackByFeatureMap.values()].reduce((s, f) => s + f.down, 0);
 
-  // ---- composite score (deterministic, not AI-generated) -------------------
+  
   const successPct = pct(nonHitOk, nonHitCount);
   const latencyScore = p95 == null ? 100 : p95 <= 8000 ? 100 : p95 >= 30000 ? 0 : round1(100 - ((p95 - 8000) / (30000 - 8000)) * 100);
   const groundingPct = pct(grounding.grounded, grounding.checked) || (grounding.checked === 0 ? 100 : 0);

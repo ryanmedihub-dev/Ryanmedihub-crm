@@ -9,9 +9,6 @@ import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { usePagedList } from "@/lib/owner/usePagedList";
 import { rupee, num } from "@/lib/owner/format";
 
-// Uses the exact same buildCompensationMetrics Part 1's Employees pages call
-// (via /api/owner/finance/salary-incentive), so these figures agree with
-// Part 1 by construction (Owner Panel v2, Part 5).
 export default function FinanceSalaryIncentivePage() {
   const [filterState, setFilterState] = useState(null);
   const list = usePagedList({ defaultSort: "name", defaultDir: "asc" });

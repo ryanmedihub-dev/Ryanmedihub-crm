@@ -1,10 +1,5 @@
 import AiVerdictChip from "./AiVerdictChip";
 
-// ReportTable column factory — place as the SECOND column (right after name)
-// on any list page that enables AI verdicts. `byId` and `loading` come
-// straight from useAiVerdicts(feature, scope). `labelSet` picks which wording
-// AiVerdictChip uses for the same star/solid/watch/at_risk enum (e.g.
-// "followUp" for patient follow-up priority — see aiLabels.js).
 export function aiVerdictColumn({ byId, loading, labelSet = "performance" }) {
   return {
     key: "aiVerdict",

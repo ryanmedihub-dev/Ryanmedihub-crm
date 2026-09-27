@@ -27,13 +27,10 @@ function orbState(status, stages) {
   return "idle";
 }
 
-// Detail-page counterpart of AiBriefPanel — same pipeline/streaming/notice/
-// footer behaviour, kind:"deep" instead of "brief", laid out as a timeline
-// review rather than a KPI-adjacent strip.
 export default function AiDeepReview({ feature, scope, title, enabled = true, aiState = null }) {
-  // Same "share one stream" pattern as AiBriefPanel — a page that also wants
-  // this result elsewhere (e.g. the entity header's AI ring/score) calls
-  // useAiInsight itself and passes it down instead of a second stream.
+  
+  
+  
   const ownAi = useAiInsight(feature, scope, { kind: "deep", enabled: enabled && !aiState });
   const ai = aiState || ownAi;
   const [drawerOpen, setDrawerOpen] = useState(false);

@@ -402,10 +402,7 @@ export async function PATCH(req) {
   }
 }
 
-// Deletes an UNPAID session — a Patient.afterSurgery.prp[] row with no money behind it yet.
-// A PAID row is a real Transactions document instead; the page deletes those through the
-// existing /api/transactions/service/delete route so it gets that route's backdate guard,
-// period-lock check, and patient-payment reversal instead of a second copy of that logic here.
+
 export async function DELETE(req) {
   try {
     const session = await getServerSession(authOptions);

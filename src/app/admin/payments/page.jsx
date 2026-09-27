@@ -52,7 +52,7 @@ function PaymentsPageInner() {
         Count: r.count,
       }));
 
-      // Every payment for the period on one sheet, regardless of expense head.
+      
       const branchQS = branch ? `&branch=${encodeURIComponent(branch)}` : "";
       const { rows: leafRows } = await fetchAllPages(
         (page, limit) =>

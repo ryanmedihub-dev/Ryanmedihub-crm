@@ -40,10 +40,10 @@ export async function POST(req) {
 
     await connectDB();
 
-    // Never trust the client's payloads — rebuild everything from the raw rows.
+    
     const { summary, results } = await runValidatePipeline(rows);
 
-    // A confirmed row that has since gone red → the world changed under us.
+    
     const brokeSincePreview = results.filter(
       (r) => confirmedHashes.has(r.rowHash) && r.status === "error",
     );
@@ -64,7 +64,7 @@ export async function POST(req) {
       (r) => confirmedHashes.has(r.rowHash) && (r.status === "ok" || r.status === "warning"),
     );
 
-    // §3.4 idempotency — skip rows already committed by a completed batch in the last 24h.
+    
     const recent = await UploadBatch.find({
       status: { $in: ["completed", "partial"] },
       createdAt: { $gte: new Date(Date.now() - DAY_MS) },

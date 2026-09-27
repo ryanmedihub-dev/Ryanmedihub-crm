@@ -6,20 +6,6 @@ import EmptyState from "./EmptyState";
 import ErrorState from "./ErrorState";
 import { DEFAULT_PAGE_SIZE } from "@/lib/owner/pagination";
 
-// The one table wrapper for every owner list page (Owner Panel v2, F4). Built on
-// DataTable — same `columns` / `rows` / `onRowClick` / `onSort` API — and adds,
-// once, the things every report screen needs:
-//   • server-side pagination controls (page / pageSize / total come from props;
-//     the PAGE fetches the slice — this component never slices in the browser)
-//   • sort + search state raised to props, so the page forwards them to its API
-//   • column-visibility toggle (columns[].defaultHidden starts a column hidden)
-//   • CSV export of the rows currently in view
-//   • loading skeleton / empty state / error state wired in by default
-//   • sticky first column + horizontal scroll on narrow screens (see owner-theme.css)
-//
-// Pagination contract (F5): the API must $skip/$limit inside the aggregation,
-// default pageSize 25, hard max 200 — see src/lib/owner/pagination.js.
-
 const PAGE_SIZE_OPTIONS = [25, 50, 100, 200];
 
 function toCsvValue(col, row) {
@@ -52,28 +38,23 @@ export default function ReportTable({
   loading = false,
   error = null,
   onRetry,
-  // sort (raised — forward to your API)
   sortKey,
   sortDir,
   onSort,
-  // search (controlled — forward to your API)
   search = "",
   onSearchChange,
   searchPlaceholder = "Search…",
-  // pagination (the page fetches the slice)
   page = 1,
   pageSize = DEFAULT_PAGE_SIZE,
   total = 0,
   onPageChange,
   onPageSizeChange,
-  // passthrough
   onRowClick,
   emptyMessage,
   csvFilename,
   toolbar,
   tall = true,
 }) {
-  // --- column visibility (persisted per tableId) --------------------------
   const storageKey = `owner-cols:${tableId}`;
   const [hidden, setHidden] = useState(() => new Set());
   const [colMenuOpen, setColMenuOpen] = useState(false);
@@ -92,7 +73,6 @@ export default function ReportTable({
       setHidden(new Set(columns.filter((c) => c.defaultHidden).map((c) => c.key)));
     }
     hydrated.current = true;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storageKey]);
 
   useEffect(() => {
@@ -100,7 +80,6 @@ export default function ReportTable({
     try {
       localStorage.setItem(storageKey, JSON.stringify([...hidden]));
     } catch {
-      /* private mode / blocked — fine, just don't persist */
     }
   }, [hidden, storageKey]);
 

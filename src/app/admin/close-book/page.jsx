@@ -632,7 +632,7 @@ function BalanceSheet({ toast }) {
         });
       }
 
-      // One ledger sheet per account, so the workbook is: Info -> Overview -> per-account.
+      
       const accountSheets = await ledgerHeadSheets({
         accounts: data.accounts.map((a) => a.account),
         scope: { branch, dateFrom: from, dateTo: to },

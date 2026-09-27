@@ -42,7 +42,7 @@ export default function LoanAccountsPage() {
       .catch((e) => e.name !== "AbortError" && console.error(e))
       .finally(() => setLoading(false));
     return () => ctrl.abort();
-  }, [scopeQS, accountsParam, refreshKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [scopeQS, accountsParam, refreshKey]); 
 
   const bump = () => setRefreshKey((k) => k + 1);
 

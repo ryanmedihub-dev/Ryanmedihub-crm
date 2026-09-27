@@ -4,15 +4,8 @@ import { buildBalanceMatch } from "@/lib/accountBalances";
 import { expenseMatch } from "@/lib/transactionFilters";
 import { istDayBucket, periodBounds } from "@/lib/owner/dates";
 
-// One implementation of the Finance landing numbers. Both the /owner/finance
-// routes and Sanya's `get_finance_summary` tool call these.
-
 const round2 = (n) => Math.round((n || 0) * 100) / 100;
 
-/**
- * Revenue / expense / profit per branch for a period — approved, settled
- * transactions only (same filter /owner/finance's branch table has always used).
- */
 export async function getBranchProfitability({ from, to }) {
   const txBase = {
     approvalStatus: { $nin: ["PENDING", "REJECTED"] },
@@ -51,14 +44,6 @@ export async function getBranchProfitability({ from, to }) {
   return { rows, totals };
 }
 
-/**
- * Daily cash-basis receipts/payments for the landing trend chart. Reuses the
- * EXACT match filter close-book's cash-flow route uses (buildBalanceMatch) —
- * same definition, just grouped by day — so this sums to the same receipts/
- * payments the landing KPI row shows. Deliberately NOT a P&L trend:
- * /api/close-book/pnl's accrual logic is nontrivial and re-deriving it per
- * day risked a second, disagreeing number — cash-basis, labelled as such.
- */
 export async function getFinanceTrend({ from = "", to = "", branch = "" }) {
   const match = buildBalanceMatch({ accounts: accountsSync(), from, to, branch });
 
@@ -88,10 +73,6 @@ export async function getFinanceTrend({ from = "", to = "", branch = "" }) {
   return { daily, totals };
 }
 
-/**
- * Expense heads for a period: total + the top categories, grouped the same
- * way /owner/finance/expenses groups its table (expense × expenseType).
- */
 export async function getExpenseSummary({ from = "", to = "", branch = "All", top = 10 }) {
   const match = expenseMatch();
   if (branch && branch !== "All") match.branch = branch;

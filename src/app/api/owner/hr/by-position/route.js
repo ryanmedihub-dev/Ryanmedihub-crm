@@ -11,14 +11,6 @@ import { cacheKey, cached } from "@/lib/cache";
 const ALLOWED_ROLES = ["owner", "super-admin"];
 const DAY_MS = 86400000;
 
-// /owner/hr/by-position — grouped by position: interviews, selected, rejected,
-// hold, selection rate, avg expected vs final salary, avg time-to-fill (date ->
-// updatedAt for Selected candidates only — "how long does filling this role take").
-//
-// `position` is free text on Interviewer, so the row count grows with every
-// new spelling (135 today). Derived columns are computed in the pipeline so
-// the database can sort on them; page/pageSize/sortBy/sortDir per
-// src/lib/owner/pagination.js (default 25, max 200).
 const SORTABLE = {
   position: "position", interviews: "interviews", selected: "selected", rejected: "rejected", onHold: "onHold",
   selectionRate: "selectionRate", avgExpectedSalary: "avgExpectedSalary", avgFinalSalary: "avgFinalSalary",

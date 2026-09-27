@@ -60,9 +60,9 @@ async function computePayablesSummary({ purpose, payeeKind, payeeRefId, payeeLab
         ? { count: agg.count, totalOwed: agg.totalOwed, totalPaid: agg.totalPaid, totalPending: agg.totalPending }
         : emptyTotals;
 
-    // `ageing=1` returns the bucket split *and* the same `overall` totals the plain call
-    // returns, so a caller needing both (the admin dashboard) makes one request, and the
-    // headline figure is guaranteed to be the sum of the buckets it sits next to.
+    
+    
+    
     if (ageing) {
       const [facet] = await Payable.aggregate([
         { $match: { isCancelled: false, ...(branch ? { branch } : {}) } },

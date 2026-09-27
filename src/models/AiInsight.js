@@ -1,17 +1,13 @@
 import mongoose from "mongoose";
 
-// The persisted result cache — works even without Redis, and is what the
-// "What AI saw" drawer reads. `facts` is the exact ALIASED payload sent to
-// OpenAI (never real names); `entities` is our own alias -> label map, held
-// only in this DB, never sent to OpenAI.
 const aiInsightSchema = new mongoose.Schema(
   {
-    key: { type: String, required: true, unique: true }, // `${feature}|${kind}|${scopeKey}`
+    key: { type: String, required: true, unique: true }, 
     feature: { type: String, required: true, index: true },
     kind: { type: String, enum: ["brief", "verdicts", "deep"], required: true },
-    scope: { type: mongoose.Schema.Types.Mixed, default: {} }, // whitelisted params only
+    scope: { type: mongoose.Schema.Types.Mixed, default: {} }, 
     fingerprint: { type: String, required: true },
-    output: { type: mongoose.Schema.Types.Mixed, required: true }, // validated + rehydrated
+    output: { type: mongoose.Schema.Types.Mixed, required: true }, 
     entities: { type: mongoose.Schema.Types.Mixed, default: {} },
     facts: { type: mongoose.Schema.Types.Mixed, default: {} },
     model: { type: String, default: null },

@@ -8,12 +8,6 @@ import { OwnerTopbar, Card, Badge, InlineNotice } from "@/components/owner";
 import AiOrb from "@/components/owner/ai/AiOrb";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 
-// Sanya — tool-calling assistant over the Owner panel's own aggregations.
-// Everything shown here is generated; every number links to the page it can
-// be verified on (the "Verify" chips come from the tools the model called,
-// so they appear even if the model forgets to cite them). History is
-// in-session only (React state) — nothing is stored client-side.
-
 const STARTERS = [
   "How many patients did we get this month, by status?",
   "Revenue, expense and profit per branch for last month",
@@ -23,8 +17,6 @@ const STARTERS = [
   "Which marketing platform has the best ROAS this month?",
 ];
 
-// A tool event's `name` back into a short human label for the chip — same
-// de-snake-casing the "What Sanya can look up" card already does.
 function toolLabel(name) {
   return String(name || "").replace(/^get_/, "").replace(/_/g, " ");
 }
@@ -39,7 +31,6 @@ function fmtDateArg(a) {
   return parts.join(" · ");
 }
 
-// Minimal markdown: paragraphs, **bold**, bullet lines, [text](href) links.
 function renderMarkdown(text) {
   const lines = String(text || "").split("\n");
   const out = [];
@@ -93,7 +84,7 @@ function renderMarkdown(text) {
 
 export default function SanyaAssistantPage() {
   const { data: meta } = useOwnerData("/api/owner/ai/sanya");
-  const [messages, setMessages] = useState([]); // { role, content, tools:[], verify:[], usage, error, streaming }
+  const [messages, setMessages] = useState([]); 
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const abortRef = useRef(null);
@@ -141,7 +132,7 @@ export default function SanyaAssistantPage() {
             const j = await res.json();
             if (j?.message) msg = j.message;
           } catch {
-            /* not JSON */
+            
           }
           patch((m) => { m.error = msg; m.streaming = false; });
           return;
@@ -184,9 +175,9 @@ export default function SanyaAssistantPage() {
   const stop = () => abortRef.current?.abort();
   const clear = () => { if (!busy) setMessages([]); };
 
-  // Prefill + auto-send once from a "?q=" (AiCommandBar's "Ask Sanya" hands
-  // off here). Guarded by a ref, not state, so React's dev-mode double-invoke
-  // of effects can never send the question twice.
+  
+  
+  
   const searchParams = useSearchParams();
   const router = useRouter();
   const autoSentRef = useRef(false);
@@ -197,7 +188,7 @@ export default function SanyaAssistantPage() {
     setInput(q);
     send(q);
     router.replace("/owner/ai/sanya");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [searchParams]);
 
   return (

@@ -8,9 +8,6 @@ import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { rupee, num } from "@/lib/owner/format";
 
-// Presents /api/payables/summary's data with owner-level rollups — the same
-// read /admin/liabilities uses (SALARY/RENT/ELECTRICITY/COLLAB_CLINIC/TAX/...
-// purposes), not a re-derived total (Owner Panel v2, Part 5).
 export default function FinanceLiabilitiesPage() {
   const [filterState, setFilterState] = useState(null);
 

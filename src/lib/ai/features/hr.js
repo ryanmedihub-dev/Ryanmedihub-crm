@@ -6,10 +6,6 @@ import { callRoute } from "../sources";
 import { AI_BRIEF_MODEL } from "../config";
 import { round, capPayload } from "./_helpers";
 
-// Candidates are private individuals — aliased K## (never P##, which is
-// reserved for patients). Payloads: counts, rates, time-to-decision, by
-// position, by source, by interviewer (aliased E). No candidate names,
-// phones, CV text, or remarks ever leave compute().
 const SAMPLE_CAP = 200;
 
 function topEntries(map, n) {

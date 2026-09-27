@@ -18,7 +18,7 @@ export default function AssetsReceivablesPage() {
   const [ageing, setAgeing] = useState(searchParams.get("ageing") || "");
   const [initialDrill, setInitialDrill] = useState(undefined);
 
-  // Land pre-drilled when arriving from the overview's top-5 / ageing links.
+  
   useEffect(() => {
     const doc = searchParams.get("doc");
     const head = searchParams.get("head");
@@ -39,7 +39,7 @@ export default function AssetsReceivablesPage() {
     } else {
       setInitialDrill(null);
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); 
 
   useEffect(() => {
     const ctrl = new AbortController();

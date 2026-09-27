@@ -11,13 +11,6 @@ import { cacheKey, cached } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["owner", "super-admin"];
 
-// One detail route for all six Employees roles (Owner Panel v2, Part 1) — the
-// role-specific KPIs/rows/trend/compensation come from src/lib/owner/employeeDetailQuery.js.
-//
-// Not wrapped in withDB() — that helper only forwards `req`, dropping the
-// dynamic route's `{ params }` — so this connects directly, same as the other
-// `[id]` routes in this app (e.g. src/app/api/employees/update/[id]/route.js).
-
 export async function GET(req, { params }) {
   try {
     await dbConnect();

@@ -138,9 +138,9 @@ export async function POST(req) {
         );
       }
 
-      // No unsettled-method exclusion — a transaction only reaches here (matched by this
-      // exact payableId) via a deliberate "settle this payable" link, so a "Paid by Other"
-      // payment counts too (the vendor was paid, just via an external party).
+      
+      
+      
       const [paidAgg] = await Transactions.aggregate([
         {
           $match: {

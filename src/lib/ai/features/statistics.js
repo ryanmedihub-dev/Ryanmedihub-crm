@@ -10,8 +10,8 @@ const statisticsFeatures = {
     kinds: ["brief"],
     model: { brief: AI_BRIEF_MODEL },
     ttlMin: { brief: 60 },
-    // The route only ever reads these three — confirmed against
-    // src/app/api/owner/statistics/route.js (no `branch`/`from`/`to`).
+    
+    
     scopeParams: ["dateFrom", "dateTo", "breakdownBy"],
     focus: {
       brief: "Find the single biggest leak in the funnel and the breakdown group that explains it. Compare stage rates, not raw counts.",

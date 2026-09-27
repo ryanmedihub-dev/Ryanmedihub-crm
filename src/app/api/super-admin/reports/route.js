@@ -40,8 +40,8 @@ export async function GET(request) {
 
     let data = [];
 
-    // The client now sends bare YYYY-MM-DD calendar days; bracket each to the IST day so
-    // "31 Aug" means exactly 31 Aug 00:00–23:59 IST and doesn't bleed into the 30th.
+    
+    
     const rangeStart = from ? getISTStartOfDay(from) : null;
     const rangeEnd = to ? getISTEndOfDay(to) : null;
     const dateWindow = rangeStart && rangeEnd ? { $gte: rangeStart, $lte: rangeEnd } : null;

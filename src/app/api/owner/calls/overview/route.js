@@ -4,9 +4,6 @@ import { getCallStats } from "@/lib/owner/metrics/leadsCalls";
 import { parseEmployeeFilters } from "@/lib/owner/pagination";
 import { cacheKey, cached } from "@/lib/cache";
 
-// /owner/calls section landing — total calls, connected, connect rate, unique
-// numbers, trend. Numbers come from src/lib/owner/metrics/leadsCalls.js
-// (shared with Sanya's get_call_stats tool).
 export const GET = withCallbyRoute(async (req, session) => {
   const { searchParams } = new URL(req.url);
   const { dateFrom, dateTo } = parseEmployeeFilters(searchParams);

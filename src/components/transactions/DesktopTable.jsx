@@ -68,7 +68,7 @@ export default function DesktopTable({
       ];
     }
 
-    // TRANSPLANT / SERVICE / MEDICINE
+    
     return [
       ...base,
       ["party", "Patient"],
@@ -218,12 +218,12 @@ export default function DesktopTable({
           </tr>
         </thead>
 
-        {/* ✅ Single tbody – no nesting */}
+        {}
         <tbody className="divide-y divide-slate-100">
           {rows.flatMap((row) => {
             const expanded = expandedId === row._id;
 
-            // Main row
+            
             const mainRow = (
               <tr
                 key={`${row._id}-main`}
@@ -244,7 +244,7 @@ export default function DesktopTable({
               </tr>
             );
 
-            // Detail row (always present, but content conditionally expanded)
+            
             const detailRow = (
               <tr key={`${row._id}-detail`}>
                 <td colSpan={columns.length} className="p-0">

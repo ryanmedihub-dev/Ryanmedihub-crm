@@ -20,7 +20,7 @@ const inputClass =
 
 export default function CampaignLeadsPage() {
   const toast = useToast();
-  const [phase, setPhase] = useState("idle"); // idle | parsing | preview | committing | done
+  const [phase, setPhase] = useState("idle"); 
 
   const [campaigns, setCampaigns] = useState([]);
   const [campaignsLoading, setCampaignsLoading] = useState(true);
@@ -38,8 +38,8 @@ export default function CampaignLeadsPage() {
   const [batches, setBatches] = useState([]);
   const [batchesLoading, setBatchesLoading] = useState(true);
 
-  // No AI anywhere in the validate/commit path itself — only a brief that
-  // reads the batch history, re-checked after a successful import.
+  
+  
   const campaignLeadsAi = useAiInsight("marketing.campaignLeads", {}, { kind: "brief" });
 
   const loadBatches = useCallback(async () => {
@@ -159,7 +159,7 @@ export default function CampaignLeadsPage() {
     setPhase("done");
     toast.success(`Imported ${r.data.created} lead(s).`);
     loadBatches();
-    campaignLeadsAi.refresh(); // re-analyse now that a new batch exists — not part of the commit itself
+    campaignLeadsAi.refresh(); 
   };
 
   const revertBatch = async () => {

@@ -10,17 +10,6 @@ import { parsePageParams, pageMeta } from "@/lib/owner/pagination";
 
 const BAND_LABEL_BY_KEY = Object.fromEntries(BANDS.map((b) => [b.key, b.label]));
 
-// ATTRIBUTION WINDOW (matches src/lib/owner/marketingAttribution.js's rule — the two must
-// never disagree):
-//   - Spend counts in the period it was entered for (AdSpend.date in [from, to]).
-//   - A CampaignLead counts in the period if its leadDate falls in [from, to].
-//   - Calls count in the period (callby is queried with the same dateFrom/dateTo)...
-//   - ...but conversion and revenue count WHENEVER THEY HAPPENED, unbounded. A patient's
-//     payment can land months after the lead. So "Converted"/"Revenue"/"CAC"/"ROAS" answer
-//     "of the leads this period's spend produced, what have they generated SO FAR" — never
-//     "revenue collected this period".
-//   - "Converted" uses the panel-wide CONVERTED_STATUSES so marketing CAC/ROAS agree with
-//     every other page in the panel.
 export const ATTRIBUTION_WINDOW_NOTE = [
   "Spend counts in the period it was entered for. A lead counts in the period it arrived (leadDate).",
   "Calls are queried from callby for the same date range.",
@@ -46,13 +35,6 @@ async function mapWithConcurrency(items, limit, fn) {
   return results;
 }
 
-/**
- * Batches callby's POST /api/leads/phone-match at 1000 phones/request, 4-way concurrent.
- * @returns { matches: Map<phone, matchRow>|null, callbyError: string|null }
- *   matches is null (not an empty Map) when the call failed entirely — callers must
- *   distinguish "callby said nothing about this phone" (0 calls, matches present) from
- *   "we couldn't ask callby" (— , matches null).
- */
 async function fetchPhoneMatchesBatched(phones, { dateFrom, dateTo }) {
   if (phones.length === 0) return { matches: new Map(), callbyError: null };
 
@@ -75,7 +57,6 @@ async function fetchPhoneMatchesBatched(phones, { dateFrom, dateTo }) {
   return { matches, callbyError: null };
 }
 
-/** One query, $in chunked at 5000 — never one query per campaign. */
 async function fetchPatientsByPhone(phones) {
   const byPhone = new Map();
   for (let i = 0; i < phones.length; i += PATIENT_IN_CHUNK) {
@@ -91,10 +72,6 @@ async function fetchPatientsByPhone(phones) {
   return byPhone;
 }
 
-/**
- * @param {{from: string, to: string, platform?: string, branch?: string, campaignId?: string}} opts
- *   from/to are plain YYYY-MM-DD strings (owner filter convention).
- */
 export async function getCampaignPerformance({ from, to, platform, branch, campaignId }) {
   const campaignMatch = {};
   if (platform) campaignMatch.platform = platform;
@@ -117,7 +94,7 @@ export async function getCampaignPerformance({ from, to, platform, branch, campa
 
   const leadsByCampaign = new Map();
   for (const id of campaignIds) leadsByCampaign.set(String(id), []);
-  const phoneToCampaigns = new Map(); // phoneNormalized -> Set(campaignIdStr) — for overlap
+  const phoneToCampaigns = new Map(); 
   for (const l of leadRows) {
     const key = String(l.campaign);
     if (!leadsByCampaign.has(key)) leadsByCampaign.set(key, []);
@@ -168,9 +145,9 @@ export async function getCampaignPerformance({ from, to, platform, branch, campa
         patientsMatched += 1;
         if (!VISITED_EXCLUDED_STATUSES.includes(patient.ops?.status)) visited += 1;
         if (CONVERTED_STATUSES.includes(patient.ops?.status)) converted += 1;
-        // Revenue = money actually received, not the package value (which includes what's
-        // still pending) — the honest figure for ROAS against real spend. packageValue is
-        // exposed separately so the two are never silently conflated.
+        
+        
+        
         revenue += patient.payments?.amountReceived || 0;
         packageValue += patient.payments?.totalAmount || 0;
       }
@@ -201,12 +178,6 @@ export async function getCampaignPerformance({ from, to, platform, branch, campa
   return { campaigns: results, overlapCount, callbyError, window: ATTRIBUTION_WINDOW_NOTE };
 }
 
-/**
- * Lead-level drill-through for one campaign — paginated server-side, never the whole
- * campaign's leads shipped to the browser. The per-lead callby/patient join only runs over
- * this page's phones (25-200), not the whole campaign, so it stays cheap regardless of how
- * many leads the campaign has in total.
- */
 export async function getCampaignLeadDetail({ campaignId, from, to, searchParams }) {
   const { page, pageSize, skip, limit } = parsePageParams(searchParams);
 

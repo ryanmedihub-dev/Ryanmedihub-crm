@@ -13,8 +13,8 @@ const ShellContext = createContext({
 
 export function ShellProvider({ children }) {
   const [navOpen, setNavOpen] = useState(false);
-  // AiCommandBar (⌘K palette) reads/writes this instead of owning its own
-  // open state, so OwnerTopbar's "⌘K Ask AI" button can open it too.
+  
+  
   const [cmdBarOpen, setCmdBarOpen] = useState(false);
 
   const value = {

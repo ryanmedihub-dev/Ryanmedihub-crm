@@ -4,8 +4,6 @@ import LeadStatusReportPage from "@/components/owner/LeadStatusReportPage";
 import { LEAD_BASE_COLUMNS, POOL_STATE_COLUMN } from "@/lib/owner/leadsColumns";
 import { num } from "@/lib/owner/format";
 
-// Mirrors callby's lead-pool concept (pooledAt/claimedAt/claimedBy) rather than
-// treating every zero-attempt lead alike — see POOL_STATE_COLUMN.
 const config = {
   preset: "unattempted",
   title: "Unattempted Leads",

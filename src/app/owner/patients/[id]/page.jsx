@@ -10,15 +10,8 @@ import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { rupee, fmtDate } from "@/lib/owner/format";
 
-// Moved from /owner/patients/journey (Owner Panel v2, Part 3) — the canonical
-// patient detail page, reached by clicking a row on any of the six Patients
-// list pages. Same render this page always had; now keyed by route param
-// instead of search-then-open, and reads /api/owner/patients/[id].
-
 const names = (arr) => (Array.isArray(arr) && arr.length ? arr.map((e) => e?.name).filter(Boolean).join(", ") : "—");
 
-// The forward path. NOT_VISITED / NOT_CONVERTED are EXITS from it (a CLOSED
-// patient never "passed" them), so they render as a branch, not as steps.
 const JOURNEY_STEPS = ["NEW", "BOOKING_DONE", "SURGERY_BOOKED", "CLOSED"];
 const EXIT_STATUSES = { NOT_VISITED: "after registration — visit date passed", NOT_CONVERTED: "after counselling — nothing paid" };
 const STEP_LABEL = {
@@ -63,7 +56,6 @@ function JourneyStrip({ status }) {
   );
 }
 
-// The list page that opened this record passes ?back=<preset>&backq=<its query>.
 const BACK_BASES = {
   all: "/owner/patients/all", notConverted: "/owner/patients/not-converted", bookingDone: "/owner/patients/booking-done",
   converted: "/owner/patients/converted", surgeryDone: "/owner/patients/surgery-done", direct: "/owner/patients/direct",

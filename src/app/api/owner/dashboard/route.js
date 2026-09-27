@@ -15,23 +15,6 @@ import { SECTION_METRIC_BUILDERS, derivePerfMetrics, sampleValue, daysInPeriod }
 import { scoreCohort } from "@/lib/owner/performance";
 import { cacheKey, cached } from "@/lib/cache";
 
-// /owner/dashboard — built LAST in the Owner Panel v2 series because it
-// summarizes everything the other parts already built. Nothing here is a new
-// number: revenue reuses the exact Transactions filter the existing finance
-// pages use (unsettledMethodsSync + SETTLEMENT_EXCLUSION, so this never
-// disagrees with /owner/finance), the funnel reuses Statistics'
-// computeStagesForLeads/stageRate, Attention reuses its own rule functions,
-// and performer scoring reuses Part 1's scoreCohort. Every piece that
-// touches callby is independently try/caught upstream (see attention/
-// route.js and buildAgentMetrics) so a down callby degrades those sections to
-// an error flag, never a blank page.
-//
-// Load shape: one $facet aggregate each for revenue and surgeries (current +
-// previous + branch breakdown in a single round trip), run in parallel with
-// the funnel/attention/performer sections via Promise.all. Response carries a
-// short Cache-Control so a page left open doesn't refetch on every render but
-// also never goes far stale.
-
 const LEAD_SAMPLE_CAP = 1500;
 const DAY_MS = 86400000;
 
@@ -130,10 +113,6 @@ async function attentionSummary() {
   };
 }
 
-// Top/bottom scored employees across every section with a real KPI formula —
-// same scoreCohort Part 1 built, never a second formula. Trailing 30 days,
-// same reasoning as Attention/Suggestions: a same-day window is too thin to
-// rank against peers.
 async function topBottomPerformers() {
   const to = new Date();
   const from = new Date(to.getTime() - 30 * DAY_MS);

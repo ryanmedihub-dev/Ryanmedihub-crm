@@ -7,14 +7,12 @@ import { useOwnerFilters } from "@/lib/owner/useOwnerFilters";
 
 const DEBOUNCE_MS = 450;
 
-// One labeled field, themed off owner-theme.css `.control`/`.filter-field` —
-// used both inline here (extras/advancedExtras) and by ReportPanel.
 export function FilterControl({ ex, value, onCommit }) {
   const type = ex.type || "select";
   const id = `filter-${ex.key}`;
-  // Hooks called unconditionally every render (text/number path needs local
-  // debounce state) — the type never changes for a given `ex.key`, but this
-  // keeps React's rules-of-hooks honest regardless.
+  
+  
+  
   const [local, setLocal] = useState(value ?? "");
   const timer = useRef(null);
   useEffect(() => setLocal(value ?? ""), [value]);
@@ -91,14 +89,14 @@ export default function FilterBar({
   const sig = JSON.stringify({ filters, range });
   useEffect(() => {
     onChangeRef.current?.({ filters, range });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [sig]);
 
   const showDate = show.includes("date");
   const showBranch = show.includes("branch");
   const allExtras = useMemo(() => [...extras, ...advancedExtras], [extras, advancedExtras]);
 
-  // One chip per active (non-default) filter — clicking × resets that key alone.
+  
   const chips = useMemo(() => {
     const list = [];
     if (showDate && filters.range && filters.range !== (defaults?.range || "Today")) {

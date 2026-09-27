@@ -43,12 +43,6 @@ const infoSheet = (label, scope, headline, truncated) => ({
   colWidths: [22, 26],
 });
 
-/**
- * One Download-Excel implementation shared by every ledger inner page. Always writes an Info
- * sheet first (with a TRUNCATED flag), a Summary sheet, then page-specific detail sheets.
- * Paging is via fetchAllPages (200/page, 50-page cap) — a hit cap raises a toast AND is
- * recorded on the Info sheet.
- */
 export async function exportLedgerPage({ pageKey, scope, extraParams = {}, toast }) {
   const meta = PAGE_META[pageKey];
   if (!meta) throw new Error(`Unknown export page "${pageKey}"`);
@@ -57,7 +51,7 @@ export async function exportLedgerPage({ pageKey, scope, extraParams = {}, toast
     `${name}_${scope.branch || "All"}_${scope.dateFrom || "start"}_to_${scope.dateTo || "today"}.xlsx`;
   let truncated = false;
 
-  // ---- account pages (cash-book / loan-accounts) ----
+  
   if (pageKey === "cash-book" || pageKey === "loan-accounts") {
     const filter = pageKey === "cash-book" ? "cash" : "loans";
     const extraQS = extraParams.accounts ? `&accounts=${encodeURIComponent(extraParams.accounts)}` : "";
@@ -89,7 +83,7 @@ export async function exportLedgerPage({ pageKey, scope, extraParams = {}, toast
     return;
   }
 
-  // ---- receivables ----
+  
   if (pageKey === "receivables") {
     const grp = await fetch(`/api/receivables/grouped?level=1&${qs}`).then((r) => r.json());
     const listParams = new URLSearchParams({ ...extraParams });
@@ -135,7 +129,7 @@ export async function exportLedgerPage({ pageKey, scope, extraParams = {}, toast
     return;
   }
 
-  // ---- advances ----
+  
   if (pageKey === "advances") {
     const p = new URLSearchParams({ direction: "OUT", ...extraParams });
     if (scope.branch) p.set("branch", scope.branch);
@@ -176,7 +170,7 @@ export async function exportLedgerPage({ pageKey, scope, extraParams = {}, toast
     return;
   }
 
-  // ---- suspense ----
+  
   if (pageKey === "suspense") {
     const suspenseExtraQS = new URLSearchParams(extraParams).toString();
     const grp = await fetch(`/api/suspense?groupBy=account&${qs}${suspenseExtraQS ? `&${suspenseExtraQS}` : ""}`).then((r) => r.json());
@@ -222,7 +216,7 @@ export async function exportLedgerPage({ pageKey, scope, extraParams = {}, toast
     return;
   }
 
-  // ---- borrowings ----
+  
   if (pageKey === "borrowings") {
     const grp = await fetch(`/api/borrowings/grouped?level=1&${qs}`).then((r) => r.json());
     const rows = grp.rows || [];
@@ -242,7 +236,7 @@ export async function exportLedgerPage({ pageKey, scope, extraParams = {}, toast
     return;
   }
 
-  // ---- payables sub-pages (rent / employees / other) ----
+  
   const purposes = PAGE_PURPOSES[pageKey];
   if (purposes) {
     const purposeCSV = purposes.join(",");

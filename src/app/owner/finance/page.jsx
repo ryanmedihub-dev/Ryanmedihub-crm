@@ -67,7 +67,7 @@ export default function OwnerFinancePage() {
 
     if ([pnlR, cashFlowR, balanceSheetR, recvR, payR, branchR, trendR].some((r) => r.aborted)) return;
 
-    // P&L is the anchor — if it failed, the whole screen is meaningless.
+    
     if (!pnlR.ok || pnlR.data?.error) {
       setError(pnlR.error || pnlR.data?.error || "Failed to load P&L");
       setLoading(false);

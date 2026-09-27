@@ -66,11 +66,11 @@ export default function DrillDownTable({
     : key !== "receivables";
   const isGrouped = isDocuments || sectionConfig.mode === "grouped" || key === "payables" || key === "receivables";
   const deepestLevel = isDocuments ? 4 : levels;
-  // "party" grouping collapses the category/sub-type levels: level 1 lists parties, then
-  // straight to that party's documents (level 3), then their transactions (level 4).
+  
+  
   const groupByParty = sectionConfig.groupBy === "party";
-  // Employee Payables' hybrid mode: level 1 stays the expense category, but level 2 lists
-  // the employees within it instead of the (fixed, useless) expense sub-type.
+  
+  
   const subGroupByParty = sectionConfig.subGroupBy === "party";
 
   const [internalScope, setInternalScope] = useState({ branch: "", dateFrom: "", dateTo: "", party: "", status: "", ageing: "" });
@@ -289,16 +289,16 @@ export default function DrillDownTable({
         subLabel: row.label,
       });
     } else if (drill.level === 3 && isDocuments) {
-      // A per-patient incentive document is a running total with no single "the" payment to
-      // drill into — its real content is the incentive-entry breakdown the detail modal shows.
+      
+      
       if (isPayableSection && row.purpose === "INCENTIVE" && row.expenseSubType === "Incentive") {
         setViewDoc(row);
         return;
       }
       const settled = isPayableSection ? row.paid : row.received;
       if (!(settled > 0)) {
-        // Nothing paid yet means level 4 (payment transactions) would be empty — open the
-        // document's own details instead of leaving the click looking like it did nothing.
+        
+        
         setViewDoc(row);
         return;
       }
@@ -566,8 +566,8 @@ export default function DrillDownTable({
           {r.payeeCode && (
             <p className="mt-0.5 text-[11px] text-gray-400">ID {r.payeeCode}</p>
           )}
-          {/* On a collab document the party is the partner clinic; the patient the case is
-              actually about lives on the CollabCase, so surface them here too. */}
+          {
+}
           {r.collabPatient?.name && (
             <p className="mt-0.5 text-[11px] text-indigo-700">
               <span className="font-semibold">{r.collabPatient.name}</span>

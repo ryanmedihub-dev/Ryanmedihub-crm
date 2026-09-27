@@ -3,19 +3,13 @@
 import { useEffect, useState } from "react";
 import { hasRecentSuccess } from "./useAiInsight";
 
-// Shared by AiStatusBeacon (topbar) and OwnerSidebar's pinned "AI Health" nav
-// item — one poll, one fallback rule, instead of two copies drifting apart.
-// `/api/owner/ai/health?lite=1` (Part 9, src/lib/ai/health.js computeLiteHealth)
-// returns { status, lastOkAt, p50LatencyMs, budgetUsedPct }; status is one of
-// online/degraded/paused/offline/disabled/unconfigured — used directly as the
-// CSS tone suffix (.ai-status-<tone>).
 const STATUS_LABEL = {
   online: "AI Online", degraded: "AI Degraded", paused: "AI Paused (budget)",
   offline: "AI Offline", disabled: "AI Disabled", unconfigured: "AI Not Configured",
 };
 
 export function useAiHealthBeacon() {
-  const [beacon, setBeacon] = useState(null); // { label, tone } | null
+  const [beacon, setBeacon] = useState(null); 
 
   useEffect(() => {
     let cancelled = false;
@@ -33,7 +27,7 @@ export function useAiHealthBeacon() {
           }
         }
       } catch {
-        /* health route unreachable — fall through to the local signal */
+        
       }
       if (!cancelled) setBeacon(hasRecentSuccess() ? { label: "AI Online", tone: "online" } : null);
     }

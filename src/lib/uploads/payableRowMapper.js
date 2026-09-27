@@ -1,15 +1,4 @@
-// Pure, dependency-free row logic for the admin bulk-Payable upload. Imported by BOTH the
-// browser preview and the server routes, so it has ZERO imports — no mongoose, no DB, no
-// NextAuth, no next/*, not even xlsx (Excel date serials are converted with the plain
-// epoch formula below so importing this map into NewPayableModal doesn't pull in SheetJS).
-//
-// The single source of truth for what a Payable *is* stays src/lib/entryCore/createPayable.js.
-// This file only shapes/validates a spreadsheet row into the payload that function expects.
 
-/* ------------------------------------------------------------------ */
-/* Maps lifted verbatim from src/components/finance/NewPayableModal.jsx */
-/* (that file now imports these from here — one copy).                 */
-/* ------------------------------------------------------------------ */
 
 export const PURPOSE_TO_CATEGORY = {
   SALARY: "Salary",
@@ -17,7 +6,7 @@ export const PURPOSE_TO_CATEGORY = {
   RENT: "Rent",
   ELECTRICITY: "Electricity Bill",
   COLLAB_CLINIC: "Collab Clinic Payment",
-  PATIENT_COMMISSION: "Commision", // sic — existing spelling in the tree, do not "fix" it
+  PATIENT_COMMISSION: "Commision", 
   TAX: "Taxes",
   MEDICAL_CONSUMABLES: "Medical Consumables",
   MEDICINE_PROCUREMENT: "Medicine Procurement",
@@ -55,12 +44,8 @@ export const PURPOSE_LABELS = {
   HARDWARE_RENTAL: "Hardware Rental",
 };
 
-// Literal mirror of models/Payable.js's MONTHLY_PAYABLE_PURPOSES. Duplicated (not imported)
-// only because that export lives on a mongoose model and this module must stay DB-free. The
-// server pipeline imports the real one and asserts the two are identical at module load.
 export const MONTHLY_PAYABLE_PURPOSES = ["SALARY", "RENT", "ELECTRICITY", "COLLAB_CLINIC", "TAX"];
 
-// Same order as the spec's column table. The template sheet uses exactly these header keys.
 export const HEADERS = [
   "purpose",
   "payeeKind",
@@ -91,11 +76,6 @@ export const HEADERS = [
 const PATIENT_PURPOSES = ["INCENTIVE", "PATIENT_COMMISSION"];
 const REFID_KINDS = ["EMPLOYEE", "PATIENT", "VENDOR"];
 
-/* ------------------------------------------------------------------ */
-/* §2.1 derivations                                                    */
-/* ------------------------------------------------------------------ */
-
-// mirrors buildPayee() in NewPayableModal.jsx
 export function defaultKindForPurpose(purpose, { vendorResolved = false } = {}) {
   if (purpose === "SALARY" || purpose === "INCENTIVE") return "EMPLOYEE";
   if (purpose === "RENT") return "RENT_UNIT";
@@ -104,7 +84,7 @@ export function defaultKindForPurpose(purpose, { vendorResolved = false } = {}) 
   if (purpose === "PATIENT_COMMISSION") return "PATIENT";
   if (purpose === "TAX") return "OTHER";
   if (GENERIC_SUBTYPE_PURPOSES.includes(purpose)) return vendorResolved ? "VENDOR" : "OTHER";
-  return "OTHER"; // purpose === "OTHER"
+  return "OTHER"; 
 }
 
 export function deriveRequirements(purpose, resolvedKind) {
@@ -115,11 +95,6 @@ export function deriveRequirements(purpose, resolvedKind) {
     needsSubType: GENERIC_SUBTYPE_PURPOSES.includes(purpose),
   };
 }
-
-/* ------------------------------------------------------------------ */
-/* §2.3 coercion helpers (pure). Each throws Error(msg) on bad input;  */
-/* callers wrap per-field so one bad cell doesn't abort the row.       */
-/* ------------------------------------------------------------------ */
 
 const BOOL_TRUE = new Set(["yes", "y", "true", "1", "✓"]);
 const BOOL_FALSE = new Set(["no", "n", "false", "0", ""]);
@@ -144,7 +119,6 @@ export function parseAmount(v) {
   return round2(n);
 }
 
-// Optional numeric (rate / tax amount). Returns null for blank, throws for garbage.
 export function parseOptionalNumber(v, { min, max, gtZero = false } = {}) {
   if (v === undefined || v === null || String(v).trim() === "") return null;
   const n = parseFloat(String(v).replace(/[₹,\s %]/g, ""));
@@ -180,8 +154,6 @@ export function parseYear(v) {
   return n;
 }
 
-// JS Date | Excel serial number | "DD-MM-YYYY" | "DD/MM/YYYY" | "YYYY-MM-DD" | ISO string.
-// Day-first for the DD?MM?YYYY shapes. Returns a Date at UTC midnight. Throws on ambiguity.
 export function parseExcelDate(v) {
   if (v === undefined || v === null || String(v).trim() === "") return null;
 
@@ -191,8 +163,8 @@ export function parseExcelDate(v) {
   }
 
   if (typeof v === "number" && Number.isFinite(v)) {
-    // Excel serial: whole days since 1899-12-30 (that epoch already absorbs Excel's
-    // 1900-leap-year bug for every date we care about, i.e. anything from 2000 on).
+    
+    
     if (v < 1 || v > 80000) throw new Error(`"${v}" is not an Excel date`);
     const ms = Date.UTC(1899, 11, 30) + Math.round(v) * 86400000;
     const d = new Date(ms);
@@ -201,14 +173,14 @@ export function parseExcelDate(v) {
 
   const s = String(v).trim();
 
-  // ISO / YYYY-MM-DD (year-first — unambiguous)
+  
   let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T ].*)?$/);
   if (m) {
     const [, y, mo, d] = m.map(Number);
     return mkUtc(y, mo, d, s);
   }
 
-  // DD-MM-YYYY or DD/MM/YYYY (day-first)
+  
   m = s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
   if (m) {
     const [, d, mo, y] = m.map(Number);
@@ -227,8 +199,6 @@ function mkUtc(y, mo, d, original) {
   return dt;
 }
 
-// trim + collapse internal whitespace, case-insensitive match against `allowed`,
-// return the canonical cased value or null.
 export function normalizeEnum(v, allowed) {
   if (v === undefined || v === null) return null;
   const s = String(v).trim().replace(/\s+/g, " ");
@@ -237,7 +207,6 @@ export function normalizeEnum(v, allowed) {
   return hit || null;
 }
 
-// purpose accepts the canonical value, the label, or a spaced/hyphenated variant.
 export function normalizePurpose(v, purposeValues) {
   if (v === undefined || v === null || String(v).trim() === "") return null;
   const raw = String(v).trim();
@@ -266,7 +235,6 @@ export function normalizeKind(v, kindValues) {
 const HEX24 = /^[a-f0-9]{24}$/i;
 export const isObjectIdish = (v) => typeof v === "string" && HEX24.test(v.trim());
 
-// Levenshtein edit distance (iterative, two-row). Used only for "did you mean" hints.
 export function levenshtein(a, b) {
   a = String(a);
   b = String(b);
@@ -285,7 +253,6 @@ export function levenshtein(a, b) {
   return prev[b.length];
 }
 
-// Closest allowed value within `max` edits (case-insensitive), or null.
 export function didYouMean(value, allowed, max = 2) {
   const v = String(value || "").trim().toLowerCase();
   if (!v) return null;
@@ -301,7 +268,6 @@ export function didYouMean(value, allowed, max = 2) {
   return bestD <= max ? best : null;
 }
 
-// Standard "X is not a valid ..." message with a typo hint appended when there's a near match.
 function enumErr(field, value, allowed, extra = "") {
   const hint = didYouMean(value, allowed);
   return `${field}: "${value || "(blank)"}" is not valid${extra ? ` ${extra}` : ""}.${
@@ -309,27 +275,10 @@ function enumErr(field, value, allowed, extra = "") {
   }`;
 }
 
-// The monthly unique key — mirrors payableSchema's partial unique index
-// (payee.kind + payee.refId + payee.label + purpose + expenseSubType + period.month + period.year).
-// expenseSubType is part of the key so one vendor can hold several monthly payables that
-// differ only by head (e.g. two RENT units, or Rent vs a different sub-type) without
-// colliding.
 export function monthlyDupKey({ kind, refId, label, purpose, expenseSubType, period }) {
   return [kind, refId || "", label, purpose, expenseSubType || "", period?.month, period?.year].join("|");
 }
 
-/* ------------------------------------------------------------------ */
-/* Format-only parse — everything that does NOT need the database.     */
-/* The server pipeline (validatePipeline.js) runs this, then layers    */
-/* ref resolution / duplicate / period-lock on top.                    */
-/* ------------------------------------------------------------------ */
-
-/**
- * @param {object} raw       one sheet row, header key -> cell value
- * @param {number} rowNumber sheet row number (data index + 2)
- * @param {object} ctx       { purposeValues, kindValues, branches, tdsTypes,
- *                             collabBranches, allCategories, subTypesFor(category) }
- */
 export function parsePayableRowFormat(raw, rowNumber, ctx) {
   const errors = [];
   const warnings = [];
@@ -348,19 +297,19 @@ export function parsePayableRowFormat(raw, rowNumber, ctx) {
 
   const out = { rowNumber, errors, warnings };
 
-  // --- purpose (drives everything) ---
+  
   const purpose = normalizePurpose(get("purpose"), ctx.purposeValues);
   if (!purpose) {
     errors.push(enumErr("purpose", get("purpose"), ctx.purposeValues, "— see the Lists sheet"));
     out.purpose = null;
-    return out; // nothing else is meaningful without a purpose
+    return out; 
   }
   out.purpose = purpose;
   out.purposeLabel = PURPOSE_LABELS[purpose] || purpose;
 
   const flags = deriveRequirements(purpose, null);
 
-  // --- payee basics ---
+  
   out.declaredKind = normalizeKind(get("payeeKind"), ctx.kindValues);
   if (get("payeeKind") && !out.declaredKind) {
     errors.push(enumErr("payeeKind", get("payeeKind"), ctx.kindValues));
@@ -374,7 +323,7 @@ export function parsePayableRowFormat(raw, rowNumber, ctx) {
   }
   out.payeeLookup = get("payeeLookup");
 
-  // fixed-label purposes: the label itself is an enum
+  
   if (purpose === "COLLAB_CLINIC" && out.payeeLabel) {
     const c = normalizeEnum(out.payeeLabel, ctx.collabBranches);
     if (!c) errors.push(enumErr("payeeLabel", out.payeeLabel, ctx.collabBranches, "as a collab clinic"));
@@ -386,7 +335,7 @@ export function parsePayableRowFormat(raw, rowNumber, ctx) {
     else out.payeeLabel = t;
   }
 
-  // --- expense category / sub-type ---
+  
   const expectedCategory = PURPOSE_TO_CATEGORY[purpose];
   const givenCategory = get("expenseCategory");
   if (!givenCategory) {
@@ -412,12 +361,12 @@ export function parsePayableRowFormat(raw, rowNumber, ctx) {
     errors.push(`expenseSubType: required for ${purpose}`);
     out.expenseSubType = "";
   } else if (subTypes.length === 1) {
-    out.expenseSubType = subTypes[0]; // e.g. SALARY -> "Salary"
+    out.expenseSubType = subTypes[0]; 
   } else {
     out.expenseSubType = "";
   }
 
-  // --- period ---
+  
   if (flags.needsPeriod) {
     const month = field("periodMonth", () => parseMonth(get("periodMonth")));
     const year = field("periodYear", () => parseYear(get("periodYear")));
@@ -432,7 +381,7 @@ export function parsePayableRowFormat(raw, rowNumber, ctx) {
     }
   }
 
-  // --- related patient (format only; resolution is server side) ---
+  
   out.relatedPatientPhone = get("relatedPatientPhone");
   out.relatedPatientId = get("relatedPatientId");
   if (out.relatedPatientId && !isObjectIdish(out.relatedPatientId)) {
@@ -443,7 +392,7 @@ export function parsePayableRowFormat(raw, rowNumber, ctx) {
     errors.push("relatedPatientPhone: required for INCENTIVE / PATIENT_COMMISSION");
   }
 
-  // --- amount / due date / branch ---
+  
   out.baseAmount = field("amount", () => parseAmount(raw.amount));
   out.dueDate = field("dueDate", () => parseExcelDate(raw.dueDate)) ?? null;
 
@@ -460,7 +409,7 @@ export function parsePayableRowFormat(raw, rowNumber, ctx) {
   out.costAlreadyRecognised = field("costAlreadyRecognised", () => parseBool(raw.costAlreadyRecognised)) ?? false;
   out.excludeFromPnl = field("excludeFromPnl", () => parseBool(raw.excludeFromPnl)) ?? false;
 
-  // --- GST ---
+  
   out.includeGST = field("includeGST", () => parseBool(raw.includeGST)) ?? false;
   out.gstRate = field("gstRate", () => parseOptionalNumber(raw.gstRate, { min: 0, max: 28 }));
   out.gstAmount = field("gstAmount", () => parseOptionalNumber(raw.gstAmount, { gtZero: true }));
@@ -471,7 +420,7 @@ export function parsePayableRowFormat(raw, rowNumber, ctx) {
     warnings.push("gstRate/gstAmount ignored because includeGST is not TRUE");
   }
 
-  // --- TDS ---
+  
   out.includeTDS = field("includeTDS", () => parseBool(raw.includeTDS)) ?? false;
   out.tdsCategory = "";
   const tdsCat = get("tdsCategory");
@@ -495,11 +444,6 @@ export function parsePayableRowFormat(raw, rowNumber, ctx) {
   return out;
 }
 
-/* ------------------------------------------------------------------ */
-/* Template content                                                    */
-/* ------------------------------------------------------------------ */
-
-// 3 example rows for the blank template — the Instructions sheet tells the user to delete them.
 export const EXAMPLE_ROWS = [
   {
     purpose: "PROFESSIONAL_EXPENSES",

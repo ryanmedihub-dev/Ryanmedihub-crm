@@ -17,8 +17,6 @@ function guard(session) {
   return null;
 }
 
-// GET /api/master-data?kind=PAYMENT_METHOD&withUsage=1
-// Admin table feed: every row (active + retired) for one kind, optionally with usage counts.
 export async function GET(req) {
   const session = await getServerSession(authOptions);
   const denied = guard(session);
@@ -50,7 +48,6 @@ export async function GET(req) {
   return NextResponse.json({ rows, usage });
 }
 
-// POST /api/master-data  — create a new master-data row.
 export async function POST(req) {
   const session = await getServerSession(authOptions);
   const denied = guard(session);
@@ -88,16 +85,16 @@ export async function POST(req) {
     value,
     label,
     parent,
-    // Category-only classification fields — ignored by the schema for other kinds, but only
-    // meaningful for EXPENSE_CATEGORY.
+    
+    
     settlementType: kind === "EXPENSE_CATEGORY" ? body.settlementType ?? null : null,
     ownedElsewhere: kind === "EXPENSE_CATEGORY" ? !!body.ownedElsewhere : false,
     payablePurpose: kind === "EXPENSE_CATEGORY" ? body.payablePurpose ?? null : null,
-    // Method-only behavioural flags.
+    
     isNonCash: kind === "PAYMENT_METHOD" ? !!body.isNonCash : false,
     isUnsettled: kind === "PAYMENT_METHOD" ? !!body.isUnsettled : false,
     appliesTo: kind === "PAYMENT_METHOD" ? body.appliesTo || "BOTH" : "BOTH",
-    // A new row is never a system row — that flag is set only by the seed.
+    
     isSystem: false,
     isActive: true,
     sortOrder: Number.isFinite(body.sortOrder) ? body.sortOrder : 0,

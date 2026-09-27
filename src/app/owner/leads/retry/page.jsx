@@ -11,11 +11,6 @@ import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { fmtDateTime } from "@/lib/owner/format";
 
-// Retry-lanes half of the old combined "Live Workforce & Queue" page — moved
-// here (Owner Panel v2, Part 2) because these are lead-priority queues, not
-// call/agent data. The agent-status half now lives at /owner/calls/live with
-// its own route, so this page only fetches the retry queue.
-
 const LANES = [
   { key: "P0", label: "P0 · Interested, overdue follow-up" },
   { key: "P1", label: "P1 · Recently connected" },
@@ -39,7 +34,7 @@ const RETRY_SORT = {
 };
 
 export default function RetryQueuePage() {
-  const [seamLane, setSeamLane] = useState(null); // "P0".."P4" | "ALL" | null
+  const [seamLane, setSeamLane] = useState(null); 
   const [sortKey, setSortKey] = useState("priority");
   const [sortDir, setSortDir] = useState("asc");
 

@@ -6,12 +6,6 @@ import Stock from "@/models/Stock";
 import { NAME_COLLATION } from "@/lib/sortOptions";
 import { cacheKey, cached } from "@/lib/cache";
 
-// Everything below used to run as two Stock.find({}).lean() passes — one for the
-// filtered list, one unfiltered across the WHOLE collection just to sum things up in
-// JS — on every single request, including every keystroke in the search box. A single
-// $facet aggregation does the list + both stat breakdowns in one round trip, with Mongo
-// doing the summing instead of Node, and only the matched page of documents crossing
-// the wire.
 async function buildResponse(query, threshold, restrictedLocation = null) {
   const statsQuery = restrictedLocation ? { location: restrictedLocation } : {};
   const now = new Date();

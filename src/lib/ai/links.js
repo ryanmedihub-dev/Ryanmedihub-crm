@@ -1,13 +1,4 @@
-// Whitelist of owner-panel links the AI is allowed to return as an `action.link`
-// or an insight `entities` drill-through, plus the labels AiCommandBar's "Go to"
-// search shows. One source array of every href+label in
-// src/components/Sidebars/OwnerSidebar.js's SECTIONS, plus detail-page
-// patterns that aren't in the sidebar. AI-returned links that fail
-// isAllowedLink() are dropped before the UI ever sees them — this is a security
-// boundary (no arbitrary href from model output), not just a UX nicety.
-//
-// AI action links are validated against this file — keep it in sync with
-// OwnerSidebar.js's SECTIONS (see the matching comment there).
+
 
 const LINK_ITEMS = [
   { href: "/owner/dashboard", label: "Dashboard" },
@@ -74,15 +65,13 @@ const LINK_ITEMS = [
 export const OWNER_LINKS = LINK_ITEMS.map((i) => i.href);
 export const OWNER_LINK_ITEMS = LINK_ITEMS;
 
-// Detail pages reached with a dynamic id, not listed individually above.
 const DETAIL_PATTERNS = [
-  /^\/owner\/employees\/[a-z-]+\/[a-zA-Z0-9]+$/, // /owner/employees/agents/<id>
-  /^\/owner\/patients\/[a-zA-Z0-9]+$/, // /owner/patients/<id>
+  /^\/owner\/employees\/[a-z-]+\/[a-zA-Z0-9]+$/, 
+  /^\/owner\/patients\/[a-zA-Z0-9]+$/, 
 ];
 
 const LINK_SET = new Set(OWNER_LINKS);
 
-/** true only for a path (query string ignored) in OWNER_LINKS or a known detail pattern. */
 export function isAllowedLink(href) {
   if (typeof href !== "string" || !href) return false;
   const path = href.split("?")[0];

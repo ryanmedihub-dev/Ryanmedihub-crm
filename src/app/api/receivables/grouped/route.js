@@ -181,7 +181,7 @@ async function computeGroupedReceivables({
     const match = {};
     match.isCancelled = status === "Cancelled" ? true : { $ne: true };
     if (isParty) {
-      // `category` carries the exact payer label when grouping by party.
+      
       match["payer.label"] = category;
     } else {
       match.revenueCategory = category;
@@ -189,8 +189,8 @@ async function computeGroupedReceivables({
       if (party) match["payer.label"] = { $regex: party, $options: "i" };
     }
     if (branch) match.branch = branch;
-    // The ledger scope bar's date range — until now this only shaped the level 1/2 opening vs
-    // movement rollup math, never which documents this level-3 list actually shows.
+    
+    
     if (from || to) {
       match.dueDate = {};
       if (from) match.dueDate.$gte = new Date(from);
@@ -216,7 +216,7 @@ async function computeGroupedReceivables({
     ]);
     const pageRows = facet?.rows || [];
     const total = facet?.total?.[0]?.count || 0;
-    // Collab receivables name the clinic as payer — pull through the patient the case is about.
+    
     await attachCollabPatients(pageRows, "clinicShareReceivable");
     const closedPeriods = await loadClosedPeriodSnapshot();
     const rows = pageRows.map((r) => ({

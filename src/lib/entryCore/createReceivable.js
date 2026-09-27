@@ -1,4 +1,4 @@
-// Extracted from receivables/create/route.js's POST handler — used by "receivable.raise".
+
 
 import Receivable, { RECEIVABLE_KIND_VALUES, RECEIVABLE_PURPOSE_VALUES } from "@/models/Receivable";
 import { ALL_BRANCHES } from "@/lib/branches";
@@ -27,7 +27,7 @@ export async function createReceivable({ payload, session: authSession }) {
     payer: { kind: payer.kind, refId: payer.refId || null, label: payer.label },
     purpose, revenueCategory, period: period?.month && period?.year ? period : undefined,
     relatedPatient: relatedPatient || undefined, totalAmount: parseFloat(totalAmount),
-    // Every receivable needs a dueDate for the ledger pages' date-range filter to ever see it.
+    
     dueDate: dueDate ? new Date(dueDate) : new Date(), branch: branch || authSession.user.branch,
     remarks: remarks || "", costAlreadyRecognised: costAlreadyRecognised === true, receipts: receipts || [],
     createdBy: { name: authSession.user.name, email: authSession.user.email, branch: authSession.user.branch, date: new Date() },

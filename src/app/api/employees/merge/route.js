@@ -5,7 +5,6 @@ import connectDB from "@/lib/db";
 import { runMerge } from "@/lib/employees/mergeEngine";
 import { cacheInvalidate } from "@/lib/cache";
 
-// A merge repoints the finance ledger — tighter than the delete route, NOT looser: hr is out.
 const ALLOWED_ROLES = ["admin", "super-admin"];
 
 export async function POST(request) {

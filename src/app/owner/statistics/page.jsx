@@ -52,9 +52,9 @@ export default function StatisticsPage() {
   }, [filterState]);
   const statsAi = useAiInsight("statistics.funnel", aiScope, { kind: "brief", enabled: !!filterState });
 
-  // Statistics C: the stage the AI names in its top insight gets a pulsing
-  // badge — match by stage label appearing in insights[0].title/detail,
-  // case-insensitive; no match, no highlight.
+  
+  
+  
   const aiTopInsight = statsAi.status === "ready" ? statsAi.result?.insights?.[0] : null;
   const aiFlaggedStageKey = useMemo(() => {
     if (!aiTopInsight) return null;
@@ -65,7 +65,7 @@ export default function StatisticsPage() {
       return label && haystack.includes(label.toLowerCase());
     });
     return hit?.key || null;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [aiTopInsight, data?.stages, data?.stageDefinitions]);
 
   const goToStage = (key) => {

@@ -81,7 +81,7 @@ export default function AdminCollabSettlementPage() {
 
   useEffect(() => {
     fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, []);
 
   const deleteCase = async (c) => {
@@ -177,7 +177,7 @@ export default function AdminCollabSettlementPage() {
     <div className="flex min-h-screen bg-gray-50">
       <main className="flex-1 p-4 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto">
-          {/* Header */}
+          {}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Collab Settlement</h1>
@@ -192,7 +192,7 @@ export default function AdminCollabSettlementPage() {
             </button>
           </div>
 
-          {/* KPI Strip */}
+          {}
           <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden mb-5">
             <div className="flex flex-wrap divide-y sm:divide-y-0 sm:divide-x divide-gray-100">
               <KPIItem label="Total Pending" value={formatCurrency(stats.pending.total)} count={stats.pending.count} icon={Clock} color="bg-amber-50 text-amber-600" />
@@ -202,7 +202,7 @@ export default function AdminCollabSettlementPage() {
             </div>
           </div>
 
-          {/* Tab Navigation */}
+          {}
           <div className="flex gap-1 p-1 bg-gray-100 rounded-xl overflow-x-auto mb-5">
             {TABS.map((tab) => {
               const Icon = tab.icon;
@@ -225,7 +225,7 @@ export default function AdminCollabSettlementPage() {
             })}
           </div>
 
-          {/* Filters */}
+          {}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-5">
             <div className="flex flex-col lg:flex-row gap-3">
               <div className="relative flex-1 lg:max-w-md">
@@ -288,7 +288,7 @@ export default function AdminCollabSettlementPage() {
             </div>
           </div>
 
-          {/* Content */}
+          {}
           {loading ? (
             <div className="flex items-center justify-center py-16">
               <Loader2 className="w-6 h-6 text-indigo-600 animate-spin" />
@@ -299,7 +299,7 @@ export default function AdminCollabSettlementPage() {
             </div>
           ) : (
             <>
-              {/* Mobile cards */}
+              {}
               <div className="sm:hidden space-y-3">
                 {paginated.map((c) => (
                   <MobileCard
@@ -315,7 +315,7 @@ export default function AdminCollabSettlementPage() {
                 ))}
               </div>
 
-              {/* Desktop table */}
+              {}
               <div className="hidden sm:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
@@ -403,7 +403,7 @@ export default function AdminCollabSettlementPage() {
                 </div>
               </div>
 
-              {/* Pagination */}
+              {}
               {totalPages > 1 && (
                 <div className="flex items-center justify-between pt-4">
                   <p className="text-xs text-gray-500">
@@ -432,7 +432,7 @@ export default function AdminCollabSettlementPage() {
         </div>
       </main>
 
-      {/* Modals */}
+      {}
       {showCreate && (
         <NewCollabCaseModal
           onClose={() => setShowCreate(false)}
@@ -471,7 +471,6 @@ export default function AdminCollabSettlementPage() {
   );
 }
 
-/* ---- KPI Item ---- */
 function KPIItem({ label, value, count, icon: Icon, color }) {
   return (
     <div className="flex-1 min-w-42.5 px-5 py-4">
@@ -489,7 +488,6 @@ function KPIItem({ label, value, count, icon: Icon, color }) {
   );
 }
 
-/* ---- Settlement value cell (receivable or payable) ---- */
 function SettlementCell({ value, total, tone }) {
   if (value == null)
     return (
@@ -508,7 +506,6 @@ function SettlementCell({ value, total, tone }) {
   );
 }
 
-/* ---- Mobile card ---- */
 function MobileCard({ c, activeTab, expanded, onToggle, onSettle, onCollection, onDelete }) {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
@@ -565,7 +562,6 @@ function MobileCard({ c, activeTab, expanded, onToggle, onSettle, onCollection, 
   );
 }
 
-/* ---- Patient Transactions (every entry booked against this patient) ---- */
 function PatientTransactions({ patientId, patientName }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -659,7 +655,6 @@ function PatientTransactions({ patientId, patientName }) {
   );
 }
 
-/* ---- Case History (patient transactions + clinic collections + log) ---- */
 function CaseHistory({ collabCase }) {
   const collections = collabCase.clinicCollections || [];
   const log = collabCase.log || [];
@@ -760,7 +755,6 @@ function CaseHistory({ collabCase }) {
   );
 }
 
-/* ---- New Collab Case Modal ---- */
 function NewCollabCaseModal({ onClose, onSuccess, toast }) {
   return (
     <ModalShell

@@ -4,10 +4,6 @@ import { withCallbyRoute, toCallDateParams } from "@/lib/owner/callbyRoute";
 import { parseEmployeeFilters, parsePageParams } from "@/lib/owner/pagination";
 import { cacheKey, cached } from "@/lib/cache";
 
-// /owner/calls/untracked — calls whose number never matched a Lead
-// (callby GET /api/calls?unsynced=true already filters leadId:null, paginated
-// in Mongo). The untracked/tracked split is computed here from two calls to
-// the same already-paginated endpoint (limit=1, we only need the totals).
 export const GET = withCallbyRoute(async (req, session) => {
   const { searchParams } = new URL(req.url);
   const { dateFrom, dateTo, search } = parseEmployeeFilters(searchParams);

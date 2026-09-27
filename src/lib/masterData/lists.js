@@ -1,13 +1,4 @@
-// Server-only. The composed master-data getters that server routes / server components read.
-// Each one layers the live cache (src/lib/masterData/index.js) over the literal array still
-// living in src/constants/* :
-//
-//   - literal array = the ordering TEMPLATE and the empty-collection FALLBACK,
-//   - live cache    = the source of truth once seeded — retired values drop out, new active
-//                     values are appended after the templated ones.
-//
-// This module imports mongoose (via the cache), so it must never be pulled into a client
-// bundle. Client code goes through GET /api/master-data/lists and src/lib/useMasterData.js.
+
 
 import {
   getActiveValues,
@@ -52,7 +43,6 @@ import {
 
 export { getExpenseFurtherModeDefault };
 
-// Keep the template's order, drop entries that are no longer active, append new active values.
 function mergeTemplate(activeValues, template) {
   const activeSet = new Set(activeValues);
   const kept = template.filter((v) => activeSet.has(v));
@@ -60,8 +50,6 @@ function mergeTemplate(activeValues, template) {
   const appended = activeValues.filter((v) => !templateSet.has(v));
   return [...kept, ...appended];
 }
-
-// ---- Expense heads -------------------------------------------------------------------------
 
 export async function getExpenseCategories() {
   if (await isEmpty("EXPENSE_CATEGORY")) return [...EXPENSE_CATEGORIES];
@@ -88,7 +76,6 @@ export async function getPayableExpenseDropdownCategories() {
   return mergeTemplate(await mdPayableDropdown(), PAYABLE_EXPENSE_DROPDOWN_CATEGORIES);
 }
 
-/** { [category]: [subTypeValue, ...] } for every active category — the dynamic tree. */
 export async function getExpenseCategoryTree() {
   const cats = await getExpenseCategories();
   const tree = {};
@@ -96,22 +83,17 @@ export async function getExpenseCategoryTree() {
   return tree;
 }
 
-// ---- Accounts / receipt modes ------------------------------------------------------------
-
 export async function getAccounts() {
   if (await isEmpty("ACCOUNT")) return [...ACCOUNTS];
   return mergeTemplate(await getActiveValues("ACCOUNT"), ACCOUNTS);
 }
 
-/** FURTHER_MODES has always been an alias of ACCOUNTS. */
 export const getFurtherModes = getAccounts;
 
 export async function getReceiptModes() {
   if (await isEmpty("RECEIPT_MODE")) return [...RECEIPT_MODES];
   return mergeTemplate(await getActiveValues("RECEIPT_MODE"), RECEIPT_MODES);
 }
-
-// ---- Payment methods ------------------------------------------------------------------------
 
 export async function getNonCashMethods() {
   if (await isEmpty("PAYMENT_METHOD")) return [...NON_CASH_METHODS];
@@ -123,7 +105,6 @@ export async function getUnsettledMethods() {
   return mdUnsettled();
 }
 
-/** { value: label }, retired rows included so historical documents keep their labels. */
 export async function getMethodLabels() {
   const dyn = await getLabelMap("PAYMENT_METHOD");
   return Object.keys(dyn).length ? { ...METHOD_LABELS, ...dyn } : { ...METHOD_LABELS };
@@ -136,7 +117,6 @@ const METHOD_SPECIALS = new Set([
   "including-package",
 ]);
 
-/** Same shape and branching as paymentMethods.getMethodOptions, rebuilt from live rows. */
 export async function getMethodOptions(category, { forEdit = false } = {}) {
   if (await isEmpty("PAYMENT_METHOD")) return literalMethodOptions(category, { forEdit });
 
@@ -170,8 +150,6 @@ export async function getMethodOptions(category, { forEdit = false } = {}) {
 
   return out.map((v) => ({ value: v, label: labelOf(v) }));
 }
-
-// ---- Bank routing ------------------------------------------------------------------------
 
 export async function getBankRoutingDefaults(branch, transactionCategory, method) {
   const rule = await getRoutingRule(branch, transactionCategory, method);

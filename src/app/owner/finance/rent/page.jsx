@@ -10,9 +10,6 @@ import { rupee, num, fmtDate } from "@/lib/owner/format";
 
 const STATUS_KIND = { Paid: "good", "Partially Paid": "info", Pending: "warn", Overdue: "bad" };
 
-// Payable{purpose:"RENT"} per property — reuses the existing
-// /api/payables/grouped (party mode) rather than a new aggregation, grouped
-// client-side by payee.label/branch (Owner Panel v2, Part 5).
 export default function FinanceRentPage() {
   const [filterState, setFilterState] = useState(null);
 

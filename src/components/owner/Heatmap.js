@@ -4,7 +4,7 @@ function defaultColorFor(value, { min, max }) {
   if (value == null) return "var(--surface-2)";
   const range = max - min || 1;
   const t = Math.min(1, Math.max(0, (value - min) / range));
-  // 12%..78% mix of the info hue over the surface — legible with --ink text
+  
   const pct = Math.round(12 + t * 66);
   return `color-mix(in srgb, var(--info) ${pct}%, var(--surface))`;
 }

@@ -13,15 +13,8 @@ import { cacheKey, cached } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["owner", "super-admin"];
 
-// Reconciliation target: EXPENSE_CATEGORY_TREE.Marketing's "Meta ads"/"Google
-// ads" sub-types (src/constants/expenseCategories.js) vs Part 4's AdSpend.
-// These are entered in two different places and will drift — surfaced as a
-// line, never hidden (Owner Panel v2, Part 5 brief).
 const EXPENSE_TYPE_TO_PLATFORM = { "Meta ads": "Meta", "Google ads": "Google" };
 
-// Rows are one per (category, sub-type) — bounded by the category tree today,
-// but sorted/sliced in the database like every other list so the contract is
-// uniform: page / pageSize (default 25, max 200) / sortBy / sortDir.
 const SORTABLE = { total: "total", count: "count", category: "category", subType: "subType" };
 
 const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -44,8 +37,8 @@ export async function GET(req) {
     const meta = {};
     const key = cacheKey("owner", { route: "finance-expenses", ...Object.fromEntries(searchParams) }, session);
     const data = await cached(key, 60, async () => {
-      // Same booked-money rules as the transactions KPI and P&L (approved only,
-      // no settlements, no external methods) — one expense total, not three.
+      
+      
       const match = expenseMatch();
       if (branch && branch !== "All") match.branch = branch;
       const dateBounds = periodBounds(dateFrom, dateTo);
@@ -93,9 +86,9 @@ export async function GET(req) {
             ],
           }),
         ]).collation({ locale: "en", strength: 2 }),
-        // Same window, same branch scope, AdSpend side — no budget data exists
-        // anywhere so this route never invents one; it only reconciles the two
-        // numbers that already exist.
+        
+        
+        
         AdSpend.aggregate([{ $match: adSpendMatch }, { $group: { _id: null, total: { $sum: "$amount" } } }]),
       ]);
 

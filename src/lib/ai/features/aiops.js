@@ -6,11 +6,6 @@ import { callRoute } from "../sources";
 import { AI_BRIEF_MODEL } from "../config";
 import { capPayload } from "./_helpers";
 
-// AI section pages — meta features about the owner panel's own rule engines
-// (Attention/Suggestions/Attendance are deliberately NOT AI; these features
-// add an AI triage layer on top of their already-computed, non-AI output)
-// plus ai.selfDiagnosis, which analyses the AI system itself.
-
 const aiopsFeatures = {
   "ai.attention": {
     title: "Attention", page: "/owner/ai/attention", kinds: ["brief"],

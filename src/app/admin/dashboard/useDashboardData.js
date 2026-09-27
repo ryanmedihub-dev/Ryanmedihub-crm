@@ -4,11 +4,6 @@ import { useEffect, useState } from "react";
 import { ACCOUNTS } from "@/constants/bankRouting";
 import { bucketMap, iso, overdueAmount, overdueCount } from "./dashboardMath";
 
-/**
- * Owns every fetch behind the dashboard: the headline assets/liabilities/cash-flow/P&L
- * batch (re-run whenever the applied filters or period change) and the separate six-month
- * trend batch. Split out of page.jsx so the page component is just layout.
- */
 export function useDashboardData({ from, to, priorFrom, priorTo, customReady, appliedAccounts, appliedBranch }) {
   const [assets, setAssets] = useState(null);
   const [liabilities, setLiabilities] = useState(null);
@@ -53,8 +48,8 @@ export function useDashboardData({ from, to, priorFrom, priorTo, customReady, ap
         ]);
         if (cancelled) return;
 
-        // Bajaj/Fibe are financing lines, not cash — they're split out of Cash & Bank so
-        // this card agrees with the cash-balance trend, which has always excluded them.
+        
+        
         const allRows = cashJson.rows || [];
         const cashTotal = allRows
           .filter((r) => !["Bajaj Loan", "Fibe Loan"].includes(r.key))
@@ -63,9 +58,9 @@ export function useDashboardData({ from, to, priorFrom, priorTo, customReady, ap
           .filter((r) => ["Bajaj Loan", "Fibe Loan"].includes(r.key))
           .reduce((s, r) => s + (r.closing || 0), 0);
 
-        // Receivables/payables use per-document `pending` (floored at 0) — the same basis
-        // as the ageing buckets and the overdue rows below, so the card is now exactly the
-        // sum of the bars beside it.
+        
+        
+        
         const receivablesTotal = ageingRecJson.overall?.totalPending || 0;
         const payablesTotal = ageingPayJson.overall?.totalPending || 0;
         const suspenseTotal = (suspenseJson.rows || []).reduce((s, r) => s + (r.closing || 0), 0);
@@ -109,9 +104,9 @@ export function useDashboardData({ from, to, priorFrom, priorTo, customReady, ap
     return () => { cancelled = true; };
   }, [from, to, priorFrom, priorTo, customReady, appliedAccounts, appliedBranch, refreshNonce]);
 
-  // Six-month trend, computed from the same accrual P&L endpoint as the card above, so the
-  // chart and the card describe the same quantity. (It previously read transaction stats,
-  // a cash-basis figure, while being labelled "Accrual".)
+  
+  
+  
   useEffect(() => {
     let cancelled = false;
     async function run() {

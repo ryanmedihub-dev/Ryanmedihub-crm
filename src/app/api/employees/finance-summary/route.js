@@ -11,17 +11,6 @@ import { settledTotalExpr } from "@/lib/advanceSettlements";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 
-/**
- * Per-employee payable rollup for the staff table's money columns.
- *
- * All six figures come from the same source — Payables raised against the employee —
- * so they reconcile with each other and with the payables pages:
- *     Total Payable = Salary Payable + Incentive Payable + everything else
- *     Pending       = Payable − Paid
- *
- * `paid` comes from buildPayableAggregationStages, so it counts settlement by transaction,
- * borrowing and applied advance alike — the same definition the Payables Report uses.
- */
 export async function GET(request) {
   try {
     const session = await getServerSession(authOptions);
@@ -44,8 +33,8 @@ export async function GET(request) {
       isCancelled: { $ne: true },
     };
     if (branch) match.branch = branch;
-    // Single-employee mode for the detail page — avoids shipping every employee's salary
-    // figures to a page that only needs one.
+    
+    
     if (employeeId && mongoose.Types.ObjectId.isValid(employeeId)) {
       match["payee.refId"] = new mongoose.Types.ObjectId(employeeId);
     }
@@ -96,9 +85,9 @@ export async function GET(request) {
       },
     ]);
 
-    // Advances given to the employee (money OUT held with them) net of what has since been
-    // settled against their payables or recovered in cash — a running balance, so it is NOT
-    // bound by the createdAt date range the payable figures use.
+    
+    
+    
     const advMatch = {
       "party.kind": "EMPLOYEE",
       "party.refId": { $ne: null },

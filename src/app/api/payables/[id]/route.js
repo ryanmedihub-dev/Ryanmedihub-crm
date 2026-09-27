@@ -40,7 +40,7 @@ export async function GET(req, { params }) {
       return NextResponse.json({ error: "Payable not found" }, { status: 404 });
     }
 
-    // Human staff code for an EMPLOYEE payee, so callers can show "Ashu · RYN-014".
+    
     if (payable.payee?.kind === "EMPLOYEE" && payable.payee?.refId) {
       const emp = await Employee.findById(payable.payee.refId).select("employeeId role").lean();
       if (emp) {
@@ -49,9 +49,9 @@ export async function GET(req, { params }) {
       }
     }
 
-    // A per-patient incentive payable (findOrCreateIncentivePayable) is a running total —
-    // the actual amounts live as rows on Patient.incentives[], each linked back here via
-    // payableId. Surface that breakdown so the payable's own total isn't a black box.
+    
+    
+    
     if (payable.purpose === "INCENTIVE" && payable.expenseSubType === "Incentive") {
       payable.incentiveEntries = await Patient.aggregate([
         { $match: { "incentives.payableId": payable._id } },

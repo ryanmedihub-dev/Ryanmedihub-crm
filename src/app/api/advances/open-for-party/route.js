@@ -1,6 +1,4 @@
-// "Which advances does this party still owe back?" — one call for the expense create form.
-// Filters an OUT advance's `remaining` down through both settlement shapes (via the shared
-// helper) AND any cash recoveries, and drops anything already exhausted.
+
 
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
@@ -63,7 +61,7 @@ async function computeOpenAdvancesForParty({ partyKind, partyRefId, partyLabel, 
       }
       match["party.refId"] = new mongoose.Types.ObjectId(partyRefId);
     } else {
-      match["party.label"] = partyLabel; // exact, not regex — a real party, not a fuzzy search
+      match["party.label"] = partyLabel; 
     }
     if (branch) match.branch = branch;
 
@@ -72,7 +70,7 @@ async function computeOpenAdvancesForParty({ partyKind, partyRefId, partyLabel, 
       return { success: true, advances: [], totalRemaining: 0 };
     }
 
-    // Cash recovered per receivable — one grouped query, not one per advance.
+    
     const receivableIds = [...new Set(rows.map((r) => String(r.receivableId)))].map(
       (id) => new mongoose.Types.ObjectId(id),
     );
@@ -87,7 +85,7 @@ async function computeOpenAdvancesForParty({ partyKind, partyRefId, partyLabel, 
       const settledTotal = totalSettledAmount(r);
       const cashRecovered = round2(cashByReceivable.get(String(r.receivableId)) || 0);
       const remaining = Math.max(0, round2(r.amount - settledTotal - cashRecovered));
-      if (remaining <= 0.005) continue; // never offer an exhausted advance
+      if (remaining <= 0.005) continue; 
 
       advances.push({
         _id: String(r._id),

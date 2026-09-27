@@ -13,8 +13,6 @@ function cleanScope(scope) {
   return out;
 }
 
-// Same idea as useOwnerData's ownerFetch-backed fetcher, but POST — the
-// server recomputes from scope, the client never sends row data.
 async function postVerdicts(url, scope) {
   const r = await ownerFetch(url, {
     method: "POST",
@@ -25,7 +23,6 @@ async function postVerdicts(url, scope) {
   return r.data;
 }
 
-/** Ratings for every visible row of a table, keyed by entity id. */
 export function useAiVerdicts(feature, scope, { enabled = true } = {}) {
   const cleanedScope = cleanScope(scope);
   const base = isLongFeature(feature) ? "/api/owner/ai/verdicts-long" : "/api/owner/ai/verdicts";

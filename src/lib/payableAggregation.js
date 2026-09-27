@@ -18,19 +18,19 @@ export function buildPayableAggregationStages(
                 $and: [
                   { $eq: ["$payableId", "$$payableId"] },
                   { $eq: ["$approvalStatus", "APPROVED"] },
-                  // No unsettled-method (paid_by_other/paid_to_external) exclusion here —
-                  // unlike a blanket balance/P&L rollup, this lookup only ever matches
-                  // transactions that were explicitly linked to THIS payable's own _id via
-                  // an intentional payableId, which only happens through deliberate
-                  // "settle this payable" user action (RecordPaymentModal, vouchers, collab
-                  // settlements) — never through the "spawn a brand-new document" path an
-                  // unlinked external-party transaction takes (that path always saves
-                  // payableId: null, so it can never reach this lookup regardless). If the
-                  // vendor was paid — even via an external party fronting the money — this
-                  // payable is genuinely settled; excluding the method here was the bug that
-                  // let a "Paid by Other" payment against an existing payable leave it stuck
-                  // pending forever while a duplicate, disconnected payable was raised to
-                  // the external party.
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
                 ],
               },
             },
@@ -80,9 +80,9 @@ export function buildPayableAggregationStages(
           {
             $group: {
               _id: null,
-              // A document can now hold several settlement lines (see settlements array on
-              // the Advance model) — sum only the ones that target THIS payable, not the
-              // whole document, so a doc settling multiple payables isn't double-counted here.
+              
+              
+              
               paid: { $sum: settledAgainstPayableExpr("$$payableId") },
               paymentCount: { $sum: 1 },
             },
@@ -142,24 +142,24 @@ export function buildPayableAggregationStages(
 
 export function buildPayableGroupedStages(txCollectionName, { level, category, subType, branch, from, to, groupBy = "category", subGroupBy, purpose, payeeKind, party, borrowingsCollectionName = "borrowings", advancesCollectionName = "advances" } = {}) {
   const isVendor = groupBy === "vendor";
-  // "party" groups every payable by its payee's label (employee, vendor, clinic — any kind)
-  // at every level — used where the whole page is one flat party list (e.g. Assets/Receivables).
+  
+  
   const isParty = groupBy === "party";
-  // Employee Payables wants the opposite hybrid: level 1 stays the Salary/Incentive category
-  // (unchanged UI), but level 2 — normally the expense sub-type, which is always fixed
-  // ("Salary"/"Incentive") and useless as a breakdown — instead lists the employees who hold
-  // payables in that category.
+  
+  
+  
+  
   const isSubParty = level === 2 && subGroupBy === "party";
-  // Every filter lands in this first $match so it runs before the $lookups — filtering after
-  // the joins would join every payable in the DB and then throw most of it away.
+  
+  
   const match = { isCancelled: { $ne: true } };
   if (isVendor) match["payee.kind"] = "VENDOR";
   else if (payeeKind) match["payee.kind"] = payeeKind;
   if (purpose) match.purpose = Array.isArray(purpose) ? { $in: purpose } : purpose;
   if (branch) match.branch = branch;
-  // Lets a category/sub-type breakdown be pre-narrowed to one payee (e.g. "search employee"
-  // on the Employee Payables page) before it's even grouped — isParty already groups BY this
-  // exact field, so a regex on top of it there would be redundant/wrong.
+  
+  
+  
   if (party && !isVendor && !isParty) match["payee.label"] = { $regex: party, $options: "i" };
   if (!isVendor && !isParty) {
     if (level !== 1 && category) match.expenseCategory = category;
@@ -193,9 +193,9 @@ export function buildPayableGroupedStages(txCollectionName, { level, category, s
         pipeline: [
           ...(toDate ? [{ $match: { date: { $lte: toDate } } }] : []),
           {
-            // Same reasoning as buildPayableAggregationStages' paymentAgg lookup above: no
-            // unsettled-method exclusion, since a payableId match here only ever comes from
-            // a deliberate "settle this payable" link.
+            
+            
+            
             $match: {
               $expr: {
                 $and: [
@@ -233,9 +233,9 @@ export function buildPayableGroupedStages(txCollectionName, { level, category, s
       },
     },
     {
-      // Advances applied against a payable count as money paid, exactly as they do in
-      // buildPayableAggregationStages. Omitting them here made the grouped rollup overstate
-      // what is still owed versus the document list built from the other pipeline.
+      
+      
+      
       $lookup: {
         from: advancesCollectionName,
         let: { payableId: "$_id" },
@@ -252,9 +252,9 @@ export function buildPayableGroupedStages(txCollectionName, { level, category, s
               },
             },
           },
-          // A doc's own date covers every line on it — using it for every matched line here
-          // (rather than each line's settledAt) mirrors the original single-settlement
-          // behaviour and keeps the range-bucketing math unchanged.
+          
+          
+          
           { $project: { amount: settledAgainstPayableExpr("$$payableId"), date: 1 } },
         ],
         as: "advancePayments",

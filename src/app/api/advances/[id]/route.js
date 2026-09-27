@@ -112,8 +112,8 @@ export async function PATCH(req, { params }) {
     const performedBy = { name: session.user.name, email: session.user.email };
 
     if (action === "settle" || action === "unsettle") {
-      // Both branches are just thin wrappers over the extracted functions now — same checks,
-      // same messages, same transaction, so the orchestrator route can reuse them.
+      
+      
       if (action === "unsettle") {
         const r = await unsettleAdvanceFromPayable({
           advanceId: id,

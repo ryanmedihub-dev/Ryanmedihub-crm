@@ -29,9 +29,9 @@ export default function BankRoutingFields({
 
     if (firstRun && (forEdit || receiptMode || furtherMode)) return;
 
-    // No known default for this method — reveal the manual picker instead of silently
-    // submitting an empty furtherMode (the server requires it whenever a payment is
-    // recorded against a payable).
+    
+    
+    
     if (collapsible && !defaults.furtherMode) setShowRouting(true);
 
     onChange(

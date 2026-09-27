@@ -48,7 +48,7 @@ export async function POST(req, { params }) {
       return NextResponse.json({ cancelled: 0, skipped: [], message: "Batch had no payables." });
     }
 
-    // Which of the batch's payables already have money against them — those are left alone.
+    
     const withPaid = await Payable.aggregate([
       { $match: { _id: { $in: ids } } },
       ...buildPayableAggregationStages(Transactions.collection.name),

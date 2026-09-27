@@ -10,18 +10,13 @@ import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { ownerFetch } from "@/lib/ownerFetch";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 
-// Manual pairing screen for the employee <-> callby links the reconciliation
-// script (scripts/sync-callby-links.mjs) couldn't match by code — no
-// Employee.employeeId, or no callby user carries that code yet.
-// Without this, every Employees page silently under-reports for anyone unlinked.
-
 export default function CallbyLinksPage() {
   const [selEmp, setSelEmp] = useState(null);
   const [selAgent, setSelAgent] = useState(null);
   const [empQuery, setEmpQuery] = useState("");
   const [agentQuery, setAgentQuery] = useState("");
-  // Default to caller-type roles: the ~200 OT/doctor/reception employees can
-  // never be in callby and would bury the real gaps.
+  
+  
   const [callersOnly, setCallersOnly] = useState(true);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState(null);

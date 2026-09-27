@@ -12,14 +12,14 @@ const handler = async (req) => {
   try {
     const data = await Employee.find({ mergedInto: null }).sort({ name: 1 }).collation(NAME_COLLATION);
 
-    // Seed every canonical bucket so consumers can safely read e.g. `employees.Counsellor`
-    // even when no employee currently holds that role.
+    
+    
     const employeesByRole = {};
     for (const r of [...EMPLOYEE_ROLE_OPTIONS, OTHER_EMPLOYEE_ROLE]) employeesByRole[r] = [];
 
     for (const employee of data) {
-      // Role is free-form text — fold "counsellor" / "Counsellor" / "COUNSELLOR" etc. into
-      // one bucket; anything unrecognised goes to "Others".
+      
+      
       const role = canonicalEmployeeRole(employee.role);
       employeesByRole[role].push({
         name: employee.name,

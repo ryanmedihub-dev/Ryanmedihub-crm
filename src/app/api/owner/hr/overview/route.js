@@ -10,8 +10,6 @@ import { cacheKey, cached } from "@/lib/cache";
 const ALLOWED_ROLES = ["owner", "super-admin"];
 const DAY_MS = 86400000;
 
-// /owner/hr section landing — interviews/selected/rejected/hold/selectionRate/
-// avg time-to-decision/position demand/trend, one $facet round trip.
 export async function GET(req) {
   try {
     await dbConnect();
@@ -45,8 +43,8 @@ export async function GET(req) {
                   selected: { $sum: { $cond: [{ $eq: ["$status", "Selected"] }, 1, 0] } },
                   rejected: { $sum: { $cond: [{ $eq: ["$status", "Rejected"] }, 1, 0] } },
                   onHold: { $sum: { $cond: [{ $eq: ["$status", "On Hold"] }, 1, 0] } },
-                  // Time-to-decision: date -> updatedAt, only for interviews that have left
-                  // "Applied" (i.e. an actual decision has been recorded).
+                  
+                  
                   decidedCount: { $sum: { $cond: [{ $ne: ["$status", "Applied"] }, 1, 0] } },
                   decisionDaysSum: {
                     $sum: {

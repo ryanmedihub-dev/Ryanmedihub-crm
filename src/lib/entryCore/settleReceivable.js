@@ -1,9 +1,4 @@
-// Extracted from receivables/[id]/receipt/route.js's POST handler — used by
-// "receivable.settle". AUDIT.md B1/N10: this route never recomputes patient.payments even
-// when the receivable resolves to a patient, and never checked period lock (the new
-// dispatcher's guards.js now does, for anything submitted through it — see the Phase B
-// response's notes on what that does and doesn't change). Neither is fixed inside this
-// function itself; it is a faithful port of the route body.
+
 
 import Receivable from "@/models/Receivable";
 import Transactions from "@/models/Transactions";

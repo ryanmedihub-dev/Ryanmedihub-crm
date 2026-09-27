@@ -13,8 +13,6 @@ export const maxDuration = 300;
 const ALLOWED_ROLES = ["owner", "super-admin"];
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
-// Hard delete is correct here (unlike payables, which are soft-cancelled because money may
-// reference them) — nothing else in the system points at a CampaignLead by id.
 export async function POST(req, { params }) {
   try {
     const session = await getServerSession(authOptions);
@@ -45,8 +43,8 @@ export async function POST(req, { params }) {
       return NextResponse.json({ error: "This batch is more than 30 days old and can no longer be reverted." }, { status: 400 });
     }
 
-    // Source labels already written to callby are not reverted. To correct them, upload the
-    // list against the right campaign.
+    
+    
     const ids = batch.createdCampaignLeads || [];
     const { deletedCount } = ids.length ? await CampaignLead.deleteMany({ _id: { $in: ids } }) : { deletedCount: 0 };
 

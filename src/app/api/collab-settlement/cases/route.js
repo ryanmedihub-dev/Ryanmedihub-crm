@@ -15,12 +15,6 @@ import { cacheKey, cached } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["collab", "admin", "super-admin"];
 
-/**
- * Fills in payableValue / receivableValue on each case from the Payable / Receivable it
- * crystallised into, using the same aggregation the balances endpoint and the
- * assets/liabilities pages use — so a case row and the clinic total above it can't drift.
- * Cases that haven't crystallised yet get null, which the UI renders as "—".
- */
 async function attachSettlementValues(rows, txCollection) {
   const payableIds = rows.map((r) => r.clinicSharePayable).filter(Boolean);
   const receivableIds = rows.map((r) => r.clinicShareReceivable).filter(Boolean);
@@ -177,7 +171,7 @@ async function computeCases({ match, search, page, limit, txCollection, patientC
       },
       {
         $addFields: {
-          // Case-scoped figure, kept because the collection modal caps against it.
+          
           caseOutstanding: {
             $subtract: [
               "$packageAmount",
@@ -188,8 +182,8 @@ async function computeCases({ match, search, page, limit, txCollection, patientC
           patientName: "$patientInfo.personal.name",
           patientPhone: "$patientInfo.personal.phone",
           paidToClinic: "$collectedByClinic",
-          // The patient's own ledger — what the Package and Outstanding columns show.
-          // Note this is patient-level, so a patient with several cases repeats it.
+          
+          
           patientPackage: { $ifNull: ["$patientInfo.payments.totalAmount", 0] },
           patientOutstanding: { $ifNull: ["$patientInfo.payments.pendingAmount", 0] },
           patientReceived: { $ifNull: ["$patientInfo.payments.amountReceived", 0] },
@@ -224,13 +218,13 @@ async function computeCases({ match, search, page, limit, txCollection, patientC
       console.error("Collab case query returned non-collab-branch rows:", leaked.map((r) => r._id));
     }
 
-    // Live pending on the payable/receivable each case crystallised into — what is actually
-    // still on the books, and what the clinic totals on this page are built from. Resolved
-    // for just this page's ids so the heavy settlement pipelines run over a handful of docs.
+    
+    
+    
     await attachSettlementValues(rows, txCollection);
 
-    // A patient can hold several collab cases; the Package / Outstanding columns are
-    // patient-level, so flag every repeat after the first to stop them being summed twice.
+    
+    
     const seenPatients = new Set();
     for (const r of rows) {
       const pid = String(r.patient || "");

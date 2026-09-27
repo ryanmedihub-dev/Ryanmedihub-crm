@@ -1,7 +1,4 @@
-// Superset of /api/transactions/expense/create — same body, plus
-// `advanceSettlements: [{ advanceId, amount }]`. With no settlements it delegates straight to
-// createExpense(), so the form can always post here. All real work is in
-// src/lib/entryCore/createExpenseWithSettlement.js.
+
 
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";

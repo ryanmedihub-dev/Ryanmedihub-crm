@@ -82,7 +82,7 @@ export default function FilterPanel({
           applyFilters();
         }}
       >
-        {/* Header */}
+        {}
         <div className="px-4 sm:px-6 pt-5 pb-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-start gap-3">
@@ -132,11 +132,11 @@ export default function FilterPanel({
           </div>
         </div>
 
-        {/* Filter Area */}
+        {}
         <div className="px-4 sm:px-6 pb-5">
           <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-3 sm:p-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
-              {/* Branch */}
+              {}
               <SearchableMultiSelect
                 label="Branch"
                 icon={Building2}
@@ -154,7 +154,7 @@ export default function FilterPanel({
                 }))}
               />
 
-              {/* Date From */}
+              {}
               <Input
                 label="From date"
                 type="date"
@@ -168,7 +168,7 @@ export default function FilterPanel({
                 }
               />
 
-              {/* Date To */}
+              {}
               <Input
                 label="To date"
                 type="date"
@@ -182,7 +182,7 @@ export default function FilterPanel({
                 }
               />
 
-              {/* Payment Method */}
+              {}
               <SearchableMultiSelect
                 label="Payment method"
                 icon={CreditCard}
@@ -200,7 +200,7 @@ export default function FilterPanel({
                 }))}
               />
 
-              {/* Entry Type */}
+              {}
               {!NON_TRANSACTION_TABS.includes(activeCategory) && (
                 <SearchableMultiSelect
                   label="Entry type"
@@ -222,7 +222,7 @@ export default function FilterPanel({
                 />
               )}
 
-              {/* Procedure */}
+              {}
               {(activeCategory === "ALL" ||
                 activeCategory === "TRANSPLANT" ||
                 activeCategory === "SERVICE") && (
@@ -247,7 +247,7 @@ export default function FilterPanel({
                 />
               )}
 
-              {/* Account */}
+              {}
               {(REVENUE_CATEGORIES.includes(activeCategory) ||
                 activeCategory === "EXPENSE" ||
                 activeCategory === "ALL") && (
@@ -279,7 +279,7 @@ export default function FilterPanel({
                 />
               )}
 
-              {/* Expense Category */}
+              {}
               {(activeCategory === "EXPENSE" ||
                 activeCategory === "ALL") && (
                 <>
@@ -300,7 +300,7 @@ export default function FilterPanel({
                     }))}
                   />
 
-                  {/* Expense Type */}
+                  {}
                   <SearchableMultiSelect
                     label="Expense type"
                     allLabel="All Types"
@@ -336,7 +336,7 @@ export default function FilterPanel({
               )}
             </div>
 
-            {/* Bottom Actions */}
+            {}
             <div className="mt-4 pt-4 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="text-xs text-slate-500">
                 {hasPendingChanges ? (
@@ -399,7 +399,7 @@ export default function FilterPanel({
         </div>
       </form>
 
-      {/* Applied Filters */}
+      {}
       {hasAppliedFilters && (
         <div className="px-4 sm:px-6 pb-5">
           <div className="rounded-2xl border border-slate-200 bg-white p-3 sm:p-4">
@@ -429,7 +429,7 @@ export default function FilterPanel({
               </div>
 
               <div className="flex flex-1 flex-wrap gap-2">
-                {/* Branch */}
+                {}
                 {appliedFilters.branch.map((v) => (
                   <FilterChip
                     key={`branch-${v}`}
@@ -440,7 +440,7 @@ export default function FilterPanel({
                   />
                 ))}
 
-                {/* From Date */}
+                {}
                 {appliedFilters.dateFrom && (
                   <FilterChip
                     label={`From: ${formatDateForDisplay(
@@ -452,7 +452,7 @@ export default function FilterPanel({
                   />
                 )}
 
-                {/* To Date */}
+                {}
                 {appliedFilters.dateTo && (
                   <FilterChip
                     label={`To: ${formatDateForDisplay(
@@ -464,7 +464,7 @@ export default function FilterPanel({
                   />
                 )}
 
-                {/* Payment Method */}
+                {}
                 {appliedFilters.paymentMethod.map((v) => (
                   <FilterChip
                     key={`method-${v}`}
@@ -477,7 +477,7 @@ export default function FilterPanel({
                   />
                 ))}
 
-                {/* Procedure */}
+                {}
                 {appliedFilters.procedure.map((v) => (
                   <FilterChip
                     key={`procedure-${v}`}
@@ -488,7 +488,7 @@ export default function FilterPanel({
                   />
                 ))}
 
-                {/* Account */}
+                {}
                 {appliedFilters.furtherMode.map((v) => (
                   <FilterChip
                     key={`account-${v}`}
@@ -503,7 +503,7 @@ export default function FilterPanel({
                   />
                 ))}
 
-                {/* Expense Category */}
+                {}
                 {appliedFilters.expenseCategory.map((v) => (
                   <FilterChip
                     key={`expense-category-${v}`}
@@ -514,7 +514,7 @@ export default function FilterPanel({
                   />
                 ))}
 
-                {/* Expense Type */}
+                {}
                 {appliedFilters.expenseType.map((v) => (
                   <FilterChip
                     key={`expense-type-${v}`}
@@ -525,7 +525,7 @@ export default function FilterPanel({
                   />
                 ))}
 
-                {/* Entry Type */}
+                {}
                 {appliedFilters.entryType.map((v) => (
                   <FilterChip
                     key={`entry-${v}`}

@@ -1,27 +1,13 @@
-// Employee performance scoring (Owner Panel v2, Part 1).
-//
-// This is used to judge people, so every rule here is explicit, documented, and
-// normalized against PEERS IN THE SAME ROLE BUCKET OVER THE SAME PERIOD — never
-// an absolute threshold, and never blended with salary/incentive. Below a
-// minimum sample size the result is "insufficient data", never a letter grade —
-// someone with 3 calls this week is not "Bad", they're unmeasured.
-//
-// This module is pure (no DB access): callers compute the raw metric inputs per
-// employee (from Patient/Payable/Interviewer/callby aggregations) and pass them
-// in as a flat number per metric key; this module only ranks and bands them.
+
 
 export const PERFORMANCE_BANDS = ["Excellent", "Good", "Average", "Bad"];
 
-// Per-role formula: which metrics feed the score, their weight (sums to 1),
-// whether higher-is-better (default) or lower-is-better (`invert: true`), and
-// the minimum sample size (on `sampleField`) below which the employee is
-// reported as "insufficient data" instead of scored.
 export const ROLE_PERFORMANCE_CONFIG = {
   Agent: {
     minSample: 5,
-    // Must match a key buildAgentMetrics emits (src/lib/owner/employeeReportQuery.js).
-    // Was "totalLeads" — dropped along with every other lead-status metric in the
-    // engagement-metrics rework, so the sample is now call volume instead of lead count.
+    
+    
+    
     sampleField: "totalCalls",
     sampleLabel: "calls made",
     metrics: [
@@ -58,9 +44,9 @@ export const ROLE_PERFORMANCE_CONFIG = {
       { key: "interviewVolume", label: "Interview volume", weight: 0.4 },
     ],
   },
-  // "Other" spans unrelated designations (reception, housekeeping, accountant,
-  // CEO, ...) with no common KPI — deliberately no formula. Callers must check
-  // for a missing config and render "no KPI for this role", not a fabricated score.
+  
+  
+  
 };
 
 function toNum(v) {
@@ -68,7 +54,6 @@ function toNum(v) {
   return Number.isFinite(n) ? n : 0;
 }
 
-/** Fraction of `values` that are <= `value` — a simple, explainable percentile rank. */
 function percentileRank(values, value) {
   if (!values.length) return 0;
   let count = 0;
@@ -83,19 +68,11 @@ function bandFromPercentile(p) {
   return "Bad";
 }
 
-/**
- * Score a whole cohort (one role bucket, one period) at once, so percentiles are
- * computed against real peers.
- *
- * @param section one of ROLE_PERFORMANCE_CONFIG's keys
- * @param cohort   [{ id, sample: number, metrics: { [metricKey]: number } }, ...]
- * @returns Map<id, { insufficientData, band, score, explanation }>
- */
 export function scoreCohort(section, cohort) {
   const config = ROLE_PERFORMANCE_CONFIG[section];
   const results = new Map();
   if (!config) {
-    // "Other" (and any future unmapped section) — no formula, not a fabricated score.
+    
     for (const row of cohort) {
       results.set(row.id, { insufficientData: null, band: null, score: null, explanation: [] });
     }
@@ -104,7 +81,7 @@ export function scoreCohort(section, cohort) {
 
   const scorable = cohort.filter((row) => toNum(row.sample) >= config.minSample);
 
-  // Peer value pools per metric, built only from scorable peers.
+  
   const pools = {};
   for (const m of config.metrics) {
     pools[m.key] = scorable.map((row) => toNum(row.metrics?.[m.key]));
@@ -151,11 +128,6 @@ export function scoreCohort(section, cohort) {
   return results;
 }
 
-/**
- * Team-level performance for the Leadership page: the mean of member scores,
- * excluding members with insufficient data. A team with zero scored members is
- * itself "insufficient data".
- */
 export function teamPerformanceFromMembers(memberResults) {
   const scored = memberResults.filter((r) => r && r.insufficientData === false);
   if (!scored.length) {

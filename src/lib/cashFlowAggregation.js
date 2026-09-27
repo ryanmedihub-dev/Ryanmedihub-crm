@@ -41,8 +41,8 @@ export function buildCashFlowGroupedStages({ level, costType, head, groupBy = "a
   const isRevenue = costType === "Revenue";
   const accountField = groupBy === "mode" ? "$receiptMode" : "$furtherMode";
 
-  // Level 2+ narrows to the level-1 bucket that was drilled into. For receipts that
-  // bucket is now a bank account / receipt mode (see headExpr below), not a revenue head.
+  
+  
   if (level !== 1 && head) {
     if (isRevenue) {
       Object.assign(match, groupBy === "mode" ? { receiptMode: head } : { furtherMode: head });
@@ -51,8 +51,8 @@ export function buildCashFlowGroupedStages({ level, costType, head, groupBy = "a
     }
   }
 
-  // Receipts: level 1 = bank account / receipt mode, level 2 = revenue head within it.
-  // Payments: unchanged — level 1 = expense head, level 2 = expense sub-type.
+  
+  
   const headExpr = isRevenue
     ? { $ifNull: [accountField, "Unspecified"] }
     : { $ifNull: ["$expense", "Uncategorised"] };
@@ -109,7 +109,7 @@ export function buildCashFlowLeafMatch({ costType, head, sub, groupBy = "account
   if (from) match.date = { ...(match.date || {}), $gte: new Date(from) };
 
   if (costType === "Revenue") {
-    // Level 1 = bank account / receipt mode (head); level 2 = revenue head (sub).
+    
     if (head) {
       if (groupBy === "mode") match.receiptMode = head;
       else match.furtherMode = head;

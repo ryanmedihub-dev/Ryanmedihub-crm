@@ -5,14 +5,13 @@ import { PATIENT_SHARED_COLUMNS, DAYS_SINCE_BOOKING_COLUMN, SURGERY_DATE_IF_SET_
 import { ATTENTION_THRESHOLDS } from "@/lib/owner/attentionThresholds";
 import { num, rupee } from "@/lib/owner/format";
 
-// ops.status === "BOOKING_DONE" — any partial payment made.
 const config = {
   preset: "bookingDone",
   title: "Booking Done",
   subtitle: `Paid something but not in full — flagged past ${ATTENTION_THRESHOLDS.bookingDoneStaleDays} days with no surgery date booked`,
   tableId: "patients-booking-done",
   defaultSort: "createdAt",
-  defaultSortDir: "asc", // oldest registrations first, so the ones going stale surface
+  defaultSortDir: "asc", 
   aiFeature: "patients.preset",
   aiVerdicts: true,
   columns: [...PATIENT_SHARED_COLUMNS, DAYS_SINCE_BOOKING_COLUMN, SURGERY_DATE_IF_SET_COLUMN],

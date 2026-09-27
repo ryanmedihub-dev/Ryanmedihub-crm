@@ -1,5 +1,5 @@
-// Severity ramp: fill-count is the primary encoding (colour-blind safe),
-// colour and glyph are secondary. level 0..4.
+
+
 const GLYPH = { 4: "▲" };
 
 export default function AttentionRamp({ level = 0, label, showLabel = true }) {
@@ -21,7 +21,6 @@ export default function AttentionRamp({ level = 0, label, showLabel = true }) {
   );
 }
 
-// Map the P0..P4 priority lanes to a ramp level (P0 = most urgent = 4).
 export function priorityToLevel(priority) {
   const map = { P0: 4, P1: 3, P2: 2, P3: 1, P4: 1 };
   return map[priority] ?? 0;

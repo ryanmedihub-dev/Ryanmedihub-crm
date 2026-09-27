@@ -1,8 +1,4 @@
-// Extracted from collab-settlement/cases/create/route.js's POST handler — used by
-// "collab.case". Per the project's guardrails, collabDerivation.js (createCollabCaseAtomic)
-// is read and called, never modified — this module only carries the route's OWN
-// pre-validation (the package/discount/share bounds checks that live in the route, not in
-// collabDerivation.js).
+
 
 import Patient from "@/models/Patient";
 import { createCollabCaseAtomic } from "@/lib/collabDerivation";

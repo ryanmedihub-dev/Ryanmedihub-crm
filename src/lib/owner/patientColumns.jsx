@@ -2,10 +2,6 @@ import Badge from "@/components/owner/Badge";
 import { rupee, fmtDate, daysAgo } from "@/lib/owner/format";
 import { PATIENT_STATUS_LABELS } from "@/lib/owner/patientStatus";
 
-// Patient-report columns (Owner Panel v2, Part 3) — the shared set from the
-// brief, plus per-preset extras. Six list pages assemble these into their
-// `config.columns`; only Surgery Done and Direct need materially different ones.
-
 const STATUS_KIND = {
   NEW: "neutral", NOT_VISITED: "warn", NOT_CONVERTED: "bad",
   BOOKING_DONE: "info", SURGERY_BOOKED: "good", CLOSED: "good",
@@ -32,9 +28,6 @@ export const PATIENT_SHARED_COLUMNS = [
   { key: "reference", label: "Assigned Agent", render: (r) => r.reference?.name || "—" },
 ];
 
-// --- Not Converted --------------------------------------------------------
-// Sorting on these "days since" columns is served by the API as the inverse
-// sort on the underlying date (see SORT_FIELD_MAP in api/owner/patients).
 export const DAYS_SINCE_ACTIVITY_COLUMN = {
   key: "daysSinceActivity",
   label: "Days Since Last Activity",
@@ -52,9 +45,6 @@ export const LAST_CONTACT_COLUMN = {
   render: (r) => fmtDate(r.lastActivityAt),
 };
 
-// --- Booking Done ----------------------------------------------------------
-// No booking timestamp exists on Patient — this is days since REGISTRATION
-// (createdAt), and is labelled as such.
 export const DAYS_SINCE_BOOKING_COLUMN = {
   key: "daysSinceBooking",
   label: "Days Since Registration",
@@ -64,8 +54,8 @@ export const DAYS_SINCE_BOOKING_COLUMN = {
   render: (r) => {
     const d = daysAgo(r.createdAt);
     if (d == null) return "—";
-    // Flagged the same way the AI Attention page (Part 6) will — past 10 days
-    // with no surgery date booked yet.
+    
+    
     return <Badge kind={d > 10 && !r.surgeryDate ? "bad" : "neutral"}>{d}d</Badge>;
   },
 };
@@ -75,7 +65,6 @@ export const SURGERY_DATE_IF_SET_COLUMN = {
   render: (r) => (r.surgeryDate ? fmtDate(r.surgeryDate) : <span className="muted">Not booked</span>),
 };
 
-// --- Surgery Done — full clinical set --------------------------------------
 export const SURGERY_CLINICAL_COLUMNS = [
   { key: "surgeryDate", label: "Surgery Date", sortable: true, render: (r) => fmtDate(r.surgeryDate) },
   { key: "technique", label: "Technique", render: (r) => r.technique || "—" },
@@ -96,7 +85,6 @@ export const SURGERY_CLINICAL_COLUMNS = [
   { key: "donorCondition", label: "Donor Condition", defaultHidden: true, render: (r) => r.donorCondition || "—" },
 ];
 
-// --- Converted — full revenue picture --------------------------------------
 export const REVENUE_COLUMNS = [
   { key: "discount", label: "Discount", align: "right", sortable: true, render: (r) => rupee(r.discount) },
 ];

@@ -8,9 +8,6 @@ import { cacheKey, cached } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["owner", "super-admin"];
 
-// /owner/patients section landing — total patients, status funnel, revenue,
-// conversion rate, branch split, daily trend. The numbers come from
-// src/lib/owner/metrics/patients.js, shared with Sanya's tools.
 const getHandler = async (req) => {
   const session = await getServerSession(authOptions);
   if (!session || !ALLOWED_ROLES.includes(session?.user?.role)) {

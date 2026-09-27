@@ -10,9 +10,6 @@ export const maxDuration = 300;
 
 const ALLOWED_ROLES = ["owner", "super-admin"];
 
-// Not a spreadsheet template (campaign leads have no GST/TDS/category dropdown sheet worth
-// building) — this backs the campaign picker on the upload page: Active campaigns first,
-// since that's who's actually running.
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

@@ -1,13 +1,5 @@
 "use client";
 
-// Client-side access to the dynamic master data. Fetches GET /api/master-data/lists once
-// (SWR-cached, 60s dedupe) and, until that resolves or if it fails, falls back to the literal
-// constants still bundled in src/constants/* — so every form renders identically to today from
-// the first paint and only "upgrades" to live data once the fetch lands.
-//
-// Client components must never import src/lib/masterData/* (that pulls in mongoose). This hook
-// and the API route are the only bridge.
-
 import useSWR from "swr";
 
 import {
@@ -78,11 +70,11 @@ export default function useMasterData() {
   const md = data || FALLBACK;
 
   return {
-    /** true once real data from the API is in hand (vs. the literal fallback). */
+    
     ready: live,
     isLoading,
     error,
-    /** re-fetch — call after a master-data edit in the admin UI. */
+    
     refresh: mutate,
 
     expenseCategories: md.expenseCategories,

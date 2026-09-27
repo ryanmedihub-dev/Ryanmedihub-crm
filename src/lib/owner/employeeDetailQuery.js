@@ -12,11 +12,6 @@ import { sumInterestedBands } from "@/lib/owner/engagementBands";
 import { istDayBucket, periodBounds, daysInPeriod } from "@/lib/owner/dates";
 import { parseSortParams, parsePageParams, pagedFacet, unpackFacet, pageMeta } from "@/lib/owner/pagination";
 
-// Backs /api/owner/employees/[id] — one detail route for all six roles (Owner
-// Panel v2, Part 1). Loads the Employee elsewhere; this builds the
-// role-specific KPIs, rows (paginated), trend and compensation for one
-// employee, all scoped to the same [from, to] window.
-
 const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
 
 function periodMatch(field, from, to) {
@@ -24,10 +19,6 @@ function periodMatch(field, from, to) {
   return bounds ? { [field]: bounds } : {};
 }
 
-/**
- * One aggregation: a page of rows + totals over the whole filtered set + the
- * per-day trend, all from the same $match.
- */
 async function pagedDetail(Model, { match, dateField, sort, skip, limit, project, totalsGroup }) {
   const [result] = await Model.aggregate([
     { $match: match },
@@ -48,17 +39,8 @@ async function pagedDetail(Model, { match, dateField, sort, skip, limit, project
 
 const kpi = (label, value, sub, kind = "info", format) => ({ label, value, sub, kind, ...(format ? { format } : {}) });
 
-// ---------------------------------------------------------------------------
-// Agent
-// ---------------------------------------------------------------------------
 const AGENT_SORT = { visitDate: "personal.visitDate", name: "personal.name", amountReceived: "payments.amountReceived", status: "ops.status" };
 
-// Resolves which callby User._id to call agent-detail with, preferring the
-// employeeId/ryanEmployeeCode join (see employeeReportQuery.js's buildAgentMetrics for
-// the full reasoning) and falling back to the stored callbyUserId link. callby's
-// agent-detail route is keyed on ITS OWN employeeId, never on our code, so a code-only
-// match has to be resolved through workforce-summary first — there's no evidence
-// agent-detail itself accepts a ryanEmployeeCode path, so this doesn't assume one.
 async function resolveCallbyUserId(employee, { from, to }) {
   if (employee.employeeId) {
     try {
@@ -72,8 +54,8 @@ async function resolveCallbyUserId(employee, { from, to }) {
       const uid = match ? (match.employeeId ?? match.userId ?? match.id ?? match._id ?? null) : null;
       if (uid) return String(uid);
     } catch {
-      // workforce-summary failing here doesn't mean agent-detail would fail too, but
-      // there's nothing better to resolve a code-only employee with — fall through.
+      
+      
     }
   }
   return employee.callbyUserId ? String(employee.callbyUserId) : null;
@@ -135,9 +117,6 @@ async function agentDetail(employee, { from, to, searchParams }) {
   };
 }
 
-// ---------------------------------------------------------------------------
-// Counsellor
-// ---------------------------------------------------------------------------
 const COUNSELLOR_SORT = {
   visitDate: "personal.visitDate", name: "personal.name", amountReceived: "payments.amountReceived",
   packageAfterConsult: "counselling.finlpackage", discount: "payments.discount", status: "ops.status",
@@ -181,9 +160,6 @@ async function counsellorDetail(employee, { from, to, searchParams }) {
   };
 }
 
-// ---------------------------------------------------------------------------
-// Surgery
-// ---------------------------------------------------------------------------
 const SURGERY_ROLE_FIELDS = [
   "surgery.doctor", "surgery.seniorTech", "surgery.implanterRight",
   "surgery.implanterLeft", "surgery.graftingPerson", "surgery.helper",
@@ -227,9 +203,6 @@ async function surgeryDetail(employee, { from, to, searchParams }) {
   };
 }
 
-// ---------------------------------------------------------------------------
-// HR
-// ---------------------------------------------------------------------------
 const HR_SORT = { interviewDate: "date", candidateName: "name", position: "position", status: "status", finalSalary: "finalSalary" };
 
 async function hrDetail(employee, { from, to, searchParams }) {
@@ -271,14 +244,9 @@ const SECTION_DETAIL_BUILDERS = {
   HR: hrDetail,
 };
 
-// Performance is peer-relative (src/lib/owner/performance.js), so even a single
-// employee's badge needs the whole section's cohort to rank against — same cost
-// as a list-page load for that section, bounded by employee count, run once per
-// detail-page visit. The peer set is the ACTIVE members of the section (what
-// the list page shows by default) plus this employee if inactive.
 async function computePerformanceForEmployee(employee, section, { from, to }) {
   const builder = SECTION_METRIC_BUILDERS[section];
-  if (!builder) return null; // "Other" — no formula
+  if (!builder) return null; 
 
   const peers = await Employee.find({ mergedInto: null, isactive: true })
     .select("name role callbyUserId employeeId")
@@ -326,18 +294,6 @@ export async function loadEmployeeDetail(employee, { from, to, searchParams }) {
   return { section, compensation, performance, ...sectionData, kpis };
 }
 
-// ---------------------------------------------------------------------------
-// All linked patients (Employee.patient) — every patient this employee is
-// connected to in ANY capacity, not just the role-specific list above.
-// ---------------------------------------------------------------------------
-
-// Employee.patient is a UNION written by patients/create|update|delete (see those routes'
-// addEmployeeUpdate/updateEmployee helpers) across every relationship a patient can have to
-// staff: who referred them, who counselled them, and every surgery-side role. It is NOT the
-// same set as agentDetail's "referred" rows (personal.reference only) — an agent who also
-// assisted in someone's surgery will have that patient here too. That's intentional for this
-// view; it must never be substituted into the role-specific referred/visited/converted
-// metrics, which stay defined exactly as before.
 const ROLE_CHECK_FIELDS = [
   ["personal.reference", "Referred"],
   ["counselling.counsellor", "Counselled"],
@@ -353,7 +309,6 @@ function getPath(obj, path) {
   return path.split(".").reduce((o, k) => (o == null ? o : o[k]), obj);
 }
 
-/** Which of ROLE_CHECK_FIELDS connect this employee to this patient — de-duplicated labels. */
 function rolesFor(patient, employeeIdStr) {
   const labels = new Set();
   for (const [path, label] of ROLE_CHECK_FIELDS) {
@@ -372,11 +327,6 @@ const LINKED_PATIENTS_PROJECTION =
   "personal.reference counselling.counsellor surgery.doctor surgery.seniorTech " +
   "surgery.implanterRight surgery.implanterLeft surgery.graftingPerson surgery.helper";
 
-/**
- * Paginated: Employee.patient can run into the thousands for long-tenured staff (observed
- * max ~1490), so this slices the id ARRAY first (already in memory on the employee doc — no
- * extra query needed to know which ids exist) and only fetches that page's Patient docs.
- */
 export async function loadLinkedPatients(employee, { searchParams }) {
   const { page, pageSize, skip, limit } = parsePageParams(searchParams);
   const allIds = employee.patient || [];
@@ -391,8 +341,8 @@ export async function loadLinkedPatients(employee, { searchParams }) {
   const byId = new Map(patients.map((p) => [String(p._id), p]));
   const employeeIdStr = String(employee._id);
 
-  // Preserve Employee.patient's own order (most-recently-linked first, since it's built with
-  // $push) rather than whatever order Mongo happens to return the $in match in.
+  
+  
   const rows = pageIds
     .map((id) => byId.get(String(id)))
     .filter(Boolean)

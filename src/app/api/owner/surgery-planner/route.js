@@ -38,7 +38,7 @@ export async function POST(req) {
       .sort({ "surgery.surgeryDate": 1 })
       .lean();
 
-    // "Today" for OT capacity is the IST calendar day, not the server's.
+    
     const todayStart = getISTStartOfDay();
     const todayEnd = getISTEndOfDay();
 

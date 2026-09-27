@@ -90,8 +90,7 @@ const stockSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-// /api/stocks/get filters and sorts by these on every page load (dashboard +
-// every inner stocks page) — without them each request is a full collection scan.
+
 stockSchema.index({ location: 1, name: 1 });
 stockSchema.index({ totalQuantity: 1 });
 stockSchema.index({ expiry: 1 });

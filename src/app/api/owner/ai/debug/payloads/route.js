@@ -6,29 +6,9 @@ import { createAliasBook } from "@/lib/ai/alias";
 import { assertNoPII } from "@/lib/sanya/pii";
 import { capPayload } from "@/lib/ai/features/_helpers";
 
-// Part 10, step 2 (privacy audit) — dev-only. Runs every registered feature's
-// collect()+compute() against real dev data for a default 30-day scope and
-// checks the resulting facts payload the SAME way engine.js would, MINUS the
-// OpenAI call: assertNoPII(), a stricter "no string over 60 chars" rule (a
-// long string is almost always a leaked remark/note, not a real aggregate
-// value), and — when `?allowKeys=` is passed (scripts/ai-privacy-check.mjs
-// supplies this from a static scan of every feature file) — no object key
-// outside that list, catching a stray spread (`...r`) pulling in a raw DB
-// field a static read-through of the code wouldn't show.
-//
-// Never calls OpenAI: only collect()+compute() run, engine.js's analyze/
-// verify/persist stages are never reached. Gated to non-production + owner
-// role — this exists to be run from a real logged-in dev session, not CI.
-
 const ALLOWED_ROLES = ["owner", "super-admin"];
 const MAX_STRING_LEN = 60;
 
-// A handful of features need a scope key beyond the generic date/branch
-// window to run at all (a `preset` enum, or a document `id`). Presets get a
-// real value so the check actually exercises them; `id`-only deep features
-// have no safe default (a document id isn't guessable) and are left to the
-// generic "collect/compute failed" skip path below — that's a coverage gap
-// in this tool, not a privacy gap in the feature.
 const SCOPE_OVERRIDES = {
   "hr.status": { preset: "selected" },
   "leads.status": { preset: "interested" },

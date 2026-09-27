@@ -17,7 +17,6 @@ function guard(session) {
   return null;
 }
 
-// PATCH /api/master-data/routing/:id  — edit a rule's receiptMode / furtherMode / isActive.
 export async function PATCH(req, { params }) {
   const session = await getServerSession(authOptions);
   const denied = guard(session);
@@ -75,8 +74,6 @@ export async function PATCH(req, { params }) {
   return NextResponse.json({ message: "Rule updated", rule: rule.toObject() });
 }
 
-// DELETE /api/master-data/routing/:id  — a routing rule has no downstream references, so a hard
-// delete is safe: the cell simply reverts to the blank pre-fill.
 export async function DELETE(req, { params }) {
   const session = await getServerSession(authOptions);
   const denied = guard(session);

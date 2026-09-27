@@ -1,9 +1,5 @@
 import mongoose from "mongoose";
 
-// One document per engine execution (src/lib/ai/engine.js), including cache
-// hits, so /owner/ai/health sees everything — guard rejections, source
-// errors, cache hits and real OpenAI calls alike. Never stores prompt or
-// answer text, same discipline as SanyaUsage.
 const stageMsSchema = new mongoose.Schema(
   { collect: { type: Number, default: 0 }, compute: { type: Number, default: 0 }, analyze: { type: Number, default: 0 }, verify: { type: Number, default: 0 } },
   { _id: false },
@@ -17,7 +13,7 @@ const aiRunSchema = new mongoose.Schema(
     userEmail: { type: String, required: true, index: true },
     model: { type: String, default: null },
     cache: { type: String, enum: ["HIT", "MISS", "FORCED"], default: "MISS" },
-    // ok | error | timeout | schema_invalid | pii_blocked | budget_exceeded | rate_limited | disabled | source_error
+    
     outcome: { type: String, required: true, index: true },
     errorMessage: { type: String, maxlength: 300, default: null },
     stageMs: { type: stageMsSchema, default: () => ({}) },

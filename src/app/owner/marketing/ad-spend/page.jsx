@@ -45,8 +45,8 @@ export default function AdSpendPage() {
 
   const entriesUrl = useMemo(() => {
     const params = new URLSearchParams(aiScope);
-    // Return picture (spend/leads/CPL/CPC/converted/revenue/CAC/ROAS) needs a
-    // resolved range — only ask for it once both ends are set.
+    
+    
     if (filters.from && filters.to) params.set("withReturn", "true");
     return `/api/owner/ad-spend?${params.toString()}`;
   }, [aiScope, filters.from, filters.to]);

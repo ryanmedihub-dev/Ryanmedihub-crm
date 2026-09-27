@@ -1,6 +1,4 @@
-// The one validation pipeline for the bulk-Payable upload. /validate calls it and returns
-// the results; /commit calls it again from scratch (never trusting the client's payloads)
-// before creating anything. SERVER ONLY.
+
 
 import crypto from "node:crypto";
 import { warmup, expenseTypesSync } from "@/lib/masterData";
@@ -28,7 +26,6 @@ import {
   resolveRelatedPatient,
 } from "@/lib/uploads/resolveRefs";
 
-// Guard the one place the pure module duplicates a model constant (see payableRowMapper.js).
 if (
   MONTHLY_PAYABLE_PURPOSES.length !== MODEL_MONTHLY_PURPOSES.length ||
   MONTHLY_PAYABLE_PURPOSES.some((p) => !MODEL_MONTHLY_PURPOSES.includes(p))
@@ -70,21 +67,17 @@ function canonicalHash(payload) {
   return crypto.createHash("sha256").update(JSON.stringify(sortDeep(payload))).digest("hex");
 }
 
-/**
- * @param rows   array of raw sheet-row objects (header key -> cell value)
- * @returns { summary, results }
- */
 export async function runValidatePipeline(rows) {
   await warmup();
   const ctx = buildCtx();
 
-  // 1. format parse (pure)
+  
   const parsed = rows.map((raw, i) => parsePayableRowFormat(raw || {}, i + 2, ctx));
 
-  // 2. batched ref resolution
+  
   const refs = await resolveRefs(parsed);
 
-  // pre-fetched monthly payables -> key set for the DB duplicate check
+  
   const existingByKey = new Map();
   for (const p of refs.existingPayables) {
     existingByKey.set(
@@ -109,7 +102,7 @@ export async function runValidatePipeline(rows) {
     return periodLockCache.get(key);
   };
 
-  const seenInFile = new Map(); // dup key -> first rowNumber
+  const seenInFile = new Map(); 
   const results = [];
 
   for (const row of parsed) {
@@ -125,18 +118,18 @@ export async function runValidatePipeline(rows) {
     };
 
     if (!row.purpose || result.errors.length > 0) {
-      // still try to attach whatever preview we can, but this row cannot commit
+      
       result.status = "error";
       results.push(finalisePreview(result, row, null, null));
       continue;
     }
 
-    // 3a. payee
+    
     const payee = resolvePayeeForRow(row, refs, { defaultKindForPurpose, deriveRequirements });
     result.errors.push(...payee.errors);
     result.warnings.push(...payee.warnings);
 
-    // 3b. related patient (also the payee ref for PATIENT_COMMISSION)
+    
     let relatedPatientId;
     let relatedPatientLabel = null;
     if (row.flags.needsPatient) {
@@ -151,9 +144,9 @@ export async function runValidatePipeline(rows) {
       }
     }
 
-    // 3c. refId requirement (post-resolution). Skip the generic message when a more specific
-    // "not found / ambiguous" error is already on the row, or when patient resolution (which
-    // reports its own errors) owns the ref.
+    
+    
+    
     const reqs = deriveRequirements(row.purpose, payee.kind);
     const patientOwnsRef = row.flags.needsPatient && payee.kind === "PATIENT";
     if (reqs.needsRefId && !payee.refId && !patientOwnsRef) {
@@ -162,7 +155,7 @@ export async function runValidatePipeline(rows) {
       }
     }
 
-    // 3d. tax breakdown
+    
     const tax = computeTaxBreakdown({
       baseAmount: row.baseAmount || 0,
       includeGST: row.includeGST,
@@ -181,7 +174,7 @@ export async function runValidatePipeline(rows) {
       }
     }
 
-    // 3e. build the exact createPayable payload
+    
     const payload = {
       payee: { kind: payee.kind, label: payee.label, refId: payee.refId || undefined },
       purpose: row.purpose,
@@ -189,7 +182,7 @@ export async function runValidatePipeline(rows) {
       expenseSubType: row.expenseSubType || "",
       period: row.period || undefined,
       relatedPatient: relatedPatientId,
-      totalAmount: row.baseAmount, // base — createPayable derives vendorPayable itself
+      totalAmount: row.baseAmount, 
       dueDate: row.dueDate ? new Date(row.dueDate).toISOString() : undefined,
       branch: row.branch || undefined,
       remarks: row.remarks || "",
@@ -206,11 +199,11 @@ export async function runValidatePipeline(rows) {
     result.payload = payload;
     result.rowHash = canonicalHash(payload);
 
-    // 3f. duplicate checks (monthly purposes only — mirrors the partial unique index).
-    // The key now includes the sub-type/head, so different heads for the same vendor/month
-    // are NOT duplicates. An identical row twice in one file is still an error (a paste
-    // mistake); a match against an ALREADY-EXISTING payable is only a warning — it imports
-    // anyway (the user asked for this: old payables must not block new uploads).
+    
+    
+    
+    
+    
     if (MONTHLY_PAYABLE_PURPOSES.includes(row.purpose) && row.period) {
       const key = monthlyDupKey({
         kind: payee.kind,
@@ -242,7 +235,7 @@ export async function runValidatePipeline(rows) {
       }
     }
 
-    // 3g. period lock (memoised per date)
+    
     const lockReason = await lockReasonFor(row.dueDate);
     if (lockReason) {
       result.errors.push(lockReason);

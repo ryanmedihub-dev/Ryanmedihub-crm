@@ -5,8 +5,6 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
 import { getBranchProfitability } from "@/lib/owner/metrics/finance";
 
-// Numbers come from src/lib/owner/metrics/finance.js (shared with Sanya's
-// get_finance_summary tool) so the page and the assistant can't disagree.
 export async function POST(req) {
   try {
     const session = await getServerSession(authOptions);

@@ -1,8 +1,4 @@
-// The one validation pipeline for the campaign-lead bulk upload. /validate calls it and
-// returns the results; /commit calls it again from scratch (never trusting the client's
-// payloads) before creating anything. SERVER ONLY. Mirrors src/lib/uploads/validatePipeline.js's
-// shape ({ summary, results }, canonicalHash/rowHash per row) — much simpler than the payable
-// pipeline since there's no payee resolution, no tax, no period lock.
+
 
 import crypto from "node:crypto";
 import CampaignLead from "@/models/CampaignLead";
@@ -27,12 +23,6 @@ function canonicalHash(payload) {
   return crypto.createHash("sha256").update(JSON.stringify(sortDeep(payload))).digest("hex");
 }
 
-/**
- * @param rows      array of raw sheet-row objects (header key -> cell value)
- * @param campaign  the loaded AdCampaign document (caller has already confirmed it exists —
- *                  campaign existence is a request-level guard, not a per-row concern)
- * @returns { summary, results }
- */
 export async function runValidateCampaignLeads(rows, campaign) {
   const parsed = rows.map((raw, i) => parseCampaignLeadRow(raw || {}, i + 2));
 
@@ -44,10 +34,10 @@ export async function runValidateCampaignLeads(rows, campaign) {
   }
   const uniquePhones = [...new Set(normalizedPhones)];
 
-  // Batched, not per-row: (a) already uploaded for THIS campaign — skipped, not an error,
-  // this is the normal case when a marketer re-uploads a cumulative export; (b) uploaded
-  // against a DIFFERENT campaign — a non-blocking warning naming that campaign, the cross-
-  // campaign overlap an owner wants visibility into.
+  
+  
+  
+  
   const [sameCampaign, otherCampaignRows] = await Promise.all([
     uniquePhones.length
       ? CampaignLead.find({ campaign: campaign._id, phoneNormalized: { $in: uniquePhones } })
@@ -69,7 +59,7 @@ export async function runValidateCampaignLeads(rows, campaign) {
     }
   }
 
-  const seenInFile = new Map(); // normalizedPhone -> first rowNumber
+  const seenInFile = new Map(); 
   const results = [];
 
   for (const row of parsed) {
@@ -136,8 +126,8 @@ export async function runValidateCampaignLeads(rows, campaign) {
         dupOfRow,
       },
       rowHash: payload ? canonicalHash(payload) : null,
-      // Not created even when status isn't "error" — either it's already in this campaign,
-      // or it's a within-file repeat of an earlier row.
+      
+      
       skipCreate: alreadyExists || dupOfRow !== null,
     };
     results.push(result);

@@ -2,7 +2,6 @@
 
 import { formatCurrency } from "@/lib/financeUI";
 
-/** The reference-repoint table + finance before/after for the merge impact step. */
 export default function MergeImpactTable({ references = [], totalReferences = 0, finance }) {
   const nonZero = references.filter((r) => r.count > 0);
   const zero = references.filter((r) => r.count === 0);

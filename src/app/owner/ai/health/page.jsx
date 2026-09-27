@@ -13,13 +13,6 @@ import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { relativeTime } from "@/lib/ai/client/aiLabels";
 import { num, fmtDate } from "@/lib/owner/format";
 
-// /owner/ai/health — the AI layer's own operational picture (Part 9 rebuild).
-// `insights` (from src/lib/ai/health.js, shared with ai.selfDiagnosis) covers
-// the AI-Everywhere insight engine; the existing top-level Sanya fields
-// (summary/monthToDate/byTool/daily/recentErrors) are untouched and shown in
-// section 11. Auto-refreshes sections 1-2 every 60s; everything else refreshes
-// with the date filter or a manual reload.
-
 const usd = (n) => (n == null ? "—" : `$${Number(n).toFixed(n < 1 ? 4 : 2)}`);
 const ms = (n) => (n == null ? "—" : n >= 1000 ? `${(n / 1000).toFixed(1)}s` : `${Math.round(n)}ms`);
 
@@ -61,7 +54,7 @@ export default function AiHealthPage() {
   const conn = data?.connectivity;
   const aiScope = useMemo(() => (filterState ? { from: filterState.range.from, to: filterState.range.to } : {}), [filterState]);
 
-  // ---- Sanya (section 11, existing fields, unchanged) ----------------------
+  
   const s = data?.summary;
   const mtd = data?.monthToDate;
   const budgetKind = !mtd ? "info" : mtd.budgetUsedPct >= 90 ? "bad" : mtd.budgetUsedPct >= 60 ? "warn" : "good";
@@ -95,7 +88,7 @@ export default function AiHealthPage() {
             </Card>
           ) : (
             <>
-              {/* 1. Hero — AI Health Score */}
+              {}
               <Card>
                 <div style={{ display: "flex", alignItems: "center", gap: 28, flexWrap: "wrap" }}>
                   <AiOrb state={!ins.config.aiEnabled ? "paused" : !ins.config.keyConfigured || ins.healthScore < 60 ? "error" : "idle"} size={72} />
@@ -113,7 +106,7 @@ export default function AiHealthPage() {
                 </div>
               </Card>
 
-              {/* 2. Live status strip */}
+              {}
               <Card title="Live status">
                 <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
                   <Badge kind={conn?.ok ? "good" : "bad"} dot>OpenAI {conn?.ok ? `reachable · ${ms(conn.ms)}` : "unreachable"}</Badge>
@@ -131,7 +124,7 @@ export default function AiHealthPage() {
                 </div>
               </Card>
 
-              {/* 3. Budget & cost */}
+              {}
               <Card title="Budget & cost" subtitle="Progress bar fill = month-to-date · tick = projected month-end">
                 <div className="grid cols-equal">
                   <div>
@@ -183,7 +176,7 @@ export default function AiHealthPage() {
                 </div>
               </Card>
 
-              {/* 4. Performance */}
+              {}
               <Card title="Performance" subtitle="Latency per feature (non-cache-hit runs) and where time goes within a run">
                 <div className="grid cols-equal">
                   <div>
@@ -224,7 +217,7 @@ export default function AiHealthPage() {
                 </div>
               </Card>
 
-              {/* 5. Reliability */}
+              {}
               <Card title="Reliability" subtitle="Every run outcome this period, and the last 20 that weren't ok">
                 <div className="grid cols-equal">
                   <div style={{ width: "100%", height: 220 }}>
@@ -253,7 +246,7 @@ export default function AiHealthPage() {
                 </div>
               </Card>
 
-              {/* 6. Quality */}
+              {}
               <Card title="Quality" subtitle="Grounding = every number the model wrote traced back to FACTS">
                 <div className="grid cols-3">
                   <div style={{ textAlign: "center" }}>
@@ -290,7 +283,7 @@ export default function AiHealthPage() {
                 </div>
               </Card>
 
-              {/* 7. Efficiency */}
+              {}
               <Card title="Efficiency" subtitle="Cache hits are OpenAI calls avoided entirely — same answer, zero tokens">
                 <div className="grid cols-equal">
                   <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
@@ -319,12 +312,12 @@ export default function AiHealthPage() {
                 </div>
               </Card>
 
-              {/* 8. Neural Coverage Map */}
+              {}
               <Card title="Neural Coverage Map" subtitle="Every registered feature — green fresh, amber stale, red failing, grey never run">
                 <NeuralCoverageMap coverage={ins.coverage} />
               </Card>
 
-              {/* 9. Privacy */}
+              {}
               <Card title="Privacy">
                 <div className="grid cols-equal">
                   <div>
@@ -348,10 +341,10 @@ export default function AiHealthPage() {
                 </div>
               </Card>
 
-              {/* 10. AI self-diagnosis */}
+              {}
               <AiBriefPanel feature="ai.selfDiagnosis" scope={aiScope} title="AI Health" enabled={!!filterState} />
 
-              {/* 11. Sanya block — existing content, unchanged data */}
+              {}
               <h2 style={{ fontSize: "var(--fs-18)", margin: "12px 0 0" }}>Sanya Assistant</h2>
               {!s ? (
                 <Card title="No Sanya usage in this period"><EmptyState icon="◆" title="Nothing yet" hint="Ask Sanya something and it will show up here." /></Card>

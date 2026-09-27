@@ -2,8 +2,7 @@ import { getExpenseTypes } from '@/constants/expenseCategories';
 
 export { formatCurrency } from '@/lib/financeUI';
 
-// Local: renders "" for a missing date, where financeUI.formatDate renders "—". Callers here
-// embed the result in bills/exports where a dash would read as real content.
+
 export const formatDate = (date) => {
   if (!date) return '';
   return new Date(date).toLocaleDateString('en-IN', {

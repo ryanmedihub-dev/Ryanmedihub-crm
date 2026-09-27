@@ -4,9 +4,6 @@ import PatientReportPage from "@/components/owner/PatientReportPage";
 import { PATIENT_SHARED_COLUMNS, REVENUE_COLUMNS } from "@/lib/owner/patientColumns";
 import { num, rupee } from "@/lib/owner/format";
 
-// ops.status === "SURGERY_BOOKED" — fully paid (pendingAmount <= 0). This is
-// the confirmed "Converted" definition — not also CLOSED (surgery done is its
-// own separate page/status).
 const config = {
   preset: "converted",
   title: "Converted",

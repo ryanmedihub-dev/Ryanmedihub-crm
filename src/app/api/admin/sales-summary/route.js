@@ -7,12 +7,6 @@ import { cacheKey, cached } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin", "owner"];
 
-/**
- * Gross sales booked in the period — every revenue transaction (Transplant + Service +
- * Medicine), cash and credit alike. This is the "what did we sell" number; it is NOT the
- * accrual P&L Income (which also folds in receivables raised and nets out double-counting),
- * and it is deliberately NOT account-scoped.
- */
 export async function GET(request) {
   try {
     const session = await getServerSession(authOptions);

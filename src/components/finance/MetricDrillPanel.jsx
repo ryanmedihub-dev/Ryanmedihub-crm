@@ -56,8 +56,6 @@ const COLUMNS = {
   ],
 };
 
-// Plain-value shapes for the Excel export — the display columns hold React renderers,
-// which can't be written to a sheet.
 const EXPORT_FIELDS = {
   transactions: [
     ["Date", (r) => fmtDay(r.date)],
@@ -153,8 +151,8 @@ export default function MetricDrillPanel({ metric, label, cardValue, head, bucke
 
   useEffect(() => { load(); }, [load]);
 
-  // Reset paging whenever the metric or the dashboard filters change. Guarded on "is there
-  // anything to reset" so opening the panel doesn't fire a second identical fetch.
+  
+  
   useEffect(() => {
     setSectionPage((prev) => (Object.keys(prev).length ? {} : prev));
   }, [metric, branch, from, to, accounts, head, bucket]);
@@ -174,8 +172,8 @@ export default function MetricDrillPanel({ metric, label, cardValue, head, bucke
     };
   }, [metric, onClose]);
 
-  // Applied to the rows already loaded — the header says how many that is, so a filter
-  // that appears to match nothing isn't mistaken for "no such records exist".
+  
+  
   const matchRow = useCallback(
     (row) => {
       const needle = q.trim().toLowerCase();
@@ -210,8 +208,8 @@ export default function MetricDrillPanel({ metric, label, cardValue, head, bucke
     });
   }, [data, filterActive, matchRow]);
 
-  // Pages the API per section so the workbook holds the whole result, not just the page on
-  // screen, then applies the same filters so the file matches what the panel shows.
+  
+  
   const exportExcel = useCallback(async () => {
     if (!data) return;
     setExporting(true);

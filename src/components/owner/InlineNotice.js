@@ -1,4 +1,4 @@
-// kind: warn (default) | error | info | success. `onClose` adds a dismiss button.
+
 export default function InlineNotice({ kind = "warn", title, children, action, onClose }) {
   return (
     <div className={`inline-notice${kind !== "warn" ? ` ${kind}` : ""}`} role={kind === "error" ? "alert" : "status"}>

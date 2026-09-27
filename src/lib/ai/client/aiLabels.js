@@ -1,5 +1,4 @@
-// Display maps for AI output enums — one place so a verdict/severity color
-// can't drift between AiVerdictChip, AiBriefPanel and AiDeepReview.
+
 
 export const VERDICT_LABELS = {
   star: "Star performer",
@@ -9,7 +8,6 @@ export const VERDICT_LABELS = {
   insufficient_data: "Not enough data",
 };
 
-// Maps to the existing owner-theme.css semantic classes (good/warn/bad/info/neutral).
 export const VERDICT_TONE = {
   star: "good",
   solid: "info",
@@ -18,10 +16,6 @@ export const VERDICT_TONE = {
   insufficient_data: "neutral",
 };
 
-// Alternate label set for the same verdict enum, read as a follow-up
-// priority instead of a performance rating (Part 6: not-converted/booking-done
-// patient verdicts). Same star/solid/watch/at_risk/insufficient_data values,
-// same VERDICT_TONE colors — only the wording changes.
 export const VERDICT_LABEL_SETS = {
   performance: VERDICT_LABELS,
   followUp: {

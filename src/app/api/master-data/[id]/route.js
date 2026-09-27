@@ -24,7 +24,6 @@ function guard(session) {
   return null;
 }
 
-// PATCH /api/master-data/:id
 export async function PATCH(req, { params }) {
   const session = await getServerSession(authOptions);
   const denied = guard(session);
@@ -43,7 +42,7 @@ export async function PATCH(req, { params }) {
   const body = await req.json();
   const performedBy = { name: session.user.name, email: session.user.email };
 
-  // value is immutable — changing it would orphan every document holding it.
+  
   if (body.value !== undefined && String(body.value) !== row.value) {
     return NextResponse.json(
       { error: "`value` is immutable. Rename the label instead; retire this row and create a new one if the stored value must change." },
@@ -51,7 +50,7 @@ export async function PATCH(req, { params }) {
     );
   }
 
-  // System rows: label and sortOrder only.
+  
   if (row.isSystem) {
     const allowed = new Set(["label", "sortOrder", "value", "note", "confirmImpact"]);
     const attempted = Object.keys(body).filter((k) => !allowed.has(k));
@@ -68,7 +67,7 @@ export async function PATCH(req, { params }) {
   const logs = [];
   const auditRecords = [];
 
-  // --- label -------------------------------------------------------------------------------
+  
   if (body.label !== undefined) {
     const next = String(body.label).trim();
     if (!next) return NextResponse.json({ error: "label cannot be blank" }, { status: 400 });
@@ -78,13 +77,13 @@ export async function PATCH(req, { params }) {
     }
   }
 
-  // --- sortOrder -------------------------------------------------------------------------
+  
   if (body.sortOrder !== undefined && Number.isFinite(body.sortOrder) && body.sortOrder !== row.sortOrder) {
     logs.push({ action: "Sort Changed", previousValue: String(row.sortOrder), newValue: String(body.sortOrder) });
     row.sortOrder = body.sortOrder;
   }
 
-  // --- parent (EXPENSE_SUBTYPE re-home) -----------------------------------------------
+  
   if (body.parent !== undefined && row.kind === "EXPENSE_SUBTYPE") {
     const next = String(body.parent).trim() || null;
     if (next !== row.parent) {
@@ -99,7 +98,7 @@ export async function PATCH(req, { params }) {
     }
   }
 
-  // --- settlementType (EXPENSE_CATEGORY) — blocked while payables exist ---------------
+  
   if (body.settlementType !== undefined && row.kind === "EXPENSE_CATEGORY") {
     const next = body.settlementType || null;
     if (next !== (row.settlementType || null)) {
@@ -117,7 +116,7 @@ export async function PATCH(req, { params }) {
     }
   }
 
-  // --- ownedElsewhere / payablePurpose (EXPENSE_CATEGORY) ---------------------------
+  
   if (body.ownedElsewhere !== undefined && row.kind === "EXPENSE_CATEGORY" && !!body.ownedElsewhere !== !!row.ownedElsewhere) {
     logs.push({ action: "Note Added", note: `ownedElsewhere ${row.ownedElsewhere} → ${!!body.ownedElsewhere}` });
     row.ownedElsewhere = !!body.ownedElsewhere;
@@ -127,7 +126,7 @@ export async function PATCH(req, { params }) {
     row.payablePurpose = body.payablePurpose || null;
   }
 
-  // --- appliesTo (PAYMENT_METHOD) ---------------------------------------------------
+  
   if (body.appliesTo !== undefined && row.kind === "PAYMENT_METHOD" && body.appliesTo !== row.appliesTo) {
     if (!["REVENUE", "EXPENSE", "BOTH"].includes(body.appliesTo)) {
       return NextResponse.json({ error: "appliesTo must be REVENUE, EXPENSE or BOTH" }, { status: 400 });
@@ -136,7 +135,7 @@ export async function PATCH(req, { params }) {
     row.appliesTo = body.appliesTo;
   }
 
-  // --- isNonCash / isUnsettled (PAYMENT_METHOD) — gated by impact + confirm --------
+  
   const flagChanges = [];
   for (const flag of ["isNonCash", "isUnsettled"]) {
     if (body[flag] !== undefined && row.kind === "PAYMENT_METHOD" && !!body[flag] !== !!row[flag]) {
@@ -175,7 +174,7 @@ export async function PATCH(req, { params }) {
     }
   }
 
-  // --- isActive (retire / restore) -------------------------------------------------
+  
   if (body.isActive !== undefined && !!body.isActive !== row.isActive) {
     if (row.isActive) {
       const usage = await computeUsage(row.kind, row.value);
@@ -220,7 +219,6 @@ export async function PATCH(req, { params }) {
   return NextResponse.json({ message: "Updated", row: row.toObject() });
 }
 
-// DELETE /api/master-data/:id  — hard delete, only when nothing references the value.
 export async function DELETE(req, { params }) {
   const session = await getServerSession(authOptions);
   const denied = guard(session);
@@ -243,7 +241,7 @@ export async function DELETE(req, { params }) {
     );
   }
 
-  // A category with sub-types would orphan them.
+  
   if (row.kind === "EXPENSE_CATEGORY") {
     const children = await MasterData.countDocuments({ kind: "EXPENSE_SUBTYPE", parent: row.value });
     if (children > 0) {
@@ -269,7 +267,7 @@ export async function DELETE(req, { params }) {
     );
   }
 
-  // Re-check inside a transaction so a concurrent write can't slip a reference in.
+  
   const dbSession = await mongoose.startSession();
   try {
     let deleted = false;

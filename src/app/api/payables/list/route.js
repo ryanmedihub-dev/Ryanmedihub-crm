@@ -28,7 +28,7 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
     const limit = Math.min(5000, Math.max(1, parseInt(searchParams.get("limit") || "20")));
-    // `purpose` accepts one value or a comma-separated list; an unknown value is a 400.
+    
     const purposeList = (searchParams.get("purpose") || "")
       .split(",")
       .map((s) => s.trim())
@@ -124,7 +124,7 @@ async function computePayablesList({
       Payable.aggregate([...basePipeline, { $count: "total" }]),
     ]);
 
-    // Attach the human staff code + role for EMPLOYEE payees — one batched lookup for the page.
+    
     const empIds = [
       ...new Set(
         rows

@@ -26,8 +26,8 @@ function Inner() {
   const [survivorId, setSurvivorId] = useState("");
   const [duplicateId, setDuplicateId] = useState(searchParams.get("duplicate") || "");
 
-  // Survivor and Duplicate each get their own result set — sharing one meant typing in
-  // either box silently overwrote what the other box's dropdown would show next time it opened.
+  
+  
   const [survivorOptions, setSurvivorOptions] = useState([]);
   const [survivorSearching, setSurvivorSearching] = useState(false);
   const [duplicateOptions, setDuplicateOptions] = useState([]);
@@ -76,7 +76,7 @@ function Inner() {
       .then((r) => r.json())
       .then((j) => setSuggestions(j.pairs || []))
       .catch(() => setSuggestions([]));
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); 
 
   const filteredSuggestions = useMemo(() => {
     const q = dupSearch.trim().toLowerCase();
@@ -104,7 +104,7 @@ function Inner() {
       ).then((r) => r.json());
       setPreview(json);
       if (json.success) {
-        // seed field choices from suggestions
+        
         const seed = {};
         (json.fieldDiff || []).forEach((f) => {
           if (f.differs) seed[f.field] = f.suggest || "survivor";
@@ -210,7 +210,7 @@ function Inner() {
           </div>
         </div>
 
-        {/* step rail */}
+        {}
         <div className="flex items-center gap-2 text-xs font-semibold">
           {["Find", "Compare", "Impact", "Confirm"].map((label, i) => (
             <div key={label} className={`flex items-center gap-2 ${step === i + 1 ? "text-indigo-700" : "text-gray-400"}`}>
@@ -221,7 +221,7 @@ function Inner() {
           ))}
         </div>
 
-        {/* STEP 1 */}
+        {}
         {step === 1 && (
           <div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
@@ -312,7 +312,7 @@ function Inner() {
           </div>
         )}
 
-        {/* STEP 2 */}
+        {}
         {step === 2 &&
           (previewLoading || !preview ? (
             <p className="py-10 text-center text-sm text-gray-400">Analysing…</p>
@@ -340,7 +340,7 @@ function Inner() {
             </div>
           ))}
 
-        {/* STEP 3 */}
+        {}
         {step === 3 &&
           (previewLoading || !preview ? (
             <p className="py-10 text-center text-sm text-gray-400">Analysing…</p>
@@ -367,7 +367,7 @@ function Inner() {
             </div>
           ))}
 
-        {/* STEP 4 */}
+        {}
         {step === 4 && !result && preview?.success && (
           <div className="space-y-4">
             <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -399,7 +399,7 @@ function Inner() {
           </div>
         )}
 
-        {/* RESULT */}
+        {}
         {step === 4 && result && (
           <div className="space-y-4">
             <div className={`rounded-2xl border p-5 shadow-sm ${result.success ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50"}`}>

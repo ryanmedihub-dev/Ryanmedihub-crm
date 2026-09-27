@@ -8,22 +8,6 @@ import { getAttentionItems } from "@/lib/owner/metrics/attention";
 import { getEmployeeStats } from "@/lib/owner/metrics/employees";
 import { assertNoPII } from "./pii";
 
-// Sanya's tool catalogue. Every tool:
-//   • is READ-ONLY and takes only dates / branch / section — never free text,
-//     never an id, never a query the model authored;
-//   • calls the SAME src/lib/owner/metrics/* function the corresponding Owner
-//     page calls, so its numbers are the page's numbers for the same filters;
-//   • PROJECTS an explicit allow-list of aggregate fields (names, phones and
-//     per-person rows never enter the result) and is then re-checked by
-//     assertNoPII before anything leaves runTool();
-//   • returns `verifyAt` — the exact page + filters where every number in the
-//     result can be checked by eye. The route surfaces these links under the
-//     answer whether or not the model cites them.
-
-// --- date handling ------------------------------------------------------------
-// Tools take calendar dates (YYYY-MM-DD, IST). The pages build their window as
-// local-midnight → local-end-of-day and Owner users are in IST, so the same
-// bounds are produced here explicitly (Vercel runs in UTC).
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 function istWindow(dateFrom, dateTo) {
   if (!DATE_RE.test(dateFrom || "") || !DATE_RE.test(dateTo || "")) {
@@ -55,7 +39,6 @@ const BRANCH_PARAM = {
   branch: { type: "string", enum: ["All", ...ALL_BRANCHES], description: "Clinic branch, or All" },
 };
 
-// --- the tools ------------------------------------------------------------------
 export const TOOLS = [
   {
     name: "get_patients_by_status",
@@ -268,16 +251,11 @@ export const TOOLS = [
 
 const BY_NAME = new Map(TOOLS.map((t) => [t.name, t]));
 
-/** OpenAI chat/completions `tools` payload. */
 export const OPENAI_TOOL_DEFS = TOOLS.map((t) => ({
   type: "function",
   function: { name: t.name, description: t.description, parameters: t.parameters },
 }));
 
-/**
- * Run one tool by name. The result is aggregate-only by construction and is
- * re-checked by assertNoPII — a leak throws PIIError and nothing is returned.
- */
 export async function runTool(name, args) {
   const tool = BY_NAME.get(name);
   if (!tool) throw new Error(`Unknown tool ${name}`);

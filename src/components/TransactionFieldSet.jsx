@@ -62,10 +62,10 @@ export default function TransactionFieldSet({
   amountLabel = "Amount (₹)",
   disabled = false,
   patientId,
-  // "voucher" context only — GST/TDS breakdown, shown below the routing fields.
+  
   taxValue,
   onTaxChange,
-  // "collab-settlement" context only — the one-line "you owe / you're owed" sentence.
+  
   clinicLabel,
   clinicReceived,
   clinicShare,
@@ -225,12 +225,6 @@ export default function TransactionFieldSet({
   );
 }
 
-/**
- * `nonCashMethods`/`unsettledMethods` default to the literal constants — the same values a
- * cold render would use before useMasterData()'s fetch lands — so every existing call site
- * (none of which passed these) keeps behaving exactly as before. Pass the live arrays from
- * useMasterData() to validate against the current master-data state instead.
- */
 export function validateTransactionFields(
   value,
   context,

@@ -5,10 +5,6 @@ import Link from "next/link";
 import { ownerFetch } from "@/lib/ownerFetch";
 import { SENTIMENT_TONE } from "@/lib/ai/client/aiLabels";
 
-// Horizontal auto-scrolling strip of the latest insights across every
-// feature. Pauses on hover; a static list under reduced-motion (the CSS
-// marquee animation is already killed globally, so duplicating the items for
-// a seamless loop only happens when motion is allowed).
 export default function AiFeedTicker({ limit = 12 }) {
   const [items, setItems] = useState([]);
 
@@ -24,7 +20,7 @@ export default function AiFeedTicker({ limit = 12 }) {
 
   if (items.length === 0) return null;
 
-  const loop = [...items, ...items]; // duplicated for a seamless CSS marquee
+  const loop = [...items, ...items]; 
 
   return (
     <div className="ai-feed-ticker" role="marquee" aria-label="Latest AI insights">

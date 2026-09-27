@@ -19,7 +19,6 @@ const ROLE_TO_PURPOSE = {
   Implanter: "Implanter",
 };
 
-// role is free-form text — fold casing/spelling variants before mapping to a purpose.
 export function purposeForRole(role) {
   return ROLE_TO_PURPOSE[canonicalEmployeeRole(role)] || "Other";
 }

@@ -100,31 +100,22 @@ const payableSchema = new mongoose.Schema(
       tdsAmount: Number,
     },
 
-    // Set when this payable was created by an /admin/uploads bulk run — lets that batch's
-    // revert find exactly the documents it made. Null for every normal single-entry payable.
+    
+    
     uploadBatch: { type: mongoose.Schema.Types.ObjectId, ref: "UploadBatch", default: null, index: true },
   },
   { timestamps: true },
 );
 
 payableSchema.index({ "payee.kind": 1, "payee.refId": 1 });
-// Backs buildCompensationMetrics (Owner Employees pages): EMPLOYEE payables for a set of
-// employees over a pay-month window, split by purpose.
+
 payableSchema.index({ "payee.kind": 1, "payee.refId": 1, purpose: 1, "period.year": 1, "period.month": 1, isCancelled: 1 });
 payableSchema.index({ purpose: 1, "period.year": 1, "period.month": 1 });
 payableSchema.index({ branch: 1, isCancelled: 1 });
 payableSchema.index({ dueDate: 1 });
-// Serves the /admin/liabilities/payables/{rent,employees,other} split — the first $match on
-// every grouped/list pipeline is `{ isCancelled, purpose: {$in}, branch }` ordered by dueDate.
+
 payableSchema.index({ isCancelled: 1, purpose: 1, branch: 1, dueDate: -1 });
 
-// Monthly payables are NOT uniqueness-constrained at the DB level — the same payee can hold
-// as many payables for a purpose/month as the business actually has (different heads,
-// re-issued invoices, corrections, re-uploads after a cancellation). Accidental double-entry
-// is surfaced as a non-blocking warning by the bulk-upload validator instead. This index is
-// kept only to serve queries/aggregations keyed by payee + purpose + period.
-// NOTE: earlier versions made this `unique: true`. Drop the stale unique index once per
-// environment with `node scripts/drop-payable-monthly-unique-index.mjs`.
 payableSchema.index({
   "payee.kind": 1,
   "payee.refId": 1,
@@ -135,8 +126,6 @@ payableSchema.index({
   "period.year": 1,
 });
 
-// Google Sheets finance webhook — fires once per newly-created payable, never on edits.
-// $locals is the mongoose-blessed scratch space for passing state from pre to post hooks.
 payableSchema.pre("save", function () {
   this.$locals.wasNew = this.isNew;
 });

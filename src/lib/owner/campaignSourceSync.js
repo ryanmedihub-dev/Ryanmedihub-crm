@@ -1,13 +1,7 @@
 import { fetchCallby, CallbyError } from "@/lib/callby";
 
-const CHUNK = 1000; // callby's per-request cap
+const CHUNK = 1000; 
 
-/**
- * Push `label` onto callby Lead.source for every phone. Chunks at callby's limit, runs chunks
- * one after another (a campaign file is a few thousand rows at most — sequential keeps load on
- * callby flat and the partial-failure accounting simple).
- * Never throws: returns a result object the caller stores on the batch.
- */
 export async function syncCampaignSource({ phones, label, ref, dryRun = false }) {
   const unique = [...new Set(phones.filter(Boolean))];
   const totals = { matched: 0, updated: 0, alreadySet: 0, unmatched: 0, wouldUpdate: 0 };

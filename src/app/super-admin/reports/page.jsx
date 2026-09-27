@@ -311,9 +311,7 @@ const REPORTS = [
 
 const CATEGORIES = ["All", ...new Set(REPORTS.map((r) => r.category))];
 
-// Emit the plain calendar day (YYYY-MM-DD), not an ISO instant — the API brackets it to
-// the IST day. Sending a browser-local-shifted `.toISOString()` made the server convert a
-// second time and pull the `from` boundary a day earlier.
+
 const ymd = (d) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 

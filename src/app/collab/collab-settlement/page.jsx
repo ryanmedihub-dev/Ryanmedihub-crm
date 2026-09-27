@@ -22,8 +22,7 @@ import {
   Trash2,
 } from "lucide-react";
 
-// Mirrors Transactions.procedure's enum — used to categorize any revenue
-// transaction a settlement generates the same way the transplant form does.
+
 const PROCEDURE_OPTIONS = [
   "Sapphire FUE",
   "DHI",
@@ -198,13 +197,13 @@ export default function CollabSettlementPage() {
   useEffect(() => {
     if (expandedClinic)
       fetchCasesForClinic(expandedClinic, caseFilters, casePage);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [expandedClinic, caseFilters, casePage]);
 
   useEffect(() => {
     if (expandedClinic) fetchSettlements(expandedClinic);
     else setSettlements([]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [expandedClinic]);
 
   const toggleClinic = (clinic) => {
@@ -307,10 +306,6 @@ export default function CollabSettlementPage() {
             </div>
           </div>
 
-          {/* ================= CLINIC LIST ================= */}
-          {/* A single-column register (not a grid) is deliberate: it's what lets each
-              clinic's statement open directly beneath that clinic's own row, instead of
-              in a block detached at the bottom of the page. */}
           {balancesLoading ? (
             <div className="flex items-center justify-center py-16">
               <Loader2 className="w-6 h-6 text-indigo-600 animate-spin" />
@@ -349,7 +344,7 @@ export default function CollabSettlementPage() {
                         </button>
                       </div>
 
-                      {/* Filters — order: search -> status -> date range (no purpose/branch axis; clinic is already selected) */}
+                      {}
                       <div className="bg-gray-50 rounded-xl border border-gray-200 p-3 mb-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                           <div className="relative lg:col-span-2">
@@ -418,7 +413,7 @@ export default function CollabSettlementPage() {
                         </p>
                       ) : (
                         <>
-                          {/* Mobile: stacked cards below sm breakpoint */}
+                          {}
                           <div className="sm:hidden divide-y divide-gray-100">
                             {clinicCases.map((c) => (
                               <div key={c._id} className="py-3">
@@ -515,7 +510,7 @@ export default function CollabSettlementPage() {
                             ))}
                           </div>
 
-                          {/* Desktop/tablet: table */}
+                          {}
                           <div className="hidden sm:block overflow-x-auto">
                             <table className="w-full text-sm">
                               <thead className="bg-gray-50 border-b border-gray-200">
@@ -692,9 +687,9 @@ export default function CollabSettlementPage() {
                           </div>
                         )}
 
-                      {/* Settlement history — the actual money movements with this clinic, separate
-                          from the per-case view above. This is where a mis-entered settlement gets
-                          removed; deleting one also removes the transactions it generated. */}
+                      {
+
+}
                       <div className="mt-6 pt-5 border-t border-gray-200">
                         <h4 className="text-sm font-bold text-gray-900 mb-3">
                           Settlement History ({settlements.length})
@@ -808,7 +803,7 @@ export default function CollabSettlementPage() {
   );
 }
 
-// ========== BALANCE METER (quick visual scan of who owes the most) ==========
+
 function BalanceMeter({ value, maxAbs }) {
   const pct = maxAbs > 0 ? Math.min(Math.abs(value) / maxAbs, 1) : 0;
   const isReceivable = value > 0;
@@ -832,7 +827,7 @@ function BalanceMeter({ value, maxAbs }) {
   );
 }
 
-// ========== CLINIC ROW ==========
+
 function ClinicRow({ balance, maxAbs, expanded, onToggle }) {
   const { clinic, netPosition, openCaseCount, caseCount } = balance;
   const isReceivable = netPosition > 0;
@@ -886,7 +881,7 @@ function ClinicRow({ balance, maxAbs, expanded, onToggle }) {
   );
 }
 
-// ========== CASE HISTORY (clinicCollections + log) ==========
+
 function CaseHistory({ collabCase }) {
   const collections = collabCase.clinicCollections || [];
   const log = collabCase.log || [];
@@ -979,7 +974,7 @@ function CaseHistory({ collabCase }) {
   );
 }
 
-// ========== MODAL SHELL (shared header/frame for the three modals) ==========
+
 function ModalShell({ icon: Icon, iconBg, iconFg, title, subtitle, onClose, children, maxWidth = "max-w-2xl", notice }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-3 backdrop-blur-sm sm:p-5">
@@ -1015,11 +1010,7 @@ function ModalShell({ icon: Icon, iconBg, iconFg, title, subtitle, onClose, chil
   );
 }
 
-// ========== NEW COLLAB CASE MODAL ==========
-// Admin EMERGENCY entry point. Deliberately renders the same shared CollabCaseForm the
-// collab panel uses — collab case entry logic must exist in exactly one place, so the
-// admin path cannot drift from the normal path. The clinic is an explicit
-// COLLAB_BRANCHES dropdown inside the form (no default), never a main branch.
+
 function NewCollabCaseModal({ onClose, onSuccess, toast }) {
   return (
     <ModalShell
@@ -1059,40 +1050,40 @@ function NewCollabCaseModal({ onClose, onSuccess, toast }) {
   );
 }
 
-// ========== RECORD CLINIC COLLECTION MODAL ==========
+
 function RecordCollectionModal({ collabCase, onClose, onSuccess, toast }) {
-  // Which side actually took the money — the same split collabDerivation.js's
-  // createCollectionTransaction makes for the amounts entered at case creation. Defaults to
-  // CLINIC, the original and still most common case: the patient paying the clinic directly is
-  // why this modal existed in the first place.
+  
+  
+  
+  
   const [collectedBy, setCollectedBy] = useState("CLINIC");
   const [amount, setAmount] = useState("");
-  // Pre-fills `amount` to the patient's full remaining outstanding and locks it — the shortcut
-  // for "this collection completes the case", mirroring CollabCaseForm's own checkbox.
+  
+  
   const [fullPackage, setFullPackage] = useState(false);
-  // A waiver granted at the time of this collection — reduces the patient's outstanding the
-  // same as a payment would, but is never money collected (see the model comment on
-  // clinicCollections.discount).
+  
+  
+  
   const [discount, setDiscount] = useState("");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
-  // Sent as `mode` (collectedBy:"CLINIC" — descriptive only) or `method` (collectedBy:"US" — the
-  // real payment method) depending on which side is selected; one field covers both since they
-  // draw from the same REVENUE_METHODS list.
+  
+  
+  
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [reference, setReference] = useState("");
-  // collectedBy:"CLINIC" — descriptive routing detail only (which instrument, which account, on
-  // the CLINIC's side); never touches our own accounts/books, though it DOES book real revenue
-  // (a paid_to_external Transaction, see collabDerivation.js). collectedBy:"US" — this is a real
-  // cash-in, exactly like a direct payment, so these fields route it into one of OUR OWN
-  // accounts the normal way.
+  
+  
+  
+  
+  
   const [receiptMode, setReceiptMode] = useState("");
   const [furtherMode, setFurtherMode] = useState("");
   const [note, setNote] = useState("");
   const [allowOverpayment, setAllowOverpayment] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // Deliberate override, not a continuous lock: checking pre-fills once; unchecking just leaves
-  // the current value editable rather than resetting it.
+  
+  
   useEffect(() => {
     if (fullPackage) setAmount(String(collabCase.caseOutstanding || 0));
   }, [fullPackage, collabCase.caseOutstanding]);
@@ -1116,8 +1107,8 @@ function RecordCollectionModal({ collabCase, onClose, onSuccess, toast }) {
       );
       return;
     }
-    // Same requirement as every other payment-entry form in the app — cash is the only method
-    // with no independently-verifiable trail, everything else needs one.
+    
+    
     if (paymentMethod !== "cash" && !reference.trim()) {
       toast.error("Enter the transaction ID / reference for this collection");
       return;
@@ -1169,7 +1160,7 @@ function RecordCollectionModal({ collabCase, onClose, onSuccess, toast }) {
       onClose={onClose}
     >
       <div className="px-4 py-4 sm:px-6 sm:py-5">
-        {/* Patient summary */}
+        {}
         <div className="mb-5 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -1189,7 +1180,7 @@ function RecordCollectionModal({ collabCase, onClose, onSuccess, toast }) {
           </div>
         </div>
 
-        {/* Collection source */}
+        {}
         <section className="mb-5">
           <div className="mb-2.5">
             <h4 className="text-sm font-bold text-slate-900">Collection Source</h4>
@@ -1288,7 +1279,6 @@ function RecordCollectionModal({ collabCase, onClose, onSuccess, toast }) {
           </div>
         </section>
 
-        {/* Payment details */}
         <section className="mb-5">
           <div className="mb-3">
             <h4 className="text-sm font-bold text-slate-900">Payment Details</h4>
@@ -1376,7 +1366,6 @@ function RecordCollectionModal({ collabCase, onClose, onSuccess, toast }) {
           </div>
         </section>
 
-        {/* Bank details */}
         <section className="mb-5">
           <div className="mb-3">
             <h4 className="text-sm font-bold text-slate-900">Account / Routing Details</h4>
@@ -1403,7 +1392,6 @@ function RecordCollectionModal({ collabCase, onClose, onSuccess, toast }) {
           )}
         </section>
 
-        {/* Reference */}
         <section className="mb-1">
           <div className="mb-3">
             <h4 className="text-sm font-bold text-slate-900">Transaction Information</h4>
@@ -1464,7 +1452,6 @@ function RecordCollectionModal({ collabCase, onClose, onSuccess, toast }) {
   );
 }
 
-// ========== SETTLE MODAL ==========
 function SettleModal({ clinic, balance, openCases, onClose, onSuccess, toast }) {
   const netPosition = balance?.netPosition || 0;
   const [direction, setDirection] = useState(netPosition < 0 ? "WE_PAID" : "THEY_PAID");
@@ -1653,10 +1640,6 @@ function SettleModal({ clinic, balance, openCases, onClose, onSuccess, toast }) 
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {/* Collab branches have no entry in BANK_ROUTING_MAP by design (see bankRouting.js),
-              so transactionCategory has nothing to key a pre-fill off here — the field just
-              starts blank and gets picked manually, same as it already does for any collab
-              branch on the normal transaction forms. */}
           <BankRoutingFields
             costType={direction === "WE_PAID" ? "Expenses" : "Revenue"}
             branch={clinic}

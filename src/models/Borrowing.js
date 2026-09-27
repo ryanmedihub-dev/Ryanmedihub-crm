@@ -84,9 +84,6 @@ borrowingSchema.pre("validate", function () {
 borrowingSchema.index({ isCancelled: 1, account: 1, date: 1 });
 borrowingSchema.index({ isCancelled: 1, payableId: 1, direction: 1 });
 
-// receivableAggregation.js's borrowingSettlementAgg $lookup joins on settlesReceivableId per
-// receivable document — same O(documents x borrowings) risk as the Transactions lookups above
-// without this. Partial: most borrowings never settle a receivable.
 borrowingSchema.index(
   { settlesReceivableId: 1, isCancelled: 1, direction: 1 },
   { partialFilterExpression: { settlesReceivableId: { $type: "objectId" } } },

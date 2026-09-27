@@ -10,16 +10,6 @@ import { computeLiteHealth, computeAiHealthReport, checkOpenAiConnectivity } fro
 
 const ALLOWED_ROLES = ["owner", "super-admin"];
 
-// /owner/ai/health — two things in one route:
-// 1. Sanya's operational picture, from SanyaUsage (one row per turn) — turn
-//    volume, tool-call volume per tool, latency percentiles, error/refusal/
-//    blocked rates, token and dollar cost, month-to-date against the ceiling.
-//    No question or answer text is stored, so none is shown. (unchanged since
-//    the Sanya-only version of this page.)
-// 2. `insights` (Part 9) — the AI-Everywhere insight engine's own picture,
-//    from AiRun/AiInsight, built by src/lib/ai/health.js so this route and
-//    ai.selfDiagnosis's facts can never disagree. `?lite=1` is a fast path
-//    for AiStatusBeacon, cached 30s.
 export async function GET(req) {
   try {
     await dbConnect();

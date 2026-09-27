@@ -10,10 +10,6 @@ function bucketQueue(leads) {
   return buckets;
 }
 
-// /owner/leads/retry — the P0-P4 retry lanes, split out of the old combined
-// live-workforce page into their natural home (Leads, not Calls/Employees —
-// these are lead-priority queues). Only calls callby's retry-queue; the
-// agent-status half now lives at /owner/calls/live with its own route.
 export const GET = withCallbyRoute(async (req) => {
   const { searchParams } = new URL(req.url);
   const params = {};

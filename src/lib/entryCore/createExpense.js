@@ -1,7 +1,4 @@
-// Extracted from transactions/expense/create/route.js's POST handler. Covers every
-// expense.* registry type AND payable.settle (which is, today, exactly this same call with
-// a payableId) — see AUDIT.md's surface inventory for why there is deliberately no separate
-// "settlePayable" module.
+
 
 import mongoose from "mongoose";
 import Transactions from "@/models/Transactions";
@@ -20,9 +17,9 @@ export async function createExpense({ payload, session: authSession, dbSession =
 
   if (!expenseCategory || !amount) return { error: "Missing required fields", status: 400 };
 
-  // The "paid by other" path spawns its own payable in its own transaction — it can't join a
-  // caller's session, and settling an advance there is meaningless anyway (the debt just moves
-  // to the external party).
+  
+  
+  
   if (dbSession && method === "paid_by_other") {
     return { error: "Advance settlement is not supported with 'Paid by Other'", status: 400 };
   }
@@ -59,9 +56,9 @@ export async function createExpense({ payload, session: authSession, dbSession =
     if (!payableDoc) return { error: "Payable not found", status: 404 };
     if (payableDoc.isCancelled) return { error: "This payable has been cancelled", status: 400 };
 
-    // No unsettled-method exclusion — see payableAggregation.js's paymentAgg lookup for why:
-    // a transaction only reaches here (matched by this exact payableId) via a deliberate
-    // "settle this payable" link, so a "Paid by Other" payment counts too.
+    
+    
+    
     const [paidAgg] = await Transactions.aggregate([
       { $match: { payableId: payableDoc._id, approvalStatus: "APPROVED" } },
       { $group: { _id: null, paid: { $sum: "$amount" } } },

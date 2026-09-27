@@ -22,8 +22,6 @@ import { rupee, num, fmtDate, fmtDateTime } from "@/lib/owner/format";
 import { performanceCell } from "@/lib/owner/employeeColumns";
 import { usePagedList } from "@/lib/owner/usePagedList";
 
-// Every section's detail base — used to bounce a URL that names the wrong
-// section for this employee (e.g. /agents/<counsellorId>) to the right one.
 const DETAIL_BASE = {
   Agent: "/owner/employees/agents",
   Counsellor: "/owner/employees/counsellors",
@@ -61,9 +59,6 @@ const LINKED_PATIENTS_COLUMNS = [
   },
 ];
 
-// Generic shell behind all six Employees detail pages. `rowsColumns` is the
-// only per-role piece; KPIs, rows, trend and compensation all come from
-// /api/owner/employees/[id] for the same date window.
 export default function EmployeeDetailPage({ section, listHref, rowsColumns, defaultSort = "visitDate", trendLabel = "Activity" }) {
   const params = useParams();
   const router = useRouter();
@@ -72,8 +67,8 @@ export default function EmployeeDetailPage({ section, listHref, rowsColumns, def
   const [filterState, setFilterState] = useState(null);
   const list = usePagedList({ defaultSort, defaultDir: "desc" });
 
-  // All patients linked to this employee in ANY role (Employee.patient), independent of the
-  // role-specific rows above — own pagination, own fetch, own request.
+  
+  
   const linkedList = usePagedList({ defaultSort: "visitDate", pageSize: 10 });
 
   const detailUrl = useMemo(() => {
@@ -97,7 +92,7 @@ export default function EmployeeDetailPage({ section, listHref, rowsColumns, def
   const deepAi = useAiInsight("employee.deep", deepScope, { kind: "deep", enabled: !!filterState });
   const aiReady = deepAi.status === "ready";
 
-  // A URL under the wrong section for this employee → go to the right one.
+  
   useEffect(() => {
     if (!emp || !section || emp.section === section) return;
     const base = DETAIL_BASE[emp.section];

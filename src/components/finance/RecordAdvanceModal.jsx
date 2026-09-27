@@ -256,17 +256,17 @@ export default function RecordAdvanceModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-3 backdrop-blur-sm sm:p-5">
 
-      {/* MODAL */}
+      {}
       <div className="flex max-h-[95vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
 
-        {/* =====================================================
-            HEADER
-        ====================================================== */}
+        {
+
+}
         <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 py-4 sm:px-6">
 
           <div className="flex min-w-0 items-center gap-3">
 
-            {/* ICON */}
+            {}
             <div
               className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
                 isRecovery
@@ -330,16 +330,16 @@ export default function RecordAdvanceModal({
           </button>
         </div>
 
-        {/* =====================================================
-            BODY
-        ====================================================== */}
+        {
+
+}
         <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50/50">
 
           <div className="space-y-5 p-4 sm:p-6">
 
-            {/* =================================================
-                RECEIVABLE SUMMARY
-            ================================================== */}
+            {
+
+}
             {receivable && (
               <div className="rounded-xl border border-rose-200 bg-rose-50 p-4">
 
@@ -373,9 +373,9 @@ export default function RecordAdvanceModal({
               </div>
             )}
 
-            {/* =================================================
-                PARTY SECTION
-            ================================================== */}
+            {
+
+}
             {!partyLocked && (
               <section>
                 <div className="mb-3">
@@ -388,7 +388,7 @@ export default function RecordAdvanceModal({
                   </p>
                 </div>
 
-                {/* PARTY TYPE */}
+                {}
                 <div className="mb-4">
                   <label className="mb-2 block text-xs font-semibold text-slate-600">
                     Party Type{" "}
@@ -435,7 +435,7 @@ export default function RecordAdvanceModal({
                   </div>
                 </div>
 
-                {/* PARTY INPUT */}
+                {}
                 {partyKind === "OTHER" ? (
                   <div>
                     <label className="mb-1.5 block text-sm font-semibold text-slate-700">
@@ -493,9 +493,9 @@ export default function RecordAdvanceModal({
               </section>
             )}
 
-            {/* =================================================
-                ADVANCE TYPE
-            ================================================== */}
+            {
+
+}
             {isNewAdvance && (
               <section>
                 <div className="mb-3">
@@ -533,9 +533,9 @@ export default function RecordAdvanceModal({
               </section>
             )}
 
-            {/* =================================================
-                PAYMENT SECTION
-            ================================================== */}
+            {
+
+}
             <section>
               <div className="mb-3">
                 <h4 className="text-sm font-bold text-slate-900">
@@ -551,7 +551,7 @@ export default function RecordAdvanceModal({
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 
-                {/* ACCOUNT */}
+                {}
                 <div>
                   <label className="mb-1.5 block text-sm font-semibold text-slate-700">
                     {isRecovery
@@ -581,7 +581,7 @@ export default function RecordAdvanceModal({
                   </select>
                 </div>
 
-                {/* AMOUNT */}
+                {}
                 <div>
                   <label className="mb-1.5 block text-sm font-semibold text-slate-700">
                     Amount{" "}
@@ -618,7 +618,7 @@ export default function RecordAdvanceModal({
                 </div>
               </div>
 
-              {/* OVER RECOVERY */}
+              {}
               {overBalance && (
                 <label className="mt-3 flex cursor-pointer items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
 
@@ -649,9 +649,9 @@ export default function RecordAdvanceModal({
               )}
             </section>
 
-            {/* =================================================
-                DATE / BRANCH
-            ================================================== */}
+            {
+
+}
             <section>
               <div className="mb-3">
                 <h4 className="text-sm font-bold text-slate-900">
@@ -661,7 +661,7 @@ export default function RecordAdvanceModal({
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 
-                {/* DATE */}
+                {}
                 <div>
                   <label className="mb-1.5 block text-sm font-semibold text-slate-700">
                     Date
@@ -674,7 +674,7 @@ export default function RecordAdvanceModal({
                   />
                 </div>
 
-                {/* BRANCH */}
+                {}
                 {!partyLocked && (
                   <div>
                     <label className="mb-1.5 block text-sm font-semibold text-slate-700">
@@ -709,9 +709,9 @@ export default function RecordAdvanceModal({
               </div>
             </section>
 
-            {/* =================================================
-                REFERENCE
-            ================================================== */}
+            {
+
+}
             <section>
               <div className="mb-3">
                 <h4 className="text-sm font-bold text-slate-900">
@@ -725,7 +725,7 @@ export default function RecordAdvanceModal({
 
               <div className="space-y-4">
 
-                {/* REFERENCE */}
+                {}
                 <div>
                   <label className="mb-1.5 block text-sm font-semibold text-slate-700">
                     Reference{" "}
@@ -745,7 +745,7 @@ export default function RecordAdvanceModal({
                   />
                 </div>
 
-                {/* REMARKS */}
+                {}
                 <div>
                   <label className="mb-1.5 block text-sm font-semibold text-slate-700">
                     Remarks
@@ -765,9 +765,9 @@ export default function RecordAdvanceModal({
               </div>
             </section>
 
-            {/* =================================================
-                ERROR
-            ================================================== */}
+            {
+
+}
             {error && (
               <div
                 className={`flex items-start gap-3 rounded-xl border p-3.5 ${
@@ -823,9 +823,9 @@ export default function RecordAdvanceModal({
           </div>
         </div>
 
-        {/* =====================================================
-            FOOTER
-        ====================================================== */}
+        {
+
+}
         <div className="flex shrink-0 flex-col-reverse gap-2 border-t border-slate-200 bg-white p-4 sm:flex-row sm:justify-end sm:px-6">
 
           <button

@@ -1,11 +1,4 @@
-// Extracted from transactions/transplant/create, transactions/service/create and
-// transactions/medicine/create's route.js POST handlers (AUDIT.md's Side-effects
-// Inventory). Faithful port — every branch, every side effect, in the same order,
-// including the asymmetry AUDIT.md's B1/N-finding documents: Service and Transplant
-// recompute patient.payments; Medicine does not. That is NOT fixed here — fixing it would
-// change what medicine sales report on the patient ledger going forward, which per the
-// project's guardrails is a separate, explicit decision, not something to bundle into
-// extracting the engine.
+
 
 import mongoose from "mongoose";
 import Transactions from "@/models/Transactions";
@@ -231,17 +224,17 @@ async function createLineItemRevenue({ category, payload, session: authSession }
     }
   }
 
-  // Medicine's stock decrement runs post-commit and unsessioned — this mirrors
-  // medicine/create/route.js exactly (AUDIT.md's B2/multi-line note), not a design choice
-  // made here.
+  
+  
+  
   if (isMedicine) {
     for (const item of items) {
       await Stock.findByIdAndUpdate(item.medicineId, { $inc: { totalQuantity: -item.quantity } });
     }
   }
 
-  // AUDIT.md B1: only Service recomputes patient.payments here; Medicine does not, in the
-  // legacy route this is extracted from — preserved exactly, not fixed.
+  
+  
   let updatedPatient = null;
   if (!isMedicine && patientId) {
     const patient = await recomputePatientPayments({

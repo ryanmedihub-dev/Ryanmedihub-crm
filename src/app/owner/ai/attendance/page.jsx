@@ -30,8 +30,8 @@ export default function AttendancePage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [saving, setSaving] = useState(null); // employeeId currently being saved
-  const [drafts, setDrafts] = useState({}); // employeeId -> { status, note }
+  const [saving, setSaving] = useState(null); 
+  const [drafts, setDrafts] = useState({}); 
 
   const load = useCallback(
     async ({ signal } = {}) => {

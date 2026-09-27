@@ -1,12 +1,4 @@
-// "Tick the advance box and book" — one user action spanning two documents. Extracted so the
-// route stays thin and the acceptance script can call it directly (same pattern as
-// createExpense / createPayable / settleAdvanceAgainstPayable).
-//
-// Approach: ONE mongoose transaction. Both settleAdvanceAgainstPayable() and createExpense()
-// accept the caller's dbSession, so a failure in either aborts the whole thing atomically —
-// no compensating unsettle loop needed. Settle FIRST, then create the expense: if the order
-// were reversed and the settle failed, we'd have paid the full gross against a payable that
-// was meant to be partly covered, with no signal anywhere.
+
 
 import mongoose from "mongoose";
 import Advance from "@/models/Advance";
@@ -24,8 +16,8 @@ export async function createExpenseWithSettlement({ payload, session: authSessio
     .filter((a) => a?.advanceId && Number(a.amount) > 0)
     .map((a) => ({ advanceId: String(a.advanceId), amount: round2(a.amount) }));
 
-  // Drop-in superset — no settlements ⇒ this is just a plain expense, normalised to the
-  // same { transaction, settlements, payable } shape the settlement path returns.
+  
+  
   if (allocations.length === 0) {
     const r = await createExpense({ payload, session: authSession });
     if (r.error) return r;
@@ -40,7 +32,7 @@ export async function createExpenseWithSettlement({ payload, session: authSessio
   }
   if (netAmount < 0) return { error: "Net payable cannot be negative", status: 400 };
 
-  /* ---- pre-flight: validate everything before a single write ---- */
+  
   const payable = await Payable.findById(payableId);
   if (!payable) return { error: "Payable not found", status: 404 };
   if (payable.isCancelled) return { error: "This payable has been cancelled", status: 400 };
@@ -86,7 +78,7 @@ export async function createExpenseWithSettlement({ payload, session: authSessio
   const lockReason = await checkPeriodLock({ furtherMode: furtherMode || null, date: date || new Date() });
   if (lockReason) return { error: lockReason, status: 423, periodLocked: true };
 
-  /* ---- one transaction ---- */
+  
   const dbSession = await mongoose.startSession();
   let outcome;
   try {
@@ -108,7 +100,7 @@ export async function createExpenseWithSettlement({ payload, session: authSessio
           session: authSession,
           dbSession,
         });
-        settled.push(r.data); // throws → aborts the whole transaction
+        settled.push(r.data); 
       }
 
       let transaction = null;
@@ -125,8 +117,8 @@ export async function createExpenseWithSettlement({ payload, session: authSessio
         }
         transaction = res.data;
       } else {
-        // Net zero — the settlements alone close the payable (payableAggregation counts them
-        // toward paid). Leave a log line so the history isn't silent.
+        
+        
         fresh.log.push({
           action: "Note Added",
           note:

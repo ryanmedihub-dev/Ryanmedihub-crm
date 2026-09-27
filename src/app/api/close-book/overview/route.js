@@ -29,8 +29,6 @@ const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
 const sumClosing = (rows) => round2((rows || []).reduce((s, r) => s + (r.closing || 0), 0));
 const sumCount = (rows) => (rows || []).reduce((s, r) => s + (r.count || 0), 0);
 
-// Advances OUT with something still to come back — remaining = amount − settled − cash recovered.
-// Mirrors /api/advances/open-for-party's per-doc maths, both shapes of settlement folded in.
 function advanceRemainingStages({ branch }) {
   return [
     { $match: { direction: "OUT", isCancelled: { $ne: true }, ...(branch ? { branch } : {}) } },
@@ -75,9 +73,9 @@ function advanceRemainingStages({ branch }) {
 async function assetsOverview({ branch, to }) {
   const txCollection = Transactions.collection.name;
   const liveMatch = { isCancelled: false, ...(branch ? { branch } : {}) };
-  // The hero + section cards are "as of `to`" balances — opening is folded into closing, so
-  // `from` is intentionally NOT applied here (matches the pre-split overview exactly). `from`
-  // still narrows the inner pages, where the drill table passes it through.
+  
+  
+  
 
   const [cashRows, loanRows, recGrouped, recAgeing, topRec, advAgg] = await Promise.all([
     getAccountRollup({ filter: "cash", to, branch }),
@@ -147,12 +145,12 @@ async function assetsOverview({ branch, to }) {
 async function liabilitiesOverview({ branch, to }) {
   const txCollection = Transactions.collection.name;
   const liveMatch = { isCancelled: false, ...(branch ? { branch } : {}) };
-  // "As of `to`" balances — `from` is deliberately not applied (see assetsOverview).
+  
   const groupedFor = (purpose) =>
     Payable.aggregate(buildPayableGroupedStages(txCollection, { level: 1, branch, to, purpose }));
 
-  // Suspense group-by-account, matching /api/suspense?groupBy=account exactly (closingQS sends
-  // branch + `to`, never `from`).
+  
+  
   const suspMatch = { isCancelled: { $ne: true }, isResolved: { $ne: true } };
   if (branch) suspMatch.branch = branch;
   if (to) suspMatch.date = { $lte: new Date(`${to}T23:59:59.999Z`) };

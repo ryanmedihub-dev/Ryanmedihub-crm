@@ -17,11 +17,6 @@ async function requireSession() {
   return { session };
 }
 
-// POST { tlName, managerName } -> upsert by normalized tlNameKey.
-//
-// TlManagerMap is the source of truth for TL -> Manager. Employee.managerName
-// (shown in the Agents "Manager" column and on detail pages) is kept in sync
-// here so the two never disagree.
 const postHandler = async (req) => {
   const { session, error } = await requireSession();
   if (error) return error;

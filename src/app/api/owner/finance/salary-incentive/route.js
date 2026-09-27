@@ -12,25 +12,6 @@ import { cacheKey, cached } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["owner", "super-admin"];
 
-// Per-employee salary/incentive for the period — uses the IMPORTED
-// buildCompensationMetrics (Part 1's src/lib/owner/employeeReportQuery.js),
-// the exact function the Employees pages' salaryPaid/incentivePaid columns
-// call, so this page agrees with those by construction, not by coincidence
-// (Owner Panel v2, Part 5 brief).
-//
-// Shape of a request: the compensation rollup is one grouped Payable
-// aggregation (≤ one row per employee); those rows are attached to the
-// Employee documents inside one Employee.aggregate() whose $facet does the
-// sort / page slice, the four rollups (branch / operating unit / role / month)
-// and the KPI totals — all over the whole filtered set, in one round trip.
-// Default page 25, max 200 (src/lib/owner/pagination.js).
-//
-// Operating-unit note: scripts/import-salary-data.mjs mapped the salary
-// sheet's 7 operating units (Backend/Vaishali/GD/CD/Collab/Noida/Hyd) onto
-// real ALL_BRANCHES values — 5 of them (Backend/Vaishali/GD/CD/Collab)
-// collapse onto "Delhi" — and preserved the original unit as free text in
-// Payable.remarks ("... — <unit> unit — ..."). Parsed back out here so the
-// Delhi bucket's internal split isn't silently lost.
 const UNIT_RE = /—\s*([A-Za-z]+)\s*unit\s*—/;
 
 const SORTABLE = {
@@ -89,8 +70,8 @@ export async function GET(req) {
       };
     }
 
-    // Same pay-month keying as buildCompensationMetrics (payables are for a
-    // period; they're raised weeks later).
+    
+    
     const payableMatch = {
       purpose: "SALARY", "payee.kind": "EMPLOYEE", "payee.refId": { $in: cohort.map((e) => e._id) }, isCancelled: { $ne: true },
       ...payablePeriodMatch(dateFrom, dateTo),
@@ -98,8 +79,8 @@ export async function GET(req) {
 
     const [compById, salaryPayables] = await Promise.all([
       buildCompensationMetrics(cohort, period),
-      // Raw SALARY payables in scope, for remarks (operating unit) and
-      // per-payable period, matched by the same employee set + window.
+      
+      
       Payable.find(payableMatch).select("payee.refId remarks period").lean(),
     ]);
 
@@ -114,8 +95,8 @@ export async function GET(req) {
       }
     }
 
-    // One small object per employee with activity this period. Employees with
-    // nothing due or paid are left out here, so the $match below drops them.
+    
+    
     const metricRows = [];
     for (const e of cohort) {
       const id = String(e._id);

@@ -2,9 +2,6 @@
 
 import Link from "next/link";
 
-// The one place every honest "AI isn't showing you anything right now" copy
-// lives — every status string an AI panel can be in maps to exactly one of
-// these, so no panel ever invents its own wording.
 const COPY = {
   disabled: "AI analysis is switched off for this workspace.",
   unconfigured: "AI isn't configured yet — the OpenAI key is missing on the server.",

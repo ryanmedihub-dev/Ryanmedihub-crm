@@ -3,12 +3,6 @@
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 import EmptyState from "./EmptyState";
 
-// Thin recharts wrapper for the Employee detail page's trend line (Owner Panel
-// v2, Part 1). recharts is already an approved, kept dependency (Part 0 removed
-// chart.js/react-chartjs-2, not this) — no new chart library.
-// Renders a point's dot only when its `date` label is named in `highlightLabel`
-// (case-insensitive substring — same match rule as Part 3's Statistics stage
-// flag) — an AI insight naming a real anomaly point, nothing invented.
 function anomalyDot(highlightLabel) {
   const needle = (highlightLabel || "").toLowerCase();
   return (props) => {

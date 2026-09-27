@@ -1,5 +1,4 @@
-// Server-only. Shared logic behind the master-data mutation API (§3): usage counting, the
-// account-reference check, the settlementType guard, and the behavioural-flag impact preview.
+
 
 import Transactions from "@/models/Transactions";
 import Payable from "@/models/Payable";
@@ -23,9 +22,6 @@ const MODELS = {
   BankRoutingRule,
 };
 
-// Which (collection, field) pairs hold each kind's value on live documents. Mirrors the §3
-// usage-count definition; the ACCOUNT rows also cover the "delete blocked by AccountPeriod /
-// AccountTransfer / Borrowing / Advance / SuspenseEntry" rule.
 const USAGE_MAP = {
   ACCOUNT: [
     ["Transactions", "furtherMode"],
@@ -51,10 +47,6 @@ const USAGE_MAP = {
   ],
 };
 
-/**
- * Count live documents holding `value` in the fields relevant to `kind`.
- * @returns {{ total: number, byCollection: Record<string, number> }}
- */
 export async function computeUsage(kind, value) {
   const pairs = USAGE_MAP[kind] || [];
   const results = await Promise.all(
@@ -69,10 +61,6 @@ export async function computeUsage(kind, value) {
   return { total, byCollection };
 }
 
-/**
- * For an ACCOUNT value: counts per referencing collection beyond Transactions, so a blocked
- * delete can name exactly what references it.
- */
 export async function computeAccountReferences(value) {
   const [accountPeriod, transferFrom, transferTo, advance, borrowing, suspense, transactions] =
     await Promise.all([
@@ -98,7 +86,6 @@ export async function computeAccountReferences(value) {
   return { refs, blocking, total: Object.values(refs).reduce((a, b) => a + b, 0) };
 }
 
-/** true if any non-cancelled payable is filed under this expense category. */
 export async function hasPayablesUnderCategory(categoryValue) {
   const n = await Payable.countDocuments({
     expenseCategory: categoryValue,
@@ -107,15 +94,6 @@ export async function hasPayablesUnderCategory(categoryValue) {
   return n > 0;
 }
 
-/**
- * Live estimate of what flipping isNonCash / isUnsettled on a PAYMENT_METHOD would do to P&L
- * and account balances — the §0.2 preview. Approximation: it sums the amounts that would move
- * in or out of each total, rather than re-running the full P&L pipeline.
- *
- * @param {string} value        the method value
- * @param {{ isNonCash?: boolean|null, isUnsettled?: boolean|null }} current  current flags
- * @param {{ isNonCash?: boolean, isUnsettled?: boolean }} next               proposed flags
- */
 export async function computeMethodFlagImpact(value, current, next) {
   const agg = await Transactions.aggregate([
     { $match: { method: value, approvalStatus: { $nin: ["PENDING", "REJECTED"] } } },
@@ -150,13 +128,13 @@ export async function computeMethodFlagImpact(value, current, next) {
   let balanceDelta = 0;
 
   if (changingUnsettled) {
-    // Turning ON: revenue on this method stops counting, expense on it stops counting.
+    
     const sign = next.isUnsettled ? -1 : 1;
     pnlDelta += sign * (rev.amount - exp.amount);
     balanceDelta += sign * (rev.amount - exp.amount);
   }
   if (changingNonCash) {
-    // Turning ON: attributed amounts stop hitting account balances (P&L unaffected).
+    
     const sign = next.isNonCash ? -1 : 1;
     balanceDelta += sign * (rev.amountWithAccount - exp.amountWithAccount);
   }

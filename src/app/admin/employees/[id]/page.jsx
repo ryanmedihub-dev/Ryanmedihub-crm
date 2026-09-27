@@ -11,8 +11,6 @@ const MONTH_NAMES = [
   "July", "August", "September", "October", "November", "December",
 ];
 
-// Local: "N/A" for missing + the short en-IN default format — financeUI.formatDate renders
-// "—" and dd MMM yyyy, which this page's layout doesn't want.
 const formatDate = (date) => (date ? new Date(date).toLocaleDateString("en-IN") : "N/A");
 
 export default function EmployeeDetailPage() {
@@ -39,8 +37,8 @@ export default function EmployeeDetailPage() {
   const [page, setPage] = useState(1);
   const limit = 50;
 
-  // The same payable rollup the staff list's money columns are built from, so clicking
-  // through from a row shows that row's figures broken out rather than a different number.
+  
+  
   const [finance, setFinance] = useState(null);
   const [advances, setAdvances] = useState([]);
 

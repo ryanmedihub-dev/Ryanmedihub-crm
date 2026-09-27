@@ -21,9 +21,6 @@ function escapeRegex(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-// Backs /owner/hr/selected and /owner/hr/rejected — one route, one shared
-// client component (InterviewStatusReportPage), a `preset` param picks the
-// status filter. Same pattern as Part 2's /api/owner/leads/by-status.
 export async function GET(req) {
   try {
     await dbConnect();
@@ -77,7 +74,7 @@ export async function GET(req) {
       const [result] = await Interviewer.aggregate([{ $match: match }, { $facet: facet }]);
       let rows = result.rows || [];
 
-      // Populate assignedHr (name only) on the page slice only.
+      
       if (rows.length) {
         rows = await Interviewer.populate(rows, { path: "assignedHr", select: "name" });
       }

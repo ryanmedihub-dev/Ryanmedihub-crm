@@ -1,12 +1,4 @@
-// Declarative description of what each entry type must produce, transcribed from
-// AUDIT.md's Side-effects Inventory. Consumed by the acceptance scripts under
-// scripts/entry-acceptance/ so a script asserts against this list instead of hardcoding
-// its own copy of "what should happen" — one more place a rule would otherwise live twice.
-//
-// `transactional: true` means the whole effect commits or none of it does (a Mongo session
-// wraps every write). `transactional: false` means at least one step is best-effort/
-// un-sessioned in the legacy route being extracted — faithfully carried over, not fixed
-// (see the `knownDefect` pointer to AUDIT.md).
+
 
 export const SIDE_EFFECTS = {
   "revenue.transplant": {

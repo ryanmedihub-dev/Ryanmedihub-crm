@@ -1,5 +1,4 @@
-// §2.2 — batched reference resolution for the bulk-Payable upload. SERVER ONLY (imports
-// mongoose models). One query per collection, never inside the row loop.
+
 
 import Employee from "@/models/Employee";
 import Vendor from "@/models/Vendor";
@@ -35,10 +34,6 @@ function indexByName(rows) {
   return { byName, byPhone, byEmail, byId };
 }
 
-/**
- * @param parsedRows  output of parsePayableRowFormat per row (needs .purpose, .payeeLabel,
- *                    .payeeLookup, .relatedPatientPhone, .period)
- */
 export async function resolveRefs(parsedRows) {
   const normalizedPhones = new Set();
   const yearsInFile = new Set();
@@ -51,7 +46,7 @@ export async function resolveRefs(parsedRows) {
     }
     if (r.payeeLookup) {
       const p = normalizePhone(r.payeeLookup);
-      if (p) normalizedPhones.add(p); // harmless extra; patient lookup may use payeeLookup too
+      if (p) normalizedPhones.add(p); 
     }
     if (r.period?.year) yearsInFile.add(r.period.year);
   }
@@ -91,22 +86,15 @@ export async function resolveRefs(parsedRows) {
   };
 }
 
-/**
- * Resolve one payee against the batched maps.
- * @returns { kind, refId, label, errors: [], warnings: [] }
- *   kind    — the resolved payee.kind
- *   refId   — string ObjectId or null
- *   label   — the name to store (a resolved doc's real name wins over the sheet's)
- */
 export function resolvePayeeForRow(parsed, refs, { defaultKindForPurpose, deriveRequirements }) {
   const errors = [];
   const warnings = [];
   const purpose = parsed.purpose;
-  const isGeneric = deriveRequirements(purpose, null).needsSubType; // GENERIC_SUBTYPE_PURPOSES
+  const isGeneric = deriveRequirements(purpose, null).needsSubType; 
 
-  // --- RENT / ELECTRICITY: default to the unit kind, but honour an explicit
-  //     VENDOR / EMPLOYEE / PATIENT so a landlord/vendor-billed rent connects to that
-  //     record (a rent payable can legitimately be owed to a vendor).
+  
+  
+  
   const UNIT_PURPOSES = { RENT: "RENT_UNIT", ELECTRICITY: "UTILITY_UNIT" };
   if (UNIT_PURPOSES[purpose] && !isGeneric) {
     const unitKind = UNIT_PURPOSES[purpose];
@@ -118,14 +106,14 @@ export function resolvePayeeForRow(parsed, refs, { defaultKindForPurpose, derive
       return resolveAgainst("EMPLOYEE", "Employee", refs.employees, parsed, errors, warnings);
     }
     if (override === "PATIENT") {
-      // patients aren't name-indexed here — needs an explicit id (pipeline flags a missing one).
+      
       return { kind: "PATIENT", refId: parsed.payeeRefId || null, label: parsed.payeeLabel, errors, warnings };
     }
-    checkDeclaredKind(parsed, unitKind, warnings, errors); // errors only if a *wrong* kind was forced
+    checkDeclaredKind(parsed, unitKind, warnings, errors); 
     return { kind: unitKind, refId: null, label: parsed.payeeLabel, errors, warnings };
   }
 
-  // --- fixed-label purposes: the label IS an enum, so no ref and no override ---
+  
   const FIXED_LABEL_PURPOSES = { COLLAB_CLINIC: "COLLAB_CLINIC", TAX: "OTHER", OTHER: "OTHER" };
   if (FIXED_LABEL_PURPOSES[purpose] && !isGeneric) {
     const kind = FIXED_LABEL_PURPOSES[purpose];
@@ -133,20 +121,20 @@ export function resolvePayeeForRow(parsed, refs, { defaultKindForPurpose, derive
     return { kind, refId: null, label: parsed.payeeLabel, errors, warnings };
   }
 
-  // --- EMPLOYEE (SALARY / INCENTIVE) ---
+  
   if (purpose === "SALARY" || purpose === "INCENTIVE") {
     return resolveAgainst("EMPLOYEE", "Employee", refs.employees, parsed, errors, warnings);
   }
 
-  // --- PATIENT (PATIENT_COMMISSION) — payee is the patient ---
+  
   if (purpose === "PATIENT_COMMISSION") {
-    // relatedPatient resolution (below, resolveRelatedPatient) also covers this; the payee
-    // ref mirrors it. Handled by the caller wiring relatedPatient -> payee.refId.
+    
+    
     checkDeclaredKind(parsed, "PATIENT", warnings, errors);
     return { kind: "PATIENT", refId: parsed.payeeRefId || null, label: parsed.payeeLabel, errors, warnings };
   }
 
-  // --- GENERIC subtype purposes: VENDOR if one resolves, else OTHER(label = subType) ---
+  
   if (isGeneric) {
     if (parsed.payeeRefId) {
       const v = refs.vendors.byId.get(parsed.payeeRefId);
@@ -171,14 +159,14 @@ export function resolvePayeeForRow(parsed, refs, { defaultKindForPurpose, derive
       errors.push(ambiguityMessage("Vendor", parsed.payeeLabel, hit.matches));
       return { kind: "OTHER", refId: null, label: parsed.expenseSubType || parsed.payeeLabel, errors, warnings };
     }
-    // no vendor — fall back to OTHER filed under the sub-type
+    
     if (parsed.declaredKind === "VENDOR") {
       errors.push(`payeeKind VENDOR was given but no vendor named "${parsed.payeeLabel}" was found. Paste their ObjectId into payeeRefId, or leave payeeKind blank to file it under the sub-type.`);
     }
     return { kind: "OTHER", refId: null, label: parsed.expenseSubType || parsed.payeeLabel, errors, warnings };
   }
 
-  // --- explicit payeeKind on an otherwise unmatched row ---
+  
   const kind = parsed.declaredKind || defaultKindForPurpose(purpose);
   return { kind, refId: parsed.payeeRefId || null, label: parsed.payeeLabel, errors, warnings };
 }
@@ -238,14 +226,10 @@ function ambiguityMessage(noun, label, matches) {
   return `${matches.length} ${noun.toLowerCase()}s match "${label}": ${list}. Put the right one's id in payeeRefId.`;
 }
 
-/**
- * Resolve relatedPatient for INCENTIVE / PATIENT_COMMISSION rows.
- * @returns { id: string|null, label: string|null, errors: [] }
- */
 export function resolveRelatedPatient(parsed, refs) {
   const errors = [];
   if (parsed.relatedPatientId) {
-    return { id: parsed.relatedPatientId, label: null, errors }; // trusted escape hatch
+    return { id: parsed.relatedPatientId, label: null, errors }; 
   }
   if (!parsed.relatedPatientPhone) return { id: null, label: null, errors };
   const key = normalizePhone(parsed.relatedPatientPhone);

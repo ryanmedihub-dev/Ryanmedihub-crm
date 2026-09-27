@@ -17,31 +17,7 @@ import { CONVERTED_STATUSES, VISITED_EXCLUDED_STATUSES } from "@/lib/owner/patie
 import { sumInterestedBands } from "@/lib/owner/engagementBands";
 import { cacheKey, cached } from "@/lib/cache";
 
-// Leadership groups agents with no TL under this key; the roster route pins
-// tlName to it, so the section match must read it as "tlName is empty".
 export const UNASSIGNED_TEAM = "(unassigned)";
-
-// One query builder behind all five Employees list pages (Owner Panel v2, Part 1).
-// Each role route is a one-line wrapper: `runEmployeeReportQuery(req, "Agent")`.
-//
-// How a request runs (see runEmployeeReportQuery):
-//   1. Section → Mongo $match. Employee.role is free text and employeeSection()
-//      is a JS classifier, so the DISTINCT role strings (a few dozen) are
-//      classified once and the section becomes `role: { $in: [...] }` — an exact
-//      DB filter, one classifier implementation.
-//   2. Metrics per employee come from the SECTION_METRIC_BUILDERS below — each
-//      is one grouped aggregation (Patient/Payable/Interviewer) or one cached
-//      callby call, returning ≤ one row per employee. These builders are the
-//      single implementation of every metric: dashboard, overview, attention,
-//      suggestions, the detail page and Sanya's tools all call the same ones.
-//      Performance is peer-relative (scoreCohort), so it needs the whole cohort.
-//   3. One Employee.aggregate() with $facet does the rest IN THE DATABASE:
-//      attach the per-employee metrics, $sort on any column (employee field,
-//      metric, or performance score) with an _id tiebreak so pages never
-//      overlap, $skip/$limit the page, and $group the KPI totals — page rows +
-//      KPIs in one round trip. Nothing is sliced in Node.
-//   Cost is bounded by employee count (a few hundred), never by Patient/CallLog
-//   scale. Default page 25, hard max 200 (src/lib/owner/pagination.js).
 
 const ALLOWED_ROLES = ["owner", "super-admin"];
 
@@ -54,21 +30,7 @@ export { daysInPeriod };
 const round = (n) => Math.round((Number(n) || 0) * 100) / 100;
 const rupee0 = (n) => `₹${new Intl.NumberFormat("en-IN").format(Math.round(Number(n) || 0))}`;
 
-// Join key, in priority order:
-//   1. Employee.employeeId  <->  agent.ryanEmployeeCode   — the business's own code, the key
-//      the owner actually thinks in and the one they can fix themselves in the HR screen.
-//   2. Employee.callbyUserId <-> agent.employeeId          — the original link, kept as a
-//      fallback so the employees already linked through /owner/employees/links do not
-//      regress to "Not linked" the moment this ships.
-// Codes in the wild are inconsistent ("541", "RM-0099", "RC-014"), so both sides are
-// normalized the same way before comparison. Normalizing on only one side is how a join
-// silently matches nothing.
 export const codeKey = (v) => String(v ?? "").trim().toUpperCase().replace(/\s+/g, "");
-
-// ---------------------------------------------------------------------------
-// Section-specific metric builders. Each returns { metricsById, callbyError }.
-// metricsById: Map<employeeIdString, { ...raw section metrics }>.
-// ---------------------------------------------------------------------------
 
 export async function buildAgentMetrics(employees, { from, to }) {
   const metricsById = new Map();
@@ -77,8 +39,8 @@ export async function buildAgentMetrics(employees, { from, to }) {
       totalCalls: 0, connected: 0, dailyTarget: 100,
       notConnected: null, interested: null, avgCallSeconds: null,
       referred: 0, visited: 0, converted: 0, nonConverted: 0, amountReceived: 0,
-      // "Has a way to link" (employeeId or callbyUserId set), independent of whether
-      // callby actually returned a row for it — see callbyMatched below.
+      
+      
       callbyLinked: !!e.employeeId || !!e.callbyUserId,
       callbyMatched: false,
     });
@@ -86,8 +48,8 @@ export async function buildAgentMetrics(employees, { from, to }) {
 
   let callbyError = null;
   try {
-    // callby reads dateFrom/dateTo (not from/to) and silently defaults to the
-    // last 30 days when they're absent. Call figures are period-scoped.
+    
+    
     const params = {};
     if (from) params.dateFrom = from;
     if (to) params.dateTo = to;
@@ -119,16 +81,16 @@ export async function buildAgentMetrics(employees, { from, to }) {
       m.connected = a.calls?.connected || 0;
       m.dailyTarget = a.dailyTarget || 100;
 
-      // Why notConnected is a band count and not (total - connected): `connected` counts
-      // any call with duration > 0, so a 2-second misdial counts as connected. The
-      // NOT_CONNECTED band is the honest zero-duration/missed/rejected count. The two
-      // definitions disagree by design and both are shown; do not "reconcile" them by
-      // deriving one from the other.
+      
+      
+      
+      
+      
       const byEngagement = a.calls?.byEngagement;
       m.notConnected = byEngagement ? (byEngagement.NOT_CONNECTED || 0) : null;
-      // `interested` is a DURATION signal, not a Lead.status — sum of bands scoring >=
-      // INTEREST_MIN_SCORE. A lead an agent spoke to for three minutes is behaving like an
-      // interested lead whether or not anyone tagged it.
+      
+      
+      
       m.interested = byEngagement ? sumInterestedBands(byEngagement) : null;
       m.avgCallSeconds = a.calls?.total ? Math.round((a.calls?.totalDurationSeconds || 0) / a.calls.total) : null;
     }
@@ -146,9 +108,9 @@ export async function buildAgentMetrics(employees, { from, to }) {
       $group: {
         _id: "$personal.reference",
         referred: { $sum: 1 },
-        // Visited = the patient actually turned up. "status is not NEW and not
-        // NOT_VISITED" rather than matching CONSULTED, which the Patient pre-save hook
-        // never assigns (see patientStatus.js).
+        
+        
+        
         visited: { $sum: { $cond: [{ $in: ["$ops.status", VISITED_EXCLUDED_STATUSES] }, 0, 1] } },
         converted: { $sum: { $cond: [{ $in: ["$ops.status", CONVERTED_STATUSES] }, 1, 0] } },
         amountReceived: { $sum: { $ifNull: ["$payments.amountReceived", 0] } },
@@ -161,8 +123,8 @@ export async function buildAgentMetrics(employees, { from, to }) {
     m.referred = r.referred;
     m.visited = r.visited;
     m.converted = r.converted;
-    // Drop-off vs. visited, not vs. referred — a patient who never showed up isn't a
-    // "non-conversion", they're a no-visit, already visible via referred - visited.
+    
+    
     m.nonConverted = r.visited - r.converted;
     m.amountReceived = round(r.amountReceived);
   }
@@ -226,9 +188,9 @@ async function buildSurgeryMetrics(employees, { from, to }) {
   const ids = employees.map((e) => e._id);
   const dateMatch = { "surgery.surgeryDate": { $exists: true, $ne: null, ...(periodBounds(from, to) || {}) } };
 
-  // $facet output names may not contain "." (Mongo Location16412 — this page
-  // 500'd on every load until the keys were flattened), so the field path is
-  // stored under a dot-free key and mapped back below.
+  
+  
+  
   const facetKey = (field) => field.replace(/\./g, "_");
   const facet = {};
   for (const field of SURGERY_ROLE_FIELDS) {
@@ -241,9 +203,9 @@ async function buildSurgeryMetrics(employees, { from, to }) {
   }
   const [result] = await Patient.aggregate([{ $facet: facet }]);
 
-  // A staff member listed on more than one of the six role arrays for the same
-  // surgery (rare, but possible) is counted once per array here — flagged in
-  // the end-of-part report rather than engineered around, given how rare it is.
+  
+  
+  
   for (const field of SURGERY_ROLE_FIELDS) {
     for (const row of result[facetKey(field)] || []) {
       const m = metricsById.get(String(row._id));
@@ -252,8 +214,8 @@ async function buildSurgeryMetrics(employees, { from, to }) {
       m.graftsImplanted += row.graftsImplanted;
     }
   }
-  // No "scheduled but not completed" flag exists on Patient — these read
-  // identically until that data exists.
+  
+  
   for (const m of metricsById.values()) m.surgeriesAttempted = m.patientsOperated;
 
   return { metricsById, callbyError: null };
@@ -304,19 +266,6 @@ export const SECTION_METRIC_BUILDERS = {
   Other: buildOtherMetrics,
 };
 
-// ---------------------------------------------------------------------------
-// Compensation — shared by every section. Reuses the exact aggregation
-// src/app/api/employees/finance-summary/route.js already uses (that route is
-// admin/super-admin only, so this calls the aggregation directly rather than
-// fetching it over HTTP).
-// ---------------------------------------------------------------------------
-
-/**
- * Payables for the pay months a client window covers. Salary/incentive
- * payables are raised weeks after the month they're for (July salary is
- * created mid-September), so matching on createdAt showed nothing for most
- * ranges. Payables without a period fall back to createdAt.
- */
 export function payablePeriodMatch(from, to) {
   const months = istMonthKeys(from, to);
   if (!months.length) return {};
@@ -365,19 +314,14 @@ export async function buildCompensationMetrics(employees, { from, to }) {
   return metricsById;
 }
 
-// ---------------------------------------------------------------------------
-// Performance input derivation — turns raw section metrics into the rate
-// inputs src/lib/owner/performance.js's formulas expect (see ROLE_PERFORMANCE_CONFIG).
-// ---------------------------------------------------------------------------
-
 export function derivePerfMetrics(section, m, periodDays) {
   switch (section) {
     case "Agent":
       return {
         connectRate: m.totalCalls ? m.connected / m.totalCalls : 0,
-        // Denominator is `visited`, not `referred` — a patient who never showed up isn't
-        // a missed conversion, they're a no-visit. Both sides come from Patient; callby's
-        // lead count is a present-moment snapshot, not period-scoped, so it can't be used.
+        
+        
+        
         conversionRate: m.visited ? m.converted / m.visited : 0,
         targetAttainment: m.dailyTarget ? m.totalCalls / (m.dailyTarget * periodDays) : 0,
       };
@@ -408,8 +352,6 @@ export function sampleValue(section, m) {
   return m[config.sampleField] || 0;
 }
 
-// KPI tiles from the $facet totals (one $group over the whole filtered cohort —
-// the same rows the table pages through, never a second query).
 function buildKpis(section, t) {
   const headcount = t?.headcount || 0;
   const active = t?.active || 0;
@@ -417,9 +359,9 @@ function buildKpis(section, t) {
   const scoredCount = t?.scoredCount || 0;
   const avgScore = scoredCount ? Math.round((t.scoreSum || 0) / scoredCount) : null;
 
-  // Agent has a 3-state breakdown (linked-and-matched / code-set-but-no-callby-row /
-  // no-code) because it's the one section that actually joins to callby by code. Every
-  // other section only knows "callbyUserId is set or not" — the original boolean.
+  
+  
+  
   const linkedTile = section === "Agent" && t
     ? (() => {
         const matched = t.callbyMatched || 0;
@@ -457,9 +399,6 @@ function buildKpis(section, t) {
   return base;
 }
 
-// Columns the table may sort on. Employee-document fields sort on the document
-// itself; everything else lives under the attached `_m` metrics object. Anything
-// not listed falls back to name so a crafted sortBy can't probe arbitrary paths.
 const EMPLOYEE_SORT_FIELDS = new Set([
   "name", "phone", "email", "employeeId", "role", "branch", "tlName", "managerName", "dateOfJoining", "isactive",
 ]);
@@ -475,8 +414,6 @@ function resolveSortPath(section, sortBy) {
   return "name";
 }
 
-// Metric keys each section's builder emits — derived from the builders' own
-// zero-rows so the sort whitelist can't drift from what they actually return.
 const SECTION_METRIC_KEYS = {
   Agent: new Set(["totalCalls", "connected", "dailyTarget", "notConnected", "interested", "avgCallSeconds", "referred", "visited", "converted", "nonConverted", "amountReceived"]),
   Counsellor: new Set(["patientsConsulted", "converted", "nonConverted", "amountReceived", "avgDiscount", "packageBeforeConsult", "packageAfterConsult"]),
@@ -485,7 +422,6 @@ const SECTION_METRIC_KEYS = {
   Other: new Set([]),
 };
 
-// Per-section KPI accumulators for the $facet totals branch.
 const SECTION_KPI_SUMS = {
   Agent: { totalCalls: "$_m.totalCalls" },
   Counsellor: { patientsConsulted: "$_m.patientsConsulted" },
@@ -498,19 +434,14 @@ const ROW_FIELDS = [
   "name", "phone", "email", "employeeId", "role", "dateOfJoining", "tlName", "managerName", "branch", "isactive",
 ];
 
-/**
- * Mongo $match for one section + the standard filters. Exported so any other
- * owner query that needs "the employees on the Agents page" (Sanya's tools,
- * overview) builds the identical filter instead of re-deriving it.
- */
 export async function buildSectionMatch(section, filters = {}) {
   const distinctRoles = await Employee.distinct("role", { mergedInto: null });
   let sectionRoles = distinctRoles.filter((r) => employeeSection(r) === section);
-  // A missing/blank role classifies as "Other" — $in with null also matches
-  // documents without the field.
+  
+  
   if (section === "Other") sectionRoles.push(null, "");
-  // "Role" advanced filter narrows the section's own role bucket rather than
-  // fighting it with a second `role` match key (Mongo would just keep the last one).
+  
+  
   if (filters.role) {
     const q = filters.role.trim().toLowerCase();
     sectionRoles = sectionRoles.filter((r) => r && r.toLowerCase().includes(q));
@@ -534,7 +465,7 @@ export async function buildSectionMatch(section, filters = {}) {
   if (filters.tlName === UNASSIGNED_TEAM) {
     match.$and = [...(match.$and || []), { $or: [{ tlName: { $exists: false } }, { tlName: null }, { tlName: "" }] }];
   } else if (filters.tlName) {
-    // Exact team, case/whitespace-insensitive — same rule the Leadership page uses.
+    
     match.tlName = new RegExp(`^\\s*${escapeRegex(filters.tlName.trim())}\\s*$`, "i");
   }
   if (filters.dojFrom || filters.dojTo) {
@@ -555,10 +486,6 @@ export async function buildSectionMatch(section, filters = {}) {
   return match;
 }
 
-// ---------------------------------------------------------------------------
-// Main entry point
-// ---------------------------------------------------------------------------
-
 export async function runEmployeeReportQuery(req, section) {
   const session = await getServerSession(authOptions);
   if (!session || !ALLOWED_ROLES.includes(session?.user?.role)) {
@@ -569,10 +496,10 @@ export async function runEmployeeReportQuery(req, section) {
   const filters = parseEmployeeFilters(searchParams);
   const pageParams = parsePageParams(searchParams);
 
-  // Shared by every Employees section route (agents/counsellors/hr/other-staff/
-  // surgery-staff, plus the leadership/[tlNameKey] roster which proxies through
-  // here as section "Agent") — cached once here rather than in each one-line
-  // route file.
+  
+  
+  
+  
   const meta = {};
   const key = cacheKey("owner", { route: "employees-section", section, ...Object.fromEntries(searchParams) }, session);
   const data = await cached(key, 120, () => queryEmployeeSection({ section, filters, ...pageParams }), meta);
@@ -582,20 +509,15 @@ export async function runEmployeeReportQuery(req, section) {
   return res;
 }
 
-/**
- * The Employees list query without the HTTP layer — the payload
- * runEmployeeReportQuery returns. Exported so src/lib/owner/metrics/employees.js
- * (Sanya) reads the same KPI totals the page shows for the same filters.
- */
 export async function queryEmployeeSection({ section, filters, page, pageSize, skip, limit }) {
   const sortPath = resolveSortPath(section, filters.sortBy);
   const sortDir = filters.sortDir === "desc" ? -1 : 1;
 
   const match = await buildSectionMatch(section, filters);
 
-  // The cohort's ids (+ callby link) — the only thing the metric builders need.
-  // A projection of two fields over a few hundred docs; the full rows are read
-  // by the paginated aggregation below, one page at a time.
+  
+  
+  
   const cohort = await Employee.find(match).select("_id callbyUserId employeeId").lean();
 
   const meta = pageMeta({ page, pageSize, total: 0 });
@@ -616,8 +538,8 @@ export async function queryEmployeeSection({ section, filters, page, pageSize, s
   ]);
   const { metricsById: sectionMetricsById, callbyError } = sectionResult;
 
-  // Peer-relative scoring needs every member of the cohort — one scoreCohort
-  // call, the same implementation the detail page and dashboard use.
+  
+  
   const performanceById = scoreCohort(
     section,
     cohort.map((e) => {
@@ -627,9 +549,9 @@ export async function queryEmployeeSection({ section, filters, page, pageSize, s
     }),
   );
 
-  // One small object per employee: section metrics + compensation + performance.
-  // Attached to each Employee document inside the aggregation so the DB can
-  // sort/paginate/total on them exactly like on document fields.
+  
+  
+  
   const metricRows = cohort.map((e) => {
     const id = String(e._id);
     return {
@@ -640,10 +562,10 @@ export async function queryEmployeeSection({ section, filters, page, pageSize, s
     };
   });
 
-  // For every one of the N cohort documents, Mongo re-scans the whole metricRows array
-  // (also size N) via $filter — O(N^2) inside the aggregation. Fine at a few hundred
-  // employees (the documented bound); this guard just makes the ceiling visible in logs
-  // rather than silently getting slower as headcount grows.
+  
+  
+  
+  
   if (cohort.length > 1000) {
     console.warn(`queryEmployeeSection: cohort of ${cohort.length} exceeds 1000 — the $literal/$filter metricRows join in employeeReportQuery.js is O(cohort^2) and needs restructuring before this grows further.`);
   }
@@ -664,9 +586,9 @@ export async function queryEmployeeSection({ section, filters, page, pageSize, s
     {
       $facet: {
         rows: [
-          // _id tiebreak keeps the order total, so page N+1 can never repeat a
-          // row from page N when many employees share a sort value (very common
-          // for metrics — dozens of zeros).
+          
+          
+          
           { $sort: { [sortPath]: sortDir, _id: 1 } },
           { $skip: skip },
           { $limit: limit },
@@ -686,9 +608,9 @@ export async function queryEmployeeSection({ section, filters, page, pageSize, s
               _id: null,
               headcount: { $sum: 1 },
               active: { $sum: { $cond: ["$isactive", 1, 0] } },
-              // Section-aware: Agent rows carry their own callbyLinked on _m (computed
-              // from employeeId OR callbyUserId in buildAgentMetrics); every other section
-              // falls back to the document-level boolean (callbyUserId presence only).
+              
+              
+              
               linked: { $sum: { $cond: [{ $ifNull: ["$_m.callbyLinked", "$callbyLinked"] }, 1, 0] } },
               callbyMatched: { $sum: { $cond: [{ $eq: ["$_m.callbyMatched", true] }, 1, 0] } },
               callbyHasCodeNoRow: { $sum: { $cond: [{ $and: [{ $eq: ["$_m.callbyLinked", true] }, { $eq: ["$_m.callbyMatched", false] }] }, 1, 0] } },
@@ -710,7 +632,7 @@ export async function queryEmployeeSection({ section, filters, page, pageSize, s
         ],
       },
     },
-  ]).collation({ locale: "en", strength: 2 }); // case-insensitive name/branch ordering
+  ]).collation({ locale: "en", strength: 2 }); 
 
   const totals = result?.totals?.[0] || null;
   const total = totals?.headcount || 0;
@@ -734,7 +656,6 @@ export async function queryEmployeeSection({ section, filters, page, pageSize, s
   };
 }
 
-// Performance band distribution over the whole cohort (from the $facet totals).
 const emptyBands = () => ({ ...Object.fromEntries(PERFORMANCE_BANDS.map((b) => [b, 0])), insufficientData: 0 });
 function bandsFromTotals(t) {
   const out = emptyBands();

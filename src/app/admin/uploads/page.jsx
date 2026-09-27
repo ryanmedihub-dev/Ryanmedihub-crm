@@ -34,14 +34,14 @@ const UPLOAD_TYPES = [
 
 export default function UploadsPage() {
   const toast = useToast();
-  const [phase, setPhase] = useState("idle"); // idle | parsing | preview | committing | done
+  const [phase, setPhase] = useState("idle"); 
   const [lists, setLists] = useState(null);
   const [listsError, setListsError] = useState(false);
   const [building, setBuilding] = useState(false);
 
   const [file, setFile] = useState(null);
   const [rawRows, setRawRows] = useState([]);
-  const [validation, setValidation] = useState(null); // { summary, results }
+  const [validation, setValidation] = useState(null); 
   const [skipErrors, setSkipErrors] = useState(false);
   const [batchLabel, setBatchLabel] = useState("");
   const [commitResult, setCommitResult] = useState(null);
@@ -244,7 +244,7 @@ export default function UploadsPage() {
           )}
         </div>
 
-        {/* STEP 1 — type */}
+        {}
         {phase === "idle" && (
           <section className="space-y-6">
             <div>
@@ -267,7 +267,7 @@ export default function UploadsPage() {
               </div>
             </div>
 
-            {/* STEP 2 — template */}
+            {}
             <div>
               <h2 className="mb-3 text-sm font-bold text-slate-900">2. Download the template</h2>
               {listsError ? (
@@ -298,7 +298,6 @@ export default function UploadsPage() {
               </p>
             </div>
 
-            {/* STEP 3 — upload */}
             <div>
               <h2 className="mb-3 text-sm font-bold text-slate-900">3. Upload the filled file</h2>
               <UploadDropzone onFile={handleFile} fileName={file?.name} disabled={busy} />
@@ -312,7 +311,6 @@ export default function UploadsPage() {
           </div>
         )}
 
-        {/* PREVIEW */}
         {(phase === "preview" || phase === "committing") && validation && (
           <section className="space-y-4">
             <PreviewTable summary={validation.summary} results={validation.results} />
@@ -363,7 +361,6 @@ export default function UploadsPage() {
           </section>
         )}
 
-        {/* DONE */}
         {phase === "done" && commitResult && (
           <BatchResultPanel
             result={commitResult}

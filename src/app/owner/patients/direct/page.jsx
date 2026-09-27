@@ -7,12 +7,6 @@ import { PATIENT_SHARED_COLUMNS } from "@/lib/owner/patientColumns";
 import { PATIENT_DIRECT_REFERENCE_NAME } from "@/lib/owner/patientStatus";
 import { num, rupee } from "@/lib/owner/format";
 
-// personal.reference points at the Employee named exactly "Ryan" — a
-// deliberate sentinel for walk-in/direct patients (confirmed with the user;
-// NOT the same as personal.reference being empty — see the Part 3 write-up).
-//
-// "Everyone else" (data.others) comes from the same API call — same period,
-// same branch, every patient whose reference is NOT the sentinel.
 function DirectVsRestCard({ data }) {
   const direct = data.totals || {};
   const others = data.others || {};

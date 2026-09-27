@@ -10,8 +10,8 @@ export function validateExpenseSection({ expenseData, payableAction, selectedPay
 
   if (expenseData.expenseSection === "agent") {
     if (!expenseData.employeeId) return "Please select an employee";
-    // The incentive sub-tab is pay-only against an existing incentive payable — no incentive
-    // type / related patient here (those payables are raised from the Incentive tab).
+    
+    
     if (expenseData.agentSubTab === "incentive" && !selectedPayableId) {
       return "Select which open incentive payable this payment is against";
     }
@@ -61,9 +61,9 @@ export function validateExpenseEntry({
 
   if (!expenseData.branch) return "Select a branch";
 
-  // Mirrors expense/create/route.js's server-side guard: every real cash movement records
-  // which account the money left from, unless the method itself carries no cash movement
-  // (offset settlement, paid-by-other, etc).
+  
+  
+  
   if (!expenseData.furtherMode && !nonCashMethods.includes(expenseData.method)) {
     return "Select which account this payment left from";
   }

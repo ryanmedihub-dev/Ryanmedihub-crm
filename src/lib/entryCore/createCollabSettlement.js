@@ -1,11 +1,4 @@
-// Extracted from collab-settlement/settlements/create/route.js's POST handler — used by
-// "collab.settlement".
-//
-// AUDIT.md B3: the legacy route saves the CollabSettlement document, then generates one
-// Transactions document per allocated case OUTSIDE any Mongo session — a mid-loop failure
-// leaves a saved settlement with a partial transaction set and still reports success. That
-// is preserved exactly here, not fixed — per the project's guardrails, a fix that changes
-// this failure-mode behaviour is a separate, explicit decision (see the Phase B response).
+
 
 import CollabSettlement from "@/models/CollabSettlement";
 import CollabCase from "@/models/CollabCase";

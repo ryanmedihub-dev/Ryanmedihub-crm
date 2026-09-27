@@ -2,11 +2,6 @@ import { KpiSkeleton } from "./Skeleton";
 import CountUp from "./ai/CountUp";
 import { ChevronRight } from "lucide-react";
 
-// Renders one KPI tile against the owner-theme.css `.kpi`/`.kpi-lead` classes
-// (glass surface, hover lift, gradient lead card — see owner-ai.css for the
-// glass/glow/stagger additions on top of those). `rawValue` + `format` are
-// optional: pass them to animate the number in with CountUp; `value` alone
-// still renders as plain text unchanged.
 function KpiCard({ item, isLead, index }) {
   const isClickable = !!item.onDrill;
   const Tag = isClickable ? "button" : "div";
@@ -37,8 +32,8 @@ export default function KpiRow({ items = [], primaryIndex = 0, loading = false }
   const hasLead = Number.isInteger(primaryIndex) && primaryIndex >= 0 && primaryIndex < items.length;
   const support = items.map((item, i) => (hasLead && i === primaryIndex ? null : <KpiCard key={item.label ?? i} item={item} index={i} />));
 
-  // Only reserve the lead column when there IS a lead — otherwise it's a
-  // plain responsive grid of equal cards (kpi-support alone).
+  
+  
   if (!hasLead) return <div className="kpi-support">{support}</div>;
 
   return (

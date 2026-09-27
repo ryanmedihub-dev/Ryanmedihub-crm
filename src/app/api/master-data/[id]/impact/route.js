@@ -13,12 +13,6 @@ import {
 
 const ALLOWED_ROLES = ["super-admin", "owner"];
 
-// GET /api/master-data/:id/impact?isNonCash=true&isUnsettled=false
-// GET /api/master-data/:id/impact?settlementType=DIRECT
-//
-// Read-only. The preview the admin UI shows before a gated change is confirmed (§0.2 / §3):
-// how many live documents carry the value, and — for a behavioural-flag change — the estimated
-// P&L / balance delta.
 export async function GET(req, { params }) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

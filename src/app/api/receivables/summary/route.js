@@ -64,9 +64,9 @@ async function computeReceivablesSummary({ purpose, payerKind, payerRefId, payer
           }
         : emptyTotals;
 
-    // `ageing=1` returns the bucket split *and* the same `overall` totals the plain call
-    // returns, so a caller needing both (the admin dashboard) makes one request, and the
-    // headline figure is guaranteed to be the sum of the buckets it sits next to.
+    
+    
+    
     if (ageing) {
       const [facet] = await Receivable.aggregate([
         { $match: { isCancelled: false, ...(branch ? { branch } : {}) } },

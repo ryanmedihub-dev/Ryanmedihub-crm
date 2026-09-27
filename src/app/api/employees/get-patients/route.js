@@ -66,8 +66,8 @@ const handler = async (req) => {
     const employeesByRole = {};
 
     for (const employee of data) {
-      // Free-form role text folded into a canonical bucket ("counsellor"/"COUNSELLOR" -> one
-      // tab); a real but non-standard designation keeps its own Title-cased bucket.
+      
+      
       const role = employeeRoleBucket(employee.role);
       if (!employeesByRole[role]) employeesByRole[role] = [];
 

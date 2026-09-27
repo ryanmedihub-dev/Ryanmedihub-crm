@@ -1,9 +1,6 @@
 import { assertNoPII, PIIError } from "@/lib/sanya/pii";
 import { AI_LOG_PAYLOADS, AI_TIMEOUT_MS } from "./config";
 
-// Plain fetch to chat/completions, same pattern as src/lib/sanya/engine.js —
-// no SDK. Structured output via response_format: json_schema (strict).
-
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
 
 function buildBody({ model, system, user, schemaName, schema, maxTokens, stream }) {
@@ -21,9 +18,6 @@ function buildBody({ model, system, user, schemaName, schema, maxTokens, stream 
   };
 }
 
-// Aborting with no reason (or a DOMException) keeps err.name === "AbortError" on the
-// rejected fetch, which engine.js relies on to tell a timeout apart from a client
-// disconnect — passing a plain Error as the reason would rename it and break that check.
 function combineSignals(signal) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
@@ -39,8 +33,8 @@ function combineSignals(signal) {
 }
 
 async function callOpenAI(body, signal) {
-  // `user` content IS the facts JSON sent to OpenAI — the one place it must
-  // pass the PII guard. Fails closed: throws PIIError, request never sent.
+  
+  
   assertNoPII(JSON.parse(body.messages[1].content));
   if (AI_LOG_PAYLOADS) console.log("[ai] outgoing payload:\n" + JSON.stringify(body, null, 2));
   const res = await fetch(OPENAI_URL, {
@@ -56,10 +50,6 @@ async function callOpenAI(body, signal) {
   return res;
 }
 
-/**
- * Streamed structured completion. onDelta(textChunk) fires as JSON text
- * arrives. Returns { text, promptTokens, completionTokens }.
- */
 export async function streamStructured({ model, system, user, schemaName, schema, maxTokens, signal, onDelta }) {
   const combined = combineSignals(signal);
   try {
@@ -71,7 +61,6 @@ export async function streamStructured({ model, system, user, schemaName, schema
   }
 }
 
-/** Non-stream variant, same contract — used for the verdicts route and the one automatic retry on schema_invalid. */
 export async function completeStructured({ model, system, user, schemaName, schema, maxTokens, signal }) {
   const combined = combineSignals(signal);
   try {

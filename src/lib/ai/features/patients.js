@@ -9,11 +9,6 @@ import { callRoute } from "../sources";
 import { AI_BRIEF_MODEL, AI_DEEP_MODEL } from "../config";
 import { round, pct, topN, bottomN, sumBy, capPayload } from "./_helpers";
 
-// Patient data is health data — stricter than every other section. A compute()
-// here may only emit: status, branch, days-since-X, amounts, technique/OT
-// category, graft counts, and alias tokens. Never a name/phone/email/address/
-// age/gender/medical field/remarks/notes. Doctors/counsellors/agents are
-// aliased E##, patients P##.
 const SAMPLE_CAP = 200;
 
 function daysAgo(date) {
@@ -116,9 +111,9 @@ const patientsFeatures = {
         return { facts, rowsAnalyzed };
       }
 
-      // brief — totals come from the route's own whole-filtered-set aggregate
-      // (raw.totals), not re-derived from the sample; everything else (buckets,
-      // by-branch/source/counsellor) needs row-level data, so it's sample-based.
+      
+      
+      
       const ageBuckets = emptyAgeBuckets();
       const pendingBuckets = emptyPendingBuckets();
       const byBranch = new Map(); const bySource = new Map(); const byCounsellor = new Map();
@@ -140,7 +135,7 @@ const patientsFeatures = {
         byBranch: [...byBranch.entries()].map(([branch, count]) => ({ branch, count })),
         bySource: topEntries(bySource, 10).map(([source, count]) => (source === "direct" ? { source: "direct", count } : { source: book.alias("E", source, source), count })),
         byCounsellor: topEntries(byCounsellor, 8).map(([name, count]) => ({ counsellorAlias: book.alias("E", name, name), count })),
-        // Real, already-computed extras the route returns per preset — zero cost, zero invention.
+        
         stale: raw.stats?.stale ?? null,
         withSurgeryDate: raw.stats?.withSurgeryDate ?? null,
         surgeryStats: raw.surgeryStats || null,

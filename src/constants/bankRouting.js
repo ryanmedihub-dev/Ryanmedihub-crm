@@ -36,7 +36,6 @@ export const RECEIPT_MODES = [
   "Mumbai Receipts",
 ];
 
-
 const BANK_ROUTING_MAP = {
   Delhi: {
     TRANSPLANT: {

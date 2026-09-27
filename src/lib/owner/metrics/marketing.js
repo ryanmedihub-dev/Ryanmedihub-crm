@@ -3,11 +3,6 @@ import { attributeSpendToOutcomes } from "@/lib/owner/marketingAttribution";
 
 const PLATFORMS = ["Meta", "Google"];
 
-// One implementation of the Marketing landing table (/owner/marketing):
-// spend → leads → converted → revenue per platform (and per campaign where a
-// platform has more than one), on the shared attribution in
-// marketingAttribution.js. /api/owner/marketing-summary and Sanya's
-// `get_marketing_summary` tool both call this.
 export async function getMarketingSummary({ branch = "All", from, to }) {
   const { byPlatform } = await attributeSpendToOutcomes({
     platforms: PLATFORMS, branch, from: new Date(from), to: new Date(to),
@@ -42,7 +37,7 @@ export async function getMarketingSummary({ branch = "All", from, to }) {
     }
   }
 
-  // Last-entry attribution for the manual-data notice.
+  
   const lastEntry = await AdSpend.findOne(branch !== "All" ? { branch } : {})
     .sort({ createdAt: -1 })
     .select("createdAt enteredBy")

@@ -23,15 +23,12 @@ function orbState(status, stages) {
   return "idle";
 }
 
-// The star component — placed at the top of every owner page. Every string
-// and number it shows comes from a real engine run (see useAiInsight); there
-// is no simulated state anywhere in here.
 export default function AiBriefPanel({ feature, scope, title, enabled = true, compact = false, variant = "default", aiState = null, scoreLabel = "AI health score" }) {
   const hero = variant === "hero";
-  // A page that also needs this same brief for its topbar (OwnerTopbar's
-  // `aiState` prop) can call useAiInsight itself and pass the result down
-  // here instead — this hook still runs (Rules of Hooks) but does nothing
-  // when `aiState` is supplied, so there is never a second stream.
+  
+  
+  
+  
   const ownAi = useAiInsight(feature, scope, { kind: "brief", enabled: enabled && !aiState });
   const ai = aiState || ownAi;
   const [drawerOpen, setDrawerOpen] = useState(false);

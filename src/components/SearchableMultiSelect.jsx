@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, ChevronDown, Search, X } from "lucide-react";
 
-
 export default function SearchableMultiSelect({
   label,
   value = [],
@@ -110,7 +109,7 @@ export default function SearchableMultiSelect({
       className="w-full"
       ref={ref}
     >
-      {/* Label */}
+      {}
       <div className="flex items-center justify-between mb-2">
         <label className="text-[11px] font-bold uppercase tracking-wide text-slate-500">
           {label}
@@ -124,7 +123,7 @@ export default function SearchableMultiSelect({
       </div>
 
       <div className="relative">
-        {/* Trigger */}
+        {}
         <button
           type="button"
           onClick={() =>
@@ -156,7 +155,7 @@ export default function SearchableMultiSelect({
             }
           `}
         >
-          {/* Icon */}
+          {}
           {Icon && (
             <div className="absolute left-3 flex items-center justify-center">
               <Icon
@@ -173,7 +172,7 @@ export default function SearchableMultiSelect({
             </div>
           )}
 
-          {/* Selected value */}
+          {}
           <span
             className={`
               flex-1
@@ -196,7 +195,7 @@ export default function SearchableMultiSelect({
             {summary}
           </span>
 
-          {/* Right controls */}
+          {}
           <div className="absolute right-2 flex items-center gap-1">
             {value.length > 0 && (
               <span
@@ -252,7 +251,7 @@ export default function SearchableMultiSelect({
           </div>
         </button>
 
-        {/* Dropdown */}
+        {}
         {open && (
           <div
             className="
@@ -272,7 +271,7 @@ export default function SearchableMultiSelect({
               duration-100
             "
           >
-            {/* Dropdown Header */}
+            {}
             <div className="px-3 pt-3 pb-2">
               <div className="flex items-center justify-between mb-2">
                 <div>
@@ -310,7 +309,7 @@ export default function SearchableMultiSelect({
                 )}
               </div>
 
-              {/* Search */}
+              {}
               <div className="relative">
                 <Search
                   className="
@@ -358,7 +357,7 @@ export default function SearchableMultiSelect({
               </div>
             </div>
 
-            {/* Select All */}
+            {}
             {filtered.length > 0 && (
               <button
                 type="button"
@@ -380,7 +379,7 @@ export default function SearchableMultiSelect({
                   text-left
                 "
               >
-                {/* Checkbox */}
+                {}
                 <span
                   className={`
                     flex
@@ -422,7 +421,7 @@ export default function SearchableMultiSelect({
               </button>
             )}
 
-            {/* Options */}
+            {}
             <div className="max-h-64 overflow-y-auto py-1 scrollbar-thin">
               {filtered.length === 0 ? (
                 <div className="px-4 py-8 text-center">
@@ -468,7 +467,7 @@ export default function SearchableMultiSelect({
                         group
                       "
                     >
-                      {/* Checkbox */}
+                      {}
                       <span
                         className={`
                           flex
@@ -493,7 +492,7 @@ export default function SearchableMultiSelect({
                         )}
                       </span>
 
-                      {/* Label */}
+                      {}
                       <span
                         className={`
                           flex-1
@@ -512,7 +511,7 @@ export default function SearchableMultiSelect({
                         {o.label}
                       </span>
 
-                      {/* Selected indicator */}
+                      {}
                       {checked && (
                         <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">
                           Selected
@@ -524,7 +523,7 @@ export default function SearchableMultiSelect({
               )}
             </div>
 
-            {/* Footer */}
+            {}
             {filtered.length > 0 && (
               <div className="flex items-center justify-between px-3 py-2 border-t border-slate-100 bg-slate-50/60">
                 <span className="text-[10px] text-slate-400">

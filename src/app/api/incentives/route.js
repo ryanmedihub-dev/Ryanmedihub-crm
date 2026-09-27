@@ -7,10 +7,6 @@ import { recordPatientIncentive, IncentiveError } from "@/lib/incentiveDerivatio
 import { cacheInvalidate } from "@/lib/cache";
 import { ALL_BRANCHES } from "@/lib/branches";
 
-// Open incentive entry point used by the "Incentive" panel on the role transaction-create
-// pages. Any authenticated staff member may record a per-patient incentive here — it tops up
-// the linked employee's monthly INCENTIVE payable exactly like the admin patient-page flow.
-// Period-lock rules still apply (enforced inside recordPatientIncentive).
 export async function POST(req) {
   try {
     const session = await getServerSession(authOptions);

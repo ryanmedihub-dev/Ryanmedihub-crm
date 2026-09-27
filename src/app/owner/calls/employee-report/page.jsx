@@ -9,10 +9,6 @@ import { useAiVerdicts } from "@/lib/ai/client/useAiVerdicts";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { num, fmtDateTime } from "@/lib/owner/format";
 
-// Per-employee call summary for the period. "Active Call Window" (first call
-// to last call) is CALL ACTIVITY, not attendance — an agent can be present and
-// not calling. Never labelled/implied as attendance (Part 0, Blocking
-// Decision #2).
 export default function CallsEmployeeReportPage() {
   const [filterState, setFilterState] = useState(null);
   const [sortKey, setSortKey] = useState("totalCalls");

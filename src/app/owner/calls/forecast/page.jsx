@@ -8,8 +8,6 @@ import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { rupee } from "@/lib/owner/format";
 
-// local: this screen rounds every projected figure to a whole number before display
-// (shared `num` keeps decimals, which reads wrong for "43.2 consulted").
 const fmt = (n) => new Intl.NumberFormat("en-IN").format(Math.round(n || 0));
 
 function SliderRow({ label, value, onChange, min, max, step = 1, suffix = "" }) {
@@ -35,7 +33,7 @@ export default function ForecastStaffingPage() {
   const note = seedData?.note ?? null;
   const forecastAi = useAiInsight("calls.forecast", {}, { kind: "brief" });
 
-  // Sliders are free-edit after the first load — only seed them once, not on every revalidation.
+  
   const seeded = useRef(false);
   useEffect(() => {
     if (seeded.current || !seedData) return;

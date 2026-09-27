@@ -31,7 +31,7 @@ export async function PUT(request, { params }) {
         { status: 400 }
       );
     }
-    // Designation is free-form — any post can be entered, not just a fixed list.
+    
 
     if (data.email && data.email.trim()) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -64,9 +64,9 @@ export async function PUT(request, { params }) {
       incentiveRate: data.incentiveRate !== undefined ? data.incentiveRate : undefined,
     };
 
-    // Optional identity fields (Owner Panel v2). Only touched when the caller
-    // sends them, so existing edit forms are unaffected. callbyUserId is owned
-    // by /api/owner/callby-links, not this route.
+    
+    
+    
     if (data.dateOfJoining !== undefined) {
       updateData.dateOfJoining = data.dateOfJoining || null;
     }

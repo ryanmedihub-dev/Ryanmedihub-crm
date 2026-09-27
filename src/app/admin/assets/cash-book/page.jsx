@@ -36,7 +36,7 @@ export default function CashBookPage() {
       .catch((e) => e.name !== "AbortError" && console.error(e))
       .finally(() => setLoading(false));
     return () => ctrl.abort();
-  }, [scopeQS, accountsParam]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [scopeQS, accountsParam]); 
 
   return (
     <div className="space-y-4">

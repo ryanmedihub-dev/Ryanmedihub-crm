@@ -25,8 +25,8 @@ export function buildExpensePayload({
     furtherMode: expenseData.furtherMode,
     externalParty: expenseData.method === "paid_by_other" ? expenseData.externalParty : undefined,
     ...(payableAction === "pay" ? { payableId: selectedPayableId, allowOverpayment } : {}),
-    // `expenseData.amount` is already the NET (payable pending − advance applied), auto-set and
-    // locked by the form while allocations are active — so every branch below stays as-is.
+    
+    
     ...(advanceAllocations.length
       ? {
           advanceSettlements: advanceAllocations.map((a) => ({
@@ -43,8 +43,8 @@ export function buildExpensePayload({
     return {
       ...common,
       expenseCategory: isSalary ? "Salary" : "Incentive",
-      // The incentive sub-tab is pay-only against an existing payable and no longer collects
-      // an incentive type / related patient, so fall back to a generic label.
+      
+      
       expenseType: isSalary ? "Salary" : expenseData.expenseType || "Incentive",
       patientId: !isSalary && expenseData.patientId ? expenseData.patientId : undefined,
       expenseGiver: {
@@ -121,10 +121,10 @@ export function buildExpensePayload({
     const rentVendor = expenseData.payableVendorId
       ? vendors.find((v) => v._id === expenseData.payableVendorId)
       : null;
-    // Categories outside the server's NO_GIVER list (e.g. Professional Expenses, Medical
-    // Consumables) require a giver — fall back to a MANUAL payee named after the sub-type
-    // ("the shared bucket") when no specific vendor was picked. Rent/Electricity/Collab Clinic
-    // Payment stay giver-less, matching how they've always been recorded.
+    
+    
+    
+    
     const rentGiver = rentVendor
       ? { type: "VENDOR", vendorId: rentVendor._id, name: rentVendor.name }
       : expenseNeedsGiver(expenseData.payableCategory)

@@ -14,10 +14,6 @@ import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { ownerFetch } from "@/lib/ownerFetch";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 
-// Shared shell for the Selected/Rejected interview pages (Owner Panel v2,
-// Part 5) — same "config object, one component" pattern as Part 2's
-// LeadStatusReportPage. One table, one KPI row, one API route
-// (/api/owner/hr/by-status), driven by config.preset.
 export default function InterviewStatusReportPage({ config }) {
   const [filterState, setFilterState] = useState(null);
   const [search, setSearch] = useState("");
@@ -56,8 +52,8 @@ export default function InterviewStatusReportPage({ config }) {
     }
   };
 
-  // Matches the candidate to a real Employee by phone (then exact name),
-  // server-side — never guesses; "Unmark" just clears the link.
+  
+  
   const markJoined = config.allowMarkJoined
     ? async (row) => {
         const r = await ownerFetch(`/api/owner/hr/interviews/${row.id}`, {

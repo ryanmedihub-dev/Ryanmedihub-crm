@@ -6,13 +6,6 @@ import { validateEntry } from "@/lib/entryEngine/validate";
 import { nonCashMethodsSync, unsettledMethodsSync } from "@/lib/masterData";
 import { cacheInvalidate } from "@/lib/cache";
 
-// The one new write route the Phase B brief asks for. Every existing route keeps its own
-// URL and its own (already-audited) body — this dispatches through the same entryCore
-// functions those routes will eventually delegate to, one migration step at a time. See
-// the Phase B response for exactly which surfaces post here today (none yet — "existing UI
-// untouched" per the migration order's step 2).
-//
-// Body: { type: "<registry key>", draft: {...}, documentId, idempotencyKey }
 export async function POST(req) {
   try {
     const body = await req.json();

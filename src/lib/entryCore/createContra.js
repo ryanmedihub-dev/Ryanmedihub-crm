@@ -1,7 +1,4 @@
-// Extracted from account-transfers/create/route.js's POST handler — used by "contra".
-// Note: this route already calls checkPeriodLock itself (on both accounts); guards.js
-// calls it too (once, against the furtherMode/fromAccount). Both checks reading the same
-// live AccountPeriod state is harmless — neither can pass what the other would block.
+
 
 import mongoose from "mongoose";
 import AccountTransfer from "@/models/AccountTransfer";

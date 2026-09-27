@@ -18,8 +18,6 @@ async function requireSession() {
   return { session };
 }
 
-// Not wrapped in withDB() — it only forwards `req`, dropping this dynamic
-// route's `{ params }` (same reasoning as src/app/api/owner/employees/[id]/route.js).
 export async function GET(req, { params }) {
   try {
     await dbConnect();
@@ -109,8 +107,6 @@ export async function PATCH(req, { params }) {
   }
 }
 
-// Never hard-deletes — spend rows reference campaigns by campaignId and must
-// not orphan. "Delete" retires the campaign to status:"Ended".
 export async function DELETE(req, { params }) {
   try {
     await dbConnect();

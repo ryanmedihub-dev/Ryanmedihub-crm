@@ -1,9 +1,5 @@
-// Tolerant extraction of a JSON string field from a buffer that may still be
-// mid-stream — i.e. the value's closing quote (or even the whole key) hasn't
-// arrived yet. Used to show `headline`/`summary` typing live as an OpenAI
-// structured-output stream accumulates; this is real partial data, not a
-// typewriter animation. Returns the string decoded so far, or null if the
-// key hasn't appeared in the buffer at all yet.
+
+
 const ESCAPES = { n: "\n", t: "\t", r: "\r", '"': '"', "\\": "\\", "/": "/", b: "\b", f: "\f" };
 
 export function extractStringField(buffer, key) {
@@ -14,7 +10,7 @@ export function extractStringField(buffer, key) {
 
   let i = at + marker.length;
   while (i < buffer.length && /[\s:]/.test(buffer[i])) i++;
-  if (buffer[i] !== '"') return null; // value hasn't started streaming yet
+  if (buffer[i] !== '"') return null; 
   i++;
 
   let out = "";
@@ -22,10 +18,10 @@ export function extractStringField(buffer, key) {
     const ch = buffer[i];
     if (ch === "\\") {
       const next = buffer[i + 1];
-      if (next === undefined) break; // escape sequence cut off mid-stream
+      if (next === undefined) break; 
       if (next === "u") {
         const hex = buffer.slice(i + 2, i + 6);
-        if (hex.length < 4) break; // \uXXXX not fully arrived yet
+        if (hex.length < 4) break; 
         out += String.fromCharCode(parseInt(hex, 16));
         i += 6;
         continue;
@@ -34,9 +30,9 @@ export function extractStringField(buffer, key) {
       i += 2;
       continue;
     }
-    if (ch === '"') return out; // properly closed
+    if (ch === '"') return out; 
     out += ch;
     i++;
   }
-  return out; // unterminated — whatever streamed in so far
+  return out; 
 }

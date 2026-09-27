@@ -15,11 +15,6 @@ const inputCls =
   "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100";
 const labelCls = "block text-sm font-medium text-gray-700 mb-1.5";
 
-/**
- * Target-based incentive. Each entry raises its own standalone INCENTIVE payable for the
- * employee — a real amount owed, paid later through the normal payable flow. Not tied to a
- * patient; the "target achieved" text is what the incentive is for.
- */
 export default function TargetIncentiveForm() {
   const toast = useToast();
   const { data: session } = useSession();
@@ -98,7 +93,7 @@ export default function TargetIncentiveForm() {
       toast.success(
         `Target incentive payable of ${formatCurrency(amount)} raised for ${employeeLabel}`,
       );
-      // Keep the employee for fast repeat entry; clear the rest.
+      
       setTarget("");
       setAmount("");
       setRemarks("");

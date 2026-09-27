@@ -13,11 +13,6 @@ import { AiBriefPanel } from "./ai";
 import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 
-// Shared shell for the four lead status-preset pages (Interested, Follow-ups,
-// Not-interested, Unattempted — Owner Panel v2, Part 2): one table, one KPI
-// row, one API route (/api/owner/leads/by-status), driven by `config.preset`.
-// Each page file is just this config, same "config object, not a copy"
-// pattern as Part 1's EmployeeReportPage.
 export default function LeadStatusReportPage({ config }) {
   const [filterState, setFilterState] = useState(null);
   const [search, setSearch] = useState("");

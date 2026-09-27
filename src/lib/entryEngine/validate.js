@@ -1,12 +1,4 @@
-// validateEntry(draft, typeKey, ctx) — ISOMORPHIC. Imported by UniversalEntryForm (client,
-// pre-submit) AND by /api/entries/create (server, before touching the DB). A rule lives
-// here exactly once; it can never exist on one side only (the failure mode AUDIT.md found
-// repeatedly — N6, N7, and the getPaymentIdConfig/NO_GIVER_CATEGORIES duplications).
-//
-// `ctx.masterData` carries the live lists a cold isomorphic function can't know on its own:
-// { nonCashMethods, unsettledMethods, accounts, expenseTypes(category) }. The client passes
-// useMasterData()'s live arrays; the server passes the *Sync() snapshot. Neither side may
-// hardcode these — this file has no import from constants/bankRouting or expenseCategories.
+
 
 import { getEntryType } from "./registry.js";
 import { expenseNeedsGiver, isPeriodicPurpose } from "./derive.js";
@@ -32,8 +24,6 @@ function checkAmount(draft) {
   return null;
 }
 
-/** Method + routing + external-party rules shared by every payment-bearing entry type —
- * generalises TransactionFieldSet.jsx's validateTransactionFields to the whole registry. */
 function checkPaymentFields(draft, { isSettlement = true } = {}, masterData) {
   const nonCash = masterData?.nonCashMethods || [];
   const unsettled = masterData?.unsettledMethods || [];
@@ -120,9 +110,9 @@ export function validateEntry(draft, typeKey, ctx = {}) {
     const giver = draft.vendor
       ? { kind: "VENDOR", refId: draft.vendor, name: draft.vendor }
       : null;
-    // Rent/Electricity/Collab/etc. categories don't need a giver at all (mirrors
-    // expense/create/route.js's NO_GIVER_CATEGORIES via expenseNeedsGiver()); a vendor is
-    // optional metadata here, not a requirement, so no giver check is applied.
+    
+    
+    
     void giver;
   }
   if (typeKey === "expense.vendor" && expenseNeedsGiver(draft.expenseCategory)) {

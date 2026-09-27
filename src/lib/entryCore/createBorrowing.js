@@ -1,4 +1,4 @@
-// Extracted from borrowings/create/route.js's POST handler — used by "borrowing.in"/"borrowing.out".
+
 
 import mongoose from "mongoose";
 import Borrowing, { BORROWING_PARTY_KINDS } from "@/models/Borrowing";

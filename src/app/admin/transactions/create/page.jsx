@@ -118,7 +118,7 @@ function AdminCreateTransactionPageInner() {
   const [expandedPayableTxLoading, setExpandedPayableTxLoading] = useState(false);
   const [payableRefreshKey, setPayableRefreshKey] = useState(0);
   const [openAdvances, setOpenAdvances] = useState([]);
-  const [advanceAllocations, setAdvanceAllocations] = useState({}); // { [advanceId]: amount }
+  const [advanceAllocations, setAdvanceAllocations] = useState({}); 
 
   const [transplantData, setTransplantData] = useState({
     patient: "",
@@ -464,8 +464,8 @@ function AdminCreateTransactionPageInner() {
   ]);
 
   useEffect(() => {
-    // The incentive sub-tab is pay-only — there's no "create payable" path here, so default
-    // straight to recording a payment against an existing open incentive payable.
+    
+    
     const incentivePayOnly =
       expenseData.expenseSection === "agent" && expenseData.agentSubTab === "incentive";
     setPayableAction(incentivePayOnly ? "pay" : "none");
@@ -484,13 +484,13 @@ function AdminCreateTransactionPageInner() {
     expenseData.rentSubType,
   ]);
 
-  // A stale allocation carried across a payable switch is the obvious bug — clear it.
+  
   useEffect(() => {
     setAdvanceAllocations({});
   }, [selectedPayableId, payableAction]);
 
-  // Open advances for whoever this expense is paid to — only relevant when recording a
-  // payment against a specific payable (settling an advance needs a payableId).
+  
+  
   useEffect(() => {
     if (activeTab !== "expense" || !advanceContext?.refId || payableAction !== "pay") {
       setOpenAdvances([]);
@@ -526,11 +526,11 @@ function AdminCreateTransactionPageInner() {
     setExpenseData((d) => (d.payableVendorId ? { ...d, payableVendorId: "" } : d));
   }, [expenseData.expenseSection, expenseData.payableCategory]);
 
-  /* ---- advance settlement derived state ---- */
+  
   const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
   const selectedPayableForSettle = openPayables.find((p) => p._id === selectedPayableId) || null;
 
-  // {advanceId, amount, remaining}[] — only ticked advances, keyed to their live `remaining`.
+  
   const advanceAllocList = Object.entries(advanceAllocations)
     .filter(([, v]) => v !== "" && v != null)
     .map(([advanceId, amount]) => {
@@ -544,8 +544,8 @@ function AdminCreateTransactionPageInner() {
       ? round2((selectedPayableForSettle.pending || 0) - advanceApplied)
       : round2(parseFloat(expenseData.amount || 0) - advanceApplied);
 
-  // §4.4 — while advances are ticked, the Amount field IS the net (cash leaving the account).
-  // Auto-set it and lock the input; the caption tells the user to untick to edit.
+  
+  
   useEffect(() => {
     if (!hasAdvanceAllocations) return;
     const nextStr = String(advanceNet);
@@ -681,7 +681,7 @@ function AdminCreateTransactionPageInner() {
     const selectedPayable = openPayables.find((p) => p._id === selectedPayableId);
     const overBalance =
       selectedPayable && parseFloat(expenseData.amount || 0) > selectedPayable.pending;
-    // Incentive sub-tab: pay-only against an existing open incentive payable. No create path.
+    
     const payOnly =
       expenseData.expenseSection === "agent" && expenseData.agentSubTab === "incentive";
 
@@ -1172,7 +1172,7 @@ function AdminCreateTransactionPageInner() {
     }
     setLoading(true);
     try {
-      // With advances ticked, one action spans two documents — route through the orchestrator.
+      
       const endpoint = hasAdvanceAllocations
         ? "/api/transactions/expense/create-with-settlement"
         : "/api/transactions/expense/create";

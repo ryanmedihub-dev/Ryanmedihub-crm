@@ -6,11 +6,6 @@ import AccountingTable from "@/components/finance/AccountingTable";
 import { formatCurrency, formatDate, StatusBadge } from "@/lib/financeUI";
 import { settlementLinesFor } from "@/lib/advanceSettlements";
 
-/**
- * Read-only listing of advance or borrowing transactions for a period — the same
- * "Advance Transactions" / "Borrowing Transactions" tables shown on /admin/financing,
- * surfaced on the Payments and Receipts pages so those pages tell the whole cash story.
- */
 const CONFIG = {
   advance: {
     endpoint: "/api/advances/list",

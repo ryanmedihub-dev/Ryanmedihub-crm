@@ -11,12 +11,6 @@ import { cacheInvalidate } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin", "reception", "stock"];
 
-/**
- * Target-based incentive. Unlike the per-patient incentive (which tops up a shared monthly
- * INCENTIVE payable), each target incentive is its own standalone payable for that amount —
- * raised here, then paid later through the normal payable flow. The free-form "target
- * achieved" text is carried in the payable's remarks and its Created log note.
- */
 export async function POST(req) {
   try {
     const session = await getServerSession(authOptions);

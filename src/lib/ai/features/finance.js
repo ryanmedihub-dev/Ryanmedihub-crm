@@ -14,9 +14,6 @@ import { callRoute } from "../sources";
 import { AI_BRIEF_MODEL, AI_DEEP_MODEL } from "../config";
 import { round, pct, topN, bottomN, capPayload, prevWindow } from "./_helpers";
 
-// Finance payloads are aggregates only. Party names (vendors/landlords/
-// employees) are aliased (V##, E##). Every focus note below ends with the
-// same disclaimer: this engine is not an accountant of record.
 const ACCT_NOTE = " You are not an accountant of record; flag anomalies and risks, don't restate accounting rules.";
 
 function topEntries(map, n) {
@@ -203,17 +200,17 @@ const financeFeatures = {
     scopeParams: ["dateFrom", "dateTo", "branch"],
     focus: { brief: "Payroll liability and payment discipline." + ACCT_NOTE },
     async collect(scope) {
-      // pageSize 1 is deliberate — this feature must never see per-employee rows,
-      // only the pre-aggregated totals/byBranch/byOperatingUnit/byRole/byMonth facets.
+      
+      
       return callRoute(salaryIncentiveGET, { path: "/api/owner/finance/salary-incentive", params: { dateFrom: scope.dateFrom, dateTo: scope.dateTo, branch: scope.branch, page: 1, pageSize: 1 } });
     },
     compute(raw, book, scope) {
       const t = raw.totals || {};
       const pending = (due, paid) => Math.max(0, (due || 0) - (paid || 0));
       const byMonth = raw.byMonth || [];
-      // "Pending > 1 month": count of employees whose payable month is older than
-      // last month and still has salaryDue > salaryPaid. Aggregate-only proxy —
-      // no per-employee due dates are available at this level.
+      
+      
+      
       const cutoff = new Date(); cutoff.setMonth(cutoff.getMonth() - 1);
       const cutoffKey = `${cutoff.getFullYear()}-${String(cutoff.getMonth() + 1).padStart(2, "0")}`;
       const oldPendingEmployeeCount = byMonth

@@ -61,8 +61,8 @@ const getHandler = async (req) => {
 
     const response = { success: true, entries };
 
-    // The "return" picture — spend/leads/CPL/CPC/converted/revenue/CAC/ROAS for
-    // the same filter, via the shared attribution module (marketingAttribution.js).
+    
+    
     if (withReturn && from && to) {
       const platforms = platform && PLATFORMS.includes(platform) ? [platform] : PLATFORMS;
       const { byPlatform } = await attributeSpendToOutcomes({

@@ -82,10 +82,10 @@ export async function createExternalPayable({
   branch,
   relatedPatient,
   actor,
-  // Set when this "paid by other" transaction was recorded against an existing payable
-  // (see expense/create/route.js) — that payable is settled by the payment itself; this
-  // new one is the separate, resulting debt to whoever fronted the money. Purely cosmetic
-  // (remarks text) so the two documents are traceable to each other; no schema change.
+  
+  
+  
+  
   settledPayableLabel,
 }) {
   const performedBy = { name: actor?.name, email: actor?.email };

@@ -78,7 +78,7 @@ export default function AdminDashboard() {
     batchStatus, lastRefreshed, refresh,
   } = useDashboardData({ from, to, priorFrom, priorTo, customReady, appliedAccounts, appliedBranch });
 
-  // the card whose underlying rows are open in the drill panel
+  
   const [drill, setDrill] = useState(null);
 
   const accountFilterActive = appliedAccounts.length < ACCOUNTS.length;

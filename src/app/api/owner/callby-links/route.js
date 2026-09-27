@@ -7,10 +7,6 @@ import { fetchCallby, CallbyError } from "@/lib/callby";
 import { isCallerRole } from "@/lib/owner/callerRoles";
 import { cacheKey, cached } from "@/lib/cache";
 
-// Backs the /owner/employees/links UI — the manual pairing screen for the
-// employees the reconciliation script (scripts/sync-callby-links.mjs)
-// couldn't match by code to a callby user.
-
 const ALLOWED_ROLES = ["owner", "super-admin"];
 
 async function requireSession() {
@@ -24,10 +20,6 @@ async function requireSession() {
   return { session };
 }
 
-// callby's agent id — callby's own User._id, the same value /owner/agent-360
-// hands to /api/owner/agent-detail/:id. Read `employeeId` only; `ryanEmployeeCode`
-// is ryan-crm's code and must never end up in callbyUserId. Anything that isn't
-// a 24-hex ObjectId is dropped rather than offered for linking.
 const OBJECT_ID = /^[0-9a-fA-F]{24}$/;
 const callbyId = (a) => {
   const s = String(a?.employeeId ?? "").trim();
@@ -42,8 +34,8 @@ async function loadCallbyAgents() {
       callbyUserId: callbyId(a),
       name: a?.name || "",
       tlName: a?.tlName || "",
-      // callby's copy of Employee.employeeId — shown so a human can spot a
-      // code the script couldn't auto-link (duplicate on callby's side, etc.)
+      
+      
       ryanEmployeeCode: a?.ryanEmployeeCode || "",
       isActive: a?.isActive ?? true,
     }))
@@ -58,7 +50,6 @@ function callbyErrorResponse(err) {
   return NextResponse.json({ success: false, message: "Internal server error" }, { status: 500 });
 }
 
-// GET — everything the linking screen needs in one shot.
 const getHandler = async () => {
   const { session, error } = await requireSession();
   if (error) return error;
@@ -70,8 +61,8 @@ const getHandler = async () => {
     data = await cached(key, 60, async () => {
       const agents = await loadCallbyAgents();
 
-      // Inactive employees are included so a stale link on someone who has left
-      // can still be seen and undone; they're flagged and default-hidden on screen.
+      
+      
       const allEmployees = await Employee.find({ mergedInto: null })
         .select("name phone employeeId role branch callbyUserId tlName isactive")
         .sort({ name: 1 })
@@ -90,8 +81,8 @@ const getHandler = async () => {
           callbyAgent: agentById.get(String(e.callbyUserId)) || { callbyUserId: String(e.callbyUserId), name: "(not in callby roster)", tlName: "", stale: true },
         }));
 
-      // isCaller rides along so the screen can default to the employees that can
-      // actually be in callby (same list the reconciliation script reports against).
+      
+      
       const unlinkedEmployees = employees
         .filter((e) => !e.callbyUserId)
         .map((e) => ({ ...e, isCaller: isCallerRole(e.role) }));
@@ -125,7 +116,6 @@ const getHandler = async () => {
   return res;
 };
 
-// POST { employeeId, callbyUserId } — create one pairing.
 const postHandler = async (req) => {
   const { error } = await requireSession();
   if (error) return error;
@@ -166,7 +156,6 @@ const postHandler = async (req) => {
   return NextResponse.json({ success: true, employee });
 };
 
-// DELETE ?employeeId= — clear one pairing.
 const deleteHandler = async (req) => {
   const { error } = await requireSession();
   if (error) return error;

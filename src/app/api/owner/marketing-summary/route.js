@@ -4,10 +4,6 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
 import { getMarketingSummary } from "@/lib/owner/metrics/marketing";
 
-// Same output shape as before (this route's callers are unchanged); the
-// numbers come from src/lib/owner/metrics/marketing.js, shared with Sanya's
-// get_marketing_summary tool, on the shared attribution in
-// src/lib/owner/marketingAttribution.js.
 export async function POST(req) {
   try {
     const session = await getServerSession(authOptions);

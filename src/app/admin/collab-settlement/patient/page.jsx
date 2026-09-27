@@ -19,9 +19,6 @@ import {
   Building2,
 } from "lucide-react";
 
-// Same "patient owes / clinic owes" split every collab case row uses, computed once per
-// clinic group for just this patient's cases at that clinic — see SettleModal in
-// CollabModals.jsx, which treats this exactly like a per-clinic balance.
 function clinicNetForPatient(cases) {
   return cases.reduce((sum, c) => {
     if (c.receivableValue != null) return sum + c.receivableValue;
@@ -40,7 +37,7 @@ export default function PatientCollabSettlementPage() {
   const [loaded, setLoaded] = useState(false);
   const [expandedClinic, setExpandedClinic] = useState(null);
 
-  const [settleClinic, setSettleClinic] = useState(null); // clinic name currently being settled
+  const [settleClinic, setSettleClinic] = useState(null); 
   const [collectionCase, setCollectionCase] = useState(null);
 
   const patientId = pickerValue.patient;
@@ -75,14 +72,14 @@ export default function PatientCollabSettlementPage() {
   useEffect(() => {
     fetchCases(patientId);
     setExpandedClinic(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [patientId]);
 
   const refresh = () => fetchCases(patientId);
 
-  // Grouped by clinic — a patient's cases can span more than one partner clinic, and a
-  // settlement is always written against exactly one clinic (see CollabSettlement.clinic),
-  // so each group gets its own totals and its own Settle action.
+  
+  
+  
   const clinicGroups = useMemo(() => {
     const byClinic = new Map();
     for (const c of cases) {

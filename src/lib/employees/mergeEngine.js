@@ -27,10 +27,6 @@ const sameId = (a, b) => String(a) === String(b);
 
 const FIELD_KEYS = ["name", "phone", "email", "employeeId", "role", "branch", "isactive", "salaryStructure", "incentiveRate"];
 
-/* ------------------------------------------------------------------ */
-/* reference counts + samples                                          */
-/* ------------------------------------------------------------------ */
-
 const pathCond = (ref, empId) => ({ [ref.path]: empId, ...(ref.guard || {}) });
 
 async function countReferences(empId, session) {
@@ -83,10 +79,6 @@ function summariseSample(model, d) {
   }
 }
 
-/* ------------------------------------------------------------------ */
-/* finance impact                                                      */
-/* ------------------------------------------------------------------ */
-
 async function financeFor(empId, session) {
   const [p] = await Payable.aggregate([
     { $match: { "payee.kind": "EMPLOYEE", "payee.refId": empId, isCancelled: { $ne: true } } },
@@ -119,16 +111,12 @@ async function financeFor(empId, session) {
   };
 }
 
-/* ------------------------------------------------------------------ */
-/* conflicts                                                           */
-/* ------------------------------------------------------------------ */
-
 async function detectConflicts(survivorId, duplicateId, session) {
   const conflicts = [];
   const warnings = [];
   const blockers = [];
 
-  // -- duplicate monthly payables (SALARY / RENT / ELECTRICITY / COLLAB_CLINIC / TAX) --
+  
   const groups = await Payable.aggregate([
     {
       $match: {
@@ -185,7 +173,7 @@ async function detectConflicts(survivorId, duplicateId, session) {
     }
   }
 
-  // -- both hold an active unsettled OUT advance (warning only) --
+  
   const advCounts = await Advance.aggregate([
     {
       $match: {
@@ -207,10 +195,6 @@ async function detectConflicts(survivorId, duplicateId, session) {
 }
 
 const pick = (obj, keys) => (obj ? Object.fromEntries(keys.map((k) => [k, obj[k]])) : null);
-
-/* ------------------------------------------------------------------ */
-/* field diff + overlaps                                               */
-/* ------------------------------------------------------------------ */
 
 function fieldDiff(survivor, duplicate) {
   return FIELD_KEYS.map((field) => {
@@ -248,10 +232,6 @@ async function overlaps(survivorId, duplicateId, session) {
 
   return { patientsInBoth: both, arrayFieldsNeedingDedupe: dupInBoth.map((d) => ({ patientId: d._id })) };
 }
-
-/* ------------------------------------------------------------------ */
-/* preview                                                             */
-/* ------------------------------------------------------------------ */
 
 function employeeCard(e, patientCount) {
   return {
@@ -329,14 +309,10 @@ export async function buildPreview({ survivorId, duplicateId }) {
     blockers: allBlockers,
     warnings: conflictReport.warnings,
     confirmToken: token,
-    // hint the UI which record has more history
+    
     suggestedSurvivor: finSurv.totalPayable + (survivor.patient || []).length >= finDup.totalPayable + (duplicate.patient || []).length ? "survivor" : "duplicate",
   };
 }
-
-/* ------------------------------------------------------------------ */
-/* merge                                                               */
-/* ------------------------------------------------------------------ */
 
 export async function runMerge({ survivorId, duplicateId, fieldChoices = {}, conflictResolutions = {}, confirmToken, note, actor }) {
   const pre = await buildPreview({ survivorId, duplicateId });
@@ -361,14 +337,14 @@ export async function runMerge({ survivorId, duplicateId, fieldChoices = {}, con
     await dbSession.withTransaction(async () => {
       const session = dbSession;
 
-      // (a) snapshots — MUST be sequential: MongoDB rejects concurrent operations on one
-      // transaction session ("Only servers in a sharded cluster can start a new transaction
-      // at the active transaction number"). No Promise.all anywhere inside withTransaction.
+      
+      
+      
       const survivorSnapshot = await Employee.findById(sOid).lean().session(session);
       const duplicateSnapshot = await Employee.findById(dOid).lean().session(session);
 
-      // survivor display values (a field choice of "duplicate" for name/role must be reflected
-      // in every denormalised label we write below).
+      
+      
       const survName = fieldChoices.name === "duplicate" ? duplicateSnapshot.name : survivorSnapshot.name;
       const survRole = fieldChoices.role === "duplicate" ? duplicateSnapshot.role : survivorSnapshot.role;
 
@@ -376,7 +352,7 @@ export async function runMerge({ survivorId, duplicateId, fieldChoices = {}, con
       const relabelledPayables = [];
       const cancelledPayables = [];
 
-      // (b) resolve conflicting payables first
+      
       for (const c of pre.conflicts) {
         const res = conflictResolutions[c.key];
         const pid = oid(c.duplicateDoc._id);
@@ -397,7 +373,7 @@ export async function runMerge({ survivorId, duplicateId, fieldChoices = {}, con
         }
       }
 
-      // (c) repoint every reference
+      
       for (const ref of EMPLOYEE_REFERENCES) {
         const Model = getModel(ref.model);
         const cond = pathCond(ref, dOid);
@@ -429,25 +405,25 @@ export async function runMerge({ survivorId, duplicateId, fieldChoices = {}, con
         }
       }
 
-      // relabelled payables were just repointed too — reapply the "(merged)" suffix the
-      // generic label $set clobbered.
+      
+      
       for (const rp of relabelledPayables) {
         await Payable.updateOne({ _id: rp.payableId }, { $set: { "payee.label": rp.newLabel } }, { session });
       }
 
-      // (d) union Employee.patient[]
+      
       const survivorPatientSet = new Set((survivorSnapshot.patient || []).map(String));
       const added = (duplicateSnapshot.patient || []).map(String).filter((p) => !survivorPatientSet.has(p));
       const unionedPatients = [...survivorPatientSet, ...added].map((p) => oid(p));
 
-      // (e) apply field choices + patient union to the survivor
+      
       const survivorUpdate = { patient: unionedPatients };
       for (const k of FIELD_KEYS) {
         if (fieldChoices[k] === "duplicate") survivorUpdate[k] = duplicateSnapshot[k];
       }
       await Employee.updateOne({ _id: sOid }, { $set: survivorUpdate }, { session });
 
-      // (f) soft-retire the duplicate
+      
       const retiredName = duplicateSnapshot.name?.startsWith("[MERGED]") ? duplicateSnapshot.name : `[MERGED] ${duplicateSnapshot.name}`;
       await Employee.updateOne(
         { _id: dOid },
@@ -463,7 +439,7 @@ export async function runMerge({ survivorId, duplicateId, fieldChoices = {}, con
         { session },
       );
 
-      // (g) merge log
+      
       const totalReferences = operations.reduce((s, o) => s + (o.documentIds?.length || 0), 0);
       const [logDoc] = await EmployeeMerge.create(
         [
@@ -494,7 +470,7 @@ export async function runMerge({ survivorId, duplicateId, fieldChoices = {}, con
     await dbSession.endSession();
   }
 
-  // (6) post-commit verification — cannot roll back, so surface loudly
+  
   const stillReferenced = [];
   for (const ref of EMPLOYEE_REFERENCES) {
     const Model = getModel(ref.model);
@@ -517,10 +493,6 @@ export async function runMerge({ survivorId, duplicateId, fieldChoices = {}, con
   };
 }
 
-/* ------------------------------------------------------------------ */
-/* revert                                                              */
-/* ------------------------------------------------------------------ */
-
 export async function runRevert({ mergeId, actor }) {
   if (!mongoose.Types.ObjectId.isValid(mergeId)) return { status: 400, body: { success: false, error: "Invalid merge id" } };
   const merge = await EmployeeMerge.findById(mergeId).lean();
@@ -531,7 +503,7 @@ export async function runRevert({ mergeId, actor }) {
   const dOid = oid(merge.duplicateId);
   const since = new Date(merge.performedAt).getTime();
 
-  // staleness — refuse if anything touched since the merge, or the duplicate re-merged
+  
   const dupNow = await Employee.findById(dOid).lean();
   if (!dupNow) return { status: 400, body: { success: false, error: "The duplicate record no longer exists." } };
   if (!sameId(dupNow.mergedInto, sOid)) {
@@ -569,7 +541,7 @@ export async function runRevert({ mergeId, actor }) {
     await dbSession.withTransaction(async () => {
       const session = dbSession;
 
-      // reverse each reference op
+      
       for (const op of [...merge.operations].reverse()) {
         const Model = getModel(op.model);
         const ids = (op.documentIds || []).map(oid);
@@ -593,7 +565,7 @@ export async function runRevert({ mergeId, actor }) {
         }
       }
 
-      // un-relabel / un-cancel payables
+      
       for (const rp of merge.relabelledPayables) {
         await Payable.updateOne({ _id: rp.payableId }, { $set: { "payee.label": rp.previousLabel } }, { session });
       }
@@ -601,7 +573,7 @@ export async function runRevert({ mergeId, actor }) {
         await Payable.updateOne({ _id: pid }, { $set: { isCancelled: false } }, { session });
       }
 
-      // restore both employee documents from their snapshots
+      
       await Employee.replaceOne({ _id: sOid }, merge.survivorSnapshot, { session });
       await Employee.replaceOne({ _id: dOid }, merge.duplicateSnapshot, { session });
 
@@ -617,10 +589,6 @@ export async function runRevert({ mergeId, actor }) {
 
   return { status: 200, body: { success: true, message: "Merge reverted — both records restored." } };
 }
-
-/* ------------------------------------------------------------------ */
-/* suggestions                                                         */
-/* ------------------------------------------------------------------ */
 
 const norm = (s) => String(s || "").trim().toLowerCase().replace(/\s+/g, " ");
 
@@ -662,11 +630,11 @@ export async function findSuggestions() {
     }
   }
 
-  // The exact-key pass above misses the everyday case of "Farheen" entered once, then
-  // "Farheen Ansari" entered again with a mistyped phone digit or two — neither the name nor
-  // the phone matches exactly, so it never lands in `byKey`. Employee headcount is small
-  // (low hundreds), so a second O(n²) pass comparing every pair directly is cheap and catches
-  // these near-misses without needing a real fuzzy-matching library.
+  
+  
+  
+  
+  
   const digits = (p) => String(p || "").replace(/\D/g, "");
   const sortedDigits = (p) => digits(p).split("").sort().join("");
   for (let i = 0; i < employees.length; i++) {
@@ -674,14 +642,14 @@ export async function findSuggestions() {
       const a = employees[i];
       const b = employees[j];
       const pk = [String(a._id), String(b._id)].sort().join("|");
-      if (pairs.has(pk)) continue; // already caught by a stronger exact-match signal
+      if (pairs.has(pk)) continue; 
 
       const na = norm(a.name);
       const nb = norm(b.name);
       let matched = false;
       if (na && nb && na !== nb) {
-        // One name is the other with extra words tacked on ("Farheen" / "Farheen Ansari") —
-        // word-boundary check so "Ash" doesn't falsely match "Ashutosh".
+        
+        
         const [shorter, longer] = na.length <= nb.length ? [na, nb] : [nb, na];
         if (shorter.length >= 3) {
           const escaped = shorter.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -689,8 +657,8 @@ export async function findSuggestions() {
         }
       }
       if (!matched) {
-        // Same digits, different order/typo (e.g. 7056457004 vs 7065457004) — a transposed
-        // pair of digits is the single most common phone-entry mistake.
+        
+        
         const da = digits(a.phone);
         const db = digits(b.phone);
         if (da && db && da !== db && da.length === db.length && da.length >= 10 && sortedDigits(a.phone) === sortedDigits(b.phone)) {

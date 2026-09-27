@@ -2,9 +2,6 @@ import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar } from "@/components/owner";
 import AiOrb from "@/components/owner/ai/AiOrb";
 
-// No AI call here — there is nothing real to analyse yet (see the honest line
-// below), so nothing is faked. Same "AI module coming online" treatment as
-// /owner/calls/sim-health, not the generic ComingSoon block (Part 9).
 export default function ClinicalAiQualityPage() {
   return (
     <div className="app">

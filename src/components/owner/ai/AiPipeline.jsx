@@ -1,8 +1,5 @@
 "use client";
 
-// Horizontal stepper driven entirely by `stages` from useAiInsight — every
-// node shows only what the engine actually reported (state + real ms), never
-// a simulated progress value.
 const STEPS = [
   { key: "collect", label: "Collect data" },
   { key: "compute", label: "Compute metrics" },
@@ -14,8 +11,8 @@ function stepStatus(stages, key, index) {
   const stage = stages?.[key];
   if (stage?.state === "done") return "done";
   if (stage?.state === "start") return "active";
-  // A step is implicitly "done" once a later step has started, even if this
-  // one's own "done" event raced the render (deltas can arrive fast).
+  
+  
   const later = STEPS.slice(index + 1).some((s) => stages?.[s.key]);
   return later ? "done" : "pending";
 }

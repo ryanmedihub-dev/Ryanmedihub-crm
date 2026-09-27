@@ -19,10 +19,6 @@ function optionLabel(ex, raw) {
   return typeof opt === "string" ? opt : opt.label;
 }
 
-// FilterBar + ReportTable fused into one card — same filter contract as
-// FilterBar, same table contract as ReportTable. Used by report shells
-// (EmployeeReportPage, …) that want the filter panel and the table sharing
-// one surface instead of two stacked cards.
 export default function ReportPanel({
   title,
   subtitle,
@@ -62,7 +58,7 @@ export default function ReportPanel({
   const sig = JSON.stringify({ filters, range });
   useEffect(() => {
     onChangeRef.current?.({ filters, range });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [sig]);
 
   const showDate = show.includes("date");
@@ -109,7 +105,7 @@ export default function ReportPanel({
     setFilters(patch);
   };
 
-  // --- column visibility (persisted per tableId, same as ReportTable) ---
+  
   const storageKey = `owner-cols:${tableId}`;
   const [hidden, setHidden] = useState(() => new Set());
   const [colMenuOpen, setColMenuOpen] = useState(false);
@@ -124,7 +120,7 @@ export default function ReportPanel({
     }
     setHidden(Array.isArray(stored) ? new Set(stored) : new Set(columns.filter((c) => c.defaultHidden).map((c) => c.key)));
     hydrated.current = true;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [storageKey]);
 
   useEffect(() => {

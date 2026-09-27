@@ -59,11 +59,11 @@ export default function MarketingComparisonPage() {
   const { data, loading, error, isValidating, mutate: load } = useOwnerData(url);
   const comparisonAi = useAiInsight("marketing.comparison", aiScope, { kind: "brief", enabled: !!filterState });
 
-  // "AI pick" crown — only if the brief's headline explicitly names a
-  // platform, never inferred from the numbers ourselves. A head-to-head
-  // headline often names both ("Google is outpacing Meta on ROAS"); the one
-  // named FIRST is read as the subject/favoured platform. Neither or both
-  // absent (or a tie in position) → no badge.
+  
+  
+  
+  
+  
   const aiPickHeadline = comparisonAi.status === "ready" ? (comparisonAi.result?.headline || "").toLowerCase() : "";
   const metaAt = aiPickHeadline.indexOf("meta");
   const googleAt = aiPickHeadline.indexOf("google");

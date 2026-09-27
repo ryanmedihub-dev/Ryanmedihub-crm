@@ -6,11 +6,6 @@ import * as md from "@/lib/masterData/lists";
 import { TDS_TAX_TYPES } from "@/constants/expenseCategories";
 import { cacheKey, cached } from "@/lib/cache";
 
-// Read-only. The single feed every client form uses (via src/lib/useMasterData.js) to get the
-// dynamic expense heads / payment methods / receipt modes / accounts / routing without pulling
-// mongoose into the browser bundle. Any authenticated user may read it — these lists drive
-// transaction entry across every role.
-
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
@@ -19,8 +14,8 @@ export async function GET() {
 
   await connectDB();
 
-  // Not session-scoped — every role sees the same lists, so the key carries no session (rule
-  // 0.3 only requires it when the response actually differs by role/branch).
+  
+  
   const meta = {};
   const key = cacheKey("masterdata", { route: "master-data-lists" });
   const data = await cached(key, 60, async () => {
@@ -50,7 +45,7 @@ export async function GET() {
       md.getBankRoutingMap(),
     ]);
 
-    // Pre-compute the method-option lists the forms ask for, both for a new entry and for edit.
+    
     const methodOptions = {};
     await Promise.all(
       ["EXPENSE", "TRANSPLANT", "SERVICE", "MEDICINE"].map(async (cat) => {

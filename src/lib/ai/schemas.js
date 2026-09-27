@@ -1,9 +1,4 @@
-// Output contracts for the three AI answer kinds. SCHEMAS.* are OpenAI
-// `response_format: json_schema` (strict: true) schemas — every property
-// required, additionalProperties false, empty values are "" / [] rather than
-// omitted. validate() is a second, hand-written check on the parsed object:
-// strict mode already guarantees shape, this catches an out-of-range enum or
-// an over-length string and truncates instead of failing where safe.
+
 
 const str = (maxLength) => ({ type: "string", maxLength });
 const enumOf = (values) => ({ type: "string", enum: values });
@@ -143,8 +138,6 @@ const deepSchema = {
 
 export const SCHEMAS = { brief: briefSchema, verdicts: verdictsSchema, deep: deepSchema };
 
-// ---- hand-written validation --------------------------------------------
-
 function truncStr(v, max, fallback = "") {
   return typeof v === "string" ? v.slice(0, max) : fallback;
 }
@@ -257,7 +250,6 @@ function validateDeep(o) {
 
 const VALIDATORS = { brief: validateBrief, verdicts: validateVerdicts, deep: validateDeep };
 
-/** Clean + clamp a parsed model output for `kind`. Throws if kind is unknown or obj isn't an object. */
 export function validate(kind, obj) {
   const fn = VALIDATORS[kind];
   if (!fn) throw new Error(`validate: unknown kind "${kind}"`);

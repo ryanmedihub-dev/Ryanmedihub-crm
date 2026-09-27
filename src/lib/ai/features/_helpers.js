@@ -22,7 +22,6 @@ export function bottomN(rows, key, n) {
   return [...(rows || [])].sort((a, b) => (Number(a?.[key]) || 0) - (Number(b?.[key]) || 0)).slice(0, n);
 }
 
-/** Count rows into named buckets. `buckets` = { label: (row) => boolean }, checked in order; first match wins. */
 export function distribution(rows, buckets) {
   const out = Object.fromEntries(Object.keys(buckets).map((k) => [k, 0]));
   for (const r of rows || []) {
@@ -36,7 +35,6 @@ export function distribution(rows, buckets) {
   return out;
 }
 
-/** Project an object down to an explicit allow-list of keys. */
 export function slim(obj, allowKeys) {
   const out = {};
   for (const k of allowKeys) if (obj && k in obj) out[k] = obj[k];
@@ -50,7 +48,6 @@ export function periodLabel(from, to) {
   return f === t ? f : `${f} to ${t}`;
 }
 
-/** Same-length window immediately before [from, to], for a "vs previous period" comparison. */
 export function prevWindow(from, to) {
   if (!from || !to) return { from: "", to: "" };
   const start = new Date(from);
@@ -61,19 +58,13 @@ export function prevWindow(from, to) {
   return { from: prevStart.toISOString(), to: prevEnd.toISOString() };
 }
 
-// Drops elements from the largest array field (deepest-first) until the JSON
-// form fits under the char cap, then marks `truncated: true`. Arrays are
-// shrunk in priority order — later keys in `facts` are lower priority.
-// ponytail: greedy shrink-largest-array loop, O(n) JSON.stringify calls; fine
-// at the payload sizes here (a few hundred rows, capped well before this
-// runs) — switch to a size-aware builder if a feature ever needs more.
 export function capPayload(facts, maxChars = AI_MAX_PAYLOAD_CHARS) {
   const out = facts;
-  let guard = 500; // hard stop so a pathological shape can't loop forever
+  let guard = 500; 
   while (JSON.stringify(out).length > maxChars && guard-- > 0) {
     const arrayKeys = Object.keys(out).filter((k) => Array.isArray(out[k]) && out[k].length > 0);
     if (!arrayKeys.length) break;
-    // Shrink the longest array; ties broken toward the key that appears later.
+    
     let target = arrayKeys[0];
     for (const k of arrayKeys) if (out[k].length >= out[target].length) target = k;
     out[target] = out[target].slice(0, -1);

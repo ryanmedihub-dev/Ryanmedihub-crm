@@ -8,9 +8,6 @@ export const dynamic = "force-dynamic";
 
 const ALLOWED_ROLES = ["owner", "super-admin"];
 
-// Batch history for the Campaign Leads upload page — payables' /admin/uploads has no
-// equivalent (it only shows the current session's result); campaign leads gets one because
-// a marketer re-uploading a cumulative export days later needs to see what already ran.
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

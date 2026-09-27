@@ -38,7 +38,7 @@ export async function DELETE(req, { params }) {
       return NextResponse.json({ success: false, message: "Employee not found" }, { status: 404 });
     }
 
-    // --- pre-flight: every place an employee id can live ---
+    
     const perPath = await Promise.all(
       EMPLOYEE_REFERENCES.map(async (ref) => {
         const Model = MODELS[ref.model];
@@ -74,7 +74,7 @@ export async function DELETE(req, { params }) {
       );
     }
 
-    // --- genuinely unreferenced — hard delete ---
+    
     await Employee.findByIdAndDelete(oid);
     await DeleteLog.create({
       entityType: "Employee",

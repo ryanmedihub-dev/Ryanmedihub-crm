@@ -1,12 +1,10 @@
 import mongoose from "mongoose";
 
-// One bulk-upload run from /admin/uploads. A batch is the unit of "undo" — revert cancels
-// every payable it created (that has no payment against it). See §3.3 / §3.6 of the feature spec.
 const uploadBatchSchema = new mongoose.Schema(
   {
-    batchNo: { type: Number, index: true }, // human-friendly running number
+    batchNo: { type: Number, index: true }, 
     kind: { type: String, enum: ["PAYABLE", "CAMPAIGN_LEAD"], default: "PAYABLE" },
-    label: String, // user-typed, e.g. "Sept 2026 salaries"
+    label: String, 
     fileName: String,
     totalRows: Number,
 
@@ -31,7 +29,7 @@ const uploadBatchSchema = new mongoose.Schema(
     revertedAt: Date,
     revertedBy: { name: String, email: String },
 
-    // CAMPAIGN_LEAD batches only: result of pushing the campaign label onto callby Lead.source.
+    
     sourceSync: {
       status:      { type: String, enum: ["pending", "done", "partial", "failed", "skipped"], default: undefined },
       label:       String,

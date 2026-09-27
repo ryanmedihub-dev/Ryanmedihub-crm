@@ -37,10 +37,6 @@ import { EmptyState, Pagination } from "./TransactionTableChrome";
 import DesktopTable from "./DesktopTable";
 import MobileTransactionCard from "./MobileTransactionCard";
 
-/* -------------------------------------------------------------------------- */
-/* Main page                                                                  */
-/* -------------------------------------------------------------------------- */
-
 function AllTransactionsPageInner({ Sidebar }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -136,8 +132,8 @@ function AllTransactionsPageInner({ Sidebar }) {
       }, 400);
   };
 
-  // Shared by fetchData (one page, for the screen) and the export (every page, for the
-  // download) so the two can never drift on what "the current filters" means.
+  
+  
   const buildFilterParams = useCallback(
     (overrides = {}) => {
       const p = new URLSearchParams({
@@ -225,8 +221,8 @@ function AllTransactionsPageInner({ Sidebar }) {
         setTotal(data.total || 0);
 
         if (data.stats) {
-          // The API only aggregates TRANSPLANT/SERVICE/MEDICINE/EXPENSE — "ALL" (the KPI
-          // strip's "Total activity" card) has to be summed client-side or it always shows 0.
+          
+          
           const revenueAndExpense = ["TRANSPLANT", "SERVICE", "MEDICINE", "EXPENSE"];
           const all = revenueAndExpense.reduce(
             (acc, cat) => {
@@ -400,8 +396,8 @@ function AllTransactionsPageInner({ Sidebar }) {
         };
       }
 
-      // dateFrom/dateTo default to today, not "" — clearing them to "" left the chip
-      // showing "From: —" instead of actually resetting to (and hiding behind) today.
+      
+      
       if (key === "dateFrom" || key === "dateTo") {
         return { ...filters, [key]: getTodayDate() };
       }
@@ -416,8 +412,8 @@ function AllTransactionsPageInner({ Sidebar }) {
     setAppliedFilters(update);
   };
 
-  // Preset range buttons (Today/Yesterday/This Month/All Time) bypass the draft->apply
-  // gate — they apply immediately, same as removeFilter above.
+  
+  
   const onDatePreset = (key) => {
     const range = getPresetRange(key);
     setDraftFilters((f) => ({ ...f, ...range }));
@@ -465,8 +461,8 @@ function AllTransactionsPageInner({ Sidebar }) {
       getTodayDate() ||
     !!tableSearch;
 
-  // Drives the numeric badge on the "Filters" toggle — how many distinct filter
-  // selections are applied, not counting the free-text search box.
+  
+  
   const activeFilterCount =
     MULTI_FILTER_KEYS.reduce(
       (sum, key) => sum + (appliedFilters[key]?.length || 0),
@@ -483,9 +479,9 @@ function AllTransactionsPageInner({ Sidebar }) {
     router.push(`/admin/transactions/edit/${row._id}`);
   };
 
-  // Pages through /api/transactions/get-all under the currently applied filters until
-  // every matching row has been fetched — export must cover everything the filters match,
-  // not just the `perPage` rows the screen happens to be showing right now.
+  
+  
+  
   const fetchAllMatchingFilters = async () => {
     const BATCH_SIZE = 2000;
     let batchPage = 1;
@@ -819,7 +815,7 @@ function AllTransactionsPageInner({ Sidebar }) {
         </div>
       </main>
 
-      {/* Keep your existing delete modal here */}
+      {}
       {deleteTarget && (
         <div className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">

@@ -1,7 +1,5 @@
 
-// The single currency formatter for the app. The owner panel's `rupee()` in
-// src/lib/owner/format.js wraps this (adds rounding + a "—" for missing values) —
-// extend one of these two, never add a third.
+
 export const formatCurrency = (amount) => `₹${Number(amount || 0).toLocaleString("en-IN")}`;
 
 export const formatDate = (date) => {

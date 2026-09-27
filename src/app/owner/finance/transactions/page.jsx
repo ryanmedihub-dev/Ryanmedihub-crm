@@ -18,9 +18,6 @@ const CATEGORY_OPTIONS = [
 ];
 const CATEGORY_KIND = { TRANSPLANT: "good", SERVICE: "info", MEDICINE: "purple", EXPENSE: "bad" };
 
-// Reuses the existing /api/transactions/get-all directly — the same
-// paginated, $facet-backed query /admin/transactions already uses — rather
-// than a parallel implementation (Owner Panel v2, Part 5).
 export default function FinanceTransactionsPage() {
   const [filterState, setFilterState] = useState(null);
   const [search, setSearch] = useState("");
@@ -41,7 +38,7 @@ export default function FinanceTransactionsPage() {
   const url = useMemo(() => {
     if (!filterState) return null;
     const params = new URLSearchParams();
-    // get-all takes IST calendar dates, not ISO instants.
+    
     params.set("dateFrom", toISTDateKey(filterState.range.from));
     params.set("dateTo", toISTDateKey(filterState.range.to));
     if (filterState.filters.branch && filterState.filters.branch !== "All") params.set("branch", filterState.filters.branch);

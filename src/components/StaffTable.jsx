@@ -11,8 +11,6 @@ import { exportWorkbook, filterProvenanceRows } from "@/lib/exportToExcel";
 import { fetchInterleavedRows } from "@/lib/finance/headedExport";
 import { useToast } from "@/components/Toast";
 
-// Common designations — always shown as tabs. Any other free-form role that has employees
-// is appended dynamically (see `categoryList` below) so custom posts aren't hidden.
 const CATEGORY_OPTIONS = ["Doctor", "Agent", "Counsellor", "Technician", "Implanter", "Others", "Hr"];
 
 const TECHNIQUES = [
@@ -20,7 +18,6 @@ const TECHNIQUES = [
   "Alopecia", "Headwash", "GFC", "Other",
 ];
 
-// dot = the little status dot on the tab; active = the pill styling when selected.
 const CAT_STYLE = {
   Doctor:     { dot: "bg-violet-500",  active: "bg-violet-50 text-violet-700 ring-violet-200" },
   Agent:      { dot: "bg-blue-500",    active: "bg-blue-50 text-blue-700 ring-blue-200" },
@@ -67,9 +64,6 @@ const EMPTY_FILTERS = {
   minPending: "", onlyPending: false,
 };
 
-// The six money columns, shown when config.financeColumns is on. All six come from
-// Payables raised against the employee, so Total = Salary + Incentive + other, and
-// Pending = Payable − Paid on every line.
 const FINANCE_COLUMNS = [
   { key: "totalPayable",     label: "Total Payable",   tone: "text-slate-900 font-semibold" },
   { key: "totalPaid",        label: "Total Paid",      tone: "text-emerald-600 font-semibold" },
@@ -118,8 +112,8 @@ export default function StaffTable({ config = {} }) {
         if (filters.dateTo)    p.set("dateTo",    filters.dateTo);
         if (filters.technique) p.set("technique", filters.technique);
 
-        // The payable rollup is a separate query keyed by employee id — fetched alongside
-        // so the roster and the money columns arrive together rather than popping in late.
+        
+        
         const [raw, finance] = await Promise.all([
           fetch(`/api/employees/get-patients?${p.toString()}`).then((r) => {
             if (!r.ok) throw new Error("Failed to fetch");
@@ -150,12 +144,12 @@ export default function StaffTable({ config = {} }) {
     })();
   }, [filters.dateFrom, filters.dateTo, filters.technique, financeColumns]);
 
-  const currentProfile     = filters.category;                 // "" = every profile
+  const currentProfile     = filters.category;                 
   const hasGrafts          = ["Doctor", "Technician", "Implanter", "Others"].includes(currentProfile);
   const hasReadyForSurgery = ["Agent", "Counsellor"].includes(currentProfile);
   const isHr               = currentProfile === "Hr";
 
-  // Standard profiles first, then any custom designation that actually has staff.
+  
   const categoryList = useMemo(() => {
     const custom = Object.keys(data)
       .filter((k) => !CATEGORY_OPTIONS.includes(k) && (data[k]?.length || 0) > 0)
@@ -163,8 +157,8 @@ export default function StaffTable({ config = {} }) {
     return [...CATEGORY_OPTIONS, ...custom];
   }, [data]);
 
-  // One flat roster: every profile merged, each row tagged with its bucket, then narrowed by
-  // the Profile filter (blank = everyone).
+  
+  
   const allRows = useMemo(
     () => categoryList.flatMap((p) => (data[p] || []).map((e) => ({ ...e, profile: p }))),
     [data, categoryList],
@@ -275,8 +269,8 @@ export default function StaffTable({ config = {} }) {
     }
   };
 
-  // Payroll export (finance mode only): Overview = every employee's payable rollup,
-  // Detail = one flat sheet of every employee payable + the payments against it.
+  
+  
   const handleFinanceExport = async () => {
     setExporting(true);
     try {
@@ -291,7 +285,7 @@ export default function StaffTable({ config = {} }) {
         fetchInterleavedRows({ kind: "payables", scope }),
       ]);
 
-      // Names/roles from the roster already loaded into `data`, keyed by id.
+      
       const nameById = {};
       Object.entries(data).forEach(([cat, list]) => {
         (list || []).forEach((e) => {
@@ -391,7 +385,7 @@ export default function StaffTable({ config = {} }) {
       <main className="flex-1 min-w-0">
         <div className="mx-auto max-w-400 px-4 sm:px-6 lg:px-8 py-6 space-y-5">
 
-          {/* ===== Header ===== */}
+          {}
           <header className="rounded-2xl border border-slate-200/70 bg-white p-5 shadow-sm">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex items-center gap-3.5 min-w-0">
@@ -467,7 +461,7 @@ export default function StaffTable({ config = {} }) {
             )}
           </header>
 
-          {/* ===== Profile quick-filter chips ===== */}
+          {}
           <div className="-mx-1 overflow-x-auto pb-1">
             <div className="flex gap-2 px-1">
               {[{ key: "", label: "All Profiles" }, ...categoryList.map((c) => ({ key: c, label: c }))].map((opt) => {
@@ -499,7 +493,7 @@ export default function StaffTable({ config = {} }) {
             </div>
           </div>
 
-          {/* ===== Stat cards ===== */}
+          {}
           <div className={`grid grid-cols-2 gap-3 sm:gap-4 ${financeColumns ? "lg:grid-cols-5" : "lg:grid-cols-4"}`}>
             <SummaryCard title="Total Staff" value={fmtNumber(filtered.length)} icon={<Users className="h-5 w-5" />} color="indigo" />
             {financeColumns ? (
@@ -525,7 +519,7 @@ export default function StaffTable({ config = {} }) {
             )}
           </div>
 
-          {/* ===== Table card ===== */}
+          {}
           <section className="overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-sm">
             <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-3.5 lg:flex-row lg:items-center lg:justify-between sm:px-5">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -816,7 +810,7 @@ export default function StaffTable({ config = {} }) {
         </div>
       </main>
 
-      {/* ===== Filter drawer ===== */}
+      {}
       {drawerOpen && (
         <div className="fixed inset-0 z-50">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setDrawer(false)} />

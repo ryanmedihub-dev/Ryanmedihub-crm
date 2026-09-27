@@ -70,8 +70,8 @@ export async function GET(req, { params }) {
       { $sort: { date: -1 } },
     ];
 
-    // Patient-wise rollup ("brochure") — respects the same purpose + month/year filters as the
-    // flat row list, and excludes cancelled rows so the totals line up with what's owed.
+    
+    
     const byPatientMatch = { ...rowMatch, "incentives.isCancelled": { $ne: true } };
 
     const [rows, totalAgg, byMonth, byPurpose, outstandingPayables, byPatient] = await Promise.all([

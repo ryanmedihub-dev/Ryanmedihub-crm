@@ -4,14 +4,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { extractStringField } from "./partialJson";
 import { isLongFeature } from "./featureMeta";
 
-// Module-level cache so navigating back to a page already shows the last
-// result instantly, then silently revalidates (a server-side cache HIT is
-// cheap — no OpenAI call). Keyed by feature|kind|scope.
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const memoryCache = new Map();
 
-// AiStatusBeacon's fallback signal before /owner/ai/health's `lite` endpoint
-// exists (Part 9) — never hard-code "online", only report a real recent result.
 export function hasRecentSuccess() {
   for (const { at } of memoryCache.values()) {
     if (Date.now() - at < CACHE_TTL_MS) return true;
@@ -19,7 +14,6 @@ export function hasRecentSuccess() {
   return false;
 }
 
-/** Stable string key for a scope object — order-independent, so filter re-renders with the same values don't reset the stream. */
 export function stableScope(scope) {
   const keys = Object.keys(scope || {})
     .filter((k) => scope[k] !== undefined && scope[k] !== null && scope[k] !== "")
@@ -45,11 +39,6 @@ function idleState() {
   };
 }
 
-/**
- * Streams one AI insight from /api/owner/ai/insight/[feature] over
- * ReadableStream (not EventSource — needs abort + a force=1 param).
- * Rebuilds whenever feature|kind|scope changes; aborts the previous stream.
- */
 export function useAiInsight(feature, scope, { kind = "brief", enabled = true } = {}) {
   const scopeKey = stableScope(scope);
   const cacheKey = `${feature}|${kind}|${scopeKey}`;
@@ -87,9 +76,9 @@ export function useAiInsight(feature, scope, { kind = "brief", enabled = true } 
       try {
         const base = isLongFeature(feature) ? "/api/owner/ai/insight-long" : "/api/owner/ai/insight";
         const res = await fetch(`${base}/${feature}?${params.toString()}`, { signal: controller.signal });
-        // A guard failure (bad auth, unknown feature) returns a plain JSON
-        // error response, not the SSE stream — its body is still readable, so
-        // without this check it would hang forever parsing JSON as `data:` lines.
+        
+        
+        
         if (!res.ok) {
           const body = await res.json().catch(() => null);
           throw new Error(body?.message || `Request failed (HTTP ${res.status})`);
@@ -107,7 +96,7 @@ export function useAiInsight(feature, scope, { kind = "brief", enabled = true } 
             const chunk = buf.slice(0, idx);
             buf = buf.slice(idx + 2);
             const line = chunk.split("\n").find((l) => l.startsWith("data:"));
-            if (!line) continue; // ": ping" keep-alive comment or blank
+            if (!line) continue; 
             let event;
             try {
               event = JSON.parse(line.slice(5).trim());
@@ -153,7 +142,7 @@ export function useAiInsight(feature, scope, { kind = "brief", enabled = true } 
         }));
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [feature, kind, scopeKey, enabled]);
 
   useEffect(() => {
@@ -162,7 +151,7 @@ export function useAiInsight(feature, scope, { kind = "brief", enabled = true } 
     if (hit && Date.now() - hit.at < CACHE_TTL_MS) setState((s) => ({ ...s, status: "ready", ...hit.payload, cached: true }));
     run();
     return () => abortRef.current?.abort();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [feature, kind, scopeKey, enabled]);
 
   const refresh = useCallback(() => {
@@ -180,16 +169,16 @@ export function useAiInsight(feature, scope, { kind = "brief", enabled = true } 
           body: JSON.stringify({ kind, scope: cleanScope(scope), vote: dir }),
         });
       } catch {
-        /* best-effort — a failed vote isn't worth surfacing */
+        
       }
     },
     [feature, kind, scope],
   );
 
-  // Non-forced re-check — same as the mount-time run, just callable again
-  // (e.g. a "live" page polling every few minutes). Server-side caching still
-  // decides HIT/MISS by data fingerprint, so a poll where nothing changed
-  // costs no OpenAI call.
+  
+  
+  
+  
   const poll = useCallback(() => run(), [run]);
 
   return { ...state, refresh, poll, vote };

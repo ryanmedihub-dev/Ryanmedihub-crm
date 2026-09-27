@@ -2,20 +2,6 @@ import { buildAgeingStages } from "@/lib/ageing";
 import { unsettledMethodsSync } from "@/lib/masterData";
 import { settledTotalExpr } from "@/lib/advanceSettlements";
 
-// A receivable's receipts can arrive two ways: a transaction whose own `receivableId` field
-// points straight at it, or a transaction split across several receivables via
-// `receivableAllocations`. The original shape matched both with a single correlated $lookup
-// whose pipeline did `$expr: { $or: [ {$eq:["$receivableId","$$receivableId"]},
-// {$in:["$$receivableId","$receivableAllocations.receivableId"]} ] }`. Profiling
-// (scripts/profile-finance-pages.mjs) showed this costs ~3264 documents examined per receivable
-// — Mongo can use an index for the direct-equality arm of an $expr $eq, but not for the
-// array-contains arm of an $expr $in, so the whole $or falls back to scanning every Revenue
-// transaction and filtering in memory.
-//
-// Fix: two separate $lookups using localField/foreignField (a real equi-join, index-backed —
-// including on a multikey path like receivableAllocations.receivableId, unlike the $expr form),
-// each with a `pipeline` for the non-join filter only. Merge the results afterwards in the
-// outer pipeline, where plain field paths (no $$let needed) can see the receivable's own _id.
 function buildReceiptLookupStages(txCollectionName, { projectDate = false, dateCeiling = null } = {}) {
   const postJoinFilter = { costType: "Revenue", approvalStatus: "APPROVED", method: { $nin: unsettledMethodsSync() } };
   const dateCap = dateCeiling ? [{ $match: { date: { $lte: dateCeiling } } }] : [];
@@ -44,10 +30,10 @@ function buildReceiptLookupStages(txCollectionName, { projectDate = false, dateC
       },
     },
     {
-      // A document with a non-empty receivableAllocations array is a split payment — its true
-      // contribution to THIS receivable is the sum of its matching allocation entries (which
-      // directReceipts would double-count via the full $amount), so it's excluded here and
-      // folded in via allocReceipts below instead. Mirrors the original $cond exactly.
+      
+      
+      
+      
       $addFields: {
         directOnly: {
           $filter: {
@@ -60,7 +46,6 @@ function buildReceiptLookupStages(txCollectionName, { projectDate = false, dateC
   ];
 }
 
-// Per-allocation-entry amount matching this receivable, for one joined transaction doc.
 const allocContribution = {
   $sum: {
     $map: {
@@ -126,9 +111,9 @@ export function buildReceivableAggregationStages(
       },
     },
     {
-      // An OUT advance applied against a payable is a non-cash recovery of that advance —
-      // the settled portion nets down what still has to come back on this receivable,
-      // exactly as it nets down the payable in buildPayableAggregationStages.
+      
+      
+      
       $lookup: {
         from: advancesCollectionName,
         let: { receivableId: "$_id" },
@@ -145,9 +130,9 @@ export function buildReceivableAggregationStages(
             },
           },
           {
-            // A doc may now settle several payables (settlements array) — sum ALL of them
-            // for this advance's own receivable, since every line nets down what it owes back
-            // regardless of which payable each individual line targets.
+            
+            
+            
             $project: {
               amt: settledTotalExpr,
               hasSettlement: {
@@ -253,9 +238,9 @@ export function buildReceivableGroupedStages(
   } = {},
 ) {
   const isVendor = groupBy === "vendor";
-  // "party" groups every receivable by its payer's label (patient, vendor, clinic — any
-  // kind), so the Assets page can show a Monika / Muskan / … breakdown instead of the
-  // revenue-category one.
+  
+  
+  
   const isParty = groupBy === "party";
   const match = { isCancelled: { $ne: true } };
   if (isVendor) match["payer.kind"] = "VENDOR";
@@ -288,8 +273,8 @@ export function buildReceivableGroupedStages(
     ...buildReceiptLookupStages(txCollectionName, { projectDate: true, dateCeiling: toDate }),
     {
       $addFields: {
-        // Reduce each allocReceipts doc to just the {date, amount} shape the range-bucketing
-        // below expects — same per-entry contribution logic as buildReceivableAggregationStages.
+        
+        
         allocReceiptsFlat: {
           $map: {
             input: "$allocReceipts",
@@ -322,8 +307,8 @@ export function buildReceivableGroupedStages(
       },
     },
     {
-      // OUT advances applied against a payable — non-cash recovery, mirrors
-      // advancePayableSettlementAgg in buildReceivableAggregationStages.
+      
+      
       $lookup: {
         from: advancesCollectionName,
         let: { receivableId: "$_id" },
@@ -341,9 +326,9 @@ export function buildReceivableGroupedStages(
             },
           },
           {
-            // Flatten to one {date, amount} row per settlement line (legacy pair, if any,
-            // plus every settlements[] entry) — a doc settling several payables previously
-            // collapsed to a single row here, undercounting the movement.
+            
+            
+            
             $project: {
               date: 1,
               lines: {
@@ -367,10 +352,10 @@ export function buildReceivableGroupedStages(
       },
     },
     {
-      // Borrowings that settle a receivable count as money received, exactly as they do in
-      // buildReceivableAggregationStages. Omitting them here made the grouped rollup
-      // overstate what is still outstanding versus the document list built from the other
-      // pipeline.
+      
+      
+      
+      
       $lookup: {
         from: borrowingsCollectionName,
         let: { receivableId: "$_id" },

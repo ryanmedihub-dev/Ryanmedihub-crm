@@ -1,5 +1,4 @@
-// Client-side Excel handling for /admin/uploads. xlsx is dynamic-imported so it stays out of
-// the initial bundle — same pattern as src/lib/exportToExcel.js.
+
 
 import {
   HEADERS,
@@ -11,23 +10,13 @@ import {
 
 const SHEET = "Payables";
 
-/* ------------------------------------------------------------------ */
-/* Reading                                                             */
-/* ------------------------------------------------------------------ */
-
-/**
- * @returns {{ rows, missingHeaders: string[], extraHeaders: string[] }}
- *   rows          — array of {header: string} objects, strings trimmed, all-blank rows dropped
- *   missingHeaders— template columns not found in the file's header row
- *   extraHeaders  — columns in the file that the template doesn't know (kept, just flagged)
- */
 export async function readUploadedWorkbook(file) {
   const XLSX = await import("xlsx");
   const wb = XLSX.read(await file.arrayBuffer(), { cellDates: true });
   const ws = wb.Sheets[SHEET] || wb.Sheets[wb.SheetNames[0]];
   if (!ws) return { rows: [], missingHeaders: [...HEADERS], extraHeaders: [] };
 
-  // header row as-is
+  
   const headerMatrix = XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: false });
   const fileHeaders = (headerMatrix[0] || []).map((h) => String(h ?? "").trim()).filter(Boolean);
   const fileHeaderSet = new Set(fileHeaders.map((h) => h.toLowerCase()));
@@ -47,10 +36,6 @@ export async function readUploadedWorkbook(file) {
 
   return { rows, missingHeaders, extraHeaders };
 }
-
-/* ------------------------------------------------------------------ */
-/* Writing — three sheets                                              */
-/* ------------------------------------------------------------------ */
 
 const MATH_BLOCK = [
   ["HOW THE MONEY COLUMNS WORK", ""],
@@ -102,7 +87,7 @@ function payablesSheet(XLSX, withExamples) {
   const rows = withExamples ? EXAMPLE_ROWS : [];
   const ws = XLSX.utils.json_to_sheet(rows, { header: HEADERS });
   ws["!cols"] = HEADERS.map(() => ({ wch: 18 }));
-  ws["!freeze"] = { xSplit: 0, ySplit: 1 }; // freeze the header row
+  ws["!freeze"] = { xSplit: 0, ySplit: 1 }; 
   return ws;
 }
 
@@ -127,7 +112,7 @@ function listsSheet(XLSX, lists) {
   const aoa = [enumCols.map(([h]) => h)];
   for (let i = 0; i < height; i++) aoa.push(enumCols.map(([, v]) => v[i] ?? ""));
 
-  // gap, then the Category -> SubType map (two columns)
+  
   aoa.push([], ["Category", "SubType"]);
   const tree = lists.categoryTree || {};
   for (const [cat, subs] of Object.entries(tree)) {
@@ -150,7 +135,6 @@ function listsSheet(XLSX, lists) {
   return ws;
 }
 
-/** @returns Uint8Array (xlsx bytes) */
 export async function buildTemplateBytes(lists, { withExamples = true } = {}) {
   const XLSX = await import("xlsx");
   const wb = XLSX.utils.book_new();
@@ -160,11 +144,6 @@ export async function buildTemplateBytes(lists, { withExamples = true } = {}) {
   return XLSX.write(wb, { bookType: "xlsx", type: "array" });
 }
 
-/**
- * Only the failed rows — original 24 columns + _row + _errors, so the user fixes this file
- * and re-uploads it directly.
- * @param failedRows [{ raw, rowNumber, errors: [] }]
- */
 export async function buildErrorReportBytes(failedRows) {
   const XLSX = await import("xlsx");
   const header = [...HEADERS, "_row", "_errors"];

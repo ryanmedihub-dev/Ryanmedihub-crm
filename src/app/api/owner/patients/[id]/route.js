@@ -9,10 +9,6 @@ import "@/models/Transactions";
 import { PATIENT_STATUS_LABELS, PATIENT_STATUS_EXPLANATION } from "@/lib/owner/patientStatus";
 import { cacheKey, cached } from "@/lib/cache";
 
-// Moved from /api/owner/patient-journey/[id] (Owner Panel v2, Part 3) — same
-// query (it already populated everything the Patients detail page needs), plus
-// a statusExplanation string so "what does this status mean" is answered
-// on the page itself, not left to be looked up in code.
 export async function GET(req, { params }) {
   try {
     const session = await getServerSession(authOptions);

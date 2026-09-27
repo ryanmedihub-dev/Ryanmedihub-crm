@@ -10,10 +10,6 @@ const fmt = (field, v) => {
   return String(v);
 };
 
-/**
- * Side-by-side field comparison with a radio per row to pick the survivor's value.
- * `choices` / `onChange` is the fieldChoices map ({ field: "survivor" | "duplicate" }).
- */
 export default function EmployeeComparePanel({ survivor, duplicate, fieldDiff = [], choices = {}, onChange }) {
   return (
     <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">

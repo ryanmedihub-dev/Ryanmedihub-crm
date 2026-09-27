@@ -8,18 +8,6 @@ import { normalizePhone } from "@/lib/phone";
 import { toISTDateKey } from "@/lib/owner/dates";
 import { cacheKey, cached } from "@/lib/cache";
 
-// /owner/statistics — the full conversion funnel, leads-created through
-// surgery-done, stage-by-stage (Owner Panel v2, Part 6). Cross-system: the
-// first 5 stages are callby Lead.status (the calling workflow); the last 3
-// are ryan-crm Patient.ops.status (Part 3's confirmed mapping), joined by
-// phone. One callby call for the funnel counts, one more (capped) for the
-// actual lead list needed to do the phone-join into Patient — see the
-// STAGE_DEFINITIONS export for exactly what each stage means.
-//
-// Sample cap: the phone-join needs actual lead records, not just counts —
-// capped at 3000 leads per request (documented on the page) rather than an
-// unbounded fetch; the funnel's own "Leads Created" count still comes from
-// callby's real total, uncapped.
 const LEAD_SAMPLE_CAP = 3000;
 
 export const STAGE_DEFINITIONS = [
@@ -37,8 +25,6 @@ export function emptyStageCounts() {
   return { leadsCreated: 0, contacted: 0, interested: 0, followUp: 0, converted: 0, bookingDone: 0, surgeryBooked: 0, surgeryDone: 0 };
 }
 
-// Exported so /owner/ai/suggestions can compute the same funnel numbers
-// without a second, drifting implementation (or an HTTP round-trip to itself).
 export async function computeStagesForLeads(leads) {
   const counts = emptyStageCounts();
   counts.leadsCreated = leads.length;
@@ -54,8 +40,8 @@ export async function computeStagesForLeads(leads) {
     const patients = await Patient.find({ "personal.phoneNormalized": { $in: phones } })
       .select("personal.phoneNormalized ops.status")
       .lean();
-    // A phone can match more than one Patient record (rare) — take the most
-    // "advanced" status per phone so the funnel doesn't double count.
+    
+    
     const rank = { CLOSED: 3, SURGERY_BOOKED: 2, BOOKING_DONE: 1 };
     const bestByPhone = new Map();
     for (const p of patients) {
@@ -94,7 +80,7 @@ export const GET = withCallbyRoute(async (req, session) => {
   await dbConnect();
   const { searchParams } = new URL(req.url);
   const { dateFrom, dateTo } = parseEmployeeFilters(searchParams);
-  const breakdownBy = searchParams.get("breakdownBy") || "none"; // none | source | agent | team
+  const breakdownBy = searchParams.get("breakdownBy") || "none"; 
 
   const meta = {};
   const key = cacheKey("owner", { route: "statistics", ...Object.fromEntries(searchParams) }, session);
@@ -126,8 +112,8 @@ export const GET = withCallbyRoute(async (req, session) => {
       breakdown.sort((a, b) => b.leadsCreated - a.leadsCreated);
     }
 
-    // Daily trend — leads created + converted, from the same sample already
-    // fetched (no second callby call).
+    
+    
     const dailyMap = new Map();
     for (const l of leads) {
       const day = toISTDateKey(l.createdAt) || null;

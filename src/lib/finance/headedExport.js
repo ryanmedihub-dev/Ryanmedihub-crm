@@ -4,24 +4,10 @@ import { exportWorkbook, fetchAllPages, filterProvenanceRows } from "@/lib/expor
 
 export { exportWorkbook, filterProvenanceRows };
 
-/**
- * Shared assembler for the "headed" finance exports:
- *   Sheet 1  = Overview (each head with its value)
- *   Sheet 2..N = one sheet per head, each obligation followed by the payments against it
- *
- * The obligation+payment interleaving is produced server-side by
- * /api/admin/reports?type=payables-all | receivables-all (the "Row" column marks
- * "Payable"/"Receivable" vs "  ↳ Payment"/"  ↳ Receipt"). This helper only splits that flat
- * list into per-head sheets and hands everything to exportWorkbook.
- */
-
 const d = (v) => (v ? new Date(v) : null);
 
-// --- interleaved obligation report -> per-head sheets -----------------------
-
-// Fetch the whole payables-all / receivables-all list for the current scope.
 export async function fetchInterleavedRows({ kind, scope, extraParam }) {
-  // kind: "payables" | "receivables"
+  
   const p = new URLSearchParams({ type: `${kind}-all` });
   if (scope.branch) p.set("branch", scope.branch);
   if (scope.dateFrom) p.set("from", scope.dateFrom);
@@ -33,9 +19,6 @@ export async function fetchInterleavedRows({ kind, scope, extraParam }) {
   return { rows: json.data || [], truncated: !!json.truncated, docLimit: json.docLimit };
 }
 
-// Group the flat interleaved rows into { headName -> rows[] }, order preserved. Each
-// obligation line already sits immediately above its payment lines, so a simple bucket by
-// the head column keeps them together.
 export function groupInterleavedByHead(rows, headKey) {
   const groups = new Map();
   for (const row of rows) {
@@ -46,7 +29,6 @@ export function groupInterleavedByHead(rows, headKey) {
   return [...groups.entries()].map(([name, r]) => ({ name, rows: r }));
 }
 
-// Sum the obligation lines (Row === "Payable" | "Receivable") for a quick overview total.
 export function summariseInterleaved(rows, { obligationRow, amountKey = "Total Amount", paidKey }) {
   return rows
     .filter((r) => r.Row === obligationRow)
@@ -61,9 +43,6 @@ export function summariseInterleaved(rows, { obligationRow, amountKey = "Total A
     );
 }
 
-// --- account ledgers -> per-account sheets --------------------------------
-
-// One sheet per account, full ledger for the scope. `accounts` = array of account names.
 export async function ledgerHeadSheets({ accounts, scope }) {
   const from = scope.dateFrom || "1970-01-01";
   const to = scope.dateTo || new Date().toISOString().slice(0, 10);
@@ -107,10 +86,6 @@ export async function ledgerHeadSheets({ accounts, scope }) {
   return sheets;
 }
 
-// --- transactions under one head (receipts / payments) -> per-head sheets --
-
-// One sheet per receipt/payment head, using the grouped level-3 leaf so it honours the
-// same by-account / by-mode grouping the page shows.
 export async function receiptPaymentHeadSheets({ apiBase, heads, groupBy, scope }) {
   const from = scope.dateFrom || "";
   const to = scope.dateTo || "";

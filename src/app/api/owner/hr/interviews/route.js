@@ -21,8 +21,6 @@ function escapeRegex(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-// /owner/hr/interviews — the full interview report. One $facet: page of rows
-// + totals for the whole filtered set (headcount by outcome).
 export async function GET(req) {
   try {
     await dbConnect();

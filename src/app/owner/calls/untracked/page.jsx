@@ -10,15 +10,13 @@ import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { num, fmtDateTime } from "@/lib/owner/format";
 import { callTypeBadge } from "@/lib/owner/callsColumns";
 
-// Calls whose number never matched a Lead — business happening outside the
-// CRM. High untracked% means agents are working off-system.
 export default function UntrackedCallsPage() {
   const [filterState, setFilterState] = useState(null);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
 
-  const [creating, setCreating] = useState(null); // callId currently being turned into a lead
+  const [creating, setCreating] = useState(null); 
   const [notice, setNotice] = useState(null);
 
   const aiScope = useMemo(() => (filterState ? { dateFrom: filterState.range.from, dateTo: filterState.range.to } : {}), [filterState]);

@@ -37,10 +37,10 @@ const advanceSchema = new mongoose.Schema(
       index: true,
     },
 
-    // Deprecated single-payable settlement pair — kept only so pre-existing settled
-    // advances keep reading correctly. Every settle action now writes to `settlements`
-    // below instead (folding one of these into it first if present) — see
-    // src/lib/advanceSettlements.js, which every consumer of either shape goes through.
+    
+    
+    
+    
     settlesPayableId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Payable",
@@ -48,14 +48,14 @@ const advanceSchema = new mongoose.Schema(
       index: true,
     },
 
-    // How much of this advance is applied to settlesPayableId — a non-cash contra
-    // settlement that nets against BOTH the payable's outstanding and this advance's
-    // own receivable. null on legacy rows / when unset: treat as the full `amount`.
+    
+    
+    
     settlesPayableAmount: { type: Number, default: null, min: 0 },
 
-    // One advance can now net against several payables (e.g. a 10k advance split 2k/3k/1k/2k
-    // across four salary payables) — each line nets against BOTH that payable's outstanding
-    // and this advance's own receivable, exactly like settlesPayableAmount did for one.
+    
+    
+    
     settlements: {
       type: [
         new mongoose.Schema(
@@ -113,18 +113,13 @@ advanceSchema.pre("validate", function () {
 advanceSchema.index({ isCancelled: 1, account: 1, date: 1 });
 advanceSchema.index({ isCancelled: 1, receivableId: 1, direction: 1 });
 
-// payableAggregation.js's advanceSettlementAgg $lookup joins on settlesPayableId per payable
-// document — same O(documents x advances) risk as the Transactions lookups above without this.
-// Partial: most advances never settle a payable.
 advanceSchema.index(
   { settlesPayableId: 1, isCancelled: 1, direction: 1 },
   { partialFilterExpression: { settlesPayableId: { $type: "objectId" } } },
 );
 
-// Same lookup cost for the multi-settlement array's per-line payableId.
 advanceSchema.index({ "settlements.payableId": 1, isCancelled: 1, direction: 1 });
 
-// Google Sheets finance webhook — fires once per newly-created advance, never on edits.
 advanceSchema.pre("save", function () {
   this.$locals.wasNew = this.isNew;
 });

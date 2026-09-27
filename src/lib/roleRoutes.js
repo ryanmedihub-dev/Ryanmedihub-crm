@@ -1,4 +1,4 @@
-// Where each role lands after login / when bounced off a panel it can't see.
+
 export const ROLE_ROUTES = {
   owner: "/owner/dashboard",
   "super-admin": "/super-admin/dashboard",

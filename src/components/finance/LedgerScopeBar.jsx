@@ -4,11 +4,6 @@ import { ALL_BRANCHES } from "@/lib/branches";
 import DebouncedDateInput from "@/components/finance/DebouncedDateInput";
 import { useLedgerScope } from "@/components/finance/LedgerScopeProvider";
 
-/**
- * Branch select + from/to date range + Clear, lifted verbatim from the old assets/liabilities
- * pages so the markup is identical. `actions` is a right-aligned slot for per-page buttons
- * (Download Excel, Record Advance, …). Sticky so a long table never hides the date range.
- */
 export default function LedgerScopeBar({ actions = null }) {
   const { scope, setScope, asOfLabel } = useLedgerScope();
   const dirty = scope.branch || scope.dateFrom || scope.dateTo;

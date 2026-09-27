@@ -1,7 +1,4 @@
-// buildPayload(draft, typeKey, ctx) — draft (the engine's canonical shape) -> the exact
-// body each legacy route already parses. Isomorphic. Field names on the right-hand side of
-// every object below are verified against the actual route's destructuring in AUDIT.md —
-// changing one here without checking the route it feeds is how a CONFLICT gets introduced.
+
 
 import { getEntryType, ENTRY_TYPES } from "./registry.js";
 import {
@@ -310,9 +307,9 @@ const STRATEGIES = {
       furtherMode: draft.routing?.furtherMode || "",
       receiptMode: draft.routing?.receiptMode || "",
       reference: draft.reference || "",
-      // The route's own field name is `coveredCases`, not `allocations` — verified against
-      // collab-settlement/settlements/create/route.js:33-43. `allocations` is only this
-      // engine's internal field key (schema.js); do not rename either side casually.
+      
+      
+      
       coveredCases: draft.allocations || [],
       remarks: draft.remarks || "",
     };
@@ -325,9 +322,9 @@ export function buildPayload(draft, typeKey, ctx = {}) {
   const strategy = STRATEGIES[def.buildPayload];
   if (!strategy) throw new Error(`No buildPayload strategy "${def.buildPayload}" for "${typeKey}"`);
   const payload = strategy(draft, def, ctx);
-  // PAYABLE_CATEGORY_TO_FIXED_KIND / purposeForCategory are used by expense.head's caller
-  // (entryCore) to resolve payee.kind server-side when raising a payable from this
-  // category; re-exported here so both sides derive it the same way.
+  
+  
+  
   return payload;
 }
 

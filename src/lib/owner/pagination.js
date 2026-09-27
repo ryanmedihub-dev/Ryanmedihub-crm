@@ -1,22 +1,8 @@
-// Server-side pagination contract for every owner list endpoint (Owner Panel v2, F5).
-//
-// Rule: paginate at the DATABASE level — `$skip` / `$limit` inside the aggregation
-// (or `.skip().limit()` on a find) — never fetch-all-then-slice in Node. Some of
-// these collections (callby CallLog, Patient) run into the hundreds of thousands
-// of rows.
-//
-// Pair with `$facet` when a page needs both a slice of rows AND aggregate totals,
-// so it's one round trip:
-//   { $facet: { rows: [ ...match, ...sort, { $skip: skip }, { $limit: limit } ],
-//               total: [ ...match, { $count: "n" } ] } }
+
 
 export const DEFAULT_PAGE_SIZE = 25;
 export const MAX_PAGE_SIZE = 200;
 
-/**
- * Parse + clamp pagination params from a URLSearchParams (or any object with a
- * `.get`). Returns { page, pageSize, skip, limit } — always safe to feed to Mongo.
- */
 export function parsePageParams(searchParams) {
   const get = typeof searchParams?.get === "function"
     ? (k) => searchParams.get(k)
@@ -32,7 +18,6 @@ export function parsePageParams(searchParams) {
   return { page, pageSize, skip: (page - 1) * pageSize, limit: pageSize };
 }
 
-/** Standard pagination envelope to return alongside `rows`. */
 export function pageMeta({ page, pageSize, total }) {
   return {
     page,
@@ -42,11 +27,6 @@ export function pageMeta({ page, pageSize, total }) {
   };
 }
 
-/**
- * The standard filter set every Owner Panel v2 Employees endpoint accepts
- * (Part 1): dateFrom/dateTo/branch/tlName/isactive/search + pagination + sort.
- * Always paired with parsePageParams for the page/pageSize/skip/limit half.
- */
 export function parseEmployeeFilters(searchParams) {
   const get = typeof searchParams?.get === "function"
     ? (k) => searchParams.get(k)
@@ -69,8 +49,8 @@ export function parseEmployeeFilters(searchParams) {
   const sortBy = get("sortBy") || "name";
   const sortDir = get("sortDir") === "desc" ? "desc" : "asc";
 
-  // Advanced Employees filters — role/date-of-joining/salary/incentive-rate,
-  // on top of the standard set above (Owner Panel v2, Employees filter rework).
+  
+  
   const role = (get("role") || "").trim();
   const dojFrom = get("dojFrom") || "";
   const dojTo = get("dojTo") || "";
@@ -85,14 +65,6 @@ export function parseEmployeeFilters(searchParams) {
   };
 }
 
-/**
- * Parse + whitelist sort params. `allowed` maps the public sortBy key to the
- * Mongo field path to sort on (often identical). Unknown keys fall back to
- * `defaultKey`, so a crafted URL can never sort on an arbitrary path.
- * Returns { sortBy, sortDir, sort } where `sort` is ready for $sort and always
- * carries `tiebreak` as a secondary key — without a total order, rows can
- * repeat or vanish between pages whenever many share a value.
- */
 export function parseSortParams(searchParams, { allowed, defaultKey, defaultDir = "asc", tiebreak = "_id" }) {
   const get = typeof searchParams?.get === "function"
     ? (k) => searchParams.get(k)
@@ -106,12 +78,6 @@ export function parseSortParams(searchParams, { allowed, defaultKey, defaultDir 
   return { sortBy, sortDir, sort };
 }
 
-/**
- * The standard $facet for a paginated list: one page of rows, the KPI totals
- * over the WHOLE filtered set, and the total row count — one round trip.
- *   pagedFacet({ sort, skip, limit, rowStages: [...after the slice], totals: [{ $group: ... }] })
- * Unpack with unpackFacet().
- */
 export function pagedFacet({ sort, skip, limit, rowStages = [], totals = [] }) {
   return {
     $facet: {

@@ -5,15 +5,6 @@ import dbConnect from "@/lib/db";
 import { runInsight } from "@/lib/ai/engine";
 import { AI_VERDICT_MAX_ROWS } from "@/lib/ai/config";
 
-// Shared body behind /api/owner/ai/verdicts/[feature] (maxDuration 60) and
-// /api/owner/ai/verdicts-long/[feature] (maxDuration 300) — see sseHandler.js
-// for why this can't just be one file with two exported maxDurations.
-//
-// Body: { scope } — the same filters + page/pageSize/sort the table is
-// currently showing, so the AI rates exactly the visible rows. The client
-// never sends row data; the server recomputes from `scope` via the feature's
-// own collect().
-
 const ALLOWED_ROLES = ["owner", "super-admin"];
 
 export async function handleVerdictsPOST(req, { params }) {

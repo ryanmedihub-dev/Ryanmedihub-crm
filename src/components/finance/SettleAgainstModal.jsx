@@ -16,11 +16,6 @@ const uniqById = (arr) => {
   });
 };
 
-/**
- * Settle a non-cash contra between an advance (OUT) and one or more open payables — or a
- * borrowing (IN) and one receivable. Each linked line nets BOTH sides live and never touches
- * the target document's own amount.
- */
 export default function SettleAgainstModal({ kind, row, onClose, onSuccess, toast }) {
   const isAdvance = kind === "advance";
   return isAdvance ? (
@@ -30,32 +25,28 @@ export default function SettleAgainstModal({ kind, row, onClose, onSuccess, toas
   );
 }
 
-/* ==================================================================== */
-/* Advance  →  many payables                                             */
-/* ==================================================================== */
-
 function AdvanceSettle({ row, onClose, onSuccess, toast }) {
   const endpoint = `/api/advances/${row._id}`;
 
   const [advanceDoc, setAdvanceDoc] = useState(row);
   const [options, setOptions] = useState([]);
   const [optionsLoading, setOptionsLoading] = useState(true);
-  const [metaById, setMetaById] = useState({}); // payableId -> { label, purpose, pending }
+  const [metaById, setMetaById] = useState({}); 
   const [search, setSearch] = useState("");
-  const [staged, setStaged] = useState({}); // payableId -> { label, purpose, pending, amount }
-  const [busyLine, setBusyLine] = useState(null); // payableId being unlinked
+  const [staged, setStaged] = useState({}); 
+  const [busyLine, setBusyLine] = useState(null); 
   const [submitting, setSubmitting] = useState(false);
-  // An advance can settle ANY standing payable (salary, incentive, rent, vendor bill …) — the
-  // PATCH `settle` nets both the payable's pending AND this advance's own receivable. So the
-  // list is unfiltered by default; the party toggle is only an optional convenience.
+  
+  
+  
   const canScopeToParty = !!(row.party?.refId && ["EMPLOYEE", "VENDOR", "PATIENT"].includes(row.party?.kind));
   const [scopeToParty, setScopeToParty] = useState(false);
 
   const amount = round2(advanceDoc.amount);
-  // Cash recovered (IN advances against this advance's receivable) can't change from settling
-  // payables — pin it to the value we opened with so a mid-session doc refresh (which comes
-  // from /api/advances/[id] and lacks the computed field) doesn't drop it.
-  const cashRecovered = useMemo(() => round2(row.cashRecovered || 0), [row._id]); // eslint-disable-line react-hooks/exhaustive-deps
+  
+  
+  
+  const cashRecovered = useMemo(() => round2(row.cashRecovered || 0), [row._id]); 
   const existingLines = useMemo(() => settlementLinesFor(advanceDoc), [advanceDoc]);
   const settledTotal = round2(existingLines.reduce((s, l) => s + (l.amount || 0), 0));
   const stagedList = Object.values(staged);
@@ -68,7 +59,7 @@ function AdvanceSettle({ row, onClose, onSuccess, toast }) {
   const partyRefId = advanceDoc.party?.refId ? String(advanceDoc.party.refId) : "";
   const partyLabel = advanceDoc.party?.label || "the party";
 
-  /* --- load this party's open payables (deduped, paged) --- */
+  
   useEffect(() => {
     const ctrl = new AbortController();
     setOptionsLoading(true);
@@ -98,7 +89,7 @@ function AdvanceSettle({ row, onClose, onSuccess, toast }) {
     return () => ctrl.abort();
   }, [partyKind, partyRefId, scopeToParty]);
 
-  // "Salary · 9/2026 · #RYN-014" — the line users map the settlement to.
+  
   const subtitle = (m) => {
     if (!m) return "";
     const bits = [];
@@ -108,7 +99,7 @@ function AdvanceSettle({ row, onClose, onSuccess, toast }) {
     return bits.join(" · ");
   };
 
-  /* --- resolve names for existing settlement lines --- */
+  
   const metaFromOpt = (o) => ({
     label: o.payee?.label || "—",
     purpose: o.purpose || "",
@@ -117,7 +108,7 @@ function AdvanceSettle({ row, onClose, onSuccess, toast }) {
     pending: o.pending ?? 0,
   });
   useEffect(() => {
-    // 1) anything resolvable from the already-loaded payables list — take it straight away.
+    
     const fromOptions = {};
     options.forEach((o) => {
       fromOptions[String(o._id)] = metaFromOpt(o);
@@ -126,8 +117,8 @@ function AdvanceSettle({ row, onClose, onSuccess, toast }) {
       setMetaById((prev) => ({ ...fromOptions, ...prev }));
     }
 
-    // 2) the rest (usually a fully-paid payable, absent from the outstanding-only list) —
-    //    one direct fetch each. No abort: these must not be cancelled by a later options load.
+    
+    
     const need = existingLines
       .map((l) => String(l.payableId))
       .filter((id) => !fromOptions[id] && !metaById[id]);
@@ -156,7 +147,7 @@ function AdvanceSettle({ row, onClose, onSuccess, toast }) {
             ];
           }
         } catch {
-          /* leave unresolved — modal shows "Resolving…" until reopened */
+          
         }
         return null;
       }),
@@ -173,7 +164,7 @@ function AdvanceSettle({ row, onClose, onSuccess, toast }) {
     return () => {
       cancelled = true;
     };
-  }, [existingLines, options]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [existingLines, options]); 
 
   const takenIds = useMemo(
     () => new Set([...existingLines.map((l) => String(l.payableId)), ...Object.keys(staged)]),
@@ -239,7 +230,7 @@ function AdvanceSettle({ row, onClose, onSuccess, toast }) {
       const data = await res.json();
       if (res.ok && data.advance) setAdvanceDoc((cur) => ({ ...cur, ...data.advance }));
     } catch {
-      /* keep last-known */
+      
     }
   }, [endpoint]);
 
@@ -330,7 +321,7 @@ function AdvanceSettle({ row, onClose, onSuccess, toast }) {
 
   return (
     <Shell onClose={onClose} title="Settle advance against payables" wide footer={footer}>
-      {/* context + balance */}
+      {}
       <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
         <div className="flex items-baseline justify-between gap-3">
           <p className="text-sm font-semibold text-gray-800 truncate">{partyLabel}</p>
@@ -351,7 +342,7 @@ function AdvanceSettle({ row, onClose, onSuccess, toast }) {
         </div>
       </div>
 
-      {/* existing lines */}
+      {}
       {existingLines.length > 0 && (
         <section className="space-y-2">
           <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">Currently settled against</p>
@@ -383,7 +374,7 @@ function AdvanceSettle({ row, onClose, onSuccess, toast }) {
         </section>
       )}
 
-      {/* staged lines */}
+      {}
       {stagedList.length > 0 && (
         <section className="space-y-2">
           <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">To settle now</p>
@@ -431,7 +422,7 @@ function AdvanceSettle({ row, onClose, onSuccess, toast }) {
         </section>
       )}
 
-      {/* add payables */}
+      {}
       <section className="space-y-2">
         <div className="flex items-center justify-between gap-2">
           <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">
@@ -510,10 +501,6 @@ function AdvanceSettle({ row, onClose, onSuccess, toast }) {
     </Shell>
   );
 }
-
-/* ==================================================================== */
-/* Borrowing  →  one receivable (single-settle, unchanged logic)         */
-/* ==================================================================== */
 
 function BorrowingSettle({ row, onClose, onSuccess, toast }) {
   const endpoint = `/api/borrowings/${row._id}`;
@@ -658,10 +645,6 @@ function BorrowingSettle({ row, onClose, onSuccess, toast }) {
     </Shell>
   );
 }
-
-/* ==================================================================== */
-/* Shared shell                                                          */
-/* ==================================================================== */
 
 function Shell({ title, wide = false, onClose, footer = null, children }) {
   return (

@@ -5,9 +5,6 @@ import { PATIENT_SHARED_COLUMNS, DAYS_SINCE_ACTIVITY_COLUMN, LAST_CONTACT_COLUMN
 import { ATTENTION_THRESHOLDS } from "@/lib/owner/attentionThresholds";
 import { num, rupee } from "@/lib/owner/format";
 
-// ops.status === "NOT_CONVERTED" only — seen by a counsellor, paid nothing.
-// NOT_VISITED (never showed up) is a different, earlier failure mode and is
-// deliberately excluded (confirmed with the user).
 const config = {
   preset: "notConverted",
   title: "Not Converted",

@@ -132,16 +132,6 @@ export async function recomputeIncentivePayable({ session, payableId, actor }) {
   }
 }
 
-/**
- * Records a single per-patient incentive: pushes a row onto patient.incentives and
- * tops up (or opens) that employee's INCENTIVE payable for the row's month.
- *
- * Shared by the admin-only patient route (`/api/patients/[id]/incentives`) and the
- * open transaction-page route (`/api/incentives`) so both take the exact same path.
- *
- * `actor` = { name, email, branch }, `performedBy` = { name, email }.
- * Throws IncentiveError (with .status / .body) on any validation or state failure.
- */
 export async function recordPatientIncentive({
   patientId,
   employee,

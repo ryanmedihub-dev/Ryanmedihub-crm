@@ -15,11 +15,6 @@ const TONE = {
   teal: "text-teal-600 bg-teal-50",
 };
 
-/**
- * One clickable tile on an overview page — headline figure + description + row count. Clicking
- * navigates to `href` carrying the current scope query string, so the inner page opens
- * already filtered to the same branch + date range.
- */
 export default function LedgerSummaryCard({
   href,
   label,

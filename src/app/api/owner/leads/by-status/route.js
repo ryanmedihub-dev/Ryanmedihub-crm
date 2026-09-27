@@ -8,12 +8,6 @@ import { normalizePhone } from "@/lib/phone";
 import { CONVERTED_STATUSES } from "@/lib/owner/patientStatus";
 import { cacheKey, cached } from "@/lib/cache";
 
-// Backs the four Interested/Follow-ups/Not-interested/Unattempted pages
-// (Owner Panel v2, Part 2) — one route, one shared client component
-// (LeadStatusReportPage), a `preset` param picks the filter. All four are
-// callby's GET /api/leads under different status/attempts filters; the
-// "recovery" figure on Not-interested is the one piece that needs ryan-crm's
-// own Patient collection, so it's computed here rather than in callby.
 const PRESET_PARAMS = {
   interested:    { status: "interested" },
   followUps:     { status: "follow_up" },
@@ -59,9 +53,9 @@ export const GET = withCallbyRoute(async (req, session) => {
     if (preset === "notInterested" && rows.length) {
       await dbConnect();
       const normalizedPhones = [...new Set(rows.map((l) => normalizePhone(l.phone)).filter(Boolean))];
-      // "Recovered" means money changed hands after being marked lost — any
-      // payment (BOOKING_DONE) or a full conversion — not just a NEW/NOT_VISITED/
-      // NOT_CONVERTED record.
+      
+      
+      
       const patients = normalizedPhones.length
         ? await Patient.find({
             "personal.phoneNormalized": { $in: normalizedPhones },

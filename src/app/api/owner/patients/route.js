@@ -15,8 +15,6 @@ import { cacheKey, cached } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["owner", "super-admin"];
 
-// Public sort key -> Mongo path. `invert: true` = the column shows "days
-// since X", so ascending on the column is DESCENDING on the date.
 const SORT_FIELD_MAP = {
   name: { field: "personal.name" },
   createdAt: { field: "createdAt" },
@@ -31,9 +29,6 @@ const SORT_FIELD_MAP = {
   daysSinceBooking: { field: "createdAt", invert: true },
 };
 
-// Which date the period filter applies to, per preset. Surgery Done is about
-// WHEN THE SURGERY HAPPENED; everything else is about when the patient was
-// registered.
 const PRESET_DATE_FIELD = { surgeryDone: "surgery.surgeryDate" };
 
 function escapeRegex(s) {
@@ -54,10 +49,6 @@ const TOTALS_GROUP = {
 
 const daysAgoExpr = (field) => ({ $divide: [{ $subtract: ["$$NOW", `$${field}`] }, 86400000] });
 
-// One query builder behind all six Patients list pages (Owner Panel v2,
-// Part 3). Pure ryan-crm data — no callby round trip, so this can afford a
-// single $facet aggregation (page of rows + status/revenue totals + trend
-// for the WHOLE filtered set, not just the page) in one round trip, per F7.
 const getHandler = async (req) => {
   const session = await getServerSession(authOptions);
   if (!session || !ALLOWED_ROLES.includes(session?.user?.role)) {
@@ -89,8 +80,8 @@ const getHandler = async (req) => {
   let directRef = null;
   if (preset === "direct") {
     const ryan = await Employee.findOne({ name: PATIENT_DIRECT_REFERENCE_NAME }).select("_id").lean();
-    // No matching Employee -> an impossible id, so the query legitimately returns zero rather
-    // than silently falling through to "no filter" (which would show everyone as "Direct").
+    
+    
     directRef = ryan ? ryan._id : new mongoose.Types.ObjectId();
     match["personal.reference"] = directRef;
   } else {
@@ -98,7 +89,7 @@ const getHandler = async (req) => {
     if (status) {
       match["ops.status"] = status;
     } else {
-      // The All page may narrow by one or more statuses (?status=A,B).
+      
       const wanted = (searchParams.get("status") || "").split(",").map((s) => s.trim()).filter((s) => PATIENT_STATUSES.includes(s));
       if (wanted.length) match["ops.status"] = { $in: wanted };
     }
@@ -123,8 +114,8 @@ const getHandler = async (req) => {
     ],
   };
 
-  // Preset-specific "attention" counts over the WHOLE filtered set (the pages
-  // used to compute these from the visible page only).
+  
+  
   if (preset === "notConverted") {
     facet.stats = [
       { $group: { _id: null, stale: { $sum: { $cond: [{ $gt: [daysAgoExpr("updatedAt"), ATTENTION_THRESHOLDS.notConvertedStaleDays] }, 1, 0] } } } },
@@ -152,8 +143,8 @@ const getHandler = async (req) => {
         $group: {
           _id: null,
           totalGraftsImplanted: { $sum: { $ifNull: ["$surgery.graftsImplanted", 0] } },
-          // Missing (never recorded) is tracked separately from a real 0 — a missing value
-          // must never silently drag the average down (Part 3 brief).
+          
+          
           countWithGrafts: { $sum: { $cond: [{ $ne: [{ $ifNull: ["$surgery.graftsImplanted", null] }, null] }, 1, 0] } },
           missingGrafts: { $sum: { $cond: [{ $eq: [{ $ifNull: ["$surgery.graftsImplanted", null] }, null] }, 1, 0] } },
           totalGraftsNeeded: { $sum: { $ifNull: ["$surgery.graftsneed", 0] } },
@@ -168,7 +159,7 @@ const getHandler = async (req) => {
 
   const queries = [Patient.aggregate([{ $match: match }, { $facet: facet }])];
   if (preset === "direct") {
-    // "Everyone else" = same window/branch, any reference that is NOT the Direct sentinel.
+    
     const othersMatch = { ...match, "personal.reference": { $ne: directRef } };
     queries.push(Patient.aggregate([{ $match: othersMatch }, { $group: TOTALS_GROUP }]));
   }
@@ -178,9 +169,9 @@ const getHandler = async (req) => {
   const totalsRow = result.totals?.[0] || { count: 0, packageSum: 0, receivedSum: 0, pendingSum: 0, discountSum: 0, converted: 0 };
   const statusBreakdown = (result.statusBreakdown || []).reduce((acc, r) => ({ ...acc, [r._id || "UNKNOWN"]: r.count }), {});
 
-  // Batch-resolve every Employee ref on this PAGE of rows only (never per-row) —
-  // personal.reference, counselling.counsellor, and (surgery-done) the six
-  // surgery role arrays.
+  
+  
+  
   const employeeIds = new Set();
   for (const p of rawRows) {
     if (p.personal?.reference) employeeIds.add(String(p.personal.reference));
@@ -254,7 +245,7 @@ const getHandler = async (req) => {
     sortBy,
     sortDir,
     dateField,
-    // Echoed back so a page can construct a related query without re-deriving the resolved range.
+    
     appliedFilters: { dateFrom, dateTo, branch: branch || "All" },
     totals: pickTotals(totalsRow),
     stats: result.stats?.[0] ? { stale: result.stats[0].stale || 0, withSurgeryDate: result.stats[0].withSurgeryDate || 0 } : null,

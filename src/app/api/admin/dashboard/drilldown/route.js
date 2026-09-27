@@ -25,22 +25,6 @@ import { buildPayableAggregationStages } from "@/lib/payableAggregation";
 const ALLOWED_ROLES = ["admin", "super-admin"];
 const LOAN_ACCOUNTS = ["Bajaj Loan", "Fibe Loan"];
 
-/**
- * The rows behind a dashboard card.
- *
- * Every metric here is built from the SAME match builder the card itself uses, so a
- * section total is the card's figure by construction rather than by coincidence — if the
- * panel footer and the card ever disagree, that is a genuine bug and not a rounding or
- * filter drift artifact.
- *
- *   cash-bank / loans        -> buildBalanceMatch + the 4 union stages (close-book/accounts)
- *   receipts / payments      -> buildBalanceMatch + costType     (close-book/cash-flow)
- *   receivables / payables   -> build*AggregationStages          (the summary routes)
- *   pnl-income / pnl-expense -> the exact $matches in close-book/pnl
- *   suspense                 -> buildSuspenseMatch               (/api/suspense)
- *   unattributed             -> furtherMode in [null,""]         (close-book/balance-sheet)
- */
-
 const TX_PROJECT = {
   _id: 1,
   date: 1,
@@ -122,7 +106,7 @@ export async function GET(request) {
 
     const skipFor = (key) => (pagedSection === key || !pagedSection ? (page - 1) * limit : 0);
 
-    // ---- shared match shapes, identical to close-book/pnl -----------------
+    
     const dateRange = {};
     if (from) dateRange.$gte = new Date(from);
     if (to) dateRange.$lte = new Date(to);
@@ -139,7 +123,7 @@ export async function GET(request) {
     if (Object.keys(dateRange).length) obligationBase.createdAt = dateRange;
     if (branch) obligationBase.branch = branch;
 
-    // ---- helpers ---------------------------------------------------------
+    
     async function txSection({ key, label, match, sort = { date: -1, _id: -1 } }) {
       const [rows, agg] = await Promise.all([
         Transactions.aggregate([
@@ -201,7 +185,7 @@ export async function GET(request) {
       };
     }
 
-    // Documents still carrying a balance — the `pending` basis the cards now use.
+    
     async function pendingDocSection({ key, label, isPayable, overdueOnly = false, bucket = "" }) {
       const Model = isPayable ? Payable : Receivable;
       const stages = isPayable
@@ -212,7 +196,7 @@ export async function GET(request) {
       if (bucket) {
         post.push({ $match: { ageingBucket: bucket } });
       } else if (overdueOnly) {
-        // "Overdue" spans every bucket past due, not just 1-30.
+        
         post.push({ $match: { ageingBucket: { $nin: [null, "current"] } } });
       }
 
@@ -244,7 +228,7 @@ export async function GET(request) {
       };
     }
 
-    // Per-account rollup — the exact pipeline /api/close-book/accounts runs.
+    
     async function accountSection({ key, label, accounts }) {
       const openingFrom = "1970-01-01";
       const contraStage = buildContraUnionStage({ from: openingFrom, to, branch });
@@ -305,8 +289,8 @@ export async function GET(request) {
     }
 
     async function suspenseSection() {
-      // /api/suspense's groupBy path caps at end-of-day; match it exactly or entries dated
-      // on the `to` day drop out here but not from the card.
+      
+      
       const suspenseTo = to && to.length === 10 ? `${to}T23:59:59.999Z` : to;
       const match = { ...buildSuspenseMatch({ to: suspenseTo, branch }) };
       if (selectedAccounts.length > 0) match.account = { $in: selectedAccounts };
@@ -349,7 +333,7 @@ export async function GET(request) {
       };
     }
 
-    // ---- metric dispatch -------------------------------------------------
+    
     const cashAccounts = accountsSync().filter((a) => !LOAN_ACCOUNTS.includes(a)).filter(
       (a) => selectedAccounts.length === 0 || selectedAccounts.includes(a),
     );
@@ -421,8 +405,8 @@ export async function GET(request) {
 
       case "gross-sales": {
         label = "Gross Sales";
-        // Every revenue transaction, cash + credit. Matches /api/admin/sales-summary:
-        // no method or account filter, no receivable-split exclusion.
+        
+        
         const salesMatch = {
           costType: "Revenue",
           approvalStatus: { $nin: ["PENDING", "REJECTED"] },
@@ -524,8 +508,8 @@ export async function GET(request) {
           pendingDocSection({ key: "payables", label: "Payables outstanding", isPayable: true }),
           suspenseSection(),
         ]);
-        // Liabilities subtract from the net figure, so they carry sign -1 and the footer
-        // total reads as assets − liabilities rather than a meaningless sum.
+        
+        
         sections = [cash, recv, { ...pay, sign: -1 }, { ...susp, sign: -1 }];
         break;
       }

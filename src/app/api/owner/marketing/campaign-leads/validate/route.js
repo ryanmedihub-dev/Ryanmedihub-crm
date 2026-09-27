@@ -42,8 +42,8 @@ export async function POST(req) {
 
     const { summary, results } = await runValidateCampaignLeads(rows, campaign);
 
-    // syncCampaignSource never throws — a callby outage shows up as status:"failed" below,
-    // which is information for the preview card, not a reason to fail validation.
+    
+    
     const validPhones = results.filter((r) => r.status !== "error" && r.payload).map((r) => r.payload.phoneNormalized);
     const dry = await syncCampaignSource({ phones: validPhones, label: campaignSourceLabel(campaign), dryRun: true });
     const sourcePreview = { status: dry.status, label: dry.label, matched: dry.matched, wouldUpdate: dry.wouldUpdate, alreadySet: dry.alreadySet, unmatched: dry.unmatched, error: dry.error };

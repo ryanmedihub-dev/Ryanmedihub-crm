@@ -4,9 +4,6 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 
-// Fires one sample row at the Google Sheets webhook so SHEETS_WEBHOOK_URL/SHEETS_WEBHOOK_SECRET
-// can be verified without creating a real payable/receivable/advance/transaction. See
-// src/lib/sheetsWebhook.js for the real per-model hooks this exercises the same send path of.
 export async function POST() {
   const session = await getServerSession(authOptions);
   if (!session?.user || !ALLOWED_ROLES.includes(session.user.role)) {

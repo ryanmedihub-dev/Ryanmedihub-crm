@@ -27,7 +27,7 @@ export async function GET(request) {
     const direction = searchParams.get("direction") || "";
     const receivableId = searchParams.get("receivableId") || "";
     const partyRefId = searchParams.get("partyRefId") || "";
-    const status = searchParams.get("status") || ""; // "open" | "settled" | ""(all)
+    const status = searchParams.get("status") || ""; 
     const branchFilterObj = resolveBranchFilter(session, searchParams.get("branch") || "");
     const branch = typeof branchFilterObj.branch === "string" ? branchFilterObj.branch : "";
     const from = searchParams.get("from") || "";
@@ -56,8 +56,8 @@ async function computeAdvancesList({
   account, direction, receivableId, partyRefId, status, branch, from, to, includeCancelled,
   party, page, limit,
 }) {
-    // "Search employee" accepts a name or a staff employeeId code — resolve a code to the
-    // matching employee's name so the label regex below still finds them.
+    
+    
     if (party) {
       const emp = await Employee.findOne({ employeeId: party }).select("name").lean();
       if (emp?.name) party = emp.name;
@@ -79,13 +79,13 @@ async function computeAdvancesList({
       if (to) match.date.$lte = new Date(`${to}T23:59:59.999Z`);
     }
 
-    // settled = advance applied against a payable (both legacy pair + settlements[] array).
-    // cashRecovered = IN advances against this OUT advance's own receivable.
-    // remaining = amount − settled − cashRecovered  (floored at 0).
+    
+    
+    
     const computeStages = [
       {
-        // Advance Type (e.g. "Advance Salary") lives on the backing Receivable's
-        // revenueSubType, not on the Advance doc itself — join it in for display/export.
+        
+        
         $lookup: {
           from: Receivable.collection.name,
           localField: "receivableId",

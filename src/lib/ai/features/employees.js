@@ -13,8 +13,6 @@ import { callRoute } from "../sources";
 import { AI_BRIEF_MODEL, AI_DEEP_MODEL } from "../config";
 import { round, pct, topN, bottomN, sumBy, capPayload } from "./_helpers";
 
-// Whitelist shared by every section list route (agents/counsellors/surgery/
-// hr/other-staff + the team roster) — see parseEmployeeFilters/parsePageParams.
 const SECTION_LIST_SCOPE = ["dateFrom", "dateTo", "branch", "isactive", "callbyLinked", "search", "role", "sortBy", "sortDir", "page", "pageSize"];
 
 function tenureDays(dateOfJoining) {
@@ -31,9 +29,7 @@ function median(nums) {
 function avgBy(rows, key) {
   return rows.length ? sumBy(rows, key) / rows.length : 0;
 }
-// Daily {date,value} -> up to `maxPoints` weekly-summed buckets (Sunday-start),
-// most recent first-in-array order preserved as oldest→newest. Never send a
-// raw per-day series to the model.
+
 function weeklyBuckets(daily, maxPoints) {
   if (!daily?.length) return [];
   const weeks = new Map();
@@ -48,12 +44,6 @@ function weeklyBuckets(daily, maxPoints) {
   const arr = [...weeks.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([date, value]) => ({ date, value: round(value) }));
   return arr.length > maxPoints ? arr.slice(-maxPoints) : arr;
 }
-
-// ---------------------------------------------------------------------------
-// Per-section row-fact + totals math — the ONLY per-section-specific piece.
-// Shared by the 5 section list features below AND employee.deep's cohort
-// median lookup, so there is exactly one formula per metric.
-// ---------------------------------------------------------------------------
 
 const AGENT_ROW = (r) => ({
   totalCalls: r.totalCalls || 0, connected: r.connected || 0, interested: r.interested ?? null,
@@ -137,8 +127,6 @@ const OTHER_TOTALS = (rows) => ({
   },
 });
 
-// One registry, reused by the section-feature factory below AND by
-// employee.deep (same GET + same row-fact math for the cohort-median lookup).
 const SECTION_CONFIG = {
   Agent: {
     key: "employees.agent", title: "Agent Intelligence", page: "/owner/employees/agents",
@@ -188,9 +176,6 @@ function commonRowFacts(book, r, rowFacts) {
   };
 }
 
-// Median of every numeric key `rowFacts` produces, prefixed `median_`, plus
-// the performance score median — probing key names off row 0 rather than a
-// fixed list, so each section's cohort automatically gets its own medians.
 function sectionMedians(rows, rowFacts) {
   const sampleKeys = rows.length ? Object.keys(rowFacts(rows[0])) : [];
   const medians = { medianScore: median(rows.map((r) => r.performance?.score)) };
@@ -200,9 +185,6 @@ function sectionMedians(rows, rowFacts) {
   return medians;
 }
 
-// Shared compute() for every section-list feature — the generic half of the
-// factory (cohort/bands/top5/bottom5 math), parametrized only by `cfg`'s
-// row-fact/totals functions.
 function computeSectionCompute(cfg) {
   return function compute(raw, book, scope, kind) {
     const rows = raw.rows || [];
@@ -328,7 +310,7 @@ const employeesFeatures = {
         const facts = capPayload({
           period,
           cohort: { medianScore: median(teams.map((t) => t.teamPerformance?.score)), medianCalls: median(teams.map((t) => t.teamTotalCalls)) },
-          teams: rows.map(({ alias, ...rest }) => ({ alias, ...rest })), // alias first for readability only
+          teams: rows.map(({ alias, ...rest }) => ({ alias, ...rest })), 
           dataErrors,
         });
         return { facts, rowsAnalyzed: rows.length };
@@ -422,8 +404,8 @@ const employeesFeatures = {
 
       const trend = weeklyBuckets(detail.trend || [], 8);
 
-      // Aggregated server-side from detail.rows (patient/interview-level) —
-      // only the aggregate ever reaches `facts`, never a row itself.
+      
+      
       const rows = detail.rows || [];
       const statusCounts = {};
       for (const r of rows) {

@@ -1,10 +1,4 @@
-// Field descriptors for every field key any registry entry can list, plus the canonical
-// "draft" shape (a flat object with every field defaulted) UniversalEntryForm's state is
-// built from. Isomorphic — no browser/Node-only imports.
-//
-// A descriptor is intentionally thin: `{ kind, default }`. It says what SHAPE of value the
-// field holds and renders — never a category/method/account option list (those come from
-// master data at render time, per the registry's own rule).
+
 
 export const FIELD_SCHEMA = {
   patient: { kind: "patientRef", default: "" },
@@ -17,10 +11,10 @@ export const FIELD_SCHEMA = {
   amount: { kind: "number", default: "" },
 
   employee: { kind: "employeeRef", default: "" },
-  period: { kind: "period", default: null }, // { month, year }
+  period: { kind: "period", default: null }, 
   incentiveType: { kind: "string", default: "" },
   incentivePurpose: { kind: "string", default: "" },
-  commissionReceiver: { kind: "giver", default: null }, // { type, refId, name }
+  commissionReceiver: { kind: "giver", default: null }, 
   commissionType: { kind: "string", default: "" },
 
   expenseCategory: { kind: "string", default: "" },
@@ -35,7 +29,7 @@ export const FIELD_SCHEMA = {
   tdsRate: { kind: "number", default: "" },
   tdsAmount: { kind: "number", default: "" },
 
-  payeeMode: { kind: "string", default: "VENDOR" }, // VENDOR | EMPLOYEE | PATIENT | MANUAL | fixed-by-purpose
+  payeeMode: { kind: "string", default: "VENDOR" }, 
   payee: { kind: "giver", default: null },
   payerMode: { kind: "string", default: "VENDOR" },
   payer: { kind: "giver", default: null },
@@ -65,7 +59,7 @@ export const FIELD_SCHEMA = {
 
   method: { kind: "method", default: "cash" },
   paymentId: { kind: "string", default: "" },
-  routing: { kind: "routing", default: null }, // { receiptMode, furtherMode }
+  routing: { kind: "routing", default: null }, 
   externalParty: { kind: "externalParty", default: {} },
   receivableAllocationChoice: { kind: "receivableAllocationChoice", default: { mode: "auto" } },
 
@@ -75,7 +69,6 @@ export const FIELD_SCHEMA = {
   receipts: { kind: "receipts", default: [] },
 };
 
-/** Every field a registry `fields` array can name, defaulted, for a fresh draft. */
 export function emptyDraft(fieldKeys, overrides = {}) {
   const draft = {};
   for (const key of fieldKeys) {

@@ -163,9 +163,9 @@ export async function reverseTransaction({
     });
     await original.save({ session: dbSession });
 
-    // This payment was booked alongside advance settlements (expense/create-with-settlement).
-    // A full reversal must undo those too, or the advance-receivable is left half-recovered.
-    // A PARTIAL reversal leaves them — the settlement still stands against the reduced payment.
+    
+    
+    
     const settleIds = (original.advanceSettlementIds || []).map(String);
     if (settleIds.length) {
       const advances = await Advance.find({ "settlements._id": { $in: settleIds } }).session(dbSession);

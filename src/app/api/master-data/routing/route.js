@@ -18,8 +18,6 @@ function guard(session) {
   return null;
 }
 
-// GET /api/master-data/routing  — every rule (active + retired). The UI builds the
-// branch x category grid and marks the cells that have no rule (blank pre-fill).
 export async function GET() {
   const session = await getServerSession(authOptions);
   const denied = guard(session);
@@ -32,8 +30,6 @@ export async function GET() {
   return NextResponse.json({ rules });
 }
 
-// POST /api/master-data/routing  — create or overwrite the rule for a branch x category x method
-// cell.
 export async function POST(req) {
   const session = await getServerSession(authOptions);
   const denied = guard(session);

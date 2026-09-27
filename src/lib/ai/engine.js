@@ -14,12 +14,6 @@ import {
   AI_MAX_OUTPUT_TOKENS, AI_OUTPUT_LANGUAGE, costUsd,
 } from "./config";
 
-// The Owner "AI Everywhere" engine: guard -> scope -> collect -> compute ->
-// cache check -> budget/rate -> analyze (OpenAI) -> verify -> persist. Every
-// stage emitted here is real work that happened, never a fake timer — the UI
-// pipeline animation is driven 1:1 by these events. Every exit path writes
-// exactly one AiRun.
-
 async function monthToDateSpend() {
   const start = new Date();
   start.setUTCDate(1);
@@ -66,7 +60,7 @@ ALLOWED_LINKS: ${JSON.stringify(allowed)}`;
 }
 
 function userPrompt(feature, scope, facts) {
-  const { search, ...safeScope } = scope; // never send free-text search to the model
+  const { search, ...safeScope } = scope; 
   return JSON.stringify({ page: feature.title, scope: safeScope, facts });
 }
 
@@ -91,7 +85,7 @@ export async function runInsight({ featureKey, kind, rawScope, session, force = 
   const userEmail = session?.user?.email || "unknown";
   const base = { feature: featureKey, kind, userEmail, cache: force ? "FORCED" : "MISS" };
 
-  // 1. guard --------------------------------------------------------------
+  
   const feature = getFeature(featureKey);
   if (!AI_ENABLED) {
     emit({ type: "status", status: "disabled" });
@@ -109,7 +103,7 @@ export async function runInsight({ featureKey, kind, rawScope, session, force = 
     return;
   }
 
-  // 2. scope ----------------------------------------------------------------
+  
   const scope = whitelistScope(rawScope, feature.scopeParams || []);
   const scopeKey = fingerprint(scope);
   base.scopeKey = scopeKey;
@@ -119,14 +113,14 @@ export async function runInsight({ featureKey, kind, rawScope, session, force = 
 
   let raw, facts, rowsAnalyzed, book;
   try {
-    // 3. collect --------------------------------------------------------------
+    
     emit({ type: "stage", stage: "collect", state: "start" });
     const t0 = Date.now();
     raw = await feature.collect(scope, { session, signal }, kind);
     stageMs.collect = Date.now() - t0;
     emit({ type: "stage", stage: "collect", state: "done", ms: stageMs.collect });
 
-    // 4. compute ----------------------------------------------------------------
+    
     emit({ type: "stage", stage: "compute", state: "start" });
     const t1 = Date.now();
     book = createAliasBook();
@@ -143,7 +137,7 @@ export async function runInsight({ featureKey, kind, rawScope, session, force = 
   const fp = fingerprint(facts);
   const payloadChars = JSON.stringify(facts).length;
 
-  // 5. cache ------------------------------------------------------------------
+  
   if (!force) {
     const cached = await AiInsight.findOne({ key: insightKey }).lean();
     if (cached && cached.expiresAt > new Date() && cached.fingerprint === fp) {
@@ -157,7 +151,7 @@ export async function runInsight({ featureKey, kind, rawScope, session, force = 
     }
   }
 
-  // 6. budget + rate ------------------------------------------------------------
+  
   const spend = await monthToDateSpend();
   if (spend >= AI_MONTHLY_BUDGET_USD) {
     const stale = await AiInsight.findOne({ key: insightKey }).lean();
@@ -180,7 +174,7 @@ export async function runInsight({ featureKey, kind, rawScope, session, force = 
     return;
   }
 
-  // 7. analyze ------------------------------------------------------------------
+  
   const system = systemPrompt(feature, kind);
   const user = userPrompt(feature, scope, facts);
   const schemaName = `owner_ai_${kind}`;
@@ -211,7 +205,7 @@ export async function runInsight({ featureKey, kind, rawScope, session, force = 
     return;
   }
 
-  // 8. verify ------------------------------------------------------------------
+  
   emit({ type: "stage", stage: "verify", state: "start" });
   const t3 = Date.now();
   let parsed, cleaned;
@@ -219,7 +213,7 @@ export async function runInsight({ featureKey, kind, rawScope, session, force = 
     parsed = JSON.parse(text);
     cleaned = validate(kind, parsed);
   } catch (err) {
-    // one automatic retry, non-streamed, before giving up
+    
     try {
       const retry = await completeStructured({ model, system, user, schemaName, schema: SCHEMAS[kind], maxTokens, signal });
       promptTokens += retry.promptTokens; completionTokens += retry.completionTokens;
@@ -238,7 +232,7 @@ export async function runInsight({ featureKey, kind, rawScope, session, force = 
   stageMs.verify = Date.now() - t3;
   emit({ type: "stage", stage: "verify", state: "done", ms: stageMs.verify, grounding });
 
-  // 9. persist ------------------------------------------------------------------
+  
   const generatedAt = new Date();
   const ttlMin = feature.ttlMin?.[kind] ?? AI_DEFAULT_TTL_MIN[kind];
   const expiresAt = new Date(generatedAt.getTime() + ttlMin * 60_000);

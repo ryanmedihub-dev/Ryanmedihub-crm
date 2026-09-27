@@ -12,7 +12,6 @@ export default function Skeleton({ variant, width, height, style, className = ""
   return <div className={base} style={{ width, height, ...style }} />;
 }
 
-// KPI band placeholder that matches the lead + support layout.
 export function KpiSkeleton({ support = 4 }) {
   return (
     <div className="kpi-band">
@@ -26,7 +25,6 @@ export function KpiSkeleton({ support = 4 }) {
   );
 }
 
-// A block of fake table rows to drop inside a .table-wrap while loading.
 export function TableSkeleton({ rows = 6 }) {
   return (
     <div className="table-wrap">

@@ -6,25 +6,6 @@ import { withCallbyRoute } from "@/lib/owner/callbyRoute";
 import { fetchCallbyCached, CallbyError } from "@/lib/callby";
 import { parsePageParams, parseSortParams, pagedFacet, unpackFacet, pageMeta } from "@/lib/owner/pagination";
 
-// /owner/ai/attendance — call ACTIVITY per employee per day, plus whatever
-// manual Attendance records already exist for that day, plus a SUGGESTED
-// status computed from the activity. Nothing here is a claim about presence
-// on its own — see Part 0 Blocking Decision #2 and src/models/Attendance.js.
-// This is deliberately a single-day register (not a date-range grid): the
-// thing an owner actually does with this page is "confirm today's status per
-// employee," and a day-by-employee combination is small enough to render
-// honestly, where a wide date range would invite treating gaps as absences.
-//
-// One Employee.aggregate(): $lookup the day's Attendance rows, attach the
-// day's callby activity (one cached call, keyed by callbyUserId), derive the
-// suggestion in the pipeline, then $facet the sorted page + the summary counts
-// over the whole register. page/pageSize/sortBy/sortDir per
-// src/lib/owner/pagination.js (default 25, max 200).
-
-// Suggestion rule — a starting point for a human, never final. Falls back to
-// a plain present/absent split when an employee has no dailyTarget set,
-// since attainment-based half-day math is meaningless without one.
-// (Mongo expression; the rule is documented here and nowhere else.)
 const SUGGESTED_STATUS_EXPR = {
   $cond: [
     { $eq: ["$callbyLinked", false] },
@@ -63,8 +44,8 @@ export const GET = withCallbyRoute(async (req) => {
   if (branch !== "All") empMatch.branch = branch;
   if (search) empMatch.name = { $regex: escapeRegex(search), $options: "i" };
 
-  // The day's call activity from callby — one call for the whole register,
-  // cached briefly so paging through it doesn't re-fetch.
+  
+  
   let activity = [];
   let callbyError = null;
   try {
@@ -175,10 +156,6 @@ export const GET = withCallbyRoute(async (req) => {
   });
 });
 
-// POST — mark or override one employee's attendance for a day. Always a
-// human action: `source` is "suggested" only when the caller clicked
-// "confirm suggestion" (still a click, not an automatic write) and "manual"
-// for any status the person chose themselves or typed over the suggestion.
 export const POST = withCallbyRoute(async (req, session) => {
   await dbConnect();
   const body = await req.json();

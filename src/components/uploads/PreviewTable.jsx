@@ -30,7 +30,7 @@ export default function PreviewTable({ summary, results }) {
 
   return (
     <div className="space-y-3">
-      {/* sticky summary */}
+      {}
       <div className="sticky top-0 z-10 flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl border border-slate-200 bg-white/95 px-4 py-3 text-sm shadow-sm backdrop-blur">
         <span className="font-bold text-slate-900">{summary.total} rows</span>
         <span className="text-emerald-700">{summary.ok} ready</span>
@@ -45,7 +45,7 @@ export default function PreviewTable({ summary, results }) {
         </span>
       </div>
 
-      {/* filter chips */}
+      {}
       <div className="flex flex-wrap gap-2">
         {[
           ["all", `All ${counts.all}`],

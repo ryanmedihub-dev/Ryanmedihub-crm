@@ -14,12 +14,8 @@ import { useDebounced } from "@/lib/useDebounced";
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const YEARS = Array.from({ length: 6 }, (_, i) => new Date().getFullYear() - 3 + i);
 
-// SALARY / RENT / ELECTRICITY are monthly — offer a period picker on those groups.
 const MONTHLY_GROUPS = new Set(["rent", "employees"]);
 
-// Employees keeps its original Salary/Incentive-category-first layout, but its level-2 list
-// (normally the expense sub-type, which is always the fixed "Salary"/"Incentive" value and
-// tells you nothing) instead breaks down into the employees who hold payables in that category.
 const SUB_PARTY_GROUPED = new Set(["employees"]);
 
 export default function PayablesGroupPage({ group }) {
@@ -67,7 +63,7 @@ export default function PayablesGroupPage({ group }) {
     } else {
       setInitialDrill(null);
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); 
 
   const employeeParty = subGroupByParty ? debouncedEmployeeSearch : "";
 

@@ -155,7 +155,7 @@ export default function AdminVendorsPage() {
         );
       }
 
-      // Merge payable + receivable rollups so a vendor appearing on only one side is still listed.
+      
       const byKey = new Map();
       (gJson.rows || []).forEach((r) => {
         byKey.set(r.key, {
@@ -185,7 +185,7 @@ export default function AdminVendorsPage() {
       });
       const overviewRows = [...byKey.values()];
 
-      // One flat sheet: every vendor payable + its payment lines.
+      
       const vendorDetail = (interleaved.rows || []).filter((row) => row["Payee Type"] === "VENDOR");
 
       await exportWorkbook({

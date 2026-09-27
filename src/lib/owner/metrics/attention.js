@@ -6,16 +6,6 @@ import { employeeSection } from "@/lib/owner/employeeSections";
 import { SECTION_METRIC_BUILDERS, derivePerfMetrics, sampleValue, daysInPeriod } from "@/lib/owner/employeeReportQuery";
 import { scoreCohort } from "@/lib/owner/performance";
 
-// The Attention rules (/owner/ai/attention) — everything here is a documented
-// threshold rule over data that already exists; there is no AI, no scoring
-// model, no probability estimate. Every threshold lives in
-// attentionThresholds.js so retuning a rule never means hunting through code.
-//
-// One implementation: /api/owner/ai/attention, the dashboard, suggestions and
-// Sanya's `get_attention_items` tool all call getAttentionItems() / the
-// individual rule functions below. Rule items carry patient/lead names for
-// the PAGES; the Sanya tool layer strips items and keeps counts only.
-
 const LEAD_SAMPLE_CAP = 2000;
 const DAY_MS = 86400000;
 const ageInDays = (d) => (d ? Math.floor((Date.now() - new Date(d).getTime()) / DAY_MS) : null);
@@ -81,11 +71,6 @@ export async function stalePatients(status, staleDays) {
   }));
 }
 
-// Poor-performing employees — reuses Part 1's exact scoring, never a new
-// formula. Only sections with a real KPI config are scored ("Other" has
-// none, by design — see performance.js). Defaults to a trailing 30-day
-// window when no explicit range is given, since a same-day window is too
-// thin to score against peers.
 export async function poorPerformers({ from, to }) {
   const period = from || to ? { from, to } : { from: new Date(Date.now() - 30 * DAY_MS).toISOString(), to: new Date().toISOString() };
   const periodDays = daysInPeriod(period.from, period.to);
@@ -97,7 +82,7 @@ export async function poorPerformers({ from, to }) {
   const bySection = new Map();
   for (const e of employees) {
     const section = employeeSection(e.role);
-    if (!SECTION_METRIC_BUILDERS[section]) continue; // "Other" — no KPI formula, never scored
+    if (!SECTION_METRIC_BUILDERS[section]) continue; 
     if (!bySection.has(section)) bySection.set(section, []);
     bySection.get(section).push(e);
   }
@@ -129,8 +114,6 @@ export async function poorPerformers({ from, to }) {
   return { items: flagged, error: callbyError };
 }
 
-
-/** Every rule, evaluated once, with counts, value at risk and drill links. */
 export async function getAttentionItems({ from = "", to = "" } = {}) {
   const [followUps, interested, bookingDone, surgeryBooked, performers] = await Promise.all([
     overdueFollowUps(),

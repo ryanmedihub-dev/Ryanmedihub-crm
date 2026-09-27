@@ -28,7 +28,7 @@ const plexMono = IBM_Plex_Mono({
 const OWNER_ROLES = ["owner", "super-admin"];
 
 export default async function OwnerLayout({ children }) {
-  // Single, central gate for the whole /owner tree — the pages themselves don't check.
+  
   const session = await getServerSession(authOptions);
   if (!session?.user) redirect("/login");
   if (!OWNER_ROLES.includes(session.user.role)) redirect(roleHome(session.user.role));

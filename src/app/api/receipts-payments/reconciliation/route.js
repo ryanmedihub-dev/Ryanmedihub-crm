@@ -56,10 +56,10 @@ export async function GET(request) {
     );
     const contraNet = round2(contraRows.reduce((s, c) => s + (c.totalIn - c.totalOut), 0));
     const suspenseNet = round2(suspenseRows.reduce((s, c) => s + (c.totalIn - c.totalOut), 0));
-    // Borrowings received / advances paid out are real cash movements on these accounts (they
-    // just aren't "revenue" or "expense" in the Transactions sense), so — same as contra and
-    // suspense — the closing balance already carries them and the reconciliation must too, or
-    // any borrowing/advance activity in the period shows up as a false "off by ₹X".
+    
+    
+    
+    
     const borrowingNet = round2(borrowingRows.reduce((s, c) => s + (c.totalIn - c.totalOut), 0));
     const advanceNet = round2(advanceRows.reduce((s, c) => s + (c.totalIn - c.totalOut), 0));
 

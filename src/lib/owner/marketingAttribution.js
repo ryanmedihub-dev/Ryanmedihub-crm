@@ -4,46 +4,10 @@ import Patient from "@/models/Patient";
 import { normalizePhone } from "@/lib/phone";
 import { CONVERTED_STATUSES } from "@/lib/owner/patientStatus";
 
-// Shared attribution logic for the Marketing section (Owner Panel v2, Part 4).
-// Pulled out of the original src/app/api/owner/marketing-summary/route.js
-// inline copy so the landing page, the Ad Spend return picture, and the
-// Comparison page all compute the same numbers the same way — one
-// implementation, not three.
-//
-// IMPORTANT — this is 100% local data, not callby. The brief assumed lead
-// source came from callby's Lead.tag; it doesn't — src/models/Leads.js is a
-// ryan-crm-local inquiry table (website form / Collab intake) with its own
-// `tag` field. callby's Lead/CallLog (the telecalling workflow) plays no part
-// in ad attribution. See the Part 4 report for the full finding.
-//
-// ATTRIBUTION WINDOW (stated once here, shown on every page that uses this):
-//   - Spend counts in the period it was entered for (AdSpend.date in [from,to]).
-//   - A Leads row counts in the period if Leads.createdAt falls in [from,to].
-//   - Conversion/revenue count WHENEVER THEY HAPPENED — not bounded to the
-//     period — because a patient's payment can land months after the lead.
-//     So "Converted"/"Revenue"/"CAC"/"ROAS" answer "of the leads this
-//     period's spend produced, what have they generated SO FAR", not
-//     "revenue collected this period".
-//   - "Converted" uses the panel-wide CONVERTED_STATUSES (paid in full or
-//     surgery done) so marketing CAC/ROAS agree with every other page.
-//
-// PER-CAMPAIGN LIMIT: Leads.tag only distinguishes platform (Meta/Google/
-// Form/Collab), never campaign — the per-platform attribution below still can't go finer
-// than that. Per-campaign attribution NOW EXISTS via a different path: CampaignLead
-// (src/models/CampaignLead.js) is uploaded against a specific campaign, so campaign is
-// captured on the lead itself. See src/lib/owner/campaignAttribution.js — a separate
-// implementation, not an extension of this one, because CampaignLead and Leads are
-// different intake sources with different lifecycles. Campaign-scoped spend/clicks/CPC
-// here (computeCampaignSpend below) is reused by that implementation rather than rebuilt.
-
 export const TAG_BY_PLATFORM = { Meta: "Meta Leads", Google: "Google Leads" };
 export const MARKETING_CONVERTED_STATUSES = CONVERTED_STATUSES;
 const PLATFORM_BY_TAG = Object.fromEntries(Object.entries(TAG_BY_PLATFORM).map(([p, t]) => [t, p]));
 
-/**
- * Full platform-level attribution: spend, clicks, leads, conversions, revenue.
- * @param {{platforms?: string[], branch?: string, from: Date, to: Date}} opts
- */
 export async function attributeSpendToOutcomes({ platforms = ["Meta", "Google"], branch, from, to }) {
   const spendMatch = { platform: { $in: platforms }, date: { $gte: from, $lte: to } };
   if (branch && branch !== "All") spendMatch.branch = branch;
@@ -72,8 +36,8 @@ export async function attributeSpendToOutcomes({ platforms = ["Meta", "Google"],
     });
   }
 
-  // Leads attribution ignores branch (Leads has no branch field) and campaign
-  // (see the per-campaign limit above).
+  
+  
   const tags = platforms.map((p) => TAG_BY_PLATFORM[p]).filter(Boolean);
   const leadsInRange = tags.length
     ? await Leads.find({ tag: { $in: tags }, createdAt: { $gte: from, $lte: to } }).select("phone tag").lean()
@@ -144,11 +108,6 @@ export async function attributeSpendToOutcomes({ platforms = ["Meta", "Google"],
   return { byPlatform };
 }
 
-/**
- * Campaign-scoped spend/clicks/CPC only — leads/conversions/revenue cannot be
- * attributed per campaign with current data (see the per-campaign limit
- * above), so this deliberately does not attempt it.
- */
 export async function computeCampaignSpend({ campaignId, from, to }) {
   const match = { campaignId, date: { $gte: from, $lte: to } };
   const [row] = await AdSpend.aggregate([

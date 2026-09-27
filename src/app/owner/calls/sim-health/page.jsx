@@ -2,9 +2,6 @@ import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import { OwnerTopbar } from "@/components/owner";
 import AiOrb from "@/components/owner/ai/AiOrb";
 
-// No AI call here — there is nothing real to analyse yet (see the honest line
-// below), so nothing is faked. Restyled per Part 5 as "AI module coming
-// online" instead of the shared generic ComingSoon block.
 export default function SimHealthPage() {
   return (
     <div className="app">

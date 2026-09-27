@@ -17,17 +17,9 @@ import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { num } from "@/lib/owner/format";
 import { usePagedList } from "@/lib/owner/usePagedList";
 
-// Text columns open A→Z; everything else (dates, money, "days since") opens
-// with the most recent / largest first.
 const TEXT_SORT_KEYS = new Set(["name", "branch", "status", "technique"]);
 const dirForKey = (key) => (TEXT_SORT_KEYS.has(key) ? "asc" : "desc");
 
-// Generic shell behind all six Patients list pages (Owner Panel v2, Part 3) —
-// one table, one KPI row, one API route (/api/owner/patients?preset=...),
-// driven by a config object. Same pattern as EmployeeReportPage/LeadStatusReportPage.
-//
-// config: { preset, title, subtitle, tableId, defaultSort, defaultSortDir,
-//           columns, kpis(data), extras?, extraContent?(data), trendLabel? }
 export default function PatientReportPage({ config }) {
   const router = useRouter();
 
@@ -40,9 +32,9 @@ export default function PatientReportPage({ config }) {
 
   const extras = config.extras || [];
 
-  // The table's filters minus page/pageSize/sort/search — what an AI brief
-  // analyses (the whole filtered cohort). Verdicts extend this with the
-  // table's exact visible page/sort, same pattern as Part 4's Employees.
+  
+  
+  
   const aiScope = useMemo(() => {
     if (!filterState) return null;
     const s = { preset: config.preset, dateFrom: filterState.range.from, dateTo: filterState.range.to };
@@ -80,14 +72,14 @@ export default function PatientReportPage({ config }) {
     ? [config.columns[0], aiVerdictColumn({ byId: verdicts.byId, loading: verdicts.loading, labelSet: "followUp" }), ...config.columns.slice(1)]
     : config.columns;
 
-  // The detail page's "Back" returns to THIS preset with the same filters.
+  
   const backQuery = useMemo(() => {
     if (typeof window === "undefined") return "";
     const current = window.location.search.replace(/^\?/, "");
     const q = new URLSearchParams({ back: config.preset });
     if (current) q.set("backq", current);
     return `?${q.toString()}`;
-  }, [config.preset, filterState]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [config.preset, filterState]); 
 
   const extraDefaults = Object.fromEntries(extras.map((ex) => [ex.key, ex.defaultValue ?? ""]));
 

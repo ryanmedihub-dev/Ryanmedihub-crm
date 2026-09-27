@@ -6,7 +6,7 @@ import Patient from "@/models/Patient";
 import Transactions from "@/models/Transactions";
 import Stock from "@/models/Stock";
 import DeleteLog from "@/models/DeleteLog";
-// Registers the Vendor schema so the transaction log's .populate("vendor") resolves.
+
 import "@/models/Vendor";
 import { getISTStartOfDay, getISTEndOfDay } from "@/lib/dateHelpers";
 import { cacheKey, cached } from "@/lib/cache";
@@ -28,11 +28,6 @@ function inRange(date, dateFrom, dateTo) {
 const fmtDay = (d) => (d ? new Date(d).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" }) : "");
 const id = (v) => (v ? String(v?._id ?? v) : "");
 
-/**
- * Every business field on a transaction, flattened for one spreadsheet row. Repeated on
- * each audit row so the export stands alone — no cross-referencing another report to work
- * out what the changed record actually was.
- */
 function transactionDetailColumns(tx) {
   return {
     "Txn ID": String(tx._id || ""),
@@ -103,10 +98,10 @@ export async function GET(request) {
     const from = searchParams.get("from");
     const to = searchParams.get("to");
 
-    // The reports page sends a branch filter for log reports too, but this route only ever
-    // honoured the session's own branch — so picking "Delhi" silently returned every
-    // branch. Take the requested branch when the session isn't already locked to one, and
-    // never widen past the session's scope.
+    
+    
+    
+    
     const sessionBranch = session.user.branch;
     const sessionLocked = sessionBranch && sessionBranch !== "All" && sessionBranch !== "all";
     const requestedBranch = searchParams.get("branch") || "";
@@ -114,8 +109,8 @@ export async function GET(request) {
     const branch = sessionLocked ? sessionBranch : requestedBranch;
     const hasBranch = !!branch && branch !== "All" && branch !== "all";
 
-    // Bracket the plain YYYY-MM-DD to the IST calendar day (Vercel runs in UTC, so a raw
-    // new Date("YYYY-MM-DD") is IST 05:30, and the `to` side never reached end-of-day).
+    
+    
     const dateFrom = from ? getISTStartOfDay(from) : null;
     const dateTo = to ? getISTEndOfDay(to) : null;
 
@@ -210,10 +205,10 @@ async function computeLogs({ type, hasBranch, branch, dateFrom, dateTo }) {
       case "transaction-changes-log": {
         const txQuery = hasBranch ? { branch } : {};
 
-        // Only pull documents that could contribute an event in range. An audit event lives
-        // on one of three paths, so a doc qualifies if any of them falls in the window —
-        // per-event filtering still happens below, this just avoids loading the whole
-        // collection into memory the way this used to.
+        
+        
+        
+        
         if (dateFrom && dateTo) {
           const eventWindow = { $gte: dateFrom, $lte: dateTo };
           txQuery.$or = [
@@ -231,8 +226,8 @@ async function computeLogs({ type, hasBranch, branch, dateFrom, dateTo }) {
           .lean();
 
         for (const tx of transactions) {
-          // Every audit row repeats this block, so the sheet is self-contained: you can
-          // read what the transaction is without cross-referencing another export.
+          
+          
           const details = transactionDetailColumns(tx);
 
           const createdAt = tx.createdBy?.date
@@ -276,7 +271,7 @@ async function computeLogs({ type, hasBranch, branch, dateFrom, dateTo }) {
             };
 
             if (!fields) {
-              // An edit was recorded but the field-level diff wasn't captured.
+              
               data.push({
                 ...auditBase,
                 "Field Changed": "(not recorded)",
@@ -289,8 +284,8 @@ async function computeLogs({ type, hasBranch, branch, dateFrom, dateTo }) {
               return;
             }
 
-            // One row per changed field, so the sheet can be filtered by field name and
-            // pivoted on who changed what.
+            
+            
             fields.forEach((f, i) => {
               data.push({
                 ...auditBase,

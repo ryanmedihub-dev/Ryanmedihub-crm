@@ -30,7 +30,6 @@ const PAYMENT_SOURCES = [
   { id: "clinic", label: "Patient paid the clinic" },
 ];
 
-
 const getTodayIST = () =>
   new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
 

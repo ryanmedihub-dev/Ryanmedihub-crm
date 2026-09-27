@@ -1,13 +1,8 @@
 import { payablePurposeLabel } from "@/constants/payablePurposes";
 
-// Indian grouping, no decimals — matches how money reads everywhere else in the app.
 const INR_FORMAT = '₹#,##,##0';
 const MONEY_COL_RE = /(amount|paid|pending|total|salary|mrp|revenue|expense|profit|value|₹|money in|money out|\bin\b|\bout\b)/i;
 
-// Emit the plain calendar day the user is thinking about (YYYY-MM-DD), NOT an ISO instant.
-// The server's getISTStartOfDay/getISTEndOfDay bracket a bare date to the IST day; handing
-// them a browser-local-shifted `.toISOString()` made them convert a second time and pull
-// the `from` boundary a full day earlier (a "31 Aug" download also returned 30 Aug).
 const ymd = (d) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
@@ -39,17 +34,12 @@ export function buildDateRange(preset, custom) {
     };
   }
   if (preset === "custom" && custom.from) {
-    // date inputs are already YYYY-MM-DD
+    
     return { from: custom.from, to: custom.to || custom.from };
   }
   return { from: null, to: null };
 }
 
-/**
- * Fetches one report's rows and saves them as an .xlsx (Report sheet + an Info sheet of
- * run metadata). Throws on a failed/empty response; the caller shows the error as a toast.
- * Returns `{ rowCount, truncated, docLimit, fileName }` on success.
- */
 export async function downloadReport(report, { datePreset, customDates, filters }) {
   const { from, to } = buildDateRange(datePreset, customDates);
   const isLogReport = !!report.apiPath;
@@ -87,8 +77,8 @@ export async function downloadReport(report, { datePreset, customDates, filters 
   const wb = utils.book_new();
   const ws = utils.json_to_sheet(result.data);
 
-  // Width off the widest of the header and the first 200 values, so wide audit sheets
-  // stay readable without hand-resizing every column.
+  
+  
   const cols = Object.keys(result.data[0] || {});
   const sample = result.data.slice(0, 200);
   ws["!cols"] = cols.map((k) => {
@@ -99,10 +89,10 @@ export async function downloadReport(report, { datePreset, customDates, filters 
     return { wch: Math.min(Math.max(widest + 2, 12), 45) };
   });
 
-  // Audit sheets are meant to be sliced — turn on the filter row.
+  
   if (ws["!ref"]) ws["!autofilter"] = { ref: ws["!ref"] };
 
-  // Money columns render as ₹ with Indian grouping instead of bare numbers.
+  
   const moneyCols = cols.filter((k) => MONEY_COL_RE.test(k));
   moneyCols.forEach((k) => {
     const idx = cols.indexOf(k);
@@ -116,8 +106,8 @@ export async function downloadReport(report, { datePreset, customDates, filters 
 
   utils.book_append_sheet(wb, ws, "Report");
 
-  // For the payables statement, summarise the obligation lines only — the payment
-  // lines are detail beneath them and would double-count.
+  
+  
   const payableLines =
     report.type === "payables-all"
       ? result.data.filter((r) => r.Row === "Payable")

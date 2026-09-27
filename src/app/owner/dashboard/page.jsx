@@ -34,7 +34,7 @@ export default function OwnerDashboard() {
   const [dateRange, setDateRange] = useState("Today");
   const [custom, setCustom] = useState({ from: "", to: "" });
 
-  // Same guard as before: don't fire any of the three GETs until a custom range has a "from".
+  
   const dateReady = !(dateRange === "Custom" && !custom.from);
   const bq = branch !== "All" ? `&branch=${encodeURIComponent(branch)}` : "";
   const bqOnly = branch !== "All" ? `?branch=${encodeURIComponent(branch)}` : "";
@@ -58,8 +58,8 @@ export default function OwnerDashboard() {
   const isValidating = dashValidating || recValidating || payValidating;
   const fetchAll = () => { loadDash(); loadRec(); loadPay(); };
 
-  // Feature key dashboard.command — same guard as the three GETs above; the
-  // brief must not run before a custom range has a "from" either.
+  
+  
   const aiScope = useMemo(
     () => (resolvedDates ? { branch, from: resolvedDates.from, to: resolvedDates.to } : {}),
     [resolvedDates, branch],

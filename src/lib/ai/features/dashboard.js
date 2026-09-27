@@ -5,10 +5,6 @@ import { callRoute } from "../sources";
 import { AI_DEEP_MODEL } from "../config";
 import { round, pct, sumBy, capPayload } from "./_helpers";
 
-// receivables/payables summary routes treat an EMPTY branch param as "no
-// filter" — the dashboard route instead uses the literal string "All" for
-// that. Two different sentinels for the same UI concept; get this wrong and
-// a branch filter silently returns zero receivable/payable rows.
 function noFilterBranch(branch) {
   return !branch || branch === "All" ? undefined : branch;
 }

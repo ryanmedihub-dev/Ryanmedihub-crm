@@ -4,17 +4,6 @@ import { CONVERTED_STATUSES } from "@/lib/owner/patientStatus";
 import { istDayBucket, periodBounds } from "@/lib/owner/dates";
 import { revenueMatch } from "@/lib/transactionFilters";
 
-// One implementation of the Patients landing numbers (/owner/patients) — the
-// API route and Sanya's `get_patients_by_status` tool both call this, so the
-// assistant can never disagree with the page for the same filters.
-//
-// Two different money figures, deliberately both returned:
-//   receivedSum  — cash actually booked in the period (Transactions, revenue,
-//                  approved/settled — same filter as the finance pages).
-//   packageSum   — total package value of the patients REGISTERED in the
-//                  period (what those registrations are worth, not cash).
-// "Converted" uses the panel-wide CONVERTED_STATUSES against the patients
-// registered in the period.
 export async function getPatientsByStatus({ dateFrom = "", dateTo = "", branch = "All" } = {}) {
   const match = {};
   if (branch && branch !== "All") match["personal.branch"] = branch;

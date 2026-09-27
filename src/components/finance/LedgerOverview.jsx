@@ -43,11 +43,6 @@ const TONES = {
   borrowings: "violet",
 };
 
-/**
- * The overview dashboard for /admin/assets and /admin/liabilities — a summary, not a stack of
- * tables. Also carries the backward-compat redirect resolver for the old `?section=…` deep
- * links.
- */
 export default function LedgerOverview({ side }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -57,7 +52,7 @@ export default function LedgerOverview({ side }) {
   const [loading, setLoading] = useState(true);
   const [redirecting, setRedirecting] = useState(false);
 
-  // ---- backward-compat: bounce old ?section= deep links to the new sub-pages ----
+  
   useEffect(() => {
     const section = searchParams.get("section");
     if (!section) {
@@ -150,7 +145,7 @@ export default function LedgerOverview({ side }) {
     <div className="space-y-5">
       <LedgerScopeBar />
 
-      {/* hero */}
+      {}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{heroLabel}</p>
         {loading || !data ? (
@@ -170,7 +165,7 @@ export default function LedgerOverview({ side }) {
         )}
       </div>
 
-      {/* unattributed (assets only) */}
+      {}
       {side !== "liabilities" && data?.unattributed?.count > 0 && (
         <Link
           href="/admin/transactions?furtherMode=__UNTRACKED__"
@@ -185,7 +180,7 @@ export default function LedgerOverview({ side }) {
         </Link>
       )}
 
-      {/* section cards */}
+      {}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {(data?.sections || Array.from({ length: 4 })).map((s, i) =>
           s ? (
@@ -207,7 +202,7 @@ export default function LedgerOverview({ side }) {
         )}
       </div>
 
-      {/* ageing chips → link through */}
+      {}
       {data?.ageing?.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {AGEING_BUCKETS.map((b) => {
@@ -225,7 +220,7 @@ export default function LedgerOverview({ side }) {
         </div>
       )}
 
-      {/* top 5 outstanding */}
+      {}
       {data?.topDocuments?.length > 0 && (
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
           <div className="flex items-center justify-between mb-3">

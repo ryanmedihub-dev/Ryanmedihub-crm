@@ -11,19 +11,6 @@ import { employeeSection } from "@/lib/owner/employeeSections";
 import { SECTION_METRIC_BUILDERS, derivePerfMetrics, sampleValue, daysInPeriod } from "@/lib/owner/employeeReportQuery";
 import { scoreCohort } from "@/lib/owner/performance";
 
-// /owner/ai/suggestions — evidence-first observations, computed entirely
-// server-side from the same aggregates the rest of Owner Panel v2 already
-// uses (Statistics, Attention, Marketing, Employees). No model call, no raw
-// data leaves this function, no directive language ("do X") — every
-// observation states a fact with the numbers behind it and lets the owner
-// decide what it means. The user chose this rules-based path explicitly over
-// an LLM-based one for Part 6 (cost/model/API-key decisions deferred).
-//
-// Each observation cites real, freshly-computed numbers — nothing here is
-// estimated or extrapolated. An observation is only emitted when its
-// underlying sample is large enough to say something meaningful (thresholds
-// inline, next to the rule they gate).
-
 const DAY_MS = 86400000;
 const round1 = (n) => Math.round(n * 10) / 10;
 

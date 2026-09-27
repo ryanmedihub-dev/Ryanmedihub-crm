@@ -535,9 +535,7 @@ function DataTable({ category, rows, onDelete, onSort, sortConfig, pagination, o
 
 const EMPTY_STATS = { TRANSPLANT: { count: 0, total: 0 }, SERVICE: { count: 0, total: 0 }, MEDICINE: { count: 0, total: 0 }, EXPENSE: { count: 0, total: 0 } };
 
-// Only these columns are backed by an index the API can sort on server-side
-// (see allowedSortKeys in /api/transactions/get-all). Clicking any other column
-// header still re-fetches (so pagination stays correct) but keeps date order.
+
 const SERVER_SORT_KEYS = new Set(["date", "amount", "method", "branch", "procedure"]);
 const SORT_KEY_MAP = { patient: "patientName" };
 
@@ -567,7 +565,7 @@ export default function StocksTransactionsPage() {
   const toast = useToast();
   const [sortConfig, setSortConfig] = useState({ key: "date", direction: "desc" });
 
-  // Debounce the search box so typing doesn't fire a request per keystroke.
+  
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(tableSearch), 350);
     return () => clearTimeout(t);
@@ -575,7 +573,7 @@ export default function StocksTransactionsPage() {
 
   useEffect(() => { if (activeCategory !== "EXPENSE" && pendingOnly) setPendingOnly(false); }, [activeCategory]);
 
-  // Any of these changing invalidates the current page of results.
+  
   useEffect(() => { setPage(1); }, [activeCategory, filters, debouncedSearch, pendingOnly]);
 
   const fetchData = async () => {
@@ -626,8 +624,8 @@ export default function StocksTransactionsPage() {
 
   const handleSort = (key) => { setSortConfig((prev) => ({ key, direction: prev.key === key && prev.direction === "asc" ? "desc" : "asc" })); };
 
-  // The API already returns exactly this page, sorted and filtered — no client-side
-  // slicing needed.
+  
+  
   const paginatedRows = transactions;
   const total = serverTotal;
   const pages = Math.max(1, Math.ceil(total / perPage));
@@ -635,7 +633,7 @@ export default function StocksTransactionsPage() {
   const startIdx = total === 0 ? 0 : (current - 1) * perPage;
   const endIdx = Math.min(startIdx + paginatedRows.length, total);
 
-  // If a filter change shrinks the result set below the current page, snap back.
+  
   useEffect(() => { if (page > pages) setPage(pages); }, [pages, page]);
 
   const clearFilters = () => { setFilters({ branch: "", dateFrom: getTodayDate(), dateTo: getTodayDate(), paymentMethod: "", procedure: "" }); setTableSearch(""); setPage(1); };

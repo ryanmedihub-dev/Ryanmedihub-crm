@@ -5,7 +5,6 @@ import {
 } from "recharts";
 import { formatCurrency } from "@/lib/financeUI";
 
-
 const fmtK = (n) =>
   Math.abs(n) >= 100000
     ? `₹${(n / 100000).toFixed(1)}L`

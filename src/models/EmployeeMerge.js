@@ -1,8 +1,5 @@
 import mongoose from "mongoose";
 
-// Full audit + replayable record of one duplicate-employee merge. `operations` carries the
-// exact document ids touched per reference path so the revert moves back precisely those,
-// never a document that legitimately started on the survivor.
 const employeeMergeSchema = new mongoose.Schema(
   {
     survivorId: { type: mongoose.Schema.Types.ObjectId, ref: "Employee", required: true, index: true },
@@ -29,7 +26,7 @@ const employeeMergeSchema = new mongoose.Schema(
     ],
     cancelledPayables: [{ type: mongoose.Schema.Types.ObjectId }],
 
-    survivorPatientAdded: [{ type: mongoose.Schema.Types.ObjectId }], // patient ids unioned in
+    survivorPatientAdded: [{ type: mongoose.Schema.Types.ObjectId }], 
 
     totalReferences: Number,
     verification: { type: mongoose.Schema.Types.Mixed },

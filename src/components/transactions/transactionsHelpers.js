@@ -8,12 +8,6 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-/* -------------------------------------------------------------------------- */
-/* Dates                                                                      */
-/* -------------------------------------------------------------------------- */
-
-// Local calendar day as YYYY-MM-DD. toISOString() would be UTC — between IST midnight and
-// 05:30 that reads as *yesterday*, so "Today" / presets would query the wrong day.
 export const isoDate = (d) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
     d.getDate(),
@@ -28,7 +22,6 @@ export const DATE_PRESETS = [
   { key: "all", label: "All Time" },
 ];
 
-/** dateFrom/dateTo for one of the DATE_PRESETS keys — "all" means no date filter at all. */
 export const getPresetRange = (key) => {
   if (key === "yesterday") {
     const y = new Date();
@@ -47,7 +40,6 @@ export const getPresetRange = (key) => {
   return { dateFrom: getTodayDate(), dateTo: getTodayDate() };
 };
 
-/** Which preset (if any) the current dateFrom/dateTo pair matches — for highlighting. */
 export const matchingPreset = (dateFrom, dateTo) => {
   const found = DATE_PRESETS.find((p) => {
     const r = getPresetRange(p.key);
@@ -81,10 +73,6 @@ export const formatTime = (date) => {
   });
 };
 
-/* -------------------------------------------------------------------------- */
-/* Row field getters                                                         */
-/* -------------------------------------------------------------------------- */
-
 export const getPatientName = (row) =>
   row.patient?.personal?.name ||
   row.patientName ||
@@ -111,10 +99,6 @@ export const getExpenseGiverName = (row) => {
 
   return row.expenseGiver?.name || "N/A";
 };
-
-/* -------------------------------------------------------------------------- */
-/* Filters                                                                    */
-/* -------------------------------------------------------------------------- */
 
 export const parseList = (raw) =>
   raw
@@ -175,10 +159,6 @@ export const filterEquals = (a, b) =>
     ? (a || []).length === (b || []).length &&
       (a || []).every((v, i) => v === (b || [])[i])
     : a === b;
-
-/* -------------------------------------------------------------------------- */
-/* Categories                                                                 */
-/* -------------------------------------------------------------------------- */
 
 export const TRANSACTION_CATEGORIES = [
   {
@@ -253,10 +233,6 @@ export const SERVICE_PROCEDURES = [
 ];
 
 export const UNTRACKED_FURTHER_MODE = "__UNTRACKED__";
-
-/* -------------------------------------------------------------------------- */
-/* Style lookups                                                             */
-/* -------------------------------------------------------------------------- */
 
 export const getCategoryStyle = (category) => {
   const styles = {

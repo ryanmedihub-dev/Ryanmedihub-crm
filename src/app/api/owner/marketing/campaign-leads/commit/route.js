@@ -50,7 +50,7 @@ export async function POST(req) {
     const campaign = await AdCampaign.findById(campaignId).lean();
     if (!campaign) return NextResponse.json({ error: "Campaign not found." }, { status: 404 });
 
-    // Never trust the client's payloads — rebuild everything from the raw rows.
+    
     const { summary, results } = await runValidateCampaignLeads(rows, campaign);
 
     const brokeSincePreview = results.filter((r) => confirmedHashes.has(r.rowHash) && r.status === "error");
@@ -65,8 +65,8 @@ export async function POST(req) {
       );
     }
 
-    // skipCreate rows (already in this campaign, or a within-file repeat) are confirmed but
-    // never attempted — they're reported as skipped, not as a failure.
+    
+    
     const skippedByDesign = results.filter((r) => confirmedHashes.has(r.rowHash) && r.skipCreate);
     const toImport = results.filter(
       (r) => confirmedHashes.has(r.rowHash) && (r.status === "ok" || r.status === "warning") && !r.skipCreate,
@@ -106,8 +106,8 @@ export async function POST(req) {
         committedHashes.push(row.rowHash);
         outcomes.push({ rowNumber: row.rowNumber, campaignLeadId: String(doc._id) });
       } catch (err) {
-        // A parallel upload could have inserted the same campaign+phone between our
-        // pre-check and this insert — the unique index is the actual source of truth.
+        
+        
         const friendly = err?.code === 11000
           ? "Already exists for this campaign (created between preview and import)."
           : err?.message || "Failed to create campaign lead";
@@ -131,9 +131,9 @@ export async function POST(req) {
     batch.status = status;
     await batch.save();
 
-    // Send every valid phone in the confirmed rows, including ones skipped as "already
-    // exists for this campaign" — a lead re-labelled by a different campaign's upload since
-    // the last time gets this campaign's label restored. "Last upload wins."
+    
+    
+    
     const label = campaignSourceLabel(campaign);
     const syncPhones = results
       .filter((r) => confirmedHashes.has(r.rowHash) && r.status !== "error" && r.payload)

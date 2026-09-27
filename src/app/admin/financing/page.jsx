@@ -310,7 +310,7 @@ function BorrowingsTab({ branch, includeCancelled, toast }) {
         cancelledCount: all.filter((r) => r.isCancelled).length,
       });
     } catch {
-      // supplementary KPI row — keep last known values on failure
+      
     } finally {
       setSummaryLoading(false);
     }
@@ -756,7 +756,7 @@ function AdvancesTab({ branch, includeCancelled, toast }) {
         cancelledCount: all.filter((r) => r.isCancelled).length,
       });
     } catch {
-      // supplementary KPI row — keep last known values on failure
+      
     } finally {
       setSummaryLoading(false);
     }

@@ -1,14 +1,5 @@
-// Shared helpers for advance→payable settlements, now that one advance can settle several
-// payables (e.g. a 10k advance split 2k/3k/1k/2k across four payables). A document holds its
-// settlement(s) two ways: the original single settlesPayableId/settlesPayableAmount pair
-// (pre-multi-settle rows — never bulk-migrated, still read as-is) and the `settlements` array
-// every settle action writes to now, having first folded any pre-existing legacy pair into the
-// array (see foldLegacyIntoArray) so a document is never split across both shapes going
-// forward. Every consumer that needs "how much has this advance settled" must look at both —
-// these helpers are the one place that logic lives.
 
-// Mongo $expr fragment: total this advance has settled against ONE specific payable.
-// payableIdExpr is a field-path/variable expression, e.g. "$$payableId".
+
 export function settledAgainstPayableExpr(payableIdExpr) {
   return {
     $add: [
@@ -37,7 +28,6 @@ export function settledAgainstPayableExpr(payableIdExpr) {
   };
 }
 
-// Mongo $expr fragment: does this advance document settle the given payable at all.
 export function settlesPayableExprMatch(payableIdExpr) {
   return {
     $or: [
@@ -52,8 +42,6 @@ export function settlesPayableExprMatch(payableIdExpr) {
   };
 }
 
-// Mongo $expr fragment: total this advance has settled across ALL payables (legacy pair +
-// every array line) — what matters for netting the advance's own receivable.
 export const settledTotalExpr = {
   $add: [
     {
@@ -67,15 +55,12 @@ export const settledTotalExpr = {
   ],
 };
 
-// Plain-JS equivalent of settledTotalExpr, for an already-fetched Mongoose doc/lean object.
 export function totalSettledAmount(advance) {
   const legacy = advance.settlesPayableId != null ? Number(advance.settlesPayableAmount ?? advance.amount ?? 0) : 0;
   const arr = (advance.settlements || []).reduce((sum, s) => sum + (Number(s.amount) || 0), 0);
   return Math.round((legacy + arr) * 100) / 100;
 }
 
-// Normalized {payableId, amount, note, settledAt}[] for one advance doc — legacy pair (if
-// present) folded in as a synthetic first line. For read-only surfaces (reports, exports, UI).
 export function settlementLinesFor(advance) {
   const lines = [];
   if (advance.settlesPayableId != null) {
@@ -98,10 +83,6 @@ export function settlementLinesFor(advance) {
   return lines;
 }
 
-// Folds a legacy single settlesPayableId/settlesPayableAmount pair (if present) into the
-// `settlements` array as its first entry, then clears the legacy fields — so a document never
-// settles via both shapes at once. Mutates `advance` in place; caller must still .save() it.
-// No-op if there's nothing legacy to fold. Returns whether it did anything.
 export function foldLegacyIntoArray(advance, { performedBy } = {}) {
   if (advance.settlesPayableId == null) return false;
   advance.settlements = advance.settlements || [];

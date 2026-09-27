@@ -197,7 +197,7 @@ export default function NewReceivableModal({ onClose, onSuccess, toast }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-3 backdrop-blur-sm sm:p-5">
       <div className="flex max-h-[95vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
 
-        {/* HEADER */}
+        {}
         <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 py-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
@@ -218,11 +218,11 @@ export default function NewReceivableModal({ onClose, onSuccess, toast }) {
           </button>
         </div>
 
-        {/* BODY */}
+        {}
         <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50/50">
           <div className="space-y-5 p-4 sm:p-6">
 
-            {/* PURPOSE */}
+            {}
             <section>
               <div className="mb-3">
                 <h4 className="text-sm font-bold text-slate-900">Purpose</h4>
@@ -248,7 +248,7 @@ export default function NewReceivableModal({ onClose, onSuccess, toast }) {
               </select>
             </section>
 
-            {/* PAYER DETAILS */}
+            {}
             {hasPayerSection && (
               <section>
                 <div className="mb-3">
@@ -392,7 +392,7 @@ export default function NewReceivableModal({ onClose, onSuccess, toast }) {
               </section>
             )}
 
-            {/* PERIOD */}
+            {}
             {needsPeriod && (
               <section>
                 <div className="mb-3">
@@ -423,7 +423,7 @@ export default function NewReceivableModal({ onClose, onSuccess, toast }) {
               </section>
             )}
 
-            {/* AMOUNT / DUE DATE */}
+            {}
             <section>
               <div className="mb-3">
                 <h4 className="text-sm font-bold text-slate-900">Amount &amp; Due Date</h4>
@@ -459,7 +459,7 @@ export default function NewReceivableModal({ onClose, onSuccess, toast }) {
               </div>
             </section>
 
-            {/* ADDITIONAL */}
+            {}
             <section>
               <div className="mb-3">
                 <h4 className="text-sm font-bold text-slate-900">Additional Information</h4>
@@ -490,7 +490,7 @@ export default function NewReceivableModal({ onClose, onSuccess, toast }) {
           </div>
         </div>
 
-        {/* FOOTER */}
+        {}
         <div className="flex shrink-0 flex-col-reverse gap-2 border-t border-slate-200 bg-white p-4 sm:flex-row sm:justify-end sm:px-6">
           <button
             type="button"

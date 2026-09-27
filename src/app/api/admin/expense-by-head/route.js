@@ -8,21 +8,6 @@ import { unsettledMethodsSync, accountsSync } from "@/lib/masterData";
 import { cacheKey, cached } from "@/lib/cache";
 const ALLOWED_ROLES = ["admin", "super-admin", "owner"];
 
-/**
- * Expense by head.
- *
- * Deliberately mirrors /api/close-book/pnl's `expense` figure term for term:
- *   expense = direct expense transactions (payableId: null) + payables raised
- * so the sum of every row returned here equals the P&L Expense card exactly.
- *
- * The old dashboard chart read /api/payables/grouped instead, which meant every head in
- * DIRECT_PAYMENT_CATEGORIES — Marketing (Meta/Google ads), Office, Travelling, Bank
- * Charges, Drawings, … — never appeared at all, because those are paid directly and never
- * raise a payable.
- *
- * Direct expenses carry the head on Transactions.expense; payables carry it on
- * Payable.expenseCategory.
- */
 export async function GET(request) {
   try {
     const session = await getServerSession(authOptions);
@@ -121,7 +106,7 @@ async function computeExpenseByHead({ from, to, branch, selectedAccounts, limit 
         ...e,
         direct: round2(e.direct),
         payable: round2(e.payable),
-        // `movement` keeps the key the chart already binds to
+        
         movement: round2(e.direct + e.payable),
         count: e.directCount + e.payableCount,
       }))

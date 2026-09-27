@@ -18,9 +18,6 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-// Admin-managed master data. Super-admin only (also enforced on every /api/master-data route).
-// A change can take up to ~60s to reach every server instance (per-instance cache, 60s TTL).
-
 const TABS = [
   { key: "heads", label: "Expense Heads" },
   { key: "methods", label: "Payment Methods" },
@@ -32,14 +29,11 @@ const TABS = [
 const ROUTING_CATEGORIES = ["TRANSPLANT", "SERVICE", "MEDICINE"];
 const DEFAULT_ROUTING_METHODS = ["cash", "card", "upi", "bajaj_loan", "fibe_loan"];
 
-// Files that branch on a system method by name — shown in the lock tooltip.
 const SYSTEM_DEPS = {
   paid_to_external: "externalPartyDerivation.js · collabDerivation.js",
   paid_by_other: "externalPartyDerivation.js",
   offset_settlement: "collabDerivation.js (clinic-share contra pair)",
 };
-
-// ----------------------------------------------------------------------------- data helpers
 
 async function apiSend(url, method, body) {
   const res = await fetch(url, {
@@ -96,8 +90,6 @@ function matchesStatus(row, status) {
   if (status === "retired") return row.isActive === false;
   return true;
 }
-
-// ----------------------------------------------------------------------------- UI atoms
 
 function Spinner({ className = "" }) {
   return <Loader2 className={`w-4 h-4 animate-spin ${className}`} />;
@@ -199,8 +191,6 @@ function Field({ label, children }) {
 const inputCls =
   "w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200";
 
-// ----------------------------------------------------------------------------- page
-
 export default function MasterDataSettingsPage() {
   const { data: session, status } = useSession();
   const [tab, setTab] = useState("heads");
@@ -261,8 +251,6 @@ export default function MasterDataSettingsPage() {
   );
 }
 
-// ----------------------------------------------------------------------------- Expense Heads
-
 function ExpenseHeadsTab() {
   const toast = useToast();
   const cats = useMasterRows("EXPENSE_CATEGORY");
@@ -270,7 +258,7 @@ function ExpenseHeadsTab() {
   const [selected, setSelected] = useState(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [modal, setModal] = useState(null); // { mode: "new-cat" | "edit-cat" | "new-sub" | "edit-sub", row }
+  const [modal, setModal] = useState(null); 
 
   const shownCats = cats.rows.filter(
     (r) => matchesSearch(r, search) && matchesStatus(r, statusFilter),
@@ -332,7 +320,7 @@ function ExpenseHeadsTab() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Categories */}
+        {}
         <div className="border border-gray-200 rounded-xl overflow-hidden">
           <div className="px-3 py-2 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">
             Categories {cats.loading && <Spinner className="inline ml-1" />}
@@ -381,7 +369,7 @@ function ExpenseHeadsTab() {
           </div>
         </div>
 
-        {/* Sub-types */}
+        {}
         <div className="border border-gray-200 rounded-xl overflow-hidden">
           <div className="px-3 py-2 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">
             {selectedCat ? `Sub-types of “${selectedCat.label}”` : "Select a category"}
@@ -709,14 +697,12 @@ function SubTypeModal({ row, parent, categories, onClose, onSaved }) {
   );
 }
 
-// ----------------------------------------------------------------------------- Payment Methods
-
 function MethodsTab() {
   const toast = useToast();
   const { rows, usage, loading, reload } = useMasterRows("PAYMENT_METHOD");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [flagPreview, setFlagPreview] = useState(null); // { row, flag, next }
+  const [flagPreview, setFlagPreview] = useState(null); 
   const [editRow, setEditRow] = useState(null);
   const [creating, setCreating] = useState(false);
 
@@ -1028,8 +1014,6 @@ function MethodCreateModal({ onClose, onSaved }) {
   );
 }
 
-// ----------------------------------------------------------------------------- Receipt Modes / Accounts
-
 function SimpleListTab({ kind, noun, showRefs = false }) {
   const toast = useToast();
   const { rows, usage, loading, reload } = useMasterRows(kind);
@@ -1232,8 +1216,6 @@ function SimpleRowModal({ row, kind, noun = "value", onClose, onSaved }) {
     </Modal>
   );
 }
-
-// ----------------------------------------------------------------------------- Bank Routing
 
 function RoutingTab() {
   const toast = useToast();

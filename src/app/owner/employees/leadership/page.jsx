@@ -36,10 +36,10 @@ export default function LeadershipPage() {
   const router = useRouter();
   const [filterState, setFilterState] = useState(null);
 
-  const [editing, setEditing] = useState(null); // { tlNameKey, tlName, managerName }
+  const [editing, setEditing] = useState(null); 
   const [managerInput, setManagerInput] = useState("");
   const [saving, setSaving] = useState(false);
-  const [saveNotice, setSaveNotice] = useState(null); // { kind, title, text }
+  const [saveNotice, setSaveNotice] = useState(null); 
 
   const [sortKey, setSortKey] = useState("teamTotalCalls");
   const [sortDir, setSortDir] = useState("desc");

@@ -13,16 +13,6 @@ import { cacheKey, cached } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["owner", "super-admin"];
 
-// TL & Manager page (Owner Panel v2, Part 1) — rows are TEAMS, not individuals.
-// Scoped to Agent-section employees: `tlName` is a callby concept (one string
-// shared by many agents making calls) — counsellors/surgery/HR have no
-// comparable team structure in the data today.
-//
-// `tlName` is free text with no normalization at entry, so grouping is only as
-// clean as the data. This groups on trim+lowercase and reports every distinct
-// raw spelling feeding each group, so typos ("Ashu" vs "ashu ") are visible
-// instead of silently creating phantom teams.
-
 export async function GET(req) {
   try {
     await dbConnect();
@@ -43,7 +33,7 @@ export async function GET(req) {
         .lean();
 
       let agents = allEmployees.filter((e) => employeeSection(e.role) === "Agent");
-      // Default to active agents (what the Agents page shows); ?isactive=false / all widen it.
+      
       if (isactive === null || isactive === true) agents = agents.filter((e) => e.isactive !== false);
       else agents = agents.filter((e) => e.isactive === false);
       if (branch && branch !== "All") agents = agents.filter((e) => e.branch === branch);
@@ -54,8 +44,8 @@ export async function GET(req) {
 
       const { metricsById, callbyError } = await buildAgentMetrics(agents, period);
 
-      // Same scoring inputs as the Agents list, so a team score is the mean of
-      // exactly the member scores the roster shows.
+      
+      
       const periodDays = daysInPeriod(period.from, period.to);
       const cohort = agents.map((e) => {
         const id = String(e._id);
@@ -64,7 +54,7 @@ export async function GET(req) {
       });
       const perfById = scoreCohort("Agent", cohort);
 
-      const groups = new Map(); // tlNameKey -> { rawNames: Set, members: [] }
+      const groups = new Map(); 
       for (const e of agents) {
         const raw = (e.tlName || "").trim();
         const tlNameKeyValue = raw.toLowerCase() || UNASSIGNED_TEAM;
@@ -94,9 +84,9 @@ export async function GET(req) {
             { totalCalls: 0, interested: 0, visited: 0, converted: 0 },
           );
 
-          // Best-effort: the TL's own Employee record, matched by name — there is
-          // no employeeId link from callby's tlName string to an Employee. Flagged
-          // via tlEmployeeFound rather than guessing when ambiguous/absent.
+          
+          
+          
           const tlEmployee = tlNameKey !== UNASSIGNED_TEAM ? empByLowerName.get(tlNameKey) : null;
 
           return {
@@ -105,11 +95,11 @@ export async function GET(req) {
             distinctSpellings: [...g.rawNames],
             branch: [...new Set(g.members.map((m) => m.branch).filter(Boolean))].join(", ") || "—",
             teamSize: g.members.length,
-            // Call/engagement totals below are summed only from linked members — an
-            // unlinked member contributes silent zeros, not "we don't know". Carry
-            // the coverage count so the UI can flag a team whose total is partial.
-            // Linked = employeeId OR callbyUserId (see buildAgentMetrics's join priority),
-            // not just callbyUserId — an employeeId-only link must count as linked here too.
+            
+            
+            
+            
+            
             teamLinkedCount: memberIds.filter((id) => metricsById.get(id)?.callbyLinked).length,
             teamTotalCalls: teamTotals.totalCalls,
             teamInterested: teamTotals.interested,

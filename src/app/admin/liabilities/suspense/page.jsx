@@ -49,7 +49,7 @@ export default function LiabilitiesSuspensePage() {
       .catch((e) => e.name !== "AbortError" && console.error(e))
       .finally(() => setLoading(false));
     return () => ctrl.abort();
-  }, [scopeQS, extraParams]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [scopeQS, extraParams]); 
 
   return (
     <div className="space-y-4">

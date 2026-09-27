@@ -1,13 +1,5 @@
 "use client";
 
-// One client fetch wrapper for every owner page. It:
-//   • checks res.ok — a 401 auth bounce / 500 HTML error page no longer lands in the generic
-//     catch as "Network error"
-//   • reads the body as text first, so a non-JSON error body doesn't throw on res.json()
-//   • honours the app's { success:false, message } convention
-//   • distinguishes an AbortController cancel from a real failure
-//
-// Returns a consistent shape: { ok, status, data, error, aborted }.
 export async function ownerFetch(input, init) {
   let res;
   try {
@@ -23,7 +15,7 @@ export async function ownerFetch(input, init) {
     try {
       body = JSON.parse(raw);
     } catch {
-      body = null; // HTML error page, proxy text, empty auth redirect, …
+      body = null; 
     }
   }
 

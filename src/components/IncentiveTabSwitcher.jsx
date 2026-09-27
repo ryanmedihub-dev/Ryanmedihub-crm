@@ -5,13 +5,8 @@ import IncentiveEntryForm from "@/components/IncentiveEntryForm";
 import TargetIncentiveForm from "@/components/TargetIncentiveForm";
 import { HeartPulse, Target } from "lucide-react";
 
-/**
- * The "Incentive" tab body: two inner modes — a per-patient incentive (tops up the monthly
- * INCENTIVE payable) and a target-based incentive (raises its own standalone payable).
- * Shared by the admin / reception / stock transaction-create pages.
- */
 export default function IncentiveTabSwitcher({ picker }) {
-  const [mode, setMode] = useState("patient"); // "patient" | "target"
+  const [mode, setMode] = useState("patient"); 
 
   return (
     <div className="space-y-6">

@@ -3,11 +3,6 @@
 import { formatCurrency } from "@/lib/financeUI";
 import { useLedgerScope } from "@/components/finance/LedgerScopeProvider";
 
-/**
- * A compact metric row for a ledger inner page. Each item is { label, value, tone? }.
- * Values that are numbers are money-formatted; strings pass through. Every block states its
- * basis with the shared "As of …" caption.
- */
 export default function LedgerMetrics({ items, loading = false }) {
   const { asOfLabel } = useLedgerScope();
   return (

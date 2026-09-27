@@ -9,9 +9,6 @@ import { callRoute } from "../sources";
 import { AI_BRIEF_MODEL } from "../config";
 import { round, pct, topN, bottomN, sumBy, capPayload } from "./_helpers";
 
-// Campaign names are business data, not PII, but they're aliased C## anyway —
-// keeps payload keys uniform and a name that happens to contain a phone-like
-// number never trips the PII guard. Platforms (Meta/Google) stay as-is.
 function median(nums) {
   const s = nums.filter((n) => Number.isFinite(n)).sort((a, b) => a - b);
   if (!s.length) return null;
@@ -207,7 +204,7 @@ const marketingFeatures = {
       const totalRows = sumBy(batches, "totalRows");
       const totalCreated = sumBy(batches, "created");
       const totalFailed = sumBy(batches, "failed");
-      const lastUpload = batches[0]?.createdAt || null; // already sorted newest-first
+      const lastUpload = batches[0]?.createdAt || null; 
       const daysAgo = (d) => (d ? Math.floor((Date.now() - new Date(d).getTime()) / 86400000) : null);
       const facts = capPayload({
         batchCount: batches.length, totalRowsUploaded: totalRows, totalCreated, totalFailed,

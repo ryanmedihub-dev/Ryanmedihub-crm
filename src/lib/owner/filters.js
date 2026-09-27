@@ -1,25 +1,15 @@
 import { ALL_BRANCHES } from "@/lib/branches";
 
-// One branch list for every owner filter bar (was copy-pasted as BRANCHES / BRANCH_OPTIONS
-// in 9 pages).
 export const OWNER_BRANCHES = ["All", ...ALL_BRANCHES];
 
-// Backward-looking ranges — used by dashboard, marketing, finance, conversion,
-// counsellor-conversion. (Was an identical 20-line copy in each; consolidated here.)
 export const DATE_RANGES = [
   "Today", "Yesterday", "This Week", "This Month", "Last 7 Days", "Last 30 Days", "Custom",
 ];
 
-// Every owner list page defaults to today (Owner Panel v2, F3).
 export const DEFAULT_DATE_RANGE = "Today";
 
-// Forward-looking ranges — surgery-planner only (it plans surgeries ahead, not behind).
 export const FORWARD_DATE_RANGES = ["Today", "Next 7 Days", "Next 30 Days", "Custom"];
 
-/**
- * A [from, to] window (ISO strings, day-boundary aligned) for a backward range label.
- * Identical to the five copies it replaces.
- */
 export function buildDateRange(range, custom = {}) {
   const now = new Date();
   let from = new Date();
@@ -35,9 +25,9 @@ export function buildDateRange(range, custom = {}) {
     to = new Date(from);
     to.setHours(23, 59, 59, 999);
   } else if (range === "This Week") {
-    // Week starts Monday (India convention).
+    
     from = new Date(now);
-    const dow = (from.getDay() + 6) % 7; // 0 = Monday
+    const dow = (from.getDay() + 6) % 7; 
     from.setDate(from.getDate() - dow);
     from.setHours(0, 0, 0, 0);
   } else if (range === "This Month") {
@@ -60,7 +50,6 @@ export function buildDateRange(range, custom = {}) {
   return { from: from.toISOString(), to: to.toISOString() };
 }
 
-/** Forward window for surgery-planner: from = today start, to = today + N. */
 export function buildForwardDateRange(range, custom = {}) {
   const now = new Date();
   let from = new Date(now);

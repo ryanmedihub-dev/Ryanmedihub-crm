@@ -9,9 +9,6 @@ import { cacheKey, cached } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["owner", "super-admin"];
 
-// Separate from the main /api/owner/employees/[id] route deliberately — this is a distinct,
-// independently-paginated section (see loadLinkedPatients's header comment for why it's not
-// folded into the role-specific rows that route already returns).
 export async function GET(req, { params }) {
   try {
     await dbConnect();

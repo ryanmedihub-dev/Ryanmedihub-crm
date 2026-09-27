@@ -3,11 +3,6 @@
 import Link from "next/link";
 import { relativeTime } from "@/lib/ai/client/aiLabels";
 
-// Every owner AI feature as a node, grouped by its section (the part of the
-// feature key before the first "."), with a rail line from each section's hub
-// to its nodes — the coverage[] array already carries everything needed
-// (status is server-computed: fresh/stale/failing/never), this component only
-// lays it out. Reused compact on the AI landing page, full on AI Health.
 const STATUS_COLOR = { fresh: "var(--pos)", stale: "var(--warn)", failing: "var(--crit)", never: "var(--ink-muted)" };
 const SECTION_LABEL = {
   dashboard: "Dashboard", statistics: "Statistics", employees: "Employees", calls: "Calls",

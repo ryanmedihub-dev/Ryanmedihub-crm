@@ -26,14 +26,6 @@ function Tile({ label, value, tone = "gray" }) {
   );
 }
 
-/**
- * The Opening → +Receipts → −Payments → ±Contra → ±Suspense → ±Borrowing → ±Advance → =Closing
- * cash-basis waterfall, shared by /admin/receipts and /admin/payments so both pages reconcile
- * against Close Book the same way. Borrowings received and advances paid out are real cash
- * movements on these accounts (just not "revenue"/"expense"), so — same as contra and suspense —
- * the closing balance already carries them; leaving them out of the check here would make any
- * borrowing/advance activity in the period look like a false mismatch.
- */
 export default function CashReconciliation({ from, to, branch }) {
   const [recon, setRecon] = useState(null);
   const [receiptsTotal, setReceiptsTotal] = useState(null);

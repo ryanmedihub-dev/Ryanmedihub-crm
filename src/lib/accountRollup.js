@@ -13,11 +13,6 @@ import {
 
 export const LOAN_ACCOUNTS = ["Bajaj Loan", "Fibe Loan"];
 
-/**
- * The per-account opening / money-in / money-out / closing rollup that powers
- * /api/close-book/accounts (and now the ledger overview). Extracted verbatim so both callers
- * share one code path and the numbers can't drift.
- */
 export async function getAccountRollup({ filter = "", from = "", to = "", branch = "", accountsParam = "" }) {
   const effectiveTo = to || new Date().toISOString();
   const filterAccounts =

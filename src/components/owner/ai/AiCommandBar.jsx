@@ -6,9 +6,6 @@ import { useRouter } from "next/navigation";
 import { OWNER_LINK_ITEMS } from "@/lib/ai/links";
 import { useShell } from "@/components/owner/ShellContext";
 
-// Substring match ranks by how early it appears; otherwise an in-order
-// subsequence match (a loose "types most of the letters" fallback) ranks
-// low. No fuzzy-search dependency for an 8-item shortlist.
 function fuzzyScore(query, text) {
   const q = query.toLowerCase();
   const t = text.toLowerCase();
@@ -19,8 +16,8 @@ function fuzzyScore(query, text) {
 }
 
 export default function AiCommandBar() {
-  // Open state lives in ShellContext, not here — OwnerTopbar's "⌘K Ask AI"
-  // button needs to open the same palette instance.
+  
+  
   const { cmdBarOpen: open, closeCommandBar, toggleCommandBar } = useShell();
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);

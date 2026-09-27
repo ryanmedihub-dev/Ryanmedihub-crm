@@ -27,9 +27,9 @@ const handler = async (req) => {
       patient,
       salaryStructure,
       incentiveRate,
-      // Optional identity fields (Owner Panel v2). callbyUserId is deliberately
-      // NOT accepted here — it is owned by the reconciliation script and the
-      // /api/owner/callby-links route.
+      
+      
+      
       dateOfJoining: dateOfJoining || undefined,
       tlName: (tlName ?? "").trim() || undefined,
       managerName: (managerName ?? "").trim() || undefined,

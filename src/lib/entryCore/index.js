@@ -1,12 +1,4 @@
-// Dispatch table: registry type key -> the entryCore function that actually writes to the
-// DB, extracted from the legacy route it still shares a URL with (see each module's own
-// header comment for exactly which route.js it was ported from).
-//
-// "incentive" is deliberately NOT wrapped in a new module here — recordPatientIncentive()
-// (lib/incentiveDerivation.js) is already the single, shared implementation behind both
-// /api/incentives and /api/patients/[id]/incentives (confirmed in AUDIT.md — the one
-// surface that was already genuinely single-sourced before this engine existed). Wrapping
-// it again would just add a second layer for no reason.
+
 
 import { recordPatientIncentive, IncentiveError } from "@/lib/incentiveDerivation";
 import { createRevenue } from "./createRevenue";
@@ -21,12 +13,6 @@ import { createSuspense } from "./createSuspense";
 import { createCollabCase } from "./createCollabCase";
 import { createCollabSettlement } from "./createCollabSettlement";
 
-// Every legacy route wraps its whole handler in one try/catch that maps specific thrown
-// errors (a Mongoose ValidationError, a duplicate-key E11000) to a friendly 4xx instead of
-// a bare 500 — verified against each route's own catch block (AUDIT.md's route reads).
-// entryCore functions don't catch internally (they return {error,status} for the checks
-// they make explicitly), so this reproduces each route's OWN mapping for whatever still
-// throws past those checks (a schema validation failure on .save(), a unique-index hit).
 function mapThrownError(typeKey, error) {
   if (typeKey === "revenue.transplant" && error?.name === "ValidationError") {
     return { error: error.message, status: 400 };
@@ -47,11 +33,11 @@ function mapThrownError(typeKey, error) {
     return { error: error.message, status: 400 };
   }
   if (typeKey === "collab.case") {
-    // cases/create/route.js's own catch returns 400 (not 500) for anything
-    // createCollabCaseAtomic throws.
+    
+    
     return { error: error?.message || "Failed to create collab case", status: 400 };
   }
-  return null; // let the route's own generic 500 handler take it
+  return null; 
 }
 
 async function runIncentive({ payload, session: authSession }) {
@@ -126,13 +112,6 @@ async function dispatch(typeKey, { payload, session: authSession, documentId }) 
   }
 }
 
-/**
- * dispatchEntry(typeKey, { payload, session, documentId }) — routes to the right core
- * function. `documentId` carries the path-segment id the legacy route (receivables/[id]/
- * receipt) expects when the type settles against an already-known document. Anything the
- * core function throws (rather than returns as {error,status}) is mapped the same way its
- * source route already mapped it — see mapThrownError above.
- */
 export async function dispatchEntry(typeKey, args) {
   try {
     return await dispatch(typeKey, args);

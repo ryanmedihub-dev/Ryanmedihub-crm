@@ -70,9 +70,9 @@ const transactionSchema = new mongoose.Schema(
 
     isSettlement: { type: Boolean, default: false, index: true },
 
-    // Set only by expense/create-with-settlement: the advance settlement line _id(s) this
-    // payment was booked alongside. On a full reversal of this transaction those lines are
-    // unsettled too, so the advance-receivable isn't left half-recovered.
+    
+    
+    
     advanceSettlementIds: [{ type: mongoose.Schema.Types.ObjectId }],
 
     reversalOf: { type: mongoose.Schema.Types.ObjectId, ref: "Transactions", default: null, index: true },
@@ -178,17 +178,17 @@ const transactionSchema = new mongoose.Schema(
       enum: ["Revenue", "Expenses"],
     },
 
-    // Was a static enum; the list is now admin-managed master data, so validation moved to a
-    // runtime validator that also grandfathers a value already on the document (see §0.1).
+    
+    
     method: {
       type: String,
       ...masterDataEnum("PAYMENT_METHOD", "method"),
     },
 
     receiptMode: { type: String, default: "" },
-    // Account the money actually moved through. Required for every real cash movement;
-    // exempt only for the non-cash methods (money never touches one of our own accounts —
-    // paid by/to an external party, or netted off against a package/settlement).
+    
+    
+    
     furtherMode: {
       type: String,
       default: "",
@@ -465,11 +465,7 @@ transactionSchema.index({ approvalStatus: 1, costType: 1, date: 1 });
 transactionSchema.index({ date: -1, method: 1 });
 transactionSchema.index({ branch: 1, transactionCategory: 1, date: -1 });
 
-// Settlement lookups. payableAggregation/receivableAggregation $lookup on these per document
-// to compute paid/pending live; without an index each lookup is a full collection scan, so the
-// Assets and Liabilities pages cost O(documents x transactions). approvalStatus and method are
-// in the same filter, so they belong in the same compound index — the whole sub-pipeline is
-// then served from the index alone. Partial, since most transactions have neither field set.
+
 transactionSchema.index(
   { payableId: 1, approvalStatus: 1, method: 1, date: 1 },
   { partialFilterExpression: { payableId: { $type: "objectId" } } },
@@ -479,10 +475,9 @@ transactionSchema.index(
   { partialFilterExpression: { receivableId: { $type: "objectId" } } },
 );
 
-// collabRef.caseId already carries `index: true` on the field itself (see the collabRef
-// sub-schema above) — no separate schema.index() call needed; adding one duplicates it.
 
-// Google Sheets finance webhook — fires once per newly-created transaction, never on edits.
+
+
 transactionSchema.pre("save", function () {
   this.$locals.wasNew = this.isNew;
 });

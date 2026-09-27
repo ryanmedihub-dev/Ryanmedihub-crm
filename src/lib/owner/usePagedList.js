@@ -3,16 +3,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { DEFAULT_PAGE_SIZE } from "@/lib/owner/pagination";
 
-// Page/sort/search state for a server-paginated ReportTable. The API does the
-// sorting and slicing (src/lib/owner/pagination.js); this hook only holds the
-// request state and resets to page 1 whenever anything that reorders the list
-// changes, so a stale page number can never point past the end.
-//
-//   const list = usePagedList({ defaultSort: "total", defaultDir: "desc" });
-//   ... ownerFetch(`/api/x?${base}&${list.query}`)
-//   <ReportTable {...list.tableProps} rows={...} total={data.total} />
-// `dirForKey(key)` may return the direction a NEWLY selected column should
-// open with (e.g. "desc" for metrics so the first click reads best-first).
 export function usePagedList({ defaultSort = "name", defaultDir = "asc", dirForKey, pageSize: initialPageSize = DEFAULT_PAGE_SIZE } = {}) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(initialPageSize);
@@ -42,8 +32,8 @@ export function usePagedList({ defaultSort = "name", defaultDir = "asc", dirForK
     setPageSize(n);
   }, []);
 
-  // Call when filters outside the table change (date range, branch) so the
-  // new result set is read from its first page.
+  
+  
   const resetPage = useCallback(() => setPage(1), []);
 
   const query = useMemo(() => {

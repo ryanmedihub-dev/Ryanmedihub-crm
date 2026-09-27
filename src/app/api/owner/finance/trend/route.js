@@ -7,15 +7,6 @@ import { cacheKey, cached } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin", "owner"];
 
-// Daily receipts/payments for the /owner/finance landing trend chart. Numbers
-// come from src/lib/owner/metrics/finance.js (shared with Sanya). Reuses
-// the EXACT match filter close-book's cash-flow route uses
-// (buildBalanceMatch) — same definition, just grouped by day — so this trend
-// sums to the same receipts/payments the landing page's existing KPI row
-// already shows. Deliberately NOT a P&L trend: /api/close-book/pnl's accrual
-// logic (direct transactions + receivables/payables raised) is nontrivial and
-// re-deriving it per day risked a second, disagreeing number — cash-basis is
-// what's shown here, labelled as such.
 export async function GET(req) {
   try {
     await dbConnect();

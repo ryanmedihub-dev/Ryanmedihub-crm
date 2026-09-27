@@ -16,9 +16,9 @@ export default function DirectExpenseSection({
   collapsibleRouting = !forEdit,
 }) {
   const { expenseCategories, payableExpenseCategories, getExpenseTypes } = useMasterData();
-  // This section is only rendered in non-admin panels (sales / reception / stocks), where
-  // payable-type expense categories are managed elsewhere, so hide them here. Incentive is
-  // never a direct expense — it must go through a payable (patient-based or target-based).
+  
+  
+  
   const DIRECT_EXPENSE_CATEGORY_OPTIONS = expenseCategories.filter(
     (cat) => !payableExpenseCategories.includes(cat) && cat !== "Incentive",
   );

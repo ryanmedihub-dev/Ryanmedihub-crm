@@ -1,4 +1,4 @@
-// Extracted from payables/create/route.js's POST handler — used by "payable.raise".
+
 
 import mongoose from "mongoose";
 import Payable, { PAYABLE_KIND_VALUES, PAYABLE_PURPOSE_VALUES } from "@/models/Payable";
@@ -64,8 +64,8 @@ export async function createPayable({ payload, session: authSession }) {
   const commonFields = {
     period: period?.month && period?.year ? period : undefined,
     relatedPatient: relatedPatient || undefined,
-    // Every payable needs a dueDate for the ledger pages' date-range filter to ever see it —
-    // a missing one never matches a from/to range, so it silently falls out of every filter.
+    
+    
     dueDate: dueDate ? new Date(dueDate) : new Date(),
     branch: branch || authSession.user.branch,
     remarks: remarks || "",

@@ -1,6 +1,5 @@
 export const LOAN_ACCOUNTS = ["Bajaj Loan", "Fibe Loan"];
 
-// Written out in full — Tailwind can't see class names built by string interpolation.
 export const CASH_TONES = {
   emerald: { box: "border-emerald-100 bg-emerald-50/40", label: "text-emerald-700", icon: "text-emerald-300" },
   rose: { box: "border-rose-100 bg-rose-50/40", label: "text-rose-700", icon: "text-rose-300" },

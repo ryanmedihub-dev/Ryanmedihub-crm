@@ -5,11 +5,6 @@ import dbConnect from "@/lib/db";
 import AiInsight from "@/models/AiInsight";
 import { fingerprint } from "@/lib/ai/fingerprint";
 
-// POST /api/owner/ai/insight/[feature]/feedback — Body: { kind, scope, vote }.
-// Thumbs up/down on a cached insight. scope must match exactly what the
-// insight was generated for (same whitelisted params), so this re-derives
-// the same scopeKey the engine used rather than trusting a key from the client.
-
 const ALLOWED_ROLES = ["owner", "super-admin"];
 
 export async function POST(req, { params }) {

@@ -3,7 +3,7 @@
 import CountUp from "./CountUp";
 import { SENTIMENT_TONE } from "@/lib/ai/client/aiLabels";
 
-const CIRCUMFERENCE = 2 * Math.PI * 42; // r=42
+const CIRCUMFERENCE = 2 * Math.PI * 42; 
 
 const TONE_STOP = { good: "var(--pos)", info: "var(--info)", warn: "var(--warn)", bad: "var(--crit)" };
 

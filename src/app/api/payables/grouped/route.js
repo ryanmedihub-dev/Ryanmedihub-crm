@@ -13,9 +13,7 @@ import { resolveBranchFilter } from "@/lib/branches";
 import { attachCollabPatients } from "@/lib/collabPatientLookup";
 import { cacheKey, cached } from "@/lib/cache";
 
-// "owner" added (Owner Panel v2, Part 5) — this route is GET-only (read-only
-// grouped payables view); /owner/finance/liabilities and /owner/finance/rent
-// reuse it directly rather than a parallel query.
+
 const ALLOWED_ROLES = ["admin", "super-admin", "owner"];
 
 export async function GET(request) {
@@ -35,9 +33,9 @@ export async function GET(request) {
     const groupByParam = searchParams.get("groupBy");
     const groupBy = groupByParam === "vendor" ? "vendor" : groupByParam === "party" ? "party" : "category";
     const isParty = groupBy === "party";
-    // Employee Payables' hybrid mode: level 1 stays the Salary/Incentive category, level 2
-    // lists the employees within it instead of the (fixed, useless) expense sub-type, and
-    // level 3's "subType" param then carries an employee label instead of a real sub-type.
+    
+    
+    
     const subGroupBy = searchParams.get("subGroupBy") === "party" ? "party" : undefined;
     const subGroupByParty = subGroupBy === "party";
     const vendorId = searchParams.get("vendorId") || "";
@@ -52,8 +50,8 @@ export async function GET(request) {
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
     const limit = Math.min(200, Math.max(1, parseInt(searchParams.get("limit") || "50")));
 
-    // Optional purpose filter — a comma-separated list; reject unknown values loudly rather
-    // than silently ignoring one (which would make the page show everything and look fine).
+    
+    
     const purposeList = (searchParams.get("purpose") || "")
       .split(",")
       .map((s) => s.trim())
@@ -86,7 +84,7 @@ export async function GET(request) {
         searchParams,
       }), meta);
     } catch (err) {
-      if (err instanceof Response) return err; // a validation error thrown from inside the producer
+      if (err instanceof Response) return err; 
       throw err;
     }
     const res = NextResponse.json(data);
@@ -104,8 +102,8 @@ async function computeGroupedPayables({
   searchParams,
 }) {
     if (level < 3) {
-      // "Search employee" boxes accept a name or a staff employeeId code — resolve a code
-      // to the matching employee's name so the label regex below still finds them.
+      
+      
       let partySearch = party;
       if (party) {
         const emp = await Employee.findOne({ employeeId: party }).select("name").lean();
@@ -195,7 +193,7 @@ async function computeGroupedPayables({
       if (!category) {
         throw NextResponse.json({ error: "party is required at level 3" }, { status: 400 });
       }
-      // `category` carries the exact payee label when grouping by party.
+      
       match = { "payee.label": category };
     } else {
       if (!category) {
@@ -212,13 +210,13 @@ async function computeGroupedPayables({
     if (party && !isParty && !subGroupByParty) match["payee.label"] = { $regex: party, $options: "i" };
     if (purpose) match.purpose = { $in: purpose };
     if (payeeKind && groupBy !== "vendor" && !isParty) match["payee.kind"] = payeeKind;
-    // Period filter for the monthly payables (salary, rent, …) — narrows the document list only.
+    
     const periodMonth = parseInt(searchParams.get("periodMonth") || "", 10);
     const periodYear = parseInt(searchParams.get("periodYear") || "", 10);
     if (Number.isInteger(periodMonth)) match["period.month"] = periodMonth;
     if (Number.isInteger(periodYear)) match["period.year"] = periodYear;
-    // The ledger scope bar's date range — until now this only shaped the level 1/2 opening vs
-    // movement rollup math, never which documents this level-3 list actually shows.
+    
+    
     if (from || to) {
       match.dueDate = {};
       if (from) match.dueDate.$gte = new Date(from);
@@ -244,7 +242,7 @@ async function computeGroupedPayables({
     ]);
     const pageRows = facet?.rows || [];
     const total = facet?.total?.[0]?.count || 0;
-    // Collab payables name the clinic as payee — pull through the patient the case is about.
+    
     await attachCollabPatients(pageRows, "clinicSharePayable");
     const closedPeriods = await loadClosedPeriodSnapshot();
     const rows = pageRows.map((r) => ({
@@ -252,7 +250,7 @@ async function computeGroupedPayables({
       lockReason: blockReasonFromSnapshot(closedPeriods, null, r.dueDate || r.createdAt || new Date()),
     }));
 
-    // Human staff code alongside the name for EMPLOYEE payees (salary / incentive / etc.).
+    
     const empRefIds = [
       ...new Set(
         rows

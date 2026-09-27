@@ -1,17 +1,4 @@
-// The single declarative source of truth for every entry type the universal engine can
-// record (Phase B brief §3.1's acceptance list). Isomorphic — no browser-only or Node-only
-// imports — so both UniversalEntryForm (client) and /api/entries/create (server) read the
-// exact same definitions.
-//
-// What belongs here vs. what doesn't:
-//   - Real, fixed enums (payee/party kinds, Mongoose purpose enums) are fine as literals —
-//     they're schema, not runtime-editable data.
-//   - Category/method/account lists are NEVER hardcoded here — every consumer must resolve
-//     them from master data (useMasterData() client-side, *Sync() server-side) at render/
-//     validate time. `fields` below only names which field SLOTS render, not their options.
-//   - `endpoint` names the LEGACY route this type still posts to today. Per the migration
-//     order this stays true until each surface's own step flips it to POST
-//     /api/entries/create — building this registry does not repoint any existing UI.
+
 
 export const ENTRY_GROUPS = ["Revenue", "Expense", "Payable", "Receivable", "Financing", "Other"];
 
@@ -64,9 +51,9 @@ export const ENTRY_TYPES = {
     buildPayload: "revenue",
     revenueCategory: "MEDICINE",
     multiLine: true,
-    // NOTE: unlike revenue.transplant/revenue.service, medicine/create/route.js never
-    // recomputes patient.payments (AUDIT.md B1/N-finding). Preserved as-is here — not a
-    // registry bug, a faithful description of what the legacy route actually does today.
+    
+    
+    
     sideEffects: ["transactionPerLine", "sharedBatchId", "stockDecrement", "receivableAllocationOrExternalReceivable"],
   },
 
@@ -113,9 +100,9 @@ export const ENTRY_TYPES = {
     endpoint: "/api/transactions/expense/create",
     buildPayload: "expense.agent",
     sideEffects: ["transaction", "payableLink", "auditTrail"],
-    // The obligation itself (Patient.incentives[] row + opening/topping-up the payable) is
-    // NOT this type — that's the separate `incentive` type below, which is the one place in
-    // the audited system that was already genuinely single-sourced (recordPatientIncentive).
+    
+    
+    
   },
 
   "expense.patient.commission": {
@@ -172,13 +159,13 @@ export const ENTRY_TYPES = {
       "method", "paymentId", "routing", "externalParty", "remarks", "receipts",
     ],
     required: ["expenseCategory", "expenseSubType", "amount", "branch", "method"],
-    // purpose/payeeKind are DERIVED at submit time from `expenseCategory` via
-    // derive.js's purposeForCategory()/PAYABLE_CATEGORY_TO_FIXED_KIND — not fixed here,
-    // because this one registry entry covers every payable-raising head category
-    // (Rent, Electricity Bill, Collab Clinic Payment, Medical Consumables, Medicine
-    // Procurement, Professional Expenses, Lab Expenses, Interest Expenses, Taxes,
-    // Hardware/Software Rental Expenses) — mirroring getPayableContext.js's "rent"
-    // section, which is itself one flow for all of these.
+    
+    
+    
+    
+    
+    
+    
     payable: { periodic: null, allowRaise: true, allowSettle: true },
     endpoint: "/api/transactions/expense/create",
     buildPayload: "expense.head",
@@ -221,9 +208,9 @@ export const ENTRY_TYPES = {
     roles: ["admin", "super-admin"],
     fields: ["payableId", "amount", "date", "branch", "method", "paymentId", "routing", "externalParty", "remarks", "receipts", "allowOverpayment"],
     required: ["payableId", "amount", "branch", "method"],
-    // Deliberately dispatches to the SAME core function as expense.* — "paying a payable"
-    // IS expense/create with payableId set, today. A separate settlePayable core module
-    // would just re-duplicate that logic; see entryCore/index.js's dispatch table.
+    
+    
+    
     endpoint: "/api/transactions/expense/create",
     buildPayload: "payableSettle",
     sideEffects: ["transaction", "payableOverpaymentGuard", "isSettlementFlag"],
@@ -357,10 +344,10 @@ export const ENTRY_TYPES = {
     required: ["clinic", "direction", "amount", "mode"],
     endpoint: "/api/collab-settlement/settlements/create",
     buildPayload: "collabSettlement",
-    // AUDIT.md B3: this legacy route is NOT atomic — a mid-loop failure leaves a saved
-    // settlement with a partial set of generated transactions and still reports success.
-    // Preserved as-is; not fixed here (see AUDIT.md and the Phase B response for the
-    // separate-decision flag).
+    
+    
+    
+    
     sideEffects: ["collabSettlementDocument", "perCaseTransactionsBestEffort"],
   },
 };

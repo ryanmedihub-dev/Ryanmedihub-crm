@@ -4,13 +4,6 @@ import { withCallbyRoute, toCallDateParams } from "@/lib/owner/callbyRoute";
 import { parseEmployeeFilters, parsePageParams } from "@/lib/owner/pagination";
 import { cacheKey, cached } from "@/lib/cache";
 
-// /owner/calls/report — the full call log report. Backed by callby's own
-// GET /api/reports/periodic?tab=callHistory — the exact query behind callby's
-// dashboard "Call History" tab (reports/calllogs/page.js), so this mirrors its
-// columns (Employee/TL, To Number, Contact Name, Source, Contact Type
-// New/Repeat, Date, Time, Duration, Call Type, Remarks) instead of inventing a
-// different shape. That tab is genuinely paginated in Mongo (skip/limit +
-// countDocuments), unlike this route's other tabs.
 export const GET = withCallbyRoute(async (req, session) => {
   const { searchParams } = new URL(req.url);
   const { dateFrom, dateTo, search } = parseEmployeeFilters(searchParams);
@@ -28,7 +21,7 @@ export const GET = withCallbyRoute(async (req, session) => {
     const employeeId = searchParams.get("employeeId");
     const tlName = searchParams.get("tlName");
     const callType = searchParams.get("callType");
-    const duration = searchParams.get("duration"); // "0-60" | "60-300" | "300+"
+    const duration = searchParams.get("duration"); 
     const connectedOnly = searchParams.get("connectedOnly");
     const source = searchParams.get("source");
     if (employeeId) params.employeeId = employeeId;

@@ -15,7 +15,7 @@ export async function GET() {
   let pingMs = null;
   if (enabled) {
     const start = Date.now();
-    await cacheGet("ryan:health:ping"); // any miss/hit is fine, this only measures round-trip time
+    await cacheGet("ryan:health:ping"); 
     pingMs = Date.now() - start;
   }
 

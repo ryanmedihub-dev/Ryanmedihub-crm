@@ -30,7 +30,7 @@ const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 const UNTRACKED_FURTHER_MODE = "__UNTRACKED__";
 
-/** Split a `?key=a,b,c` param into a trimmed, de-duped list. */
+
 const listParam = (raw) => [
   ...new Set(
     (raw || "")
@@ -40,12 +40,12 @@ const listParam = (raw) => [
   ),
 ];
 
-/** Case-insensitive exact-match `$in` clause for a list of string values. */
+
 const ciInClause = (values) => ({
   $in: values.map((v) => new RegExp(`^${escapeRegex(v)}$`, "i")),
 });
 
-/** Mongo clause for a single derived "entry type" pseudo-filter. */
+
 const entryTypeClause = (t) => {
   if (t === "REGULAR")
     return { isSettlement: { $ne: true }, reversalOf: null, method: { $nin: unsettledMethodsSync() } };
@@ -76,7 +76,7 @@ export async function GET(request) {
     const sortKey       = searchParams.get("sortKey")       || "date";
     const sortDir       = searchParams.get("sortDir") === "asc" ? 1 : -1;
 
-    // Multi-value filters (comma-separated). OR within a filter, AND across filters.
+    
     const branches        = listParam(searchParams.get("branch"));
     const paymentMethods  = listParam(searchParams.get("paymentMethod"));
     const procedures      = listParam(searchParams.get("procedure"));
@@ -118,14 +118,14 @@ async function computeTransactionsGetAll({
 
     const query = { ...branchFilter };
 
-    // Honour a multi-branch selection while never widening past what the
-    // session is allowed to see.
+    
+    
     if (branches.length > 1) {
       const allowed = branchFilter.branch;
       if (allowed && Array.isArray(allowed.$in)) {
         query.branch = { $in: branches.filter((b) => allowed.$in.includes(b)) };
       } else if (typeof allowed === "string") {
-        // session is locked to a single branch — ignore the multi request
+        
       } else {
         query.branch = { $in: branches };
       }
@@ -139,8 +139,8 @@ async function computeTransactionsGetAll({
       query.receivableId = receivableId;
     }
 
-    // Every transaction booked against one patient — used by the collab settlement page to
-    // show what sits behind a case when its patient row is opened.
+    
+    
     if (patientId && mongoose.Types.ObjectId.isValid(patientId)) {
       query.patient = new mongoose.Types.ObjectId(patientId);
     }
@@ -164,9 +164,9 @@ async function computeTransactionsGetAll({
     }
 
     if (dateFrom || dateTo) {
-      // Bracket the plain YYYY-MM-DD to the IST calendar day. setHours() here would use the
-      // server's timezone (UTC on Vercel), shifting the window 5.5h and pulling neighbouring-
-      // day rows into the export.
+      
+      
+      
       query.date = {};
       if (dateFrom) query.date.$gte = getISTStartOfDay(dateFrom);
       if (dateTo) query.date.$lte = getISTEndOfDay(dateTo);

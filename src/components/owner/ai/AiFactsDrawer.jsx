@@ -44,7 +44,6 @@ function JsonNode({ label, value, depth = 0 }) {
   );
 }
 
-/** "Exactly what the AI received" — the aliased facts payload, an alias→name legend, and run metadata. */
 export default function AiFactsDrawer({ open, onClose, facts, entities, meta }) {
   const entityList = Object.values(entities || {});
 

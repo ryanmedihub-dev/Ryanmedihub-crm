@@ -5,10 +5,7 @@ import dbConnect from "@/lib/db";
 import vendor from "@/models/Vendor";
 import { cacheKey, cached } from "@/lib/cache";
 
-// ponytail: flat .limit() safety cap, not real pagination — the vendor list page fetches
-// this whole endpoint with no page/limit params and filters client-side. Vendor counts are
-// small (suppliers, not transactions), so a cap is enough; add real pagination if that stops
-// being true.
+
 const SAFETY_LIMIT = 2000;
 
 async function findVendors(query) {

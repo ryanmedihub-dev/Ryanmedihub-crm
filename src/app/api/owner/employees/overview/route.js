@@ -15,10 +15,6 @@ import { cacheKey, cached } from "@/lib/cache";
 const ALLOWED_ROLES = ["owner", "super-admin"];
 const SCORED_SECTIONS = ["Agent", "Counsellor", "Surgery", "HR"];
 
-// Backs the /owner/employees section landing: headcount by role/branch, active
-// vs inactive, total salary+incentive paid this period, and each scored
-// section's top/bottom performers. "Other" has no performance formula (see
-// src/lib/owner/performance.js) so it's headcount-only here.
 export async function GET(req) {
   try {
     await dbConnect();
@@ -65,8 +61,8 @@ export async function GET(req) {
       if (e.isactive !== false) byBranch[key].active += 1;
     }
 
-    // Compensation for everyone in scope + one metric build per scored section,
-    // all in parallel — each is an independent aggregation.
+    
+    
     const sectionJobs = SCORED_SECTIONS.map(async (section) => {
       const employees = (bySection[section] || []).filter((e) => e.isactive !== false);
       if (employees.length === 0) return { section, employees, metricsById: new Map(), callbyError: null };
@@ -82,7 +78,7 @@ export async function GET(req) {
       totalIncentivePaid += c.incentivePaid || 0;
     }
 
-    // Top/bottom performers per scored section (active employees only).
+    
     let callbyError = null;
     const performers = {};
     for (const { section, employees, metricsById, callbyError: err } of sectionResults) {

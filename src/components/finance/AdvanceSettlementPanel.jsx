@@ -4,16 +4,6 @@ import { formatCurrency, formatDate } from "@/lib/financeUI";
 
 const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
 
-/**
- * Tick an advance to apply it against the selected payable. `net = payable.pending − applied`.
- *
- * @param advances        rows from GET /api/advances/open-for-party (each has `remaining`,
- *                        `settledTotal`, `settlements`)
- * @param selectedPayable the open payable being paid (needs `.pending`, `.payee`)
- * @param allocations     { [advanceId]: number } — only ticked advances are present
- * @param onChange        (nextAllocationsObject) => void
- * @param disabled        block all interaction (e.g. while submitting)
- */
 export default function AdvanceSettlementPanel({ advances = [], selectedPayable, allocations = {}, onChange, disabled }) {
   if (!advances.length || !selectedPayable) return null;
 
@@ -36,8 +26,8 @@ export default function AdvanceSettlementPanel({ advances = [], selectedPayable,
   const toggle = (adv, checked) => {
     const next = { ...allocations };
     if (checked) {
-      // Auto-fill: the smaller of what this advance has left and what the payable still needs
-      // after the advances already ticked.
+      
+      
       const otherApplied = round2(
         Object.entries(allocations).reduce((s, [id, v]) => (id === adv._id ? s : s + (Number(v) || 0)), 0),
       );
@@ -151,7 +141,7 @@ export default function AdvanceSettlementPanel({ advances = [], selectedPayable,
         })}
       </div>
 
-      {/* Footer summary — the number that actually matters */}
+      {}
       <div className="rounded-lg bg-white border border-teal-200 p-2.5 text-sm">
         <div className="flex justify-between text-gray-600">
           <span>Payable pending</span>

@@ -123,9 +123,9 @@ const interviewerSchema = new mongoose.Schema({
     enum: ['Applied', 'Interview Scheduled', 'Selected', 'Rejected', 'On Hold'],
     default: 'Applied',
   },
-  // Owner Panel v2, Part 5: there was no way to know whether a Selected
-  // candidate actually joined — set once, manually, from the Selected page
-  // ("Mark as Joined"). Null means "not marked yet", not "didn't join".
+  
+  
+  
   hiredEmployeeId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Employee",

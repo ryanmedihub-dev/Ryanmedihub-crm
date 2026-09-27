@@ -6,19 +6,6 @@ import { runSanyaTurn } from "@/lib/sanya/engine";
 import { OPENAI_TOOL_DEFS } from "@/lib/sanya/tools";
 import { SANYA_MODEL, SANYA_MONTHLY_BUDGET_USD, SANYA_RATE_LIMIT } from "@/lib/sanya/config";
 
-// Sanya — the Owner-panel assistant (Owner Panel v2, Part 6 / Step 4).
-//
-// POST { messages: [{role:"user"|"assistant", content}] } → a newline-delimited
-// JSON event stream (Content-Type: application/x-ndjson):
-//   {type:"tool",  name, args, verifyAt, ms, ok}   a tool the model called, as it runs
-//   {type:"delta", text}                            answer text as it streams
-//   {type:"done",  verify:[{label,href}], usage, refused}
-//   {type:"error", message, code}
-// Owner/super-admin only; the engine enforces the per-user rate limit and the
-// monthly cost ceiling and logs every turn to SanyaUsage (see /owner/ai/health).
-// The model only ever sees aggregates returned by the fixed tool set in
-// src/lib/sanya/tools.js — never the database, never a name or phone.
-
 const ALLOWED_ROLES = ["owner", "super-admin"];
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -48,7 +35,7 @@ export async function POST(req) {
         try {
           controller.enqueue(encoder.encode(JSON.stringify(event) + "\n"));
         } catch {
-          /* client went away */
+          
         }
       };
       await runSanyaTurn({
@@ -60,7 +47,7 @@ export async function POST(req) {
       try {
         controller.close();
       } catch {
-        /* already closed */
+        
       }
     },
   });
@@ -74,7 +61,6 @@ export async function POST(req) {
   });
 }
 
-// GET — what the assistant can do (tool catalogue + limits), for the page header.
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session?.user || !ALLOWED_ROLES.includes(session.user.role)) {

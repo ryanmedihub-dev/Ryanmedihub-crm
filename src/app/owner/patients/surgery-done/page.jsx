@@ -7,9 +7,6 @@ import PatientReportPage from "@/components/owner/PatientReportPage";
 import { PATIENT_SHARED_COLUMNS, SURGERY_CLINICAL_COLUMNS } from "@/lib/owner/patientColumns";
 import { num } from "@/lib/owner/format";
 
-// ops.status === "CLOSED" — surgery.surgeryDate is actually set. Carries
-// clinical data read by senior staff — full team attribution, grafts
-// needed/implanted, technique mix.
 const config = {
   preset: "surgeryDone",
   title: "Surgery Done",

@@ -3,9 +3,6 @@
 import EmployeeReportPage from "@/components/owner/EmployeeReportPage";
 import { SHARED_COLUMNS } from "@/lib/owner/employeeColumns";
 
-// Reception, housekeeping, accountants, developers, office staff, etc. — no
-// role-specific KPI in common across this bucket, so it's shared columns only
-// and no Performance column (there is no formula — see src/lib/owner/performance.js).
 const config = {
   title: "Other Staff",
   subtitle: "Everyone outside Agents, Counsellors, Surgery and HR",

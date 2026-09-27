@@ -5,8 +5,6 @@ import { useShell } from "./ShellContext";
 import AiStatusBeacon from "./ai/AiStatusBeacon";
 import { relativeTime } from "@/lib/ai/client/aiLabels";
 
-// `aiState` is a page's own useAiInsight(...) result, passed down — this
-// never starts a second stream, it just reads the one the page already has.
 function aiStatusText(aiState) {
   if (!aiState) return null;
   if (aiState.status === "running") return "AI analyzing…";

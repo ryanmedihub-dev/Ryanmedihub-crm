@@ -3,11 +3,6 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
-/**
- * Horizontal pill nav for the ledger trees. Carries the current query string (branch + dates)
- * across every tab so scope survives navigation. `exact` marks the overview tab so it isn't
- * permanently lit while a child route is open.
- */
 export default function LedgerTabs({ tabs }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();

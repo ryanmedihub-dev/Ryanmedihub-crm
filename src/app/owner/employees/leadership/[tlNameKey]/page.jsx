@@ -5,14 +5,11 @@ import EmployeeReportPage from "@/components/owner/EmployeeReportPage";
 import { SHARED_COLUMNS, callbyColumn } from "@/lib/owner/employeeColumns";
 import { rupee, num } from "@/lib/owner/format";
 
-// Team roster: the exact Agent table, server-filtered to one TL
-// (src/app/api/owner/employees/leadership/[tlNameKey]/route.js re-runs the
-// Agent query with tlName pinned) — no second "list of agents" implementation.
 export default function TeamRosterPage() {
   const params = useParams();
   const tlNameKey = String(params.tlNameKey || "");
   const decoded = decodeURIComponent(tlNameKey);
-  // The key is lower-cased for grouping; show it as a name.
+  
   const tlName = decoded === "(unassigned)"
     ? "Unassigned (no TL)"
     : decoded.replace(/\b\p{L}/gu, (c) => c.toUpperCase());

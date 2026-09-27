@@ -12,7 +12,6 @@ async function employeeCode(refId) {
   return emp?.employeeId || "";
 }
 
-// Mirrors the Day Book report's shape() helper field-for-field.
 const shape = ({
   type, ts, entryDate, party = "", employeeIdCode = "", purpose = "", subType = "", direction = "",
   amount = 0, cash = "—", branch = "", account = "", method = "", reference = "",
@@ -106,7 +105,7 @@ const ROW_BUILDERS = {
 
 async function sendRow(row) {
   const url = process.env.SHEETS_WEBHOOK_URL;
-  if (!url) return; // not configured — silent no-op so this stays opt-in per environment
+  if (!url) return; 
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
@@ -137,20 +136,11 @@ async function buildAndSend(entryType, doc) {
   }
 }
 
-/**
- * Call from a model's post('save') hook, only when the doc was newly created
- * (see the `$locals.wasNew` pattern in Payable/Receivable/Advance/Transactions).
- * Never awaited by the caller — the save() the app is waiting on must not be slowed
- * down by an external HTTP call. Scheduled via Next's `after()` when we're inside a
- * request (so a serverless function doesn't get frozen before the fetch completes);
- * outside a request (a standalone script) `after()` throws, so it just runs in the
- * background on Node's own event loop instead.
- */
 export function fireSheetWebhook(entryType, doc) {
   const task = buildAndSend(entryType, doc);
   try {
     after(task);
   } catch {
-    // No request scope — already running in the background, nothing further to do.
+    
   }
 }
