@@ -155,6 +155,7 @@ export default function PerformancePage() {
                 <option value="Mumbai">Mumbai</option>
                 <option value="Hyderabad">Hyderabad</option>
                 <option value="Noida">Noida</option>
+                <option value="Gurgaon">Gurgaon</option>
               </select>
             </div>
           </div>

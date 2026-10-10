@@ -62,6 +62,7 @@ const BRANCH_COLORS = {
   Mumbai:    "bg-orange-100 text-orange-800",
   Hyderabad: "bg-teal-100 text-teal-800",
   Noida:     "bg-pink-100 text-pink-800",
+  Gurgaon:   "bg-indigo-100 text-indigo-800",
 };
 
 const fmtCurrency = (n) =>
@@ -611,6 +612,7 @@ export default function TransactionTable({ config = {} }) {
                       <option>Mumbai</option>
                       <option>Hyderabad</option>
                       <option>Noida</option>
+                      <option>Gurgaon</option>
                     </select>
                   </div>
                 )}

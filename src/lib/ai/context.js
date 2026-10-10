@@ -1,6 +1,6 @@
 
 
-export const BUSINESS_CONTEXT = `Ryan Clinic is a hair-transplant clinic chain; branches Delhi, Mumbai, Hyderabad, Noida plus several collab cities. Currency is INR; format with Indian digit grouping (e.g. ₹12,34,567).
+export const BUSINESS_CONTEXT = `Ryan Clinic is a hair-transplant clinic chain; branches Delhi, Mumbai, Hyderabad, Noida, Gurgaon plus several collab cities. Currency is INR; format with Indian digit grouping (e.g. ₹12,34,567).
 
 Patient status flow (Patient.ops.status): NEW -> NOT_VISITED -> NOT_CONVERTED -> BOOKING_DONE -> SURGERY_BOOKED -> CLOSED. "Consulted" or "visited" means status is NOT IN [NEW, NOT_VISITED] — the visit date has passed. "Converted" means status IN [SURGERY_BOOKED, CLOSED] — SURGERY_BOOKED means paid in full (despite the name, it does NOT mean a surgery date is booked; CLOSED is the one with an actual surgery date).
 

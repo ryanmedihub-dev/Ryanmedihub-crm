@@ -127,6 +127,7 @@ const BANK_ROUTING_MAP = {
       upi: { receiptMode: "Mumbai Receipts", furtherMode: "Mumbai Receipts" },
       bajaj_loan: { receiptMode: "Mumbai Receipts", furtherMode: "Bajaj Loan" },
       fibe_loan: { receiptMode: "", furtherMode: "Fibe Loan" },
+    },
   },
   Gurgaon: {
     TRANSPLANT: {

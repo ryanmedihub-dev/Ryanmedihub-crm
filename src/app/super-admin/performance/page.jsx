@@ -30,6 +30,7 @@ const BRANCH_COLORS = {
   Mumbai:    "#3b82f6",
   Hyderabad: "#10b981",
   Noida:     "#ec4899",
+  Gurgaon:   "#8b5cf6",
   Unknown:   "#9ca3af",
 };
 

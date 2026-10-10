@@ -28,7 +28,7 @@ const STATUS_COLORS = {
   CLOSED:         "bg-gray-50 text-gray-600 border-gray-200",
 };
 
-const LOCATION_OPTIONS = ["Delhi", "Mumbai", "Hyderabad", "Noida"];
+const LOCATION_OPTIONS = ["Delhi", "Mumbai", "Hyderabad", "Noida", "Gurgaon"];
 
 const COL_DEFS = {
   visitDate:   { label: "Visit Date",    sortKey: "personal.visitDate" },
