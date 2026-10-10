@@ -540,7 +540,7 @@ const SERVER_SORT_KEYS = new Set(["date", "amount", "method", "branch", "procedu
 const SORT_KEY_MAP = { patient: "patientName" };
 
 export default function StocksTransactionsPage() {
-  const tenantBranches = ["Delhi", "Mumbai", "Hyderabad", "Noida"];
+  const tenantBranches = ["Delhi", "Mumbai", "Hyderabad", "Noida", "Gurgaon"];
 
   const router = useRouter();
   const [transactions, setTransactions] = useState([]);

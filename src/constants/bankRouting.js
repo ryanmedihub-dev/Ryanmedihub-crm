@@ -127,6 +127,28 @@ const BANK_ROUTING_MAP = {
       upi: { receiptMode: "Mumbai Receipts", furtherMode: "Mumbai Receipts" },
       bajaj_loan: { receiptMode: "Mumbai Receipts", furtherMode: "Bajaj Loan" },
       fibe_loan: { receiptMode: "", furtherMode: "Fibe Loan" },
+  },
+  Gurgaon: {
+    TRANSPLANT: {
+      cash: { receiptMode: "In Cash", furtherMode: "Cash Book" },
+      card: { receiptMode: "", furtherMode: "" },
+      upi: { receiptMode: "", furtherMode: "" },
+      bajaj_loan: { receiptMode: "Bajaj Statement", furtherMode: "Bajaj Loan" },
+      fibe_loan: { receiptMode: "Fibe Statement", furtherMode: "Fibe Loan" },
+    },
+    SERVICE: {
+      cash: { receiptMode: "In Cash", furtherMode: "Cash Book" },
+      card: { receiptMode: "", furtherMode: "" },
+      upi: { receiptMode: "", furtherMode: "" },
+      bajaj_loan: { receiptMode: "Bajaj Statement", furtherMode: "Bajaj Loan" },
+      fibe_loan: { receiptMode: "Fibe Statement", furtherMode: "Fibe Loan" },
+    },
+    MEDICINE: {
+      cash: { receiptMode: "In Cash", furtherMode: "Cash Book" },
+      card: { receiptMode: "", furtherMode: "" },
+      upi: { receiptMode: "", furtherMode: "" },
+      bajaj_loan: { receiptMode: "Bajaj Statement", furtherMode: "Bajaj Loan" },
+      fibe_loan: { receiptMode: "Fibe Statement", furtherMode: "Fibe Loan" },
     },
   },
 };

@@ -41,7 +41,7 @@ export default function ReportsPage() {
     staff: [],
     techniques: [],
     status: [],
-    branches: ["Delhi", "Mumbai", "Hyderabad", "Noida"],
+    branches: ["Delhi", "Mumbai", "Hyderabad", "Noida", "Gurgaon"],
     procedures: ["hair transplant", "prp", "beard transplant", "medicine", "gfc", "Other"],
     paymentTypes: ["Booking", "Pending", "Full-payment", "Other"],
   });

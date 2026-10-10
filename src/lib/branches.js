@@ -1,4 +1,4 @@
-export const MAIN_BRANCHES = ["Delhi", "Mumbai", "Hyderabad", "Noida"];
+export const MAIN_BRANCHES = ["Delhi", "Mumbai", "Hyderabad", "Noida", "Gurgaon"];
 
 export const COLLAB_BRANCHES = [
   "Patna",

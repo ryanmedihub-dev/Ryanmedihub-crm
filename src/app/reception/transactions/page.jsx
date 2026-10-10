@@ -1222,7 +1222,7 @@ function DataTable({
 }
 
 export default function AllTransactionsPage() {
-  const tenantBranches = ["Delhi", "Mumbai", "Hyderabad", "Noida"];
+  const tenantBranches = ["Delhi", "Mumbai", "Hyderabad", "Noida", "Gurgaon"];
 
   const router = useRouter();
   const toast  = useToast();

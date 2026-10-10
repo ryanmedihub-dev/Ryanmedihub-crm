@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { formatDate as fmtDate } from "@/lib/financeUI";
 
-const BRANCHES = ["All", "Delhi", "Mumbai", "Hyderabad", "Noida"];
+const BRANCHES = ["All", "Delhi", "Mumbai", "Hyderabad", "Noida", "Gurgaon"];
 
 const fmt = (n) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n || 0);

@@ -126,6 +126,7 @@ export default function NotVisited() {
                 <option value="Mumbai">Mumbai</option>
                 <option value="Hyderabad">Hyderabad</option>
                 <option value="Noida">Noida</option>
+                <option value="Gurgaon">Gurgaon</option>
               </select>
             </div>
           </div>
