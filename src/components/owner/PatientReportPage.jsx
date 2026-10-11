@@ -2,8 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
-import OwnerTopbar from "./OwnerTopbar";
+import OwnerPage from "./OwnerPage";
 import Card from "./Card";
 import FilterBar from "./FilterBar";
 import ReportTable from "./ReportTable";
@@ -84,69 +83,62 @@ export default function PatientReportPage({ config }) {
   const extraDefaults = Object.fromEntries(extras.map((ex) => [ex.key, ex.defaultValue ?? ""]));
 
   return (
-    <div className="app">
-      <OwnerSidebar />
-      <div className="main">
-        <OwnerTopbar
-          title={config.title}
-          subtitle={config.subtitle}
-          aiState={aiFeature ? pageAi : undefined}
-          controls={
-            <button className="icon-btn" onClick={() => load()} disabled={isValidating} title="Refresh">
-              {isValidating ? "…" : "⟳"}
-            </button>
-          }
-        />
+    <OwnerPage
+      title={config.title}
+      subtitle={config.subtitle}
+      aiState={aiFeature ? pageAi : undefined}
+      controls={
+        <button className="icon-btn" onClick={() => load()} disabled={isValidating} title="Refresh">
+          {isValidating ? "…" : "⟳"}
+        </button>
+      }
+    >
+      <FilterBar
+        show={["date", "branch"]}
+        extras={[
+          ...extras,
+          { key: "q", label: "Search", type: "text", placeholder: "Name / phone" },
+        ]}
+        defaults={{ q: "", ...extraDefaults, ...(config.filterDefaults || {}) }}
+        onChange={({ filters, range }) => {
+          list.resetPage();
+          setFilterState({ filters, range });
+        }}
+      />
 
-        <div className="content">
-          <FilterBar
-            show={["date", "branch"]}
-            extras={[
-              ...extras,
-              { key: "q", label: "Search", type: "text", placeholder: "Name / phone" },
-            ]}
-            defaults={{ q: "", ...extraDefaults, ...(config.filterDefaults || {}) }}
-            onChange={({ filters, range }) => {
-              list.resetPage();
-              setFilterState({ filters, range });
-            }}
-          />
+      {aiFeature && <AiBriefPanel feature={aiFeature} scope={aiScope || {}} title={config.title} enabled={!!aiScope} aiState={pageAi} />}
 
-          {aiFeature && <AiBriefPanel feature={aiFeature} scope={aiScope || {}} title={config.title} enabled={!!aiScope} aiState={pageAi} />}
+      {error ? (
+        <ErrorState message={error} onRetry={load} />
+      ) : (
+        <>
+          <KpiRow loading={loading || !data} items={kpis} primaryIndex={0} />
 
-          {error ? (
-            <ErrorState message={error} onRetry={load} />
-          ) : (
-            <>
-              <KpiRow loading={loading || !data} items={kpis} primaryIndex={0} />
+          {config.extraContent && data && config.extraContent(data)}
 
-              {config.extraContent && data && config.extraContent(data)}
-
-              {data?.trend?.length > 1 && (
-                <Card title="Trend" subtitle={config.trendLabel || "Patients per day · selected period"}>
-                  <TrendChart data={data.trend} label={config.trendLabel || "Patients"} />
-                </Card>
-              )}
-
-              <Card title={`${config.title} list`} subtitle={loading ? "Loading…" : `${num(total)} ${total === 1 ? "patient" : "patients"}`}>
-                <AiScanOverlay active={aiVerdictsEnabled && verdicts.loading}>
-                <ReportTable
-                  tableId={config.tableId}
-                  columns={columns}
-                  rows={rows}
-                  loading={loading}
-                  {...list.tableProps}
-                  onSearchChange={undefined}
-                  total={total}
-                  onRowClick={(row) => router.push(`/owner/patients/${row.id}${backQuery}`)}
-                  csvFilename={`patients-${config.preset}.csv`}
-                />
-                </AiScanOverlay>
-              </Card>
-            </>
+          {data?.trend?.length > 1 && (
+            <Card title="Trend" subtitle={config.trendLabel || "Patients per day · selected period"}>
+              <TrendChart data={data.trend} label={config.trendLabel || "Patients"} />
+            </Card>
           )}
-        </div>
-      </div>
-    </div>
+
+          <Card title={`${config.title} list`} subtitle={loading ? "Loading…" : `${num(total)} ${total === 1 ? "patient" : "patients"}`}>
+            <AiScanOverlay active={aiVerdictsEnabled && verdicts.loading}>
+            <ReportTable
+              tableId={config.tableId}
+              columns={columns}
+              rows={rows}
+              loading={loading}
+              {...list.tableProps}
+              onSearchChange={undefined}
+              total={total}
+              onRowClick={(row) => router.push(`/owner/patients/${row.id}${backQuery}`)}
+              csvFilename={`patients-${config.preset}.csv`}
+            />
+            </AiScanOverlay>
+          </Card>
+        </>
+      )}
+    </OwnerPage>
   );
 }

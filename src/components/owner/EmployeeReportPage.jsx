@@ -2,8 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
-import OwnerTopbar from "./OwnerTopbar";
+import OwnerPage from "./OwnerPage";
 import ReportPanel from "./ReportPanel";
 import KpiRow from "./KpiRow";
 import ErrorState from "./ErrorState";
@@ -173,115 +172,108 @@ export default function EmployeeReportPage({ config }) {
   }, [filterState]);
 
   return (
-    <div className="app">
-      <OwnerSidebar />
-      <div className="main">
-        <OwnerTopbar
-          title={config.title}
-          subtitle={config.subtitle}
-          aiState={aiFeature ? pageAi : undefined}
-          controls={
-            <button
-              className="icon-btn"
-              onClick={() => load()}
-              disabled={isValidating}
-              title="Refresh"
+    <OwnerPage
+      title={config.title}
+      subtitle={config.subtitle}
+      aiState={aiFeature ? pageAi : undefined}
+      controls={
+        <button
+          className="icon-btn"
+          onClick={() => load()}
+          disabled={isValidating}
+          title="Refresh"
+        >
+          {isValidating ? "…" : "⟳"}
+        </button>
+      }
+    >
+      {aiFeature && <AiBriefPanel feature={aiFeature} scope={tableScope || {}} title={config.title} enabled={!!tableScope} aiState={pageAi} />}
+
+      {error ? (
+        <ErrorState message={error} onRetry={load} />
+      ) : (
+        <>
+          <KpiRow
+            loading={loading || !data}
+            items={kpis}
+            primaryIndex={0}
+          />
+
+          {data?.callbyError && (
+            <InlineNotice
+              kind="error"
+              title="callby data may be incomplete for this page"
             >
-              {isValidating ? "…" : "⟳"}
-            </button>
-          }
-        />
-
-        <div className="content">
-          {aiFeature && <AiBriefPanel feature={aiFeature} scope={tableScope || {}} title={config.title} enabled={!!tableScope} aiState={pageAi} />}
-
-          {error ? (
-            <ErrorState message={error} onRetry={load} />
-          ) : (
-            <>
-              <KpiRow
-                loading={loading || !data}
-                items={kpis}
-                primaryIndex={0}
-              />
-
-              {data?.callbyError && (
-                <InlineNotice
-                  kind="error"
-                  title="callby data may be incomplete for this page"
-                >
-                  {data.callbyError}
-                </InlineNotice>
-              )}
-
-              <AiScanOverlay active={aiVerdictsEnabled && verdicts.loading}>
-                <ReportPanel
-                  title={`${config.title} list`}
-                  subtitle={
-                    loading
-                      ? "Loading…"
-                      : `${num(total)} ${total === 1 ? "record" : "records"}`
-                  }
-                  show={["date", "branch"]}
-                  extras={[
-                    {
-                      key: "isactive",
-                      label: "Status",
-                      options: STATUS_OPTIONS,
-                    },
-                    {
-                      key: "callbyLinked",
-                      label: "callby link",
-                      options: CALLBY_LINKED_OPTIONS,
-                    },
-                    {
-                      key: "q",
-                      label: "Search",
-                      type: "text",
-                      placeholder: "Name / phone / email / ID / TL / manager",
-                    },
-                  ]}
-                  advancedExtras={ADVANCED_EXTRAS}
-                  defaults={{
-                    ...(config.defaultRange ? { range: config.defaultRange } : {}),
-                    isactive: "true",
-                    callbyLinked: "",
-                    q: "",
-                    ...ADVANCED_DEFAULTS,
-                  }}
-                  onChange={({ filters, range }) => {
-                    list.resetPage();
-                    setFilterState({ filters, range });
-                  }}
-                  toolbar={
-                    aiVerdictsEnabled && (
-                      <button
-                        type="button"
-                        className={`ai-ghost-btn${aiSort ? " ai-cmdbar-item-active" : ""}`}
-                        onClick={() => setAiSort((s) => !s)}
-                        title="Sorts the rows on this page only by AI score — the server-side sort is unchanged"
-                      >
-                        ↕ Sort by AI score (this page)
-                      </button>
-                    )
-                  }
-                  tableId={config.tableId}
-                  columns={columns}
-                  rows={rows}
-                  loading={loading}
-                  {...list.tableProps}
-                  onSearchChange={undefined}
-                  total={total}
-                  onRowClick={(row) =>
-                    router.push(`${config.detailBase}/${row.id}${detailQuery}`)
-                  }
-                  csvFilename={`${config.tableId}.csv`}
-                />
-              </AiScanOverlay>
-            </>
+              {data.callbyError}
+            </InlineNotice>
           )}
-        </div>
-      </div>
-    </div>
+
+          <AiScanOverlay active={aiVerdictsEnabled && verdicts.loading}>
+            <ReportPanel
+              title={`${config.title} list`}
+              subtitle={
+                loading
+                  ? "Loading…"
+                  : `${num(total)} ${total === 1 ? "record" : "records"}`
+              }
+              show={["date", "branch"]}
+              extras={[
+                {
+                  key: "isactive",
+                  label: "Status",
+                  options: STATUS_OPTIONS,
+                },
+                {
+                  key: "callbyLinked",
+                  label: "callby link",
+                  options: CALLBY_LINKED_OPTIONS,
+                },
+                {
+                  key: "q",
+                  label: "Search",
+                  type: "text",
+                  placeholder: "Name / phone / email / ID / TL / manager",
+                },
+              ]}
+              advancedExtras={ADVANCED_EXTRAS}
+              defaults={{
+                ...(config.defaultRange ? { range: config.defaultRange } : {}),
+                isactive: "true",
+                callbyLinked: "",
+                q: "",
+                ...ADVANCED_DEFAULTS,
+              }}
+              onChange={({ filters, range }) => {
+                list.resetPage();
+                setFilterState({ filters, range });
+              }}
+              toolbar={
+                aiVerdictsEnabled && (
+                  <button
+                    type="button"
+                    className={`ai-ghost-btn${aiSort ? " ai-cmdbar-item-active" : ""}`}
+                    onClick={() => setAiSort((s) => !s)}
+                    title="Sorts the rows on this page only by AI score — the server-side sort is unchanged"
+                  >
+                    ↕ Sort by AI score (this page)
+                  </button>
+                )
+              }
+              tableId={config.tableId}
+              columns={columns}
+              rows={rows}
+              loading={loading}
+              {...list.tableProps}
+              onSearchChange={undefined}
+              total={total}
+              onRowClick={(row) =>
+                router.push(`${config.detailBase}/${row.id}${detailQuery}`)
+              }
+              csvFilename={`${config.tableId}.csv`}
+            />
+          </AiScanOverlay>
+        </>
+      )}
+    </OwnerPage>
   );
 }

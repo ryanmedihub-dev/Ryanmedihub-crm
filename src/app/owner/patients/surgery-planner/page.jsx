@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
-import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
-import { OwnerTopbar, Card, DataTable, Badge, KpiRow, ErrorState, EmptyState, Skeleton } from "@/components/owner";
+import { OwnerPage, Card, DataTable, Badge, KpiRow, ErrorState, EmptyState, Skeleton } from "@/components/owner";
 import { AiBriefPanel } from "@/components/owner/ai";
 import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { ownerFetch } from "@/lib/ownerFetch";
@@ -69,102 +68,94 @@ export default function SurgeryPlannerPage() {
   ];
 
   return (
-    <div className="app">
-      <OwnerSidebar />
-
-      <div className="main">
-        <OwnerTopbar
-          title="Surgery & OT Planner"
-          subtitle="Scheduled surgeries and today's real OT load"
-          aiState={plannerAi}
-          controls={
+    <OwnerPage
+      title="Surgery & OT Planner"
+      subtitle="Scheduled surgeries and today's real OT load"
+      aiState={plannerAi}
+      controls={
+        <>
+          <select className="control" value={branch} onChange={(e) => setBranch(e.target.value)}>
+            {BRANCHES.map((b) => <option key={b}>{b}</option>)}
+          </select>
+          <select className="control" value={dateRange} onChange={(e) => setDateRange(e.target.value)}>
+            {DATE_RANGES.map((r) => <option key={r}>{r}</option>)}
+          </select>
+          {dateRange === "Custom" && (
             <>
-              <select className="control" value={branch} onChange={(e) => setBranch(e.target.value)}>
-                {BRANCHES.map((b) => <option key={b}>{b}</option>)}
-              </select>
-              <select className="control" value={dateRange} onChange={(e) => setDateRange(e.target.value)}>
-                {DATE_RANGES.map((r) => <option key={r}>{r}</option>)}
-              </select>
-              {dateRange === "Custom" && (
-                <>
-                  <input type="date" className="control" value={custom.from} onChange={(e) => setCustom((p) => ({ ...p, from: e.target.value }))} />
-                  <input type="date" className="control" value={custom.to} onChange={(e) => setCustom((p) => ({ ...p, to: e.target.value }))} />
-                </>
-              )}
-              <button className="icon-btn" onClick={fetchData} disabled={loading} title="Refresh">
-                {loading ? "…" : "⟳"}
-              </button>
-            </>
-          }
-        />
-
-        <div className="content">
-          <AiBriefPanel feature="patients.surgeryPlanner" scope={aiScope} title="Surgery & OT Planner" enabled={dateReady} aiState={plannerAi} />
-
-          {error ? (
-            <ErrorState message={error} onRetry={fetchData} />
-          ) : (
-            <>
-              <KpiRow items={kpiItems} primaryIndex={0} loading={loading} />
-
-              <Card title="Today's OT capacity" subtitle="Real count of surgeries scheduled today, by OT — not a fabricated utilization %">
-                {loading ? (
-                  <Skeleton variant="row" count={3} style={{ height: 56, margin: "8px 0" }} />
-                ) : capacity.length === 0 ? (
-                  <EmptyState icon="✂" title="No surgeries scheduled today" hint="Today's OT board is clear." />
-                ) : (
-                  <div className="status-grid">
-                    {capacity.map((c) => (
-                      <div className="status-card" key={c.OT}>
-                        <strong>{c.count}</strong>
-                        <span>OT {c.OT}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </Card>
-
-              <Card
-                title="Scheduled surgeries"
-                subtitle={loading ? "Loading…" : `${surgeries.length} surgeries · ${dateRange}${branch !== "All" ? ` · ${branch}` : ""}`}
-              >
-                <DataTable
-                  tall
-                  loading={loading}
-                  emptyMessage={<EmptyState icon="✂" title="No surgeries in this window" hint="Pick a wider date range or another branch." />}
-                  columns={[
-                    { key: "name", label: "Patient" },
-                    { key: "branch", label: "Branch" },
-                    {
-                      key: "surgeryDate", label: "Date",
-                      render: (r) => {
-                        const iso = r.surgeryDate ? toISTDateKey(r.surgeryDate) : "";
-                        const human = fmtDate(r.surgeryDate).toLowerCase();
-                        const flagged = aiFlaggedDay && ((iso && aiFlaggedDay.includes(iso)) || (human && aiFlaggedDay.includes(human)));
-                        return (
-                          <span>
-                            {fmtDate(r.surgeryDate)}
-                            {flagged && <span className="ai-stage-flag">✦ AI flagged</span>}
-                          </span>
-                        );
-                      },
-                    },
-                    { key: "OT", label: "OT", render: (r) => (r.OT != null ? <Badge kind="info">OT {r.OT}</Badge> : "—") },
-                    { key: "technique", label: "Technique" },
-                    { key: "graftsneed", label: "Grafts needed", align: "right" },
-                    { key: "graftsImplanted", label: "Grafts implanted", align: "right" },
-                    { key: "doctor", label: "Doctor" },
-                    { key: "seniorTech", label: "Senior tech" },
-                    { key: "implanterRight", label: "Implanter R" },
-                    { key: "implanterLeft", label: "Implanter L" },
-                  ]}
-                  rows={loading ? [] : surgeries.map((r, i) => ({ ...r, id: r.id || r._id || i }))}
-                />
-              </Card>
+              <input type="date" className="control" value={custom.from} onChange={(e) => setCustom((p) => ({ ...p, from: e.target.value }))} />
+              <input type="date" className="control" value={custom.to} onChange={(e) => setCustom((p) => ({ ...p, to: e.target.value }))} />
             </>
           )}
-        </div>
-      </div>
-    </div>
+          <button className="icon-btn" onClick={fetchData} disabled={loading} title="Refresh">
+            {loading ? "…" : "⟳"}
+          </button>
+        </>
+      }
+    >
+      <AiBriefPanel feature="patients.surgeryPlanner" scope={aiScope} title="Surgery & OT Planner" enabled={dateReady} aiState={plannerAi} />
+
+      {error ? (
+        <ErrorState message={error} onRetry={fetchData} />
+      ) : (
+        <>
+          <KpiRow items={kpiItems} primaryIndex={0} loading={loading} />
+
+          <Card title="Today's OT capacity" subtitle="Real count of surgeries scheduled today, by OT — not a fabricated utilization %">
+            {loading ? (
+              <Skeleton variant="row" count={3} style={{ height: 56, margin: "8px 0" }} />
+            ) : capacity.length === 0 ? (
+              <EmptyState icon="✂" title="No surgeries scheduled today" hint="Today's OT board is clear." />
+            ) : (
+              <div className="status-grid">
+                {capacity.map((c) => (
+                  <div className="status-card" key={c.OT}>
+                    <strong>{c.count}</strong>
+                    <span>OT {c.OT}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+
+          <Card
+            title="Scheduled surgeries"
+            subtitle={loading ? "Loading…" : `${surgeries.length} surgeries · ${dateRange}${branch !== "All" ? ` · ${branch}` : ""}`}
+          >
+            <DataTable
+              tall
+              loading={loading}
+              emptyMessage={<EmptyState icon="✂" title="No surgeries in this window" hint="Pick a wider date range or another branch." />}
+              columns={[
+                { key: "name", label: "Patient" },
+                { key: "branch", label: "Branch" },
+                {
+                  key: "surgeryDate", label: "Date",
+                  render: (r) => {
+                    const iso = r.surgeryDate ? toISTDateKey(r.surgeryDate) : "";
+                    const human = fmtDate(r.surgeryDate).toLowerCase();
+                    const flagged = aiFlaggedDay && ((iso && aiFlaggedDay.includes(iso)) || (human && aiFlaggedDay.includes(human)));
+                    return (
+                      <span>
+                        {fmtDate(r.surgeryDate)}
+                        {flagged && <span className="ai-stage-flag">✦ AI flagged</span>}
+                      </span>
+                    );
+                  },
+                },
+                { key: "OT", label: "OT", render: (r) => (r.OT != null ? <Badge kind="info">OT {r.OT}</Badge> : "—") },
+                { key: "technique", label: "Technique" },
+                { key: "graftsneed", label: "Grafts needed", align: "right" },
+                { key: "graftsImplanted", label: "Grafts implanted", align: "right" },
+                { key: "doctor", label: "Doctor" },
+                { key: "seniorTech", label: "Senior tech" },
+                { key: "implanterRight", label: "Implanter R" },
+                { key: "implanterLeft", label: "Implanter L" },
+              ]}
+              rows={loading ? [] : surgeries.map((r, i) => ({ ...r, id: r.id || r._id || i }))}
+            />
+          </Card>
+        </>
+      )}
+    </OwnerPage>
   );
 }

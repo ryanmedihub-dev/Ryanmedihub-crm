@@ -1,8 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
-import { OwnerTopbar, Card, FilterBar, KpiRow, DataTable, ErrorState, Badge } from "@/components/owner";
+import { OwnerPage, Card, FilterBar, KpiRow, DataTable, ErrorState, Badge } from "@/components/owner";
 import { AiBriefPanel } from "@/components/owner/ai";
 import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
@@ -28,68 +27,61 @@ export default function FinanceAssetsPage() {
   const assetsAi = useAiInsight("finance.assets", aiScope, { kind: "brief", enabled: !!filterState });
 
   return (
-    <div className="app">
-      <OwnerSidebar />
-      <div className="main">
-        <OwnerTopbar
-          title="Assets"
-          subtitle="Receivables outstanding — same data as /admin/assets, owner-level rollup"
-          aiState={assetsAi}
-          controls={
-            <button className="icon-btn" onClick={() => load()} disabled={isValidating} title="Refresh">
-              {isValidating ? "…" : "⟳"}
-            </button>
-          }
-        />
+    <OwnerPage
+      title="Assets"
+      subtitle="Receivables outstanding — same data as /admin/assets, owner-level rollup"
+      aiState={assetsAi}
+      controls={
+        <button className="icon-btn" onClick={() => load()} disabled={isValidating} title="Refresh">
+          {isValidating ? "…" : "⟳"}
+        </button>
+      }
+    >
+      <AiBriefPanel feature="finance.assets" scope={aiScope} title="Assets" enabled={!!filterState} aiState={assetsAi} />
 
-        <div className="content">
-          <AiBriefPanel feature="finance.assets" scope={aiScope} title="Assets" enabled={!!filterState} aiState={assetsAi} />
+      <FilterBar show={["branch"]} onChange={({ filters, range }) => setFilterState({ filters, range })} />
 
-          <FilterBar show={["branch"]} onChange={({ filters, range }) => setFilterState({ filters, range })} />
+      {error ? (
+        <ErrorState message={error} onRetry={load} />
+      ) : (
+        <>
+          <KpiRow
+            loading={loading || !overall}
+            primaryIndex={0}
+            items={[
+              { label: "Total Owed", value: rupee(overall?.totalOwed), rawValue: overall?.totalOwed, format: "rupee", sub: `${num(overall?.count)} receivables`, kind: "info" },
+              { label: "Received", value: rupee(overall?.totalPaid), rawValue: overall?.totalPaid, format: "rupee", sub: "So far", kind: "good" },
+              { label: "Pending", value: rupee(overall?.totalPending), rawValue: overall?.totalPending, format: "rupee", sub: "Outstanding", kind: overall?.totalPending > 0 ? "warn" : "good" },
+            ]}
+          />
 
-          {error ? (
-            <ErrorState message={error} onRetry={load} />
-          ) : (
-            <>
-              <KpiRow
-                loading={loading || !overall}
-                primaryIndex={0}
-                items={[
-                  { label: "Total Owed", value: rupee(overall?.totalOwed), rawValue: overall?.totalOwed, format: "rupee", sub: `${num(overall?.count)} receivables`, kind: "info" },
-                  { label: "Received", value: rupee(overall?.totalPaid), rawValue: overall?.totalPaid, format: "rupee", sub: "So far", kind: "good" },
-                  { label: "Pending", value: rupee(overall?.totalPending), rawValue: overall?.totalPending, format: "rupee", sub: "Outstanding", kind: overall?.totalPending > 0 ? "warn" : "good" },
+          <div className="grid cols-equal">
+            <Card title="By Purpose">
+              <DataTable
+                loading={loading}
+                columns={[
+                  { key: "purpose", label: "Purpose", render: (r) => r._id || "—" },
+                  { key: "count", label: "Count", align: "right", render: (r) => num(r.count) },
+                  { key: "totalOwed", label: "Owed", align: "right", render: (r) => rupee(r.totalOwed) },
+                  { key: "totalPending", label: "Pending", align: "right", render: (r) => rupee(r.totalPending) },
                 ]}
+                rows={byPurpose.map((r, i) => ({ ...r, id: i }))}
               />
-
-              <div className="grid cols-equal">
-                <Card title="By Purpose">
-                  <DataTable
-                    loading={loading}
-                    columns={[
-                      { key: "purpose", label: "Purpose", render: (r) => r._id || "—" },
-                      { key: "count", label: "Count", align: "right", render: (r) => num(r.count) },
-                      { key: "totalOwed", label: "Owed", align: "right", render: (r) => rupee(r.totalOwed) },
-                      { key: "totalPending", label: "Pending", align: "right", render: (r) => rupee(r.totalPending) },
-                    ]}
-                    rows={byPurpose.map((r, i) => ({ ...r, id: i }))}
-                  />
-                </Card>
-                <Card title="Aging" subtitle="Pending only">
-                  <DataTable
-                    loading={loading}
-                    columns={[
-                      { key: "bucket", label: "Bucket", render: (r) => <Badge kind={r._id === "0-30" ? "good" : r._id === "31-60" ? "warn" : "bad"}>{r._id || "—"}</Badge> },
-                      { key: "count", label: "Count", align: "right", render: (r) => num(r.count) },
-                      { key: "totalPending", label: "Pending", align: "right", render: (r) => rupee(r.totalPending) },
-                    ]}
-                    rows={byBucket.map((r, i) => ({ ...r, id: i }))}
-                  />
-                </Card>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
+            </Card>
+            <Card title="Aging" subtitle="Pending only">
+              <DataTable
+                loading={loading}
+                columns={[
+                  { key: "bucket", label: "Bucket", render: (r) => <Badge kind={r._id === "0-30" ? "good" : r._id === "31-60" ? "warn" : "bad"}>{r._id || "—"}</Badge> },
+                  { key: "count", label: "Count", align: "right", render: (r) => num(r.count) },
+                  { key: "totalPending", label: "Pending", align: "right", render: (r) => rupee(r.totalPending) },
+                ]}
+                rows={byBucket.map((r, i) => ({ ...r, id: i }))}
+              />
+            </Card>
+          </div>
+        </>
+      )}
+    </OwnerPage>
   );
 }

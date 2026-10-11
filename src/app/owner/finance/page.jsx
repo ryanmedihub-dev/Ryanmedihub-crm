@@ -2,8 +2,7 @@
 
 import { useEffect, useMemo, useState, useCallback } from "react";
 import Link from "next/link";
-import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
-import { OwnerTopbar, Card, KpiRow, DataTable, ErrorState, EmptyState, TrendChart } from "@/components/owner";
+import { OwnerPage, Card, KpiRow, DataTable, ErrorState, EmptyState, TrendChart } from "@/components/owner";
 import { AiBriefPanel } from "@/components/owner/ai";
 import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { ownerFetch } from "@/lib/ownerFetch";
@@ -93,121 +92,113 @@ export default function OwnerFinancePage() {
   const accountRows = balanceSheet?.accounts || [];
 
   return (
-    <div className="app">
-      <OwnerSidebar />
-
-      <div className="main">
-        <OwnerTopbar
-          title="Accounts, P&L & Expenses"
-          subtitle="Reuses the same close-book P&L / balance sheet / cash flow logic as /admin/close-book"
-          aiState={overviewAi}
-          controls={
+    <OwnerPage
+      title="Accounts, P&L & Expenses"
+      subtitle="Reuses the same close-book P&L / balance sheet / cash flow logic as /admin/close-book"
+      aiState={overviewAi}
+      controls={
+        <>
+          <select className="control" value={branch} onChange={(e) => setBranch(e.target.value)}>
+            {BRANCHES.map((b) => <option key={b}>{b}</option>)}
+          </select>
+          <select className="control" value={dateRange} onChange={(e) => setDateRange(e.target.value)}>
+            {DATE_RANGES.map((r) => <option key={r}>{r}</option>)}
+          </select>
+          {dateRange === "Custom" && (
             <>
-              <select className="control" value={branch} onChange={(e) => setBranch(e.target.value)}>
-                {BRANCHES.map((b) => <option key={b}>{b}</option>)}
-              </select>
-              <select className="control" value={dateRange} onChange={(e) => setDateRange(e.target.value)}>
-                {DATE_RANGES.map((r) => <option key={r}>{r}</option>)}
-              </select>
-              {dateRange === "Custom" && (
-                <>
-                  <input type="date" className="control" value={custom.from} onChange={(e) => setCustom((p) => ({ ...p, from: e.target.value }))} />
-                  <input type="date" className="control" value={custom.to} onChange={(e) => setCustom((p) => ({ ...p, to: e.target.value }))} />
-                </>
-              )}
-              <button className="icon-btn" onClick={fetchData} disabled={loading} title="Refresh">
-                {loading ? "…" : "⟳"}
-              </button>
-            </>
-          }
-        />
-
-        <div className="content">
-          <AiBriefPanel feature="finance.overview" scope={aiScope} title="Finance" variant="hero" scoreLabel="Financial Health" enabled={!!aiScope.from} aiState={overviewAi} />
-
-          {error ? (
-            <ErrorState message={error} onRetry={fetchData} />
-          ) : (
-            <>
-              <KpiRow
-                primaryIndex={2}
-                loading={loading}
-                items={[
-                  { label: "Income", value: loading ? "—" : rupee(pnl?.income), rawValue: loading ? null : pnl?.income, format: "rupee", sub: "Accrual", kind: "good" },
-                  { label: "Expense", value: loading ? "—" : rupee(pnl?.expense), rawValue: loading ? null : pnl?.expense, format: "rupee", sub: "Accrual", kind: "bad" },
-                  { label: "Profit", value: loading ? "—" : rupee(pnl?.profit), rawValue: loading ? null : pnl?.profit, format: "rupee", sub: dateRange, kind: pnl?.profit >= 0 ? "good" : "bad" },
-                  { label: "Receipts", value: loading ? "—" : rupee(cashFlow?.receipts), rawValue: loading ? null : cashFlow?.receipts, format: "rupee", sub: "Cash-basis", kind: "info" },
-                  { label: "Payments", value: loading ? "—" : rupee(cashFlow?.payments), rawValue: loading ? null : cashFlow?.payments, format: "rupee", sub: "Cash-basis", kind: "info" },
-                  { label: "Balance Left", value: loading ? "—" : rupee(cashFlow?.balanceLeft), rawValue: loading ? null : cashFlow?.balanceLeft, format: "rupee", sub: "Receipts − payments", kind: cashFlow?.balanceLeft >= 0 ? "good" : "bad" },
-                  { label: "Pending Receivable", value: loading ? "—" : rupee(receivable?.totalPending), rawValue: loading ? null : receivable?.totalPending, format: "rupee", sub: `${fmt(receivable?.count ?? 0)} open`, kind: "info" },
-                  { label: "Pending Payable", value: loading ? "—" : rupee(payable?.totalPending), rawValue: loading ? null : payable?.totalPending, format: "rupee", sub: `${fmt(payable?.count ?? 0)} open`, kind: payable?.totalPending > 0 ? "warn" : "good" },
-                ]}
-              />
-
-              <Card title="Balance sheet by account" subtitle={loading ? "Loading…" : `${dateRange}${branch !== "All" ? ` · ${branch}` : ""}`}>
-                <DataTable
-                  tall
-                  loading={loading}
-                  emptyMessage={<EmptyState icon="▦" title="No account data" hint="No ledger movement in this period." />}
-                  columns={[
-                    { key: "account", label: "Account" },
-                    { key: "openingBalance", label: "Opening", align: "right", render: (r) => rupee(r.openingBalance) },
-                    { key: "totalIn", label: "In", align: "right", render: (r) => rupee(r.totalIn) },
-                    { key: "totalOut", label: "Out", align: "right", render: (r) => rupee(r.totalOut) },
-                    { key: "closingBalance", label: "Closing", align: "right", render: (r) => rupee(r.closingBalance) },
-                    { key: "transactionCount", label: "Txns", align: "right" },
-                  ]}
-                  rows={
-                    loading
-                      ? []
-                      : [
-                          ...accountRows.map((r) => ({ ...r, id: r.account })),
-                          balanceSheet?.grandTotal
-                            ? { ...balanceSheet.grandTotal, account: "Grand total", id: "grand-total", _isTotal: true }
-                            : null,
-                        ].filter(Boolean)
-                  }
-                />
-              </Card>
-
-              <Card title="Branch profitability" subtitle="All branches, regardless of the branch filter above">
-                <DataTable
-                  loading={loading}
-                  emptyMessage={<EmptyState icon="▦" title="No transaction data" hint="No revenue or expense recorded for this period." />}
-                  columns={[
-                    { key: "branch", label: "Branch" },
-                    { key: "revenue", label: "Revenue", align: "right", render: (r) => rupee(r.revenue) },
-                    { key: "expense", label: "Expense", align: "right", render: (r) => rupee(r.expense) },
-                    { key: "profit", label: "Profit", align: "right", render: (r) => (
-                      <span style={{ color: r.profit >= 0 ? "var(--pos)" : "var(--crit)", fontWeight: 600 }}>{rupee(r.profit)}</span>
-                    ) },
-                  ]}
-                  rows={loading ? [] : branchRows.map((r) => ({ ...r, id: r.branch }))}
-                />
-              </Card>
-
-              <Card title="Daily Cash Activity" subtitle="Receipts vs payments, cash-basis — same definition as the Receipts/Payments KPIs above, just by day">
-                <TrendChart data={daily.map((d) => ({ date: d.date, value: d.receipts - d.payments }))} label="Net cash" />
-              </Card>
-
-              <Card title="Jump to a page">
-                <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}>
-                  {FINANCE_LINKS.map((it) => (
-                    <Link key={it.href} href={it.href} className="card" style={{ display: "block", textDecoration: "none" }}>
-                      <div className="card-title">
-                        <div>
-                          <h3>{it.label}</h3>
-                          <p>{it.note}</p>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </Card>
+              <input type="date" className="control" value={custom.from} onChange={(e) => setCustom((p) => ({ ...p, from: e.target.value }))} />
+              <input type="date" className="control" value={custom.to} onChange={(e) => setCustom((p) => ({ ...p, to: e.target.value }))} />
             </>
           )}
-        </div>
-      </div>
-    </div>
+          <button className="icon-btn" onClick={fetchData} disabled={loading} title="Refresh">
+            {loading ? "…" : "⟳"}
+          </button>
+        </>
+      }
+    >
+      <AiBriefPanel feature="finance.overview" scope={aiScope} title="Finance" variant="hero" scoreLabel="Financial Health" enabled={!!aiScope.from} aiState={overviewAi} />
+
+      {error ? (
+        <ErrorState message={error} onRetry={fetchData} />
+      ) : (
+        <>
+          <KpiRow
+            primaryIndex={2}
+            loading={loading}
+            items={[
+              { label: "Income", value: loading ? "—" : rupee(pnl?.income), rawValue: loading ? null : pnl?.income, format: "rupee", sub: "Accrual", kind: "good" },
+              { label: "Expense", value: loading ? "—" : rupee(pnl?.expense), rawValue: loading ? null : pnl?.expense, format: "rupee", sub: "Accrual", kind: "bad" },
+              { label: "Profit", value: loading ? "—" : rupee(pnl?.profit), rawValue: loading ? null : pnl?.profit, format: "rupee", sub: dateRange, kind: pnl?.profit >= 0 ? "good" : "bad" },
+              { label: "Receipts", value: loading ? "—" : rupee(cashFlow?.receipts), rawValue: loading ? null : cashFlow?.receipts, format: "rupee", sub: "Cash-basis", kind: "info" },
+              { label: "Payments", value: loading ? "—" : rupee(cashFlow?.payments), rawValue: loading ? null : cashFlow?.payments, format: "rupee", sub: "Cash-basis", kind: "info" },
+              { label: "Balance Left", value: loading ? "—" : rupee(cashFlow?.balanceLeft), rawValue: loading ? null : cashFlow?.balanceLeft, format: "rupee", sub: "Receipts − payments", kind: cashFlow?.balanceLeft >= 0 ? "good" : "bad" },
+              { label: "Pending Receivable", value: loading ? "—" : rupee(receivable?.totalPending), rawValue: loading ? null : receivable?.totalPending, format: "rupee", sub: `${fmt(receivable?.count ?? 0)} open`, kind: "info" },
+              { label: "Pending Payable", value: loading ? "—" : rupee(payable?.totalPending), rawValue: loading ? null : payable?.totalPending, format: "rupee", sub: `${fmt(payable?.count ?? 0)} open`, kind: payable?.totalPending > 0 ? "warn" : "good" },
+            ]}
+          />
+
+          <Card title="Balance sheet by account" subtitle={loading ? "Loading…" : `${dateRange}${branch !== "All" ? ` · ${branch}` : ""}`}>
+            <DataTable
+              tall
+              loading={loading}
+              emptyMessage={<EmptyState icon="▦" title="No account data" hint="No ledger movement in this period." />}
+              columns={[
+                { key: "account", label: "Account" },
+                { key: "openingBalance", label: "Opening", align: "right", render: (r) => rupee(r.openingBalance) },
+                { key: "totalIn", label: "In", align: "right", render: (r) => rupee(r.totalIn) },
+                { key: "totalOut", label: "Out", align: "right", render: (r) => rupee(r.totalOut) },
+                { key: "closingBalance", label: "Closing", align: "right", render: (r) => rupee(r.closingBalance) },
+                { key: "transactionCount", label: "Txns", align: "right" },
+              ]}
+              rows={
+                loading
+                  ? []
+                  : [
+                      ...accountRows.map((r) => ({ ...r, id: r.account })),
+                      balanceSheet?.grandTotal
+                        ? { ...balanceSheet.grandTotal, account: "Grand total", id: "grand-total", _isTotal: true }
+                        : null,
+                    ].filter(Boolean)
+              }
+            />
+          </Card>
+
+          <Card title="Branch profitability" subtitle="All branches, regardless of the branch filter above">
+            <DataTable
+              loading={loading}
+              emptyMessage={<EmptyState icon="▦" title="No transaction data" hint="No revenue or expense recorded for this period." />}
+              columns={[
+                { key: "branch", label: "Branch" },
+                { key: "revenue", label: "Revenue", align: "right", render: (r) => rupee(r.revenue) },
+                { key: "expense", label: "Expense", align: "right", render: (r) => rupee(r.expense) },
+                { key: "profit", label: "Profit", align: "right", render: (r) => (
+                  <span style={{ color: r.profit >= 0 ? "var(--pos)" : "var(--crit)", fontWeight: 600 }}>{rupee(r.profit)}</span>
+                ) },
+              ]}
+              rows={loading ? [] : branchRows.map((r) => ({ ...r, id: r.branch }))}
+            />
+          </Card>
+
+          <Card title="Daily Cash Activity" subtitle="Receipts vs payments, cash-basis — same definition as the Receipts/Payments KPIs above, just by day">
+            <TrendChart data={daily.map((d) => ({ date: d.date, value: d.receipts - d.payments }))} label="Net cash" />
+          </Card>
+
+          <Card title="Jump to a page">
+            <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}>
+              {FINANCE_LINKS.map((it) => (
+                <Link key={it.href} href={it.href} className="card" style={{ display: "block", textDecoration: "none" }}>
+                  <div className="card-title">
+                    <div>
+                      <h3>{it.label}</h3>
+                      <p>{it.note}</p>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </Card>
+        </>
+      )}
+    </OwnerPage>
   );
 }

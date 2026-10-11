@@ -19,7 +19,7 @@ export default function OwnerTopbar({ title, subtitle, controls, aiState }) {
 
   return (
     <div className="topbar">
-      <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+      <div className="topbar-left">
         <button
           className="icon-btn menu-btn"
           type="button"
@@ -28,7 +28,7 @@ export default function OwnerTopbar({ title, subtitle, controls, aiState }) {
         >
           ☰
         </button>
-        <div style={{ minWidth: 0 }}>
+        <div className="topbar-heading">
           {title && <h1>{title}</h1>}
           {subtitle && <p>{subtitle}</p>}
           {aiText && <span className="ai-topbar-status">{aiText}</span>}

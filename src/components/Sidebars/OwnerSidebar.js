@@ -9,129 +9,20 @@ import LogoutButton from "../LogoutButton";
 import { useShell } from "@/components/owner/ShellContext";
 import AiOrb from "@/components/owner/ai/AiOrb";
 import { useAiHealthBeacon } from "@/lib/ai/client/useAiHealthBeacon";
-
-const SECTIONS = [
-  { title: "Dashboard", href: "/owner/dashboard", icon: "◎" },
-  {
-    title: "Employees",
-    href: "/owner/employees",
-    icon: "☏",
-    items: [
-      { label: "Agents", href: "/owner/employees/agents" },
-      { label: "Counsellors", href: "/owner/employees/counsellors" },
-      { label: "Surgery", href: "/owner/employees/surgery-staff" },
-      { label: "HR", href: "/owner/employees/hr" },
-      { label: "Other staff", href: "/owner/employees/other-staff" },
-      { label: "TL & Manager", href: "/owner/employees/leadership" },
-      { label: "callby Links", href: "/owner/employees/links" },
-    ],
-  },
-  {
-    title: "Calls",
-    href: "/owner/calls",
-    icon: "◉",
-    items: [
-      { label: "Live Agent Status", href: "/owner/calls/live" },
-      { label: "Call Report", href: "/owner/calls/report" },
-      { label: "Employee Call Report", href: "/owner/calls/employee-report" },
-      { label: "Untracked Calls", href: "/owner/calls/untracked" },
-      { label: "Forecast & Staffing", href: "/owner/calls/forecast" },
-      { label: "Phone & SIM Health", href: "/owner/calls/sim-health", soon: true },
-    ],
-  },
-  {
-    title: "Leads",
-    href: "/owner/leads",
-    icon: "⚑",
-    items: [
-      { label: "Lead Report", href: "/owner/leads/report" },
-      { label: "Interested", href: "/owner/leads/interested" },
-      { label: "Follow-ups", href: "/owner/leads/follow-ups" },
-      { label: "Not Interested / Lost", href: "/owner/leads/not-interested" },
-      { label: "Unattempted", href: "/owner/leads/unattempted" },
-      { label: "Retry & Recovery", href: "/owner/leads/retry" },
-    ],
-  },
-  {
-    title: "Patients",
-    href: "/owner/patients",
-    icon: "✚",
-    items: [
-      { label: "All Patients", href: "/owner/patients/all" },
-      { label: "Not Converted", href: "/owner/patients/not-converted" },
-      { label: "Booking Done", href: "/owner/patients/booking-done" },
-      { label: "Converted", href: "/owner/patients/converted" },
-      { label: "Surgery Done", href: "/owner/patients/surgery-done" },
-      { label: "Direct", href: "/owner/patients/direct" },
-      { label: "Counsellor Conversion", href: "/owner/patients/counsellor-conversion" },
-      { label: "Surgery & OT Planner", href: "/owner/patients/surgery-planner" },
-    ],
-  },
-  {
-    title: "Marketing",
-    href: "/owner/marketing",
-    icon: "◈",
-    items: [
-      { label: "Active Ads", href: "/owner/marketing/campaigns" },
-      { label: "Ad Spend Entry", href: "/owner/marketing/ad-spend" },
-      { label: "Meta & Google", href: "/owner/marketing/platforms" },
-      { label: "Meta vs Google", href: "/owner/marketing/comparison" },
-      { label: "Campaign Leads", href: "/owner/marketing/campaign-leads" },
-      { label: "Campaign Performance", href: "/owner/marketing/performance" },
-    ],
-  },
-  {
-    title: "HR",
-    href: "/owner/hr",
-    icon: "₹",
-    items: [
-      { label: "All Interviews", href: "/owner/hr/interviews" },
-      { label: "Selected", href: "/owner/hr/selected" },
-      { label: "Rejected", href: "/owner/hr/rejected" },
-      { label: "By Position", href: "/owner/hr/by-position" },
-      { label: "HR Team", href: "/owner/employees/hr" },
-    ],
-  },
-  {
-    title: "Finance",
-    href: "/owner/finance",
-    icon: "▦",
-    items: [
-      { label: "All Transactions", href: "/owner/finance/transactions" },
-      { label: "Expenses", href: "/owner/finance/expenses" },
-      { label: "Assets", href: "/owner/finance/assets" },
-      { label: "Liabilities", href: "/owner/finance/liabilities" },
-      { label: "Salary & Incentive", href: "/owner/finance/salary-incentive" },
-      { label: "Rent", href: "/owner/finance/rent" },
-    ],
-  },
-  {
-    title: "AI",
-    href: "/owner/ai",
-    icon: "◆",
-    items: [
-      { label: "Attendance", href: "/owner/ai/attendance" },
-      { label: "Attention", href: "/owner/ai/attention" },
-      { label: "Suggestions", href: "/owner/ai/suggestions" },
-      { label: "Sanya Assistant", href: "/owner/ai/sanya" },
-      { label: "AI Health & Audit", href: "/owner/ai/health" },
-      { label: "Clinical AI Quality", href: "/owner/ai/clinical-quality", soon: true },
-    ],
-  },
-  { title: "Statistics", href: "/owner/statistics", icon: "⟐" },
-];
+import { OWNER_SECTIONS as SECTIONS, sectionFor } from "@/lib/owner/navTree";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
 const OPEN_KEY = "owner-nav-open-group";
 
 export default function OwnerSidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const { navOpen, setNavOpen, openCommandBar } = useShell();
+  const { navOpen, setNavOpen, openCommandBar, navCollapsed, toggleNavCollapsed } = useShell();
   const healthBeacon = useAiHealthBeacon();
   const aiHealthActive = pathname === "/owner/ai/health";
 
   const inTrail = (href) => pathname === href || pathname.startsWith(href + "/");
-  const activeSection = SECTIONS.find((s) => inTrail(s.href));
+  const activeSection = sectionFor(pathname);
 
   const [openGroup, setOpenGroup] = useState(null);
   const [hydrated, setHydrated] = useState(false);
@@ -188,16 +79,27 @@ export default function OwnerSidebar() {
       <aside className={`sidebar${navOpen ? " open" : ""}`}>
         <div className="brand">
           <AiOrb state="idle" size={40} />
-          <div>
+          <div className="brand-text">
             <strong>RyanCRM</strong>
             <small>Neural Command</small>
           </div>
+          <button
+            type="button"
+            className="icon-btn nav-collapse-btn"
+            onClick={toggleNavCollapsed}
+            aria-label={navCollapsed ? "Expand navigation" : "Collapse navigation"}
+            title={navCollapsed ? "Expand navigation" : "Collapse navigation"}
+          >
+            {navCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+          </button>
         </div>
 
         <nav>
           {SECTIONS.map((section, sectionIndex) => {
             const sectionActive = activeSection?.title === section.title;
-            const isOpen = openGroup === section.title;
+            // On the collapsed rail there is no room for sub-items; the section
+            // link goes to its landing page, which lists them.
+            const isOpen = !navCollapsed && openGroup === section.title;
 
             
             
@@ -208,9 +110,10 @@ export default function OwnerSidebar() {
                 href="/owner/ai/health"
                 aria-current={aiHealthActive ? "page" : undefined}
                 className={`nav-btn nav-pin${aiHealthActive ? " active" : ""}`}
+                title="AI Health"
               >
                 <span className="nav-ico nav-pin-ico" aria-hidden="true">◆</span>
-                <span>AI Health</span>
+                <span className="nav-label">AI Health</span>
                 {healthBeacon && <span className={`nav-pin-dot ai-status-${healthBeacon.tone}`} aria-hidden="true" />}
               </Link>
             );
@@ -223,9 +126,10 @@ export default function OwnerSidebar() {
                     href={section.href}
                     aria-current={sectionActive ? "page" : undefined}
                     className={`nav-btn${sectionActive ? " active" : ""}`}
+                    title={section.title}
                   >
                     <span className="nav-ico" aria-hidden="true">{section.icon}</span>
-                    <span>{section.title}</span>
+                    <span className="nav-label">{section.title}</span>
                   </Link>
                   {pin}
                 </div>
@@ -241,9 +145,10 @@ export default function OwnerSidebar() {
                     href={section.href}
                     aria-current={sectionActive ? "page" : undefined}
                     className="nav-group-link"
+                    title={section.title}
                   >
                     <span className="nav-ico" aria-hidden="true">{section.icon}</span>
-                    <span>{section.title}</span>
+                    <span className="nav-label">{section.title}</span>
                   </Link>
                   <button
                     type="button"
@@ -289,13 +194,11 @@ export default function OwnerSidebar() {
         </nav>
 
         <div className="side-foot">
-          <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-3)", marginBottom: "var(--sp-3)" }}>
+          <div className="user-chip" title={userName}>
             <div className="avatar" aria-hidden="true">{initials}</div>
-            <div style={{ minWidth: 0 }}>
-              <strong style={{ display: "block", fontSize: "var(--fs-14)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {userName}
-              </strong>
-              <span className="muted" style={{ fontSize: "var(--fs-12)" }}>Owner</span>
+            <div className="user-chip-text">
+              <strong>{userName}</strong>
+              <span className="muted">Owner</span>
             </div>
           </div>
           <button type="button" className="nav-cmdk-hint" onClick={openCommandBar}>

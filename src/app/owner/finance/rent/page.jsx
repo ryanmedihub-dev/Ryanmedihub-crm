@@ -1,8 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
-import { OwnerTopbar, Card, FilterBar, KpiRow, DataTable, ErrorState, Badge } from "@/components/owner";
+import { OwnerPage, Card, FilterBar, KpiRow, DataTable, ErrorState, Badge } from "@/components/owner";
 import { AiBriefPanel } from "@/components/owner/ai";
 import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
@@ -49,60 +48,53 @@ export default function FinanceRentPage() {
   const rentAi = useAiInsight("finance.rent", aiScope, { kind: "brief", enabled: !!filterState });
 
   return (
-    <div className="app">
-      <OwnerSidebar />
-      <div className="main">
-        <OwnerTopbar
-          title="Rent"
-          subtitle="Payable purpose: RENT — per property, from the existing payables data"
-          aiState={rentAi}
-          controls={
-            <button className="icon-btn" onClick={() => load()} disabled={isValidating} title="Refresh">
-              {isValidating ? "…" : "⟳"}
-            </button>
-          }
-        />
+    <OwnerPage
+      title="Rent"
+      subtitle="Payable purpose: RENT — per property, from the existing payables data"
+      aiState={rentAi}
+      controls={
+        <button className="icon-btn" onClick={() => load()} disabled={isValidating} title="Refresh">
+          {isValidating ? "…" : "⟳"}
+        </button>
+      }
+    >
+      <AiBriefPanel feature="finance.rent" scope={aiScope} title="Rent" enabled={!!filterState} aiState={rentAi} />
 
-        <div className="content">
-          <AiBriefPanel feature="finance.rent" scope={aiScope} title="Rent" enabled={!!filterState} aiState={rentAi} />
+      <FilterBar show={["branch"]} onChange={({ filters, range }) => setFilterState({ filters, range })} />
 
-          <FilterBar show={["branch"]} onChange={({ filters, range }) => setFilterState({ filters, range })} />
+      {error ? (
+        <ErrorState message={error} onRetry={load} />
+      ) : (
+        <>
+          <KpiRow
+            loading={loading}
+            primaryIndex={0}
+            items={[
+              { label: "Properties", value: loading ? "—" : propertyRows.length, rawValue: loading ? null : propertyRows.length, format: "num", sub: "Distinct payees", kind: "info" },
+              { label: "Pending", value: loading ? "—" : rupee(totalPending), rawValue: loading ? null : totalPending, format: "rupee", sub: "Outstanding", kind: totalPending > 0 ? "warn" : "good" },
+              { label: "Overdue", value: loading ? "—" : overdueCount, rawValue: loading ? null : overdueCount, format: "num", sub: "Payable rows", kind: overdueCount ? "bad" : "good" },
+            ]}
+          />
 
-          {error ? (
-            <ErrorState message={error} onRetry={load} />
-          ) : (
-            <>
-              <KpiRow
-                loading={loading}
-                primaryIndex={0}
-                items={[
-                  { label: "Properties", value: loading ? "—" : propertyRows.length, rawValue: loading ? null : propertyRows.length, format: "num", sub: "Distinct payees", kind: "info" },
-                  { label: "Pending", value: loading ? "—" : rupee(totalPending), rawValue: loading ? null : totalPending, format: "rupee", sub: "Outstanding", kind: totalPending > 0 ? "warn" : "good" },
-                  { label: "Overdue", value: loading ? "—" : overdueCount, rawValue: loading ? null : overdueCount, format: "num", sub: "Payable rows", kind: overdueCount ? "bad" : "good" },
-                ]}
-              />
-
-              <Card title="By Property" subtitle={loading ? "Loading…" : `${propertyRows.length} properties`}>
-                <DataTable
-                  tall
-                  loading={loading}
-                  columns={[
-                    { key: "property", label: "Property" },
-                    { key: "branch", label: "Branch" },
-                    { key: "monthlyAmount", label: "Latest Monthly Amount", align: "right", render: (r) => rupee(r.monthlyAmount) },
-                    { key: "latestDueDate", label: "Due Date", render: (r) => fmtDate(r.latestDueDate) },
-                    { key: "latestStatus", label: "Status", render: (r) => <Badge kind={STATUS_KIND[r.latestStatus] || "neutral"}>{r.latestStatus || "—"}</Badge> },
-                    { key: "pending", label: "Pending (all records)", align: "right", render: (r) => rupee(r.pending) },
-                    { key: "annualTotal", label: "Total (all records)", align: "right", render: (r) => rupee(r.annualTotal) },
-                    { key: "count", label: "Records", align: "right", render: (r) => num(r.count) },
-                  ]}
-                  rows={propertyRows.map((r) => ({ ...r, id: r.property }))}
-                />
-              </Card>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
+          <Card title="By Property" subtitle={loading ? "Loading…" : `${propertyRows.length} properties`}>
+            <DataTable
+              tall
+              loading={loading}
+              columns={[
+                { key: "property", label: "Property" },
+                { key: "branch", label: "Branch" },
+                { key: "monthlyAmount", label: "Latest Monthly Amount", align: "right", render: (r) => rupee(r.monthlyAmount) },
+                { key: "latestDueDate", label: "Due Date", render: (r) => fmtDate(r.latestDueDate) },
+                { key: "latestStatus", label: "Status", render: (r) => <Badge kind={STATUS_KIND[r.latestStatus] || "neutral"}>{r.latestStatus || "—"}</Badge> },
+                { key: "pending", label: "Pending (all records)", align: "right", render: (r) => rupee(r.pending) },
+                { key: "annualTotal", label: "Total (all records)", align: "right", render: (r) => rupee(r.annualTotal) },
+                { key: "count", label: "Records", align: "right", render: (r) => num(r.count) },
+              ]}
+              rows={propertyRows.map((r) => ({ ...r, id: r.property }))}
+            />
+          </Card>
+        </>
+      )}
+    </OwnerPage>
   );
 }

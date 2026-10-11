@@ -2,8 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
-import { OwnerTopbar, Card, FilterBar, KpiRow, DataTable, ErrorState, TrendChart } from "@/components/owner";
+import { OwnerPage, Card, FilterBar, KpiRow, DataTable, ErrorState, TrendChart } from "@/components/owner";
 import { AiBriefPanel } from "@/components/owner/ai";
 import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
@@ -35,76 +34,69 @@ export default function HrLanding() {
   const overviewAi = useAiInsight("hr.overview", aiScope, { kind: "brief", enabled: !!filterState });
 
   return (
-    <div className="app">
-      <OwnerSidebar />
-      <div className="main">
-        <OwnerTopbar
-          title="HR"
-          subtitle="Interviews, outcomes and hiring demand — links into every HR page"
-          aiState={overviewAi}
-          controls={
-            <button className="icon-btn" onClick={() => load()} disabled={isValidating} title="Refresh">
-              {isValidating ? "…" : "⟳"}
-            </button>
-          }
-        />
+    <OwnerPage
+      title="HR"
+      subtitle="Interviews, outcomes and hiring demand — links into every HR page"
+      aiState={overviewAi}
+      controls={
+        <button className="icon-btn" onClick={() => load()} disabled={isValidating} title="Refresh">
+          {isValidating ? "…" : "⟳"}
+        </button>
+      }
+    >
+      <AiBriefPanel feature="hr.overview" scope={aiScope} title="HR" enabled={!!filterState} aiState={overviewAi} />
 
-        <div className="content">
-          <AiBriefPanel feature="hr.overview" scope={aiScope} title="HR" enabled={!!filterState} aiState={overviewAi} />
+      <FilterBar show={["date"]} onChange={({ filters, range }) => setFilterState({ filters, range })} />
 
-          <FilterBar show={["date"]} onChange={({ filters, range }) => setFilterState({ filters, range })} />
+      {error ? (
+        <ErrorState message={error} onRetry={load} />
+      ) : (
+        <>
+          <KpiRow
+            loading={loading || !data}
+            primaryIndex={0}
+            items={[
+              { label: "Interviews", value: num(data?.total), sub: "This period", kind: "info" },
+              { label: "Selected", value: num(data?.selected), sub: "This period", kind: "good" },
+              { label: "Rejected", value: num(data?.rejected), sub: "This period", kind: "bad" },
+              { label: "On Hold", value: num(data?.onHold), sub: "This period", kind: "warn" },
+              { label: "Selection Rate", value: data ? `${data.selectionRate}%` : "—", sub: "Selected ÷ total", kind: "good" },
+              { label: "Avg. Days to Decision", value: data?.avgDaysToDecision == null ? "—" : `${data.avgDaysToDecision}d`, sub: "Applied → decided", kind: "info" },
+            ]}
+          />
 
-          {error ? (
-            <ErrorState message={error} onRetry={load} />
-          ) : (
-            <>
-              <KpiRow
-                loading={loading || !data}
-                primaryIndex={0}
-                items={[
-                  { label: "Interviews", value: num(data?.total), sub: "This period", kind: "info" },
-                  { label: "Selected", value: num(data?.selected), sub: "This period", kind: "good" },
-                  { label: "Rejected", value: num(data?.rejected), sub: "This period", kind: "bad" },
-                  { label: "On Hold", value: num(data?.onHold), sub: "This period", kind: "warn" },
-                  { label: "Selection Rate", value: data ? `${data.selectionRate}%` : "—", sub: "Selected ÷ total", kind: "good" },
-                  { label: "Avg. Days to Decision", value: data?.avgDaysToDecision == null ? "—" : `${data.avgDaysToDecision}d`, sub: "Applied → decided", kind: "info" },
+          <div className="grid cols-equal">
+            <Card title="Demand by Position" subtitle="Top 15, this period">
+              <DataTable
+                loading={loading}
+                columns={[
+                  { key: "position", label: "Position" },
+                  { key: "count", label: "Interviews", align: "right", render: (r) => num(r.count) },
                 ]}
+                rows={(data?.byPosition || []).map((p, i) => ({ ...p, id: i }))}
               />
+            </Card>
+            <Card title="Interviews Per Day" subtitle="This period">
+              <TrendChart data={data?.daywise || []} label="Interviews" />
+            </Card>
+          </div>
 
-              <div className="grid cols-equal">
-                <Card title="Demand by Position" subtitle="Top 15, this period">
-                  <DataTable
-                    loading={loading}
-                    columns={[
-                      { key: "position", label: "Position" },
-                      { key: "count", label: "Interviews", align: "right", render: (r) => num(r.count) },
-                    ]}
-                    rows={(data?.byPosition || []).map((p, i) => ({ ...p, id: i }))}
-                  />
-                </Card>
-                <Card title="Interviews Per Day" subtitle="This period">
-                  <TrendChart data={data?.daywise || []} label="Interviews" />
-                </Card>
-              </div>
-
-              <Card title="Jump to a page">
-                <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}>
-                  {LINKS.map((it) => (
-                    <Link key={it.href} href={it.href} className="card" style={{ display: "block", textDecoration: "none" }}>
-                      <div className="card-title">
-                        <div>
-                          <h3>{it.label}</h3>
-                          <p>{it.note}</p>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </Card>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
+          <Card title="Jump to a page">
+            <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}>
+              {LINKS.map((it) => (
+                <Link key={it.href} href={it.href} className="card" style={{ display: "block", textDecoration: "none" }}>
+                  <div className="card-title">
+                    <div>
+                      <h3>{it.label}</h3>
+                      <p>{it.note}</p>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </Card>
+        </>
+      )}
+    </OwnerPage>
   );
 }

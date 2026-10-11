@@ -1,8 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
-import { OwnerTopbar, Card, FilterBar, ReportTable, KpiRow, ErrorState } from "@/components/owner";
+import { OwnerPage, Card, FilterBar, ReportTable, KpiRow, ErrorState } from "@/components/owner";
 import { AiBriefPanel } from "@/components/owner/ai";
 import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
@@ -64,73 +63,66 @@ export default function LeadsReportPage() {
   const total = data?.total || 0;
 
   return (
-    <div className="app">
-      <OwnerSidebar />
-      <div className="main">
-        <OwnerTopbar
-          title="Lead Report"
-          subtitle="Full lead report — mirrors callby's own Lead Reports page"
-          aiState={reportAi}
-          controls={
-            <button className="icon-btn" onClick={() => load()} disabled={loading} title="Refresh">
-              {loading ? "…" : "⟳"}
-            </button>
-          }
-        />
+    <OwnerPage
+      title="Lead Report"
+      subtitle="Full lead report — mirrors callby's own Lead Reports page"
+      aiState={reportAi}
+      controls={
+        <button className="icon-btn" onClick={() => load()} disabled={loading} title="Refresh">
+          {loading ? "…" : "⟳"}
+        </button>
+      }
+    >
+      <AiBriefPanel feature="leads.report" scope={aiScope} title="Lead Report" enabled={!!filterState} aiState={reportAi} />
 
-        <div className="content">
-          <AiBriefPanel feature="leads.report" scope={aiScope} title="Lead Report" enabled={!!filterState} aiState={reportAi} />
+      <FilterBar
+        show={["date"]}
+        extras={[{ key: "status", label: "Status", options: STATUS_OPTIONS }]}
+        defaults={{ status: "" }}
+        onChange={({ filters, range }) => {
+          setPage(1);
+          setFilterState({ filters, range });
+        }}
+      />
 
-          <FilterBar
-            show={["date"]}
-            extras={[{ key: "status", label: "Status", options: STATUS_OPTIONS }]}
-            defaults={{ status: "" }}
-            onChange={({ filters, range }) => {
-              setPage(1);
-              setFilterState({ filters, range });
-            }}
+      {error ? (
+        <ErrorState message={error} onRetry={load} />
+      ) : (
+        <>
+          <KpiRow
+            loading={loading || !data}
+            primaryIndex={0}
+            items={[{ label: "Total Leads", value: num(total), sub: "This period", kind: "info" }]}
           />
 
-          {error ? (
-            <ErrorState message={error} onRetry={load} />
-          ) : (
-            <>
-              <KpiRow
-                loading={loading || !data}
-                primaryIndex={0}
-                items={[{ label: "Total Leads", value: num(total), sub: "This period", kind: "info" }]}
-              />
-
-              <Card title="Leads" subtitle={loading ? "Loading…" : `${total} leads`}>
-                <ReportTable
-                  tableId="leads-report"
-                  columns={LEAD_BASE_COLUMNS}
-                  rows={rows}
-                  loading={loading}
-                  sortKey={sortKey}
-                  sortDir={sortDir}
-                  onSort={handleSort}
-                  search={search}
-                  onSearchChange={(v) => {
-                    setSearch(v);
-                    setPage(1);
-                  }}
-                  searchPlaceholder="Search name / phone / email…"
-                  page={page}
-                  pageSize={pageSize}
-                  total={total}
-                  onPageChange={setPage}
-                  onPageSizeChange={(n) => {
-                    setPageSize(n);
-                    setPage(1);
-                  }}
-                  csvFilename="leads-report.csv"
-                />
-              </Card>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
+          <Card title="Leads" subtitle={loading ? "Loading…" : `${total} leads`}>
+            <ReportTable
+              tableId="leads-report"
+              columns={LEAD_BASE_COLUMNS}
+              rows={rows}
+              loading={loading}
+              sortKey={sortKey}
+              sortDir={sortDir}
+              onSort={handleSort}
+              search={search}
+              onSearchChange={(v) => {
+                setSearch(v);
+                setPage(1);
+              }}
+              searchPlaceholder="Search name / phone / email…"
+              page={page}
+              pageSize={pageSize}
+              total={total}
+              onPageChange={setPage}
+              onPageSizeChange={(n) => {
+                setPageSize(n);
+                setPage(1);
+              }}
+              csvFilename="leads-report.csv"
+            />
+          </Card>
+        </>
+      )}
+    </OwnerPage>
   );
 }

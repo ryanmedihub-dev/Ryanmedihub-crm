@@ -2,8 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
-import { OwnerTopbar, Card, FilterBar, KpiRow, TrendChart, ErrorState, ManualDataNotice } from "@/components/owner";
+import { OwnerPage, Card, FilterBar, KpiRow, TrendChart, ErrorState, ManualDataNotice } from "@/components/owner";
 import { AiBriefPanel } from "@/components/owner/ai";
 import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { ownerFetch } from "@/lib/ownerFetch";
@@ -76,69 +75,62 @@ export default function MarketingLanding() {
   );
 
   return (
-    <div className="app">
-      <OwnerSidebar />
-      <div className="main">
-        <OwnerTopbar
-          title="Marketing"
-          subtitle="Spend, leads, CPL, CAC and ROAS by platform — links into every marketing page"
-          aiState={overviewAi}
-          controls={
-            <button className="icon-btn" onClick={() => load()} disabled={loading} title="Refresh">
-              {loading ? "…" : "⟳"}
-            </button>
-          }
-        />
+    <OwnerPage
+      title="Marketing"
+      subtitle="Spend, leads, CPL, CAC and ROAS by platform — links into every marketing page"
+      aiState={overviewAi}
+      controls={
+        <button className="icon-btn" onClick={() => load()} disabled={loading} title="Refresh">
+          {loading ? "…" : "⟳"}
+        </button>
+      }
+    >
+      <AiBriefPanel feature="marketing.overview" scope={aiScope} title="Marketing" enabled={!!filterState} aiState={overviewAi} />
 
-        <div className="content">
-          <AiBriefPanel feature="marketing.overview" scope={aiScope} title="Marketing" enabled={!!filterState} aiState={overviewAi} />
+      <ManualDataNotice lastUpdatedAt={notice?.lastUpdatedAt} lastUpdatedBy={notice?.lastUpdatedBy} />
 
-          <ManualDataNotice lastUpdatedAt={notice?.lastUpdatedAt} lastUpdatedBy={notice?.lastUpdatedBy} />
+      <FilterBar show={["date", "branch"]} onChange={({ filters, range }) => setFilterState({ filters, range })} />
 
-          <FilterBar show={["date", "branch"]} onChange={({ filters, range }) => setFilterState({ filters, range })} />
+      {error ? (
+        <ErrorState message={error} onRetry={load} />
+      ) : (
+        <>
+          <KpiRow
+            loading={loading || !summary}
+            primaryIndex={0}
+            items={[
+              { label: "Total Spend", value: rupee(totals.spend), sub: "This period", kind: "info" },
+              { label: "Total Leads", value: num(totals.leads), sub: "Meta + Google", kind: "info" },
+              { label: "Blended CPL", value: rupee(totals.leads ? totals.spend / totals.leads : null), sub: "Cost per lead", kind: "good" },
+              { label: "Converted", value: num(totals.converted), sub: "So far", kind: "good" },
+              { label: "Blended CAC", value: rupee(totals.converted ? totals.spend / totals.converted : null), sub: "Cost per conversion", kind: "warn" },
+              { label: "Blended ROAS", value: roasFmt(totals.spend ? totals.revenue / totals.spend : null), sub: "Revenue ÷ spend", kind: "good" },
+            ]}
+          />
 
-          {error ? (
-            <ErrorState message={error} onRetry={load} />
-          ) : (
-            <>
-              <KpiRow
-                loading={loading || !summary}
-                primaryIndex={0}
-                items={[
-                  { label: "Total Spend", value: rupee(totals.spend), sub: "This period", kind: "info" },
-                  { label: "Total Leads", value: num(totals.leads), sub: "Meta + Google", kind: "info" },
-                  { label: "Blended CPL", value: rupee(totals.leads ? totals.spend / totals.leads : null), sub: "Cost per lead", kind: "good" },
-                  { label: "Converted", value: num(totals.converted), sub: "So far", kind: "good" },
-                  { label: "Blended CAC", value: rupee(totals.converted ? totals.spend / totals.converted : null), sub: "Cost per conversion", kind: "warn" },
-                  { label: "Blended ROAS", value: roasFmt(totals.spend ? totals.revenue / totals.spend : null), sub: "Revenue ÷ spend", kind: "good" },
-                ]}
-              />
+          <Card title="Spend Per Day" subtitle="Meta + Google, this period">
+            <TrendChart
+              data={daily.map((d) => ({ date: d.date, value: (d.Meta || 0) + (d.Google || 0) }))}
+              label="Spend"
+            />
+          </Card>
 
-              <Card title="Spend Per Day" subtitle="Meta + Google, this period">
-                <TrendChart
-                  data={daily.map((d) => ({ date: d.date, value: (d.Meta || 0) + (d.Google || 0) }))}
-                  label="Spend"
-                />
-              </Card>
-
-              <Card title="Jump to a page">
-                <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}>
-                  {LINKS.map((it) => (
-                    <Link key={it.href} href={it.href} className="card" style={{ display: "block", textDecoration: "none" }}>
-                      <div className="card-title">
-                        <div>
-                          <h3>{it.label}</h3>
-                          <p>{it.note}</p>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </Card>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
+          <Card title="Jump to a page">
+            <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}>
+              {LINKS.map((it) => (
+                <Link key={it.href} href={it.href} className="card" style={{ display: "block", textDecoration: "none" }}>
+                  <div className="card-title">
+                    <div>
+                      <h3>{it.label}</h3>
+                      <p>{it.note}</p>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </Card>
+        </>
+      )}
+    </OwnerPage>
   );
 }

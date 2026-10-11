@@ -1,8 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
-import { OwnerTopbar, Card, FilterBar, ReportTable, KpiRow, ErrorState, InlineNotice } from "@/components/owner";
+import { OwnerPage, Card, FilterBar, ReportTable, KpiRow, ErrorState, InlineNotice } from "@/components/owner";
 import { AiBriefPanel } from "@/components/owner/ai";
 import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { ownerFetch } from "@/lib/ownerFetch";
@@ -59,86 +58,79 @@ export default function UntrackedCallsPage() {
   const total = data?.total || 0;
 
   return (
-    <div className="app">
-      <OwnerSidebar />
-      <div className="main">
-        <OwnerTopbar
-          title="Untracked Calls"
-          subtitle="Calls to numbers that never matched a lead — business happening outside the CRM"
-          aiState={untrackedAi}
-          controls={
-            <button className="icon-btn" onClick={() => load()} disabled={loading} title="Refresh">
-              {loading ? "…" : "⟳"}
-            </button>
-          }
-        />
+    <OwnerPage
+      title="Untracked Calls"
+      subtitle="Calls to numbers that never matched a lead — business happening outside the CRM"
+      aiState={untrackedAi}
+      controls={
+        <button className="icon-btn" onClick={() => load()} disabled={loading} title="Refresh">
+          {loading ? "…" : "⟳"}
+        </button>
+      }
+    >
+      <AiBriefPanel feature="calls.untracked" scope={aiScope} title="Untracked Calls" enabled={!!filterState} aiState={untrackedAi} />
 
-        <div className="content">
-          <AiBriefPanel feature="calls.untracked" scope={aiScope} title="Untracked Calls" enabled={!!filterState} aiState={untrackedAi} />
+      <FilterBar show={["date"]} onChange={({ filters, range }) => { setPage(1); setFilterState({ filters, range }); }} />
 
-          <FilterBar show={["date"]} onChange={({ filters, range }) => { setPage(1); setFilterState({ filters, range }); }} />
+      {error ? (
+        <ErrorState message={error} onRetry={load} />
+      ) : (
+        <>
+          <KpiRow
+            loading={loading || !data}
+            primaryIndex={0}
+            items={[
+              { label: "Untracked Calls", value: num(total), sub: "This period", kind: "warn" },
+              {
+                label: "Untracked %",
+                value: data ? `${data.untrackedPct}%` : "—",
+                sub: `of ${data ? num(data.totalCalls) : "—"} total calls`,
+                kind: data && data.untrackedPct > 20 ? "bad" : "info",
+              },
+            ]}
+          />
 
-          {error ? (
-            <ErrorState message={error} onRetry={load} />
-          ) : (
-            <>
-              <KpiRow
-                loading={loading || !data}
-                primaryIndex={0}
-                items={[
-                  { label: "Untracked Calls", value: num(total), sub: "This period", kind: "warn" },
-                  {
-                    label: "Untracked %",
-                    value: data ? `${data.untrackedPct}%` : "—",
-                    sub: `of ${data ? num(data.totalCalls) : "—"} total calls`,
-                    kind: data && data.untrackedPct > 20 ? "bad" : "info",
-                  },
-                ]}
-              />
-
-              {notice && (
-                <InlineNotice kind={notice.kind === "error" ? "error" : "info"} title={notice.kind === "error" ? "Couldn't create the lead" : "Done"}>
-                  {notice.text}
-                </InlineNotice>
-              )}
-
-              <Card title="Untracked Calls" subtitle={loading ? "Loading…" : `${total} calls`}>
-                <ReportTable
-                  tableId="calls-untracked"
-                  columns={[
-                    { key: "employeeName", label: "Employee", render: (r) => r.employeeName || "Unknown" },
-                    { key: "contactNumber", label: "Number", render: (r) => r.contactNumber || "—" },
-                    { key: "contactName", label: "Contact Name", render: (r) => r.contactName || "Unknown" },
-                    { key: "callType", label: "Call Type", render: (r) => callTypeBadge(r.callType) },
-                    { key: "timestamp", label: "When", render: (r) => fmtDateTime(r.timestamp) },
-                    {
-                      key: "actions",
-                      label: "",
-                      align: "right",
-                      render: (r) => (
-                        <button className="btn" disabled={creating === r._id} onClick={() => createLead(r)}>
-                          {creating === r._id ? "Creating…" : "Create Lead"}
-                        </button>
-                      ),
-                    },
-                  ]}
-                  rows={rows.map((r) => ({ ...r, id: r._id }))}
-                  loading={loading}
-                  search={search}
-                  onSearchChange={(v) => { setSearch(v); setPage(1); }}
-                  searchPlaceholder="Search number / contact name…"
-                  page={page}
-                  pageSize={pageSize}
-                  total={total}
-                  onPageChange={setPage}
-                  onPageSizeChange={(n) => { setPageSize(n); setPage(1); }}
-                  csvFilename="untracked-calls.csv"
-                />
-              </Card>
-            </>
+          {notice && (
+            <InlineNotice kind={notice.kind === "error" ? "error" : "info"} title={notice.kind === "error" ? "Couldn't create the lead" : "Done"}>
+              {notice.text}
+            </InlineNotice>
           )}
-        </div>
-      </div>
-    </div>
+
+          <Card title="Untracked Calls" subtitle={loading ? "Loading…" : `${total} calls`}>
+            <ReportTable
+              tableId="calls-untracked"
+              columns={[
+                { key: "employeeName", label: "Employee", render: (r) => r.employeeName || "Unknown" },
+                { key: "contactNumber", label: "Number", render: (r) => r.contactNumber || "—" },
+                { key: "contactName", label: "Contact Name", render: (r) => r.contactName || "Unknown" },
+                { key: "callType", label: "Call Type", render: (r) => callTypeBadge(r.callType) },
+                { key: "timestamp", label: "When", render: (r) => fmtDateTime(r.timestamp) },
+                {
+                  key: "actions",
+                  label: "",
+                  align: "right",
+                  render: (r) => (
+                    <button className="btn" disabled={creating === r._id} onClick={() => createLead(r)}>
+                      {creating === r._id ? "Creating…" : "Create Lead"}
+                    </button>
+                  ),
+                },
+              ]}
+              rows={rows.map((r) => ({ ...r, id: r._id }))}
+              loading={loading}
+              search={search}
+              onSearchChange={(v) => { setSearch(v); setPage(1); }}
+              searchPlaceholder="Search number / contact name…"
+              page={page}
+              pageSize={pageSize}
+              total={total}
+              onPageChange={setPage}
+              onPageSizeChange={(n) => { setPageSize(n); setPage(1); }}
+              csvFilename="untracked-calls.csv"
+            />
+          </Card>
+        </>
+      )}
+    </OwnerPage>
   );
 }

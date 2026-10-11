@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useMemo } from "react";
-import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
-import { OwnerTopbar, Card, InlineNotice, Funnel, Badge, ProgressBar } from "@/components/owner";
+import { OwnerPage, Card, InlineNotice, Funnel, Badge, ProgressBar } from "@/components/owner";
 import { AiBriefPanel } from "@/components/owner/ai";
 import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
@@ -59,88 +58,80 @@ export default function ForecastStaffingPage() {
   }, [leadsPerDay, connectRate, consultRate, conversionRate, avgPackage, agents, capacityPerAgent]);
 
   return (
-    <div className="app">
-      <OwnerSidebar />
+    <OwnerPage
+      title="Forecast & Staffing"
+      subtitle="Adjust the assumptions below — defaults are seeded from real 30-day figures where available"
+      aiState={forecastAi}
+    >
+      <AiBriefPanel feature="calls.forecast" scope={{}} title="Forecast & Staffing" aiState={forecastAi} />
 
-      <div className="main">
-        <OwnerTopbar
-          title="Forecast & Staffing"
-          subtitle="Adjust the assumptions below — defaults are seeded from real 30-day figures where available"
-          aiState={forecastAi}
-        />
+      {seedError && (
+        <InlineNotice kind="warn" title="Couldn't seed real defaults">
+          {seedError} — the sliders below start from generic assumptions.
+        </InlineNotice>
+      )}
+      {note && (
+        <InlineNotice kind="info" title="Partial live data">{note}</InlineNotice>
+      )}
 
-        <div className="content">
-          <AiBriefPanel feature="calls.forecast" scope={{}} title="Forecast & Staffing" aiState={forecastAi} />
+      <div className="grid cols-2">
+        <Card title="Assumptions" subtitle={seedLoading ? "Loading real 30-day defaults…" : "Leads/day and consult rate are real; drag any slider to explore scenarios"}>
+          <SliderRow label="Leads / day" value={leadsPerDay} onChange={setLeadsPerDay} min={0} max={300} />
+          <SliderRow label="Connect Rate" value={connectRate} onChange={setConnectRate} min={0} max={100} suffix="%" />
+          <SliderRow label="Consult Rate" value={consultRate} onChange={setConsultRate} min={0} max={100} suffix="%" />
+          <SliderRow label="Conversion Rate" value={conversionRate} onChange={setConversionRate} min={0} max={100} suffix="%" />
+          <SliderRow label="Avg. Package (₹)" value={avgPackage} onChange={setAvgPackage} min={0} max={200000} step={1000} />
+          <SliderRow label="Current Agents" value={agents} onChange={setAgents} min={0} max={100} />
+          <SliderRow label="Leads / Agent / Day" value={capacityPerAgent} onChange={setCapacityPerAgent} min={1} max={60} />
+        </Card>
 
-          {seedError && (
-            <InlineNotice kind="warn" title="Couldn't seed real defaults">
-              {seedError} — the sliders below start from generic assumptions.
-            </InlineNotice>
-          )}
-          {note && (
-            <InlineNotice kind="info" title="Partial live data">{note}</InlineNotice>
-          )}
-
-          <div className="grid cols-2">
-            <Card title="Assumptions" subtitle={seedLoading ? "Loading real 30-day defaults…" : "Leads/day and consult rate are real; drag any slider to explore scenarios"}>
-              <SliderRow label="Leads / day" value={leadsPerDay} onChange={setLeadsPerDay} min={0} max={300} />
-              <SliderRow label="Connect Rate" value={connectRate} onChange={setConnectRate} min={0} max={100} suffix="%" />
-              <SliderRow label="Consult Rate" value={consultRate} onChange={setConsultRate} min={0} max={100} suffix="%" />
-              <SliderRow label="Conversion Rate" value={conversionRate} onChange={setConversionRate} min={0} max={100} suffix="%" />
-              <SliderRow label="Avg. Package (₹)" value={avgPackage} onChange={setAvgPackage} min={0} max={200000} step={1000} />
-              <SliderRow label="Current Agents" value={agents} onChange={setAgents} min={0} max={100} />
-              <SliderRow label="Leads / Agent / Day" value={capacityPerAgent} onChange={setCapacityPerAgent} min={1} max={60} />
-            </Card>
-
-            <Card title="Projected Monthly Outcome" subtitle="30-day projection from the assumptions on the left">
-              <div className="kpi kpi-lead" style={{ marginBottom: "var(--sp-4)" }}>
-                <span className="label">Projected Monthly Revenue</span>
-                <span className="value">{rupee(forecast.monthlyRevenue)}</span>
-                <span className="sub">{fmt(forecast.monthlyConversions)} conversions × avg. package</span>
-              </div>
-
-              <Funnel
-                items={[
-                  { label: "Leads", value: Math.round(forecast.monthlyLeads) },
-                  { label: "Connected", value: Math.round(forecast.monthlyConnected) },
-                  { label: "Consulted", value: Math.round(forecast.monthlyConsulted) },
-                  { label: "Conversions", value: Math.round(forecast.monthlyConversions) },
-                ]}
-              />
-
-              <div className="forecast-box" style={{ marginTop: "var(--sp-4)" }}>
-                <div className="forecast-card">
-                  <strong>{agents}</strong>
-                  <span>Current Agents</span>
-                </div>
-                <div className="forecast-card">
-                  <strong>{forecast.requiredAgents}</strong>
-                  <span>Agents Needed</span>
-                </div>
-              </div>
-
-              <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-3)", marginTop: "var(--sp-3)" }}>
-                <Badge kind={forecast.agentGap > 0 ? "bad" : "good"} dot>
-                  {forecast.agentGap > 0
-                    ? `${forecast.agentGap} agent${forecast.agentGap === 1 ? "" : "s"} short`
-                    : forecast.agentGap < 0
-                    ? `${-forecast.agentGap} agent${forecast.agentGap === -1 ? "" : "s"} spare`
-                    : "Fully staffed"}
-                </Badge>
-                <ProgressBar
-                  value={forecast.requiredAgents > 0 ? (agents / forecast.requiredAgents) * 100 : 100}
-                  kind={forecast.agentGap > 0 ? "bad" : "good"}
-                />
-              </div>
-
-              <p className="muted" style={{ marginTop: 12 }}>
-                Agents Needed = Leads/day ÷ Leads/Agent/Day. Not a callby figure — a simple staffing
-                math check against whatever capacity assumption you set above.
-              </p>
-            </Card>
+        <Card title="Projected Monthly Outcome" subtitle="30-day projection from the assumptions on the left">
+          <div className="kpi kpi-lead" style={{ marginBottom: "var(--sp-4)" }}>
+            <span className="label">Projected Monthly Revenue</span>
+            <span className="value">{rupee(forecast.monthlyRevenue)}</span>
+            <span className="sub">{fmt(forecast.monthlyConversions)} conversions × avg. package</span>
           </div>
-        </div>
+
+          <Funnel
+            items={[
+              { label: "Leads", value: Math.round(forecast.monthlyLeads) },
+              { label: "Connected", value: Math.round(forecast.monthlyConnected) },
+              { label: "Consulted", value: Math.round(forecast.monthlyConsulted) },
+              { label: "Conversions", value: Math.round(forecast.monthlyConversions) },
+            ]}
+          />
+
+          <div className="forecast-box" style={{ marginTop: "var(--sp-4)" }}>
+            <div className="forecast-card">
+              <strong>{agents}</strong>
+              <span>Current Agents</span>
+            </div>
+            <div className="forecast-card">
+              <strong>{forecast.requiredAgents}</strong>
+              <span>Agents Needed</span>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-3)", marginTop: "var(--sp-3)" }}>
+            <Badge kind={forecast.agentGap > 0 ? "bad" : "good"} dot>
+              {forecast.agentGap > 0
+                ? `${forecast.agentGap} agent${forecast.agentGap === 1 ? "" : "s"} short`
+                : forecast.agentGap < 0
+                ? `${-forecast.agentGap} agent${forecast.agentGap === -1 ? "" : "s"} spare`
+                : "Fully staffed"}
+            </Badge>
+            <ProgressBar
+              value={forecast.requiredAgents > 0 ? (agents / forecast.requiredAgents) * 100 : 100}
+              kind={forecast.agentGap > 0 ? "bad" : "good"}
+            />
+          </div>
+
+          <p className="muted" style={{ marginTop: 12 }}>
+            Agents Needed = Leads/day ÷ Leads/Agent/Day. Not a callby figure — a simple staffing
+            math check against whatever capacity assumption you set above.
+          </p>
+        </Card>
       </div>
-    </div>
+    </OwnerPage>
   );
 }

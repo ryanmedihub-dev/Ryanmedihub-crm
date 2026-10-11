@@ -3,8 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
-import OwnerTopbar from "./OwnerTopbar";
+import OwnerPage from "./OwnerPage";
 import Card from "./Card";
 import FilterBar from "./FilterBar";
 import ReportTable from "./ReportTable";
@@ -134,149 +133,142 @@ export default function EmployeeDetailPage({ section, listHref, rowsColumns, def
   );
 
   return (
-    <div className="app">
-      <OwnerSidebar />
-      <div className="main">
-        <OwnerTopbar
-          title={emp?.name || "Employee"}
-          subtitle={emp ? `${emp.sectionLabel} · ${emp.branch || "No branch"}` : "Loading…"}
-          controls={
-            <Link href={backHref} className="btn btn-link">
-              ← Back to list
-            </Link>
-          }
-        />
+    <OwnerPage
+      title={emp?.name || "Employee"}
+      subtitle={emp ? `${emp.sectionLabel} · ${emp.branch || "No branch"}` : "Loading…"}
+      controls={
+        <Link href={backHref} className="btn btn-link">
+          ← Back to list
+        </Link>
+      }
+    >
+      <FilterBar
+        show={["date"]}
+        defaults={{ range: "Last 30 Days" }}
+        onChange={({ filters, range }) => { list.resetPage(); setFilterState({ filters, range }); }}
+      />
 
-        <div className="content">
-          <FilterBar
-            show={["date"]}
-            defaults={{ range: "Last 30 Days" }}
-            onChange={({ filters, range }) => { list.resetPage(); setFilterState({ filters, range }); }}
-          />
+      {error ? (
+        <ErrorState message={error} onRetry={load} />
+      ) : !data ? (
+        <>
+          <Card><Skeleton height={56} /></Card>
+          <KpiSkeleton support={4} />
+          <Card><Skeleton height={180} /></Card>
+        </>
+      ) : (
+        <>
+          <Card className="entity-header">
+            <div
+              className={`entity-avatar${aiReady ? " entity-avatar-ai-ring" : ""}`}
+              aria-hidden="true"
+              style={aiReady ? { "--ai-ring-tone": TONE_VAR[SENTIMENT_TONE[deepAi.result?.sentiment]] || TONE_VAR.info } : undefined}
+            >
+              {(emp.name || "?").slice(0, 2).toUpperCase()}
+            </div>
+            <div className="entity-main">
+              <h2>{emp.name}</h2>
+              <p className="muted">
+                {emp.employeeId || "No employee ID"} · {emp.role || "No role"} · {emp.branch || "No branch"}
+              </p>
+              <div className="entity-badges">
+                <Badge kind={emp.isactive ? "good" : "neutral"} glyph>{emp.isactive ? "Active" : "Inactive"}</Badge>
+                {!emp.callbyLinked && <Badge kind="warn">Not linked to callby</Badge>}
+              </div>
+            </div>
+            <dl className="entity-facts">
+              <div><dt>Joined</dt><dd>{fmtDate(emp.dateOfJoining)}</dd></div>
+              <div><dt>TL</dt><dd>{emp.tlName || "—"}</dd></div>
+              <div><dt>Manager</dt><dd>{emp.managerName || "— (unmapped)"}</dd></div>
+              <div>
+                <dt>Performance</dt>
+                <dd>
+                  {performanceCell({ performance: emp.performance })}
+                  {aiReady && deepAi.result?.healthScore != null && <span className="ai-model-chip" style={{ marginLeft: 6 }}>AI {deepAi.result.healthScore}</span>}
+                </dd>
+              </div>
+            </dl>
+          </Card>
 
-          {error ? (
-            <ErrorState message={error} onRetry={load} />
-          ) : !data ? (
+          <AiDeepReview feature="employee.deep" scope={deepScope} title={emp.name || "Employee"} enabled={!!filterState} aiState={deepAi} />
+
+          {data.callbyError && (
+            <InlineNotice kind="error" title="callby data unavailable for this employee">
+              {data.callbyError}
+            </InlineNotice>
+          )}
+
+          <KpiRow loading={loading} items={kpiItems} primaryIndex={0} />
+
+          {rowsColumns.length > 0 && (
             <>
-              <Card><Skeleton height={56} /></Card>
-              <KpiSkeleton support={4} />
-              <Card><Skeleton height={180} /></Card>
-            </>
-          ) : (
-            <>
-              <Card className="entity-header">
-                <div
-                  className={`entity-avatar${aiReady ? " entity-avatar-ai-ring" : ""}`}
-                  aria-hidden="true"
-                  style={aiReady ? { "--ai-ring-tone": TONE_VAR[SENTIMENT_TONE[deepAi.result?.sentiment]] || TONE_VAR.info } : undefined}
-                >
-                  {(emp.name || "?").slice(0, 2).toUpperCase()}
-                </div>
-                <div className="entity-main">
-                  <h2>{emp.name}</h2>
-                  <p className="muted">
-                    {emp.employeeId || "No employee ID"} · {emp.role || "No role"} · {emp.branch || "No branch"}
-                  </p>
-                  <div className="entity-badges">
-                    <Badge kind={emp.isactive ? "good" : "neutral"} glyph>{emp.isactive ? "Active" : "Inactive"}</Badge>
-                    {!emp.callbyLinked && <Badge kind="warn">Not linked to callby</Badge>}
-                  </div>
-                </div>
-                <dl className="entity-facts">
-                  <div><dt>Joined</dt><dd>{fmtDate(emp.dateOfJoining)}</dd></div>
-                  <div><dt>TL</dt><dd>{emp.tlName || "—"}</dd></div>
-                  <div><dt>Manager</dt><dd>{emp.managerName || "— (unmapped)"}</dd></div>
-                  <div>
-                    <dt>Performance</dt>
-                    <dd>
-                      {performanceCell({ performance: emp.performance })}
-                      {aiReady && deepAi.result?.healthScore != null && <span className="ai-model-chip" style={{ marginLeft: 6 }}>AI {deepAi.result.healthScore}</span>}
-                    </dd>
-                  </div>
-                </dl>
-              </Card>
-
-              <AiDeepReview feature="employee.deep" scope={deepScope} title={emp.name || "Employee"} enabled={!!filterState} aiState={deepAi} />
-
-              {data.callbyError && (
-                <InlineNotice kind="error" title="callby data unavailable for this employee">
-                  {data.callbyError}
-                </InlineNotice>
-              )}
-
-              <KpiRow loading={loading} items={kpiItems} primaryIndex={0} />
-
-              {rowsColumns.length > 0 && (
-                <>
-                  <Card title="Trend" subtitle={`${trendLabel} · selected period`}>
-                    <TrendChart data={data.trend} label={trendLabel} stroke="var(--ai-cyan)" glow />
-                  </Card>
-
-                  <Card
-                    title={data.rowsLabel || "Detail"}
-                    subtitle={loading ? "Loading…" : `${num(data.total)} ${data.total === 1 ? "record" : "records"} in period`}
-                  >
-                    <ReportTable
-                      tableId={`employee-detail-${emp.section}`}
-                      columns={rowsColumns}
-                      rows={data.rows}
-                      loading={loading}
-                      {...list.tableProps}
-                      onSearchChange={undefined}
-                      total={data.total}
-                      emptyMessage="No records in this period."
-                    />
-                  </Card>
-                </>
-              )}
-
-              <Card title="Compensation" subtitle="Salary and incentive for the pay months the date filter covers">
-                <div className="grid cols-equal">
-                  <div>
-                    <div className="metric-pair"><span>Base Salary (monthly)</span><span className="readout">{rupee(emp.salary)}</span></div>
-                    <div className="metric-pair"><span>Salary Due</span><span className="readout">{rupee(data.compensation?.salaryPayable)}</span></div>
-                    <div className="metric-pair"><span>Salary Paid</span><span className="readout">{rupee(data.compensation?.salaryPaid)}</span></div>
-                  </div>
-                  <div>
-                    <div className="metric-pair"><span>Incentive Rate (setting)</span><span className="readout">{emp.incentiveRate ? `₹${emp.incentiveRate} / patient` : "—"}</span></div>
-                    <div className="metric-pair"><span>Incentive Earned</span><span className="readout">{rupee(data.compensation?.incentivePayable)}</span></div>
-                    <div className="metric-pair"><span>Incentive Paid</span><span className="readout">{rupee(data.compensation?.incentivePaid)}</span></div>
-                  </div>
-                </div>
+              <Card title="Trend" subtitle={`${trendLabel} · selected period`}>
+                <TrendChart data={data.trend} label={trendLabel} stroke="var(--ai-cyan)" glow />
               </Card>
 
               <Card
-                title="All Linked Patients"
-                subtitle={linkedLoading ? "Loading…" : `${num(linked?.total || 0)} patient(s) linked in any role — referred, counselled or surgery-side`}
+                title={data.rowsLabel || "Detail"}
+                subtitle={loading ? "Loading…" : `${num(data.total)} ${data.total === 1 ? "record" : "records"} in period`}
               >
                 <ReportTable
-                  tableId="employee-detail-linked-patients"
-                  columns={LINKED_PATIENTS_COLUMNS}
-                  rows={linked?.rows || []}
-                  loading={linkedLoading}
-                  page={linkedList.page}
-                  pageSize={linkedList.pageSize}
-                  total={linked?.total || 0}
-                  onPageChange={linkedList.tableProps.onPageChange}
-                  onPageSizeChange={linkedList.tableProps.onPageSizeChange}
-                  emptyMessage="No linked patients."
-                  csvFilename={`${emp.name || "employee"}-linked-patients.csv`}
+                  tableId={`employee-detail-${emp.section}`}
+                  columns={rowsColumns}
+                  rows={data.rows}
+                  loading={loading}
+                  {...list.tableProps}
+                  onSearchChange={undefined}
+                  total={data.total}
+                  emptyMessage="No records in this period."
                 />
               </Card>
-
-              {emp.section === "Agent" && recentRows.length > 0 && (
-                <Card title="Recent Activity (from callby)" subtitle="Calls and lead updates in this period">
-                  <ReportTable
-                    tableId="employee-detail-recent-activity"
-                    columns={RECENT_ACTIVITY_COLUMNS}
-                    rows={recentRows}
-                  />
-                </Card>
-              )}
             </>
           )}
-        </div>
-      </div>
-    </div>
+
+          <Card title="Compensation" subtitle="Salary and incentive for the pay months the date filter covers">
+            <div className="grid cols-equal">
+              <div>
+                <div className="metric-pair"><span>Base Salary (monthly)</span><span className="readout">{rupee(emp.salary)}</span></div>
+                <div className="metric-pair"><span>Salary Due</span><span className="readout">{rupee(data.compensation?.salaryPayable)}</span></div>
+                <div className="metric-pair"><span>Salary Paid</span><span className="readout">{rupee(data.compensation?.salaryPaid)}</span></div>
+              </div>
+              <div>
+                <div className="metric-pair"><span>Incentive Rate (setting)</span><span className="readout">{emp.incentiveRate ? `₹${emp.incentiveRate} / patient` : "—"}</span></div>
+                <div className="metric-pair"><span>Incentive Earned</span><span className="readout">{rupee(data.compensation?.incentivePayable)}</span></div>
+                <div className="metric-pair"><span>Incentive Paid</span><span className="readout">{rupee(data.compensation?.incentivePaid)}</span></div>
+              </div>
+            </div>
+          </Card>
+
+          <Card
+            title="All Linked Patients"
+            subtitle={linkedLoading ? "Loading…" : `${num(linked?.total || 0)} patient(s) linked in any role — referred, counselled or surgery-side`}
+          >
+            <ReportTable
+              tableId="employee-detail-linked-patients"
+              columns={LINKED_PATIENTS_COLUMNS}
+              rows={linked?.rows || []}
+              loading={linkedLoading}
+              page={linkedList.page}
+              pageSize={linkedList.pageSize}
+              total={linked?.total || 0}
+              onPageChange={linkedList.tableProps.onPageChange}
+              onPageSizeChange={linkedList.tableProps.onPageSizeChange}
+              emptyMessage="No linked patients."
+              csvFilename={`${emp.name || "employee"}-linked-patients.csv`}
+            />
+          </Card>
+
+          {emp.section === "Agent" && recentRows.length > 0 && (
+            <Card title="Recent Activity (from callby)" subtitle="Calls and lead updates in this period">
+              <ReportTable
+                tableId="employee-detail-recent-activity"
+                columns={RECENT_ACTIVITY_COLUMNS}
+                rows={recentRows}
+              />
+            </Card>
+          )}
+        </>
+      )}
+    </OwnerPage>
   );
 }

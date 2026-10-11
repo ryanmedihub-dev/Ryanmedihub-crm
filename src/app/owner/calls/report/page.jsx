@@ -1,8 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
-import { OwnerTopbar, Card, FilterBar, ReportTable, KpiRow, ErrorState } from "@/components/owner";
+import { OwnerPage, Card, FilterBar, ReportTable, KpiRow, ErrorState } from "@/components/owner";
 import { AiBriefPanel } from "@/components/owner/ai";
 import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
@@ -64,76 +63,69 @@ export default function CallsReportPage() {
   const total = data?.total || 0;
 
   return (
-    <div className="app">
-      <OwnerSidebar />
-      <div className="main">
-        <OwnerTopbar
-          title="Call Report"
-          subtitle="Full call log — mirrors callby's own Call History report"
-          aiState={reportAi}
-          controls={
-            <button className="icon-btn" onClick={() => load()} disabled={loading} title="Refresh">
-              {loading ? "…" : "⟳"}
-            </button>
-          }
-        />
+    <OwnerPage
+      title="Call Report"
+      subtitle="Full call log — mirrors callby's own Call History report"
+      aiState={reportAi}
+      controls={
+        <button className="icon-btn" onClick={() => load()} disabled={loading} title="Refresh">
+          {loading ? "…" : "⟳"}
+        </button>
+      }
+    >
+      <AiBriefPanel feature="calls.report" scope={aiScope} title="Call Report" enabled={!!filterState} aiState={reportAi} />
 
-        <div className="content">
-          <AiBriefPanel feature="calls.report" scope={aiScope} title="Call Report" enabled={!!filterState} aiState={reportAi} />
+      <FilterBar
+        show={["date"]}
+        extras={[
+          { key: "callType", label: "Call Type", options: CALL_TYPE_OPTIONS },
+          { key: "connectedOnly", label: "Connected", options: CONNECTED_OPTIONS },
+        ]}
+        defaults={{ callType: "", connectedOnly: "" }}
+        onChange={({ filters, range }) => {
+          setPage(1);
+          setFilterState({ filters, range });
+        }}
+      />
 
-          <FilterBar
-            show={["date"]}
-            extras={[
-              { key: "callType", label: "Call Type", options: CALL_TYPE_OPTIONS },
-              { key: "connectedOnly", label: "Connected", options: CONNECTED_OPTIONS },
-            ]}
-            defaults={{ callType: "", connectedOnly: "" }}
-            onChange={({ filters, range }) => {
-              setPage(1);
-              setFilterState({ filters, range });
-            }}
+      {error ? (
+        <ErrorState message={error} onRetry={load} />
+      ) : (
+        <>
+          <KpiRow
+            loading={loading || !data}
+            primaryIndex={0}
+            items={[{ label: "Total Calls", value: num(total), sub: "This period", kind: "info" }]}
           />
 
-          {error ? (
-            <ErrorState message={error} onRetry={load} />
-          ) : (
-            <>
-              <KpiRow
-                loading={loading || !data}
-                primaryIndex={0}
-                items={[{ label: "Total Calls", value: num(total), sub: "This period", kind: "info" }]}
-              />
-
-              <Card title="Calls" subtitle={loading ? "Loading…" : `${total} calls`}>
-                <ReportTable
-                  tableId="calls-report"
-                  columns={CALL_REPORT_COLUMNS}
-                  rows={rows}
-                  loading={loading}
-                  sortKey={sortKey}
-                  sortDir={sortDir}
-                  onSort={handleSort}
-                  search={search}
-                  onSearchChange={(v) => {
-                    setSearch(v);
-                    setPage(1);
-                  }}
-                  searchPlaceholder="Search number / contact name…"
-                  page={page}
-                  pageSize={pageSize}
-                  total={total}
-                  onPageChange={setPage}
-                  onPageSizeChange={(n) => {
-                    setPageSize(n);
-                    setPage(1);
-                  }}
-                  csvFilename="calls-report.csv"
-                />
-              </Card>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
+          <Card title="Calls" subtitle={loading ? "Loading…" : `${total} calls`}>
+            <ReportTable
+              tableId="calls-report"
+              columns={CALL_REPORT_COLUMNS}
+              rows={rows}
+              loading={loading}
+              sortKey={sortKey}
+              sortDir={sortDir}
+              onSort={handleSort}
+              search={search}
+              onSearchChange={(v) => {
+                setSearch(v);
+                setPage(1);
+              }}
+              searchPlaceholder="Search number / contact name…"
+              page={page}
+              pageSize={pageSize}
+              total={total}
+              onPageChange={setPage}
+              onPageSizeChange={(n) => {
+                setPageSize(n);
+                setPage(1);
+              }}
+              csvFilename="calls-report.csv"
+            />
+          </Card>
+        </>
+      )}
+    </OwnerPage>
   );
 }

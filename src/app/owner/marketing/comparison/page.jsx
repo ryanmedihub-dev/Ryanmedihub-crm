@@ -1,8 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
-import { OwnerTopbar, Card, FilterBar, DataTable, Badge, ErrorState, TrendChart, InlineNotice, ManualDataNotice } from "@/components/owner";
+import { OwnerPage, Card, FilterBar, DataTable, Badge, ErrorState, TrendChart, InlineNotice, ManualDataNotice } from "@/components/owner";
 import { AiBriefPanel } from "@/components/owner/ai";
 import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
@@ -73,96 +72,89 @@ export default function MarketingComparisonPage() {
     : metaAt < googleAt ? "Meta" : "Google";
 
   return (
-    <div className="app">
-      <OwnerSidebar />
-      <div className="main">
-        <OwnerTopbar
-          title="Meta vs Google"
-          subtitle="Side-by-side comparison for the period — evidence only, no recommendation"
-          aiState={comparisonAi}
-          controls={
-            <button className="icon-btn" onClick={() => load()} disabled={isValidating} title="Refresh">
-              {isValidating ? "…" : "⟳"}
-            </button>
-          }
-        />
+    <OwnerPage
+      title="Meta vs Google"
+      subtitle="Side-by-side comparison for the period — evidence only, no recommendation"
+      aiState={comparisonAi}
+      controls={
+        <button className="icon-btn" onClick={() => load()} disabled={isValidating} title="Refresh">
+          {isValidating ? "…" : "⟳"}
+        </button>
+      }
+    >
+      <AiBriefPanel feature="marketing.comparison" scope={aiScope} title="Meta vs Google" enabled={!!filterState} aiState={comparisonAi} />
 
-        <div className="content">
-          <AiBriefPanel feature="marketing.comparison" scope={aiScope} title="Meta vs Google" enabled={!!filterState} aiState={comparisonAi} />
+      <ManualDataNotice />
 
-          <ManualDataNotice />
+      <FilterBar show={["date", "branch"]} onChange={({ filters, range }) => setFilterState({ filters, range })} />
 
-          <FilterBar show={["date", "branch"]} onChange={({ filters, range }) => setFilterState({ filters, range })} />
+      {error ? (
+        <ErrorState message={error} onRetry={load} />
+      ) : !data ? null : (
+        <>
+          <InlineNotice kind="info" title="Connect rate not shown">
+            There is no callby endpoint that looks up calls by a list of phone numbers, so
+            connect rate for platform-sourced leads can&apos;t be derived without a new
+            cross-repo endpoint — omitted rather than faked.
+          </InlineNotice>
 
-          {error ? (
-            <ErrorState message={error} onRetry={load} />
-          ) : !data ? null : (
-            <>
-              <InlineNotice kind="info" title="Connect rate not shown">
-                There is no callby endpoint that looks up calls by a list of phone numbers, so
-                connect rate for platform-sourced leads can&apos;t be derived without a new
-                cross-repo endpoint — omitted rather than faked.
-              </InlineNotice>
-
-              <Card title="This period vs. the immediately preceding, equal-length period">
-                <div className="grid cols-equal">
-                  {["Meta", "Google"].map((platform) => {
-                    const cur = data.current?.[platform] || {};
-                    const prev = data.previous?.[platform] || {};
-                    return (
-                      <div key={platform}>
-                        <p style={{ fontWeight: 700, marginBottom: 8 }}>
-                          <Badge kind={platform === "Meta" ? "purple" : "info"}>{platform}</Badge>
-                          {aiPickPlatform === platform && <span className="ai-model-chip" style={{ marginLeft: 8 }}>👑 AI pick</span>}
-                        </p>
-                        {METRICS.map((m) => (
-                          <div key={m.key} className="metric-row">
-                            <span>{m.label}</span>
-                            <div />
-                            <strong>
-                              {fmtMetric(m.format, cur[m.key])}
-                              <Delta current={cur[m.key]} previous={prev[m.key]} higherIsBetter={!LOWER_IS_BETTER.has(m.key)} />
-                            </strong>
-                          </div>
-                        ))}
+          <Card title="This period vs. the immediately preceding, equal-length period">
+            <div className="grid cols-equal">
+              {["Meta", "Google"].map((platform) => {
+                const cur = data.current?.[platform] || {};
+                const prev = data.previous?.[platform] || {};
+                return (
+                  <div key={platform}>
+                    <p style={{ fontWeight: 700, marginBottom: 8 }}>
+                      <Badge kind={platform === "Meta" ? "purple" : "info"}>{platform}</Badge>
+                      {aiPickPlatform === platform && <span className="ai-model-chip" style={{ marginLeft: 8 }}>👑 AI pick</span>}
+                    </p>
+                    {METRICS.map((m) => (
+                      <div key={m.key} className="metric-row">
+                        <span>{m.label}</span>
+                        <div />
+                        <strong>
+                          {fmtMetric(m.format, cur[m.key])}
+                          <Delta current={cur[m.key]} previous={prev[m.key]} higherIsBetter={!LOWER_IS_BETTER.has(m.key)} />
+                        </strong>
                       </div>
-                    );
-                  })}
-                </div>
-              </Card>
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
 
-              <Card title="Spend Per Day" subtitle="Meta vs Google">
-                <TrendChart
-                  data={(data.daily || []).map((d) => ({ date: d.date, value: d.Meta || 0 }))}
-                  label="Meta Spend"
-                />
-                <p className="muted" style={{ marginTop: 8, fontSize: "var(--fs-12)" }}>
-                  Showing Meta spend; see the per-day table below for both platforms side by side.
-                </p>
-                <DataTable
-                  columns={[
-                    { key: "date", label: "Date" },
-                    { key: "Meta", label: "Meta Spend", align: "right", render: (r) => rupee(r.Meta) },
-                    { key: "Google", label: "Google Spend", align: "right", render: (r) => rupee(r.Google) },
-                  ]}
-                  rows={(data.daily || []).map((d, i) => ({ ...d, id: i }))}
-                />
-              </Card>
+          <Card title="Spend Per Day" subtitle="Meta vs Google">
+            <TrendChart
+              data={(data.daily || []).map((d) => ({ date: d.date, value: d.Meta || 0 }))}
+              label="Meta Spend"
+            />
+            <p className="muted" style={{ marginTop: 8, fontSize: "var(--fs-12)" }}>
+              Showing Meta spend; see the per-day table below for both platforms side by side.
+            </p>
+            <DataTable
+              columns={[
+                { key: "date", label: "Date" },
+                { key: "Meta", label: "Meta Spend", align: "right", render: (r) => rupee(r.Meta) },
+                { key: "Google", label: "Google Spend", align: "right", render: (r) => rupee(r.Google) },
+              ]}
+              rows={(data.daily || []).map((d, i) => ({ ...d, id: i }))}
+            />
+          </Card>
 
-              <Card title="By Branch" subtitle={data.note}>
-                <DataTable
-                  columns={[
-                    { key: "branch", label: "Branch" },
-                    { key: "Meta", label: "Meta Spend", align: "right", render: (r) => rupee(r.Meta) },
-                    { key: "Google", label: "Google Spend", align: "right", render: (r) => rupee(r.Google) },
-                  ]}
-                  rows={(data.byBranch || []).map((b, i) => ({ ...b, id: i }))}
-                />
-              </Card>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
+          <Card title="By Branch" subtitle={data.note}>
+            <DataTable
+              columns={[
+                { key: "branch", label: "Branch" },
+                { key: "Meta", label: "Meta Spend", align: "right", render: (r) => rupee(r.Meta) },
+                { key: "Google", label: "Google Spend", align: "right", render: (r) => rupee(r.Google) },
+              ]}
+              rows={(data.byBranch || []).map((b, i) => ({ ...b, id: i }))}
+            />
+          </Card>
+        </>
+      )}
+    </OwnerPage>
   );
 }

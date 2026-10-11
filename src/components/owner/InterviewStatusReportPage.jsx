@@ -1,8 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
-import OwnerTopbar from "./OwnerTopbar";
+import OwnerPage from "./OwnerPage";
 import Card from "./Card";
 import FilterBar from "./FilterBar";
 import ReportTable from "./ReportTable";
@@ -93,63 +92,56 @@ export default function InterviewStatusReportPage({ config }) {
     : config.columns;
 
   return (
-    <div className="app">
-      <OwnerSidebar />
-      <div className="main">
-        <OwnerTopbar
-          title={config.title}
-          subtitle={config.subtitle}
-          aiState={config.aiFeature ? statusAi : undefined}
-          controls={
-            <button className="icon-btn" onClick={() => load()} disabled={loading} title="Refresh">
-              {loading ? "…" : "⟳"}
-            </button>
-          }
-        />
+    <OwnerPage
+      title={config.title}
+      subtitle={config.subtitle}
+      aiState={config.aiFeature ? statusAi : undefined}
+      controls={
+        <button className="icon-btn" onClick={() => load()} disabled={loading} title="Refresh">
+          {loading ? "…" : "⟳"}
+        </button>
+      }
+    >
+      {config.aiFeature && <AiBriefPanel feature={config.aiFeature} scope={aiScope} title={config.title} enabled={!!filterState} aiState={statusAi} />}
 
-        <div className="content">
-          {config.aiFeature && <AiBriefPanel feature={config.aiFeature} scope={aiScope} title={config.title} enabled={!!filterState} aiState={statusAi} />}
+      <FilterBar show={["date"]} onChange={({ filters, range }) => { setPage(1); setFilterState({ filters, range }); }} />
 
-          <FilterBar show={["date"]} onChange={({ filters, range }) => { setPage(1); setFilterState({ filters, range }); }} />
+      {error ? (
+        <ErrorState message={error} onRetry={load} />
+      ) : (
+        <>
+          <KpiRow loading={loading || !data} items={kpis} primaryIndex={0} />
 
-          {error ? (
-            <ErrorState message={error} onRetry={load} />
-          ) : (
-            <>
-              <KpiRow loading={loading || !data} items={kpis} primaryIndex={0} />
-
-              {notice && (
-                <InlineNotice kind={notice.kind === "error" ? "error" : "info"} title={notice.kind === "error" ? "Couldn't complete that" : "Done"}>
-                  {notice.text}
-                </InlineNotice>
-              )}
-
-              {config.extraContent && data && config.extraContent(data)}
-
-              <Card title={config.title} subtitle={loading ? "Loading…" : `${total} ${total === 1 ? "candidate" : "candidates"}`}>
-                <ReportTable
-                  tableId={`hr-${config.preset}`}
-                  columns={columns}
-                  rows={rows}
-                  loading={loading}
-                  sortKey={sortKey}
-                  sortDir={sortDir}
-                  onSort={handleSort}
-                  search={search}
-                  onSearchChange={(v) => { setSearch(v); setPage(1); }}
-                  searchPlaceholder="Search name / phone / position…"
-                  page={page}
-                  pageSize={pageSize}
-                  total={total}
-                  onPageChange={setPage}
-                  onPageSizeChange={(n) => { setPageSize(n); setPage(1); }}
-                  csvFilename={`hr-${config.preset}.csv`}
-                />
-              </Card>
-            </>
+          {notice && (
+            <InlineNotice kind={notice.kind === "error" ? "error" : "info"} title={notice.kind === "error" ? "Couldn't complete that" : "Done"}>
+              {notice.text}
+            </InlineNotice>
           )}
-        </div>
-      </div>
-    </div>
+
+          {config.extraContent && data && config.extraContent(data)}
+
+          <Card title={config.title} subtitle={loading ? "Loading…" : `${total} ${total === 1 ? "candidate" : "candidates"}`}>
+            <ReportTable
+              tableId={`hr-${config.preset}`}
+              columns={columns}
+              rows={rows}
+              loading={loading}
+              sortKey={sortKey}
+              sortDir={sortDir}
+              onSort={handleSort}
+              search={search}
+              onSearchChange={(v) => { setSearch(v); setPage(1); }}
+              searchPlaceholder="Search name / phone / position…"
+              page={page}
+              pageSize={pageSize}
+              total={total}
+              onPageChange={setPage}
+              onPageSizeChange={(n) => { setPageSize(n); setPage(1); }}
+              csvFilename={`hr-${config.preset}.csv`}
+            />
+          </Card>
+        </>
+      )}
+    </OwnerPage>
   );
 }

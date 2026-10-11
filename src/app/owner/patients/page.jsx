@@ -2,8 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
-import { OwnerTopbar, Card, FilterBar, KpiRow, DataTable, ErrorState, TrendChart, Funnel } from "@/components/owner";
+import { OwnerPage, Card, FilterBar, KpiRow, DataTable, ErrorState, TrendChart, Funnel } from "@/components/owner";
 import { AiBriefPanel } from "@/components/owner/ai";
 import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
@@ -43,77 +42,70 @@ export default function PatientsLanding() {
   const funnelStages = STATUS_ORDER.map((status) => ({ label: PATIENT_STATUS_LABELS[status], value: breakdownByStatus[status] || 0 }));
 
   return (
-    <div className="app">
-      <OwnerSidebar />
-      <div className="main">
-        <OwnerTopbar
-          title="Patients"
-          subtitle="Status funnel, revenue and branch split — pure ryan-crm data, no external system"
-          aiState={overviewAi}
-          controls={
-            <button className="icon-btn" onClick={() => load()} disabled={isValidating} title="Refresh">
-              {isValidating ? "…" : "⟳"}
-            </button>
-          }
-        />
+    <OwnerPage
+      title="Patients"
+      subtitle="Status funnel, revenue and branch split — pure ryan-crm data, no external system"
+      aiState={overviewAi}
+      controls={
+        <button className="icon-btn" onClick={() => load()} disabled={isValidating} title="Refresh">
+          {isValidating ? "…" : "⟳"}
+        </button>
+      }
+    >
+      <FilterBar show={["date", "branch"]} onChange={({ filters, range }) => setFilterState({ filters, range })} />
 
-        <div className="content">
-          <FilterBar show={["date", "branch"]} onChange={({ filters, range }) => setFilterState({ filters, range })} />
+      <AiBriefPanel feature="patients.overview" scope={aiScope} title="Patients" enabled={!!filterState} aiState={overviewAi} />
 
-          <AiBriefPanel feature="patients.overview" scope={aiScope} title="Patients" enabled={!!filterState} aiState={overviewAi} />
+      {error ? (
+        <ErrorState message={error} onRetry={load} />
+      ) : (
+        <>
+          <KpiRow
+            loading={loading || !data}
+            primaryIndex={0}
+            items={[
+              { label: "Total Patients", value: num(data?.total), sub: "This period", kind: "info" },
+              { label: "Amount Received", value: rupee(data?.receivedSum), sub: "This period", kind: "good" },
+              { label: "Conversion Rate", value: data ? `${data.conversionRate}%` : "—", sub: "Converted or surgery done, ever", kind: "good" },
+            ]}
+          />
 
-          {error ? (
-            <ErrorState message={error} onRetry={load} />
-          ) : (
-            <>
-              <KpiRow
-                loading={loading || !data}
-                primaryIndex={0}
-                items={[
-                  { label: "Total Patients", value: num(data?.total), sub: "This period", kind: "info" },
-                  { label: "Amount Received", value: rupee(data?.receivedSum), sub: "This period", kind: "good" },
-                  { label: "Conversion Rate", value: data ? `${data.conversionRate}%` : "—", sub: "Converted or surgery done, ever", kind: "good" },
+          <Card title="Status Funnel" subtitle="This period">
+            <Funnel items={funnelStages} />
+          </Card>
+
+          <div className="grid cols-equal">
+            <Card title="By Branch">
+              <DataTable
+                loading={loading}
+                columns={[
+                  { key: "branch", label: "Branch" },
+                  { key: "count", label: "Patients", align: "right", render: (r) => num(r.count) },
                 ]}
+                rows={(data?.byBranch || []).map((b, i) => ({ ...b, id: i }))}
               />
+            </Card>
+            <Card title="Patients Per Day" subtitle="This period">
+              <TrendChart data={data?.daywise || []} label="Patients" />
+            </Card>
+          </div>
 
-              <Card title="Status Funnel" subtitle="This period">
-                <Funnel items={funnelStages} />
-              </Card>
-
-              <div className="grid cols-equal">
-                <Card title="By Branch">
-                  <DataTable
-                    loading={loading}
-                    columns={[
-                      { key: "branch", label: "Branch" },
-                      { key: "count", label: "Patients", align: "right", render: (r) => num(r.count) },
-                    ]}
-                    rows={(data?.byBranch || []).map((b, i) => ({ ...b, id: i }))}
-                  />
-                </Card>
-                <Card title="Patients Per Day" subtitle="This period">
-                  <TrendChart data={data?.daywise || []} label="Patients" />
-                </Card>
-              </div>
-
-              <Card title="Jump to a page">
-                <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}>
-                  {LINKS.map((it) => (
-                    <Link key={it.href} href={it.href} className="card" style={{ display: "block", textDecoration: "none" }}>
-                      <div className="card-title">
-                        <div>
-                          <h3>{it.label}</h3>
-                          <p>{it.note}</p>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </Card>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
+          <Card title="Jump to a page">
+            <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}>
+              {LINKS.map((it) => (
+                <Link key={it.href} href={it.href} className="card" style={{ display: "block", textDecoration: "none" }}>
+                  <div className="card-title">
+                    <div>
+                      <h3>{it.label}</h3>
+                      <p>{it.note}</p>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </Card>
+        </>
+      )}
+    </OwnerPage>
   );
 }

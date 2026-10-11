@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
-import { OwnerTopbar, Card } from "@/components/owner";
+import { OwnerPage, Card } from "@/components/owner";
 import { AiOrb, AiFeedTicker, NeuralCoverageMap } from "@/components/owner/ai";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 
@@ -20,47 +19,41 @@ export default function AiLanding() {
   const coverage = data?.insights?.coverage || [];
 
   return (
-    <div className="app">
-      <OwnerSidebar />
-      <div className="main">
-        <OwnerTopbar title="AI" subtitle="What each page does and what data it uses — no page here claims more certainty than the data supports" />
-        <div className="content">
-          <Card>
-            <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-              <AiOrb state="idle" size={72} />
-              <div>
-                <h2 style={{ margin: "0 0 4px" }}>Owner Intelligence</h2>
-                <p className="muted" style={{ margin: 0 }}>
-                  Every page below reads only aggregate, already-computed numbers — grounded against real facts,
-                  people aliased (E07, P12, …), never a name or a number invented.
-                </p>
-              </div>
-            </div>
-          </Card>
-
-          <AiFeedTicker />
-
-          <Card title="Neural Coverage Map" subtitle="Every AI feature across the owner panel, grouped by section — green fresh, amber stale, red failing, grey never run">
-            <NeuralCoverageMap coverage={coverage} compact />
-          </Card>
-
-          <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))" }}>
-            {ITEMS.map((it) => (
-              <Link key={it.href} href={it.href} className="card section-landing-card" style={{ display: "block", textDecoration: "none" }}>
-                <div className="card-title">
-                  <div>
-                    <h3>{it.label}</h3>
-                    <p>{it.note}</p>
-                  </div>
-                  <span aria-hidden="true" style={{ color: it.ready ? "var(--accent)" : "var(--ink-muted)" }}>
-                    {it.ready ? "›" : "soon"}
-                  </span>
-                </div>
-              </Link>
-            ))}
+    <OwnerPage title="AI" subtitle="What each page does and what data it uses — no page here claims more certainty than the data supports">
+      <Card>
+        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+          <AiOrb state="idle" size={72} />
+          <div>
+            <h2 style={{ margin: "0 0 4px" }}>Owner Intelligence</h2>
+            <p className="muted" style={{ margin: 0 }}>
+              Every page below reads only aggregate, already-computed numbers — grounded against real facts,
+              people aliased (E07, P12, …), never a name or a number invented.
+            </p>
           </div>
         </div>
+      </Card>
+
+      <AiFeedTicker />
+
+      <Card title="Neural Coverage Map" subtitle="Every AI feature across the owner panel, grouped by section — green fresh, amber stale, red failing, grey never run">
+        <NeuralCoverageMap coverage={coverage} compact />
+      </Card>
+
+      <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))" }}>
+        {ITEMS.map((it) => (
+          <Link key={it.href} href={it.href} className="card section-landing-card" style={{ display: "block", textDecoration: "none" }}>
+            <div className="card-title">
+              <div>
+                <h3>{it.label}</h3>
+                <p>{it.note}</p>
+              </div>
+              <span aria-hidden="true" style={{ color: it.ready ? "var(--accent)" : "var(--ink-muted)" }}>
+                {it.ready ? "›" : "soon"}
+              </span>
+            </div>
+          </Link>
+        ))}
       </div>
-    </div>
+    </OwnerPage>
   );
 }

@@ -7,6 +7,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { roleHome } from "@/lib/roleRoutes";
 import { ThemeProvider } from "@/components/owner/ThemeContext";
 import { ShellProvider } from "@/components/owner/ShellContext";
+import OwnerShell from "@/components/owner/OwnerShell";
 import MotionRoot from "@/components/owner/ai/MotionRoot";
 import NeuralBackdrop from "@/components/owner/ai/NeuralBackdrop";
 import AiCommandBar from "@/components/owner/ai/AiCommandBar";
@@ -38,7 +39,7 @@ export default async function OwnerLayout({ children }) {
       <ShellProvider>
         <MotionRoot>
           <NeuralBackdrop />
-          {children}
+          <OwnerShell>{children}</OwnerShell>
           <AiCommandBar />
         </MotionRoot>
       </ShellProvider>

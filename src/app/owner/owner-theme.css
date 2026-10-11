@@ -278,6 +278,63 @@
   gap: var(--sp-4);
 }
 
+/* ---- collapsed rail -------------------------------------------------- */
+/* Reclaims ~190px of table width on laptop screens. Sub-items are dropped;
+   a section icon links to its landing page, which lists them. Desktop only —
+   below 900px the sidebar is already an off-canvas drawer. */
+@media (min-width: 901px) {
+  .owner-app .app.nav-collapsed {
+    grid-template-columns: 68px minmax(0, 1fr);
+  }
+  .owner-app .app.nav-collapsed .nav-label,
+  .owner-app .app.nav-collapsed .brand-text,
+  .owner-app .app.nav-collapsed .nav-group-toggle,
+  .owner-app .app.nav-collapsed .nav-cmdk-hint,
+  .owner-app .app.nav-collapsed .user-chip-text {
+    display: none;
+  }
+  .owner-app .app.nav-collapsed .sidebar {
+    padding-left: var(--sp-2);
+    padding-right: var(--sp-2);
+    align-items: center;
+  }
+  .owner-app .app.nav-collapsed .brand,
+  .owner-app .app.nav-collapsed .user-chip {
+    flex-direction: column;
+    gap: var(--sp-2);
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .owner-app .app.nav-collapsed nav,
+  .owner-app .app.nav-collapsed .side-foot {
+    width: 100%;
+  }
+  .owner-app .app.nav-collapsed .nav-btn,
+  .owner-app .app.nav-collapsed .nav-group-link,
+  .owner-app .app.nav-collapsed .danger-btn {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .owner-app .app.nav-collapsed .nav-pin {
+    position: relative;
+  }
+  .owner-app .app.nav-collapsed .nav-pin-dot {
+    position: absolute;
+    top: 6px;
+    right: 10px;
+  }
+}
+.owner-app .nav-collapse-btn {
+  margin-left: auto;
+  flex: none;
+}
+@media (max-width: 900px) {
+  .owner-app .nav-collapse-btn {
+    display: none;
+  }
+}
+
 /* ---- sidebar --------------------------------------------------------- */
 .owner-app .sidebar {
   position: sticky;
@@ -457,6 +514,26 @@
   justify-content: center;
   gap: 6px;
 }
+.owner-app .user-chip {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-3);
+  min-width: 0;
+}
+.owner-app .user-chip-text {
+  min-width: 0;
+}
+.owner-app .user-chip-text strong {
+  display: block;
+  font-size: var(--fs-14);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.owner-app .user-chip-text .muted {
+  font-size: var(--fs-12);
+}
 .owner-app .avatar {
   width: 34px;
   height: 34px;
@@ -485,6 +562,15 @@
   justify-content: space-between;
   padding: 0 var(--sp-5);
   gap: var(--sp-4);
+}
+.owner-app .topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.owner-app .topbar-heading {
+  min-width: 0;
 }
 .owner-app .topbar h1 {
   font-size: var(--fs-20);
@@ -1964,6 +2050,24 @@
 }
 .owner-app .skeleton-chart {
   height: 220px;
+}
+/* route-level loading.jsx placeholders */
+.owner-app .topbar-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.owner-app .skeleton-title {
+  width: 190px;
+  height: 20px;
+}
+.owner-app .skeleton-sub {
+  width: 300px;
+  height: 12px;
+}
+.owner-app .skeleton-filterbar {
+  height: 46px;
+  border-radius: var(--r-md);
 }
 
 .owner-app .state {

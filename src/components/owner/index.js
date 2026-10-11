@@ -10,6 +10,8 @@ export { default as Heatmap } from "./Heatmap";
 export { default as ProgressBar } from "./ProgressBar";
 export { default as Modal } from "./Modal";
 export { default as OwnerTopbar } from "./OwnerTopbar";
+export { default as OwnerPage } from "./OwnerPage";
+export { default as OwnerShell } from "./OwnerShell";
 export { default as Skeleton, KpiSkeleton, TableSkeleton } from "./Skeleton";
 export { default as EmptyState } from "./EmptyState";
 export { default as ErrorState } from "./ErrorState";

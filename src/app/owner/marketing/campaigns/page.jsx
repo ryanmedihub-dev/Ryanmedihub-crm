@@ -1,9 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import {
-  OwnerTopbar, Card, FilterBar, DataTable, Badge, Modal, ErrorState, EmptyState, ManualDataNotice,
+  OwnerPage, Card, FilterBar, DataTable, Badge, Modal, ErrorState, EmptyState, ManualDataNotice,
 } from "@/components/owner";
 import { AiBriefPanel, AiScanOverlay, aiVerdictColumn } from "@/components/owner/ai";
 import { useAiInsight } from "@/lib/ai/client/useAiInsight";
@@ -153,84 +152,77 @@ export default function CampaignsPage() {
   const lastUpdated = campaigns.reduce((acc, c) => (!acc || new Date(c.updatedAt) > new Date(acc.updatedAt) ? c : acc), null);
 
   return (
-    <div className="app">
-      <OwnerSidebar />
-      <div className="main">
-        <OwnerTopbar
-          title="Active Ads"
-          subtitle="Hand-maintained campaign records — no Meta/Google API integration"
-          aiState={campaignsAi}
-          controls={
-            <button className="primary" onClick={openCreate}>+ New Campaign</button>
-          }
-        />
+    <OwnerPage
+      title="Active Ads"
+      subtitle="Hand-maintained campaign records — no Meta/Google API integration"
+      aiState={campaignsAi}
+      controls={
+        <button className="primary" onClick={openCreate}>+ New Campaign</button>
+      }
+    >
+      <AiBriefPanel feature="marketing.campaigns" scope={aiScope} title="Active Ads" enabled={!!filterState} aiState={campaignsAi} />
 
-        <div className="content">
-          <AiBriefPanel feature="marketing.campaigns" scope={aiScope} title="Active Ads" enabled={!!filterState} aiState={campaignsAi} />
+      <ManualDataNotice lastUpdatedAt={lastUpdated?.updatedAt} lastUpdatedBy={lastUpdated?.updatedBy?.name} />
 
-          <ManualDataNotice lastUpdatedAt={lastUpdated?.updatedAt} lastUpdatedBy={lastUpdated?.updatedBy?.name} />
+      <FilterBar
+        show={["date", "branch"]}
+        extras={[
+          { key: "status", label: "Status", options: STATUS_OPTIONS },
+          { key: "platform", label: "Platform", options: PLATFORM_OPTIONS },
+        ]}
+        defaults={{ status: "Active", platform: "" }}
+        onChange={({ filters, range }) => setFilterState({ filters, range })}
+      />
 
-          <FilterBar
-            show={["date", "branch"]}
-            extras={[
-              { key: "status", label: "Status", options: STATUS_OPTIONS },
-              { key: "platform", label: "Platform", options: PLATFORM_OPTIONS },
+      {error ? (
+        <ErrorState message={error} onRetry={load} />
+      ) : (
+        <Card title="Campaigns" subtitle={loading ? "Loading…" : `${campaigns.length} campaigns · spend/clicks/CPC for the selected period`}>
+          <AiScanOverlay active={verdicts.loading}>
+          <DataTable
+            tall
+            loading={loading}
+            emptyMessage={<EmptyState icon="◈" title="No campaigns" hint="Create one with the button above." />}
+            columns={[
+              { key: "name", label: "Name", render: (c) => c.name },
+              aiVerdictColumn({ byId: verdicts.byId, loading: verdicts.loading, labelSet: "campaign" }),
+              { key: "platform", label: "Platform", render: (c) => <Badge kind={c.platform === "Meta" ? "purple" : "info"}>{c.platform}</Badge> },
+              { key: "status", label: "Status", render: (c) => <Badge kind={STATUS_KIND[c.status]}>{c.status}</Badge> },
+              { key: "branch", label: "Branch", render: (c) => c.branch },
+              { key: "dailyBudget", label: "Daily Budget", align: "right", render: (c) => rupee(c.dailyBudget) },
+              { key: "targetLocations", label: "Target Locations", render: (c) => (c.targetLocations || []).join(", ") || "—" },
+              {
+                key: "dates", label: "Date Range",
+                render: (c) => `${fmtDate(c.startDate)} – ${fmtDate(c.endDate)}`,
+              },
+              { key: "spend", label: "Spend (period)", align: "right", render: (c) => rupee(c.spend) },
+              {
+                key: "cpc", label: "CPC (period)", align: "right",
+                render: (c) => (c.cpc == null ? <span className="muted">No clicks entered</span> : rupee(c.cpc)),
+              },
+              { key: "updated", label: "Last Updated", render: (c) => `${fmtDate(c.updatedAt)} · ${c.updatedBy?.name || "—"}` },
+              {
+                key: "actions", label: "", align: "right",
+                render: (c) => (
+                  <div style={{ display: "inline-flex", gap: 6 }}>
+                    <button type="button" className="ok-btn" onClick={() => openEdit(c)}>Edit</button>
+                    {c.status !== "Ended" && (
+                      <button type="button" className="danger-btn" onClick={() => setDeleteTarget(c)}>End</button>
+                    )}
+                  </div>
+                ),
+              },
             ]}
-            defaults={{ status: "Active", platform: "" }}
-            onChange={({ filters, range }) => setFilterState({ filters, range })}
+            rows={campaigns.map((c) => ({ ...c, id: c._id }))}
           />
-
-          {error ? (
-            <ErrorState message={error} onRetry={load} />
-          ) : (
-            <Card title="Campaigns" subtitle={loading ? "Loading…" : `${campaigns.length} campaigns · spend/clicks/CPC for the selected period`}>
-              <AiScanOverlay active={verdicts.loading}>
-              <DataTable
-                tall
-                loading={loading}
-                emptyMessage={<EmptyState icon="◈" title="No campaigns" hint="Create one with the button above." />}
-                columns={[
-                  { key: "name", label: "Name", render: (c) => c.name },
-                  aiVerdictColumn({ byId: verdicts.byId, loading: verdicts.loading, labelSet: "campaign" }),
-                  { key: "platform", label: "Platform", render: (c) => <Badge kind={c.platform === "Meta" ? "purple" : "info"}>{c.platform}</Badge> },
-                  { key: "status", label: "Status", render: (c) => <Badge kind={STATUS_KIND[c.status]}>{c.status}</Badge> },
-                  { key: "branch", label: "Branch", render: (c) => c.branch },
-                  { key: "dailyBudget", label: "Daily Budget", align: "right", render: (c) => rupee(c.dailyBudget) },
-                  { key: "targetLocations", label: "Target Locations", render: (c) => (c.targetLocations || []).join(", ") || "—" },
-                  {
-                    key: "dates", label: "Date Range",
-                    render: (c) => `${fmtDate(c.startDate)} – ${fmtDate(c.endDate)}`,
-                  },
-                  { key: "spend", label: "Spend (period)", align: "right", render: (c) => rupee(c.spend) },
-                  {
-                    key: "cpc", label: "CPC (period)", align: "right",
-                    render: (c) => (c.cpc == null ? <span className="muted">No clicks entered</span> : rupee(c.cpc)),
-                  },
-                  { key: "updated", label: "Last Updated", render: (c) => `${fmtDate(c.updatedAt)} · ${c.updatedBy?.name || "—"}` },
-                  {
-                    key: "actions", label: "", align: "right",
-                    render: (c) => (
-                      <div style={{ display: "inline-flex", gap: 6 }}>
-                        <button type="button" className="ok-btn" onClick={() => openEdit(c)}>Edit</button>
-                        {c.status !== "Ended" && (
-                          <button type="button" className="danger-btn" onClick={() => setDeleteTarget(c)}>End</button>
-                        )}
-                      </div>
-                    ),
-                  },
-                ]}
-                rows={campaigns.map((c) => ({ ...c, id: c._id }))}
-              />
-              </AiScanOverlay>
-              <p className="muted" style={{ marginTop: 10, fontSize: "var(--fs-12)" }}>
-                Leads / CPL / Converted / CAC aren&apos;t shown per campaign — the lead source tag only
-                distinguishes platform (Meta/Google), never campaign, so per-campaign attribution isn&apos;t
-                possible with current data.
-              </p>
-            </Card>
-          )}
-        </div>
-      </div>
+          </AiScanOverlay>
+          <p className="muted" style={{ marginTop: 10, fontSize: "var(--fs-12)" }}>
+            Leads / CPL / Converted / CAC aren&apos;t shown per campaign — the lead source tag only
+            distinguishes platform (Meta/Google), never campaign, so per-campaign attribution isn&apos;t
+            possible with current data.
+          </p>
+        </Card>
+      )}
 
       <Modal open={formOpen} onClose={() => setFormOpen(false)} title={editingId ? "Edit Campaign" : "New Campaign"}>
         <form onSubmit={submit} style={{ display: "grid", gap: 12 }}>
@@ -326,6 +318,6 @@ export default function CampaignsPage() {
           </div>
         )}
       </Modal>
-    </div>
+    </OwnerPage>
   );
 }

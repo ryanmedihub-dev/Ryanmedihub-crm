@@ -1,8 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
-import { OwnerTopbar, Card, FilterBar, ReportTable, KpiRow, ErrorState } from "@/components/owner";
+import { OwnerPage, Card, FilterBar, ReportTable, KpiRow, ErrorState } from "@/components/owner";
 import { AiBriefPanel } from "@/components/owner/ai";
 import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
@@ -68,72 +67,65 @@ export default function HrInterviewsPage() {
   const totals = data?.totals || {};
 
   return (
-    <div className="app">
-      <OwnerSidebar />
-      <div className="main">
-        <OwnerTopbar
-          title="All Interviews"
-          subtitle="Full interview report"
-          aiState={interviewsAi}
-          controls={
-            <button className="icon-btn" onClick={() => load()} disabled={loading} title="Refresh">
-              {loading ? "…" : "⟳"}
-            </button>
-          }
-        />
+    <OwnerPage
+      title="All Interviews"
+      subtitle="Full interview report"
+      aiState={interviewsAi}
+      controls={
+        <button className="icon-btn" onClick={() => load()} disabled={loading} title="Refresh">
+          {loading ? "…" : "⟳"}
+        </button>
+      }
+    >
+      <AiBriefPanel feature="hr.interviews" scope={aiScope} title="All Interviews" enabled={!!filterState} aiState={interviewsAi} />
 
-        <div className="content">
-          <AiBriefPanel feature="hr.interviews" scope={aiScope} title="All Interviews" enabled={!!filterState} aiState={interviewsAi} />
+      <FilterBar
+        show={["date"]}
+        extras={[
+          { key: "status", label: "Outcome", options: STATUS_OPTIONS },
+          { key: "experienceType", label: "Experience", options: EXPERIENCE_OPTIONS },
+        ]}
+        defaults={{ status: "", experienceType: "" }}
+        onChange={({ filters, range }) => { setPage(1); setFilterState({ filters, range }); }}
+      />
 
-          <FilterBar
-            show={["date"]}
-            extras={[
-              { key: "status", label: "Outcome", options: STATUS_OPTIONS },
-              { key: "experienceType", label: "Experience", options: EXPERIENCE_OPTIONS },
+      {error ? (
+        <ErrorState message={error} onRetry={load} />
+      ) : (
+        <>
+          <KpiRow
+            loading={loading || !data}
+            primaryIndex={0}
+            items={[
+              { label: "Total Interviews", value: num(total), sub: "This period", kind: "info" },
+              { label: "Selected", value: num(totals.selected), sub: "This period", kind: "good" },
+              { label: "Rejected", value: num(totals.rejected), sub: "This period", kind: "bad" },
+              { label: "On Hold", value: num(totals.onHold), sub: "This period", kind: "warn" },
             ]}
-            defaults={{ status: "", experienceType: "" }}
-            onChange={({ filters, range }) => { setPage(1); setFilterState({ filters, range }); }}
           />
 
-          {error ? (
-            <ErrorState message={error} onRetry={load} />
-          ) : (
-            <>
-              <KpiRow
-                loading={loading || !data}
-                primaryIndex={0}
-                items={[
-                  { label: "Total Interviews", value: num(total), sub: "This period", kind: "info" },
-                  { label: "Selected", value: num(totals.selected), sub: "This period", kind: "good" },
-                  { label: "Rejected", value: num(totals.rejected), sub: "This period", kind: "bad" },
-                  { label: "On Hold", value: num(totals.onHold), sub: "This period", kind: "warn" },
-                ]}
-              />
-
-              <Card title="Interviews" subtitle={loading ? "Loading…" : `${total} candidates`}>
-                <ReportTable
-                  tableId="hr-interviews"
-                  columns={INTERVIEW_BASE_COLUMNS}
-                  rows={rows}
-                  loading={loading}
-                  sortKey={sortKey}
-                  sortDir={sortDir}
-                  onSort={handleSort}
-                  search={search}
-                  onSearchChange={(v) => { setSearch(v); setPage(1); }}
-                  searchPlaceholder="Search name / phone / email / position…"
-                  page={page}
-                  pageSize={pageSize}
-                  total={total}
-                  onPageChange={setPage}
-                  onPageSizeChange={(n) => { setPageSize(n); setPage(1); }}
-                  csvFilename="hr-interviews.csv"
-                />
-              </Card>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
+          <Card title="Interviews" subtitle={loading ? "Loading…" : `${total} candidates`}>
+            <ReportTable
+              tableId="hr-interviews"
+              columns={INTERVIEW_BASE_COLUMNS}
+              rows={rows}
+              loading={loading}
+              sortKey={sortKey}
+              sortDir={sortDir}
+              onSort={handleSort}
+              search={search}
+              onSearchChange={(v) => { setSearch(v); setPage(1); }}
+              searchPlaceholder="Search name / phone / email / position…"
+              page={page}
+              pageSize={pageSize}
+              total={total}
+              onPageChange={setPage}
+              onPageSizeChange={(n) => { setPageSize(n); setPage(1); }}
+              csvFilename="hr-interviews.csv"
+            />
+          </Card>
+        </>
+      )}
+    </OwnerPage>
   );
 }

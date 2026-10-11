@@ -2,9 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
 import {
-  OwnerTopbar, Card, ReportTable, Badge, FilterBar, KpiRow, ErrorState, InlineNotice, Modal,
+  OwnerPage, Card, ReportTable, Badge, FilterBar, KpiRow, ErrorState, InlineNotice, Modal,
 } from "@/components/owner";
 import { AiBriefPanel, aiVerdictColumn } from "@/components/owner/ai";
 import { useAiInsight } from "@/lib/ai/client/useAiInsight";
@@ -172,72 +171,65 @@ export default function LeadershipPage() {
   ];
 
   return (
-    <div className="app">
-      <OwnerSidebar />
-      <div className="main">
-        <OwnerTopbar
-          title="TL & Manager"
-          subtitle="Rows are teams, grouped by TL — click a row for the full roster"
-          aiState={leadershipAi}
-          controls={
-            <button className="icon-btn" onClick={() => load()} disabled={loading} title="Refresh">
-              {loading ? "…" : "⟳"}
-            </button>
-          }
-        />
+    <OwnerPage
+      title="TL & Manager"
+      subtitle="Rows are teams, grouped by TL — click a row for the full roster"
+      aiState={leadershipAi}
+      controls={
+        <button className="icon-btn" onClick={() => load()} disabled={loading} title="Refresh">
+          {loading ? "…" : "⟳"}
+        </button>
+      }
+    >
+      <FilterBar
+        show={["date", "branch"]}
+        extras={[{ key: "isactive", label: "Agents", options: STATUS_OPTIONS }]}
+        defaults={{ isactive: "true" }}
+        onChange={({ filters, range }) => setFilterState({ filters, range })}
+      />
 
-        <div className="content">
-          <FilterBar
-            show={["date", "branch"]}
-            extras={[{ key: "isactive", label: "Agents", options: STATUS_OPTIONS }]}
-            defaults={{ isactive: "true" }}
-            onChange={({ filters, range }) => setFilterState({ filters, range })}
+      <AiBriefPanel feature="employees.leadership" scope={aiScope} title="TL & Manager" enabled={!!filterState} aiState={leadershipAi} />
+
+      {error ? (
+        <ErrorState message={error} onRetry={load} />
+      ) : (
+        <>
+          <KpiRow
+            loading={loading}
+            primaryIndex={0}
+            items={[
+              { label: "Teams", value: loading ? "—" : totalTeams, sub: "Distinct TLs", kind: "info" },
+              { label: "Agents", value: loading ? "—" : num(totalAgents), sub: "Across all teams", kind: "info" },
+              { label: "Total Calls", value: loading ? "—" : num(totalCalls), sub: "This period (linked members)", kind: "info" },
+              { label: "Unmapped Managers", value: loading ? "—" : unmapped, sub: "No TL → Manager mapping yet", kind: unmapped ? "warn" : "good" },
+            ]}
           />
 
-          <AiBriefPanel feature="employees.leadership" scope={aiScope} title="TL & Manager" enabled={!!filterState} aiState={leadershipAi} />
-
-          {error ? (
-            <ErrorState message={error} onRetry={load} />
-          ) : (
-            <>
-              <KpiRow
-                loading={loading}
-                primaryIndex={0}
-                items={[
-                  { label: "Teams", value: loading ? "—" : totalTeams, sub: "Distinct TLs", kind: "info" },
-                  { label: "Agents", value: loading ? "—" : num(totalAgents), sub: "Across all teams", kind: "info" },
-                  { label: "Total Calls", value: loading ? "—" : num(totalCalls), sub: "This period (linked members)", kind: "info" },
-                  { label: "Unmapped Managers", value: loading ? "—" : unmapped, sub: "No TL → Manager mapping yet", kind: unmapped ? "warn" : "good" },
-                ]}
-              />
-
-              {callbyError && (
-                <InlineNotice kind="error" title="callby data may be incomplete">{callbyError}</InlineNotice>
-              )}
-              {saveNotice && (
-                <InlineNotice kind={saveNotice.kind} title={saveNotice.title} onClose={() => setSaveNotice(null)}>
-                  {saveNotice.text}
-                </InlineNotice>
-              )}
-
-              <Card title="Teams" subtitle={loading ? "Loading…" : `${totalTeams} ${totalTeams === 1 ? "team" : "teams"}`}>
-                <ReportTable
-                  tableId="employees-leadership"
-                  columns={columns}
-                  rows={sortedTeams}
-                  loading={loading}
-                  sortKey={sortKey}
-                  sortDir={sortDir}
-                  onSort={onSort}
-                  emptyMessage="No teams in this range/branch."
-                  onRowClick={(row) => router.push(`/owner/employees/leadership/${encodeURIComponent(row.tlNameKey)}`)}
-                  csvFilename="employees-leadership.csv"
-                />
-              </Card>
-            </>
+          {callbyError && (
+            <InlineNotice kind="error" title="callby data may be incomplete">{callbyError}</InlineNotice>
           )}
-        </div>
-      </div>
+          {saveNotice && (
+            <InlineNotice kind={saveNotice.kind} title={saveNotice.title} onClose={() => setSaveNotice(null)}>
+              {saveNotice.text}
+            </InlineNotice>
+          )}
+
+          <Card title="Teams" subtitle={loading ? "Loading…" : `${totalTeams} ${totalTeams === 1 ? "team" : "teams"}`}>
+            <ReportTable
+              tableId="employees-leadership"
+              columns={columns}
+              rows={sortedTeams}
+              loading={loading}
+              sortKey={sortKey}
+              sortDir={sortDir}
+              onSort={onSort}
+              emptyMessage="No teams in this range/branch."
+              onRowClick={(row) => router.push(`/owner/employees/leadership/${encodeURIComponent(row.tlNameKey)}`)}
+              csvFilename="employees-leadership.csv"
+            />
+          </Card>
+        </>
+      )}
 
       <Modal open={!!editing} onClose={() => setEditing(null)} title={`Manager for ${editing?.tlName || ""}`}>
         <div className="form-stack">
@@ -254,6 +246,6 @@ export default function LeadershipPage() {
           </button>
         </div>
       </Modal>
-    </div>
+    </OwnerPage>
   );
 }

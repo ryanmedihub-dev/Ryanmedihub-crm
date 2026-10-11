@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import OwnerSidebar from "@/components/Sidebars/OwnerSidebar";
-import { OwnerTopbar, Card, KpiRow, DataTable, Badge, ErrorState, EmptyState, InlineNotice, ManualDataNotice } from "@/components/owner";
+import { OwnerPage, Card, KpiRow, DataTable, Badge, ErrorState, EmptyState, InlineNotice, ManualDataNotice } from "@/components/owner";
 import { AiBriefPanel } from "@/components/owner/ai";
 import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { ownerFetch } from "@/lib/ownerFetch";
@@ -93,108 +92,100 @@ export default function MarketingProfitabilityPage() {
   ];
 
   return (
-    <div className="app">
-      <OwnerSidebar />
-
-      <div className="main">
-        <OwnerTopbar
-          title="Meta & Google"
-          subtitle="What the ad spend bought — CPL, CAC, ROAS by platform and campaign"
-          aiState={platformsAi}
-          controls={
+    <OwnerPage
+      title="Meta & Google"
+      subtitle="What the ad spend bought — CPL, CAC, ROAS by platform and campaign"
+      aiState={platformsAi}
+      controls={
+        <>
+          <select className="control" value={branch} onChange={(e) => setBranch(e.target.value)}>
+            {BRANCHES.map((b) => <option key={b}>{b}</option>)}
+          </select>
+          <select className="control" value={dateRange} onChange={(e) => setDateRange(e.target.value)}>
+            {DATE_RANGES.map((r) => <option key={r}>{r}</option>)}
+          </select>
+          {dateRange === "Custom" && (
             <>
-              <select className="control" value={branch} onChange={(e) => setBranch(e.target.value)}>
-                {BRANCHES.map((b) => <option key={b}>{b}</option>)}
-              </select>
-              <select className="control" value={dateRange} onChange={(e) => setDateRange(e.target.value)}>
-                {DATE_RANGES.map((r) => <option key={r}>{r}</option>)}
-              </select>
-              {dateRange === "Custom" && (
-                <>
-                  <input
-                    type="date"
-                    className="control"
-                    value={custom.from}
-                    onChange={(e) => setCustom((p) => ({ ...p, from: e.target.value }))}
-                  />
-                  <input
-                    type="date"
-                    className="control"
-                    value={custom.to}
-                    onChange={(e) => setCustom((p) => ({ ...p, to: e.target.value }))}
-                  />
-                </>
-              )}
-              <button className="icon-btn" onClick={fetchSummary} disabled={loading} title="Refresh">
-                {loading ? "…" : "⟳"}
-              </button>
-            </>
-          }
-        />
-
-        <div className="content">
-          <AiBriefPanel feature="marketing.platforms" scope={aiScope} title="Meta & Google" enabled={dateReady} aiState={platformsAi} />
-
-          {error ? (
-            <ErrorState message={error} onRetry={fetchSummary} />
-          ) : (
-            <>
-              <ManualDataNotice lastUpdatedAt={lastUpdatedAt} lastUpdatedBy={lastUpdatedBy} />
-              {note && (
-                <InlineNotice kind="info" title="Branch scope note">{note}</InlineNotice>
-              )}
-
-              <KpiRow items={kpiItems} primaryIndex={5} loading={loading} />
-
-              <Card
-                title="Platform / campaign breakdown"
-                subtitle={`${dateRange} · ${branch === "All" ? "All branches (spend only)" : `Spend scoped to ${branch}`}`}
-              >
-                <DataTable
-                  tall
-                  loading={loading}
-                  emptyMessage={<EmptyState icon="◈" title="No ad spend for this filter" hint="Log spend on the Ad Spend Entry screen, or widen the date range." />}
-                  columns={[
-                    {
-                      key: "platform",
-                      label: "Platform",
-                      render: (row) => <Badge kind={row.platform === "Meta" ? "purple" : "info"}>{row.platform}</Badge>,
-                    },
-                    {
-                      key: "campaignName",
-                      label: "Campaign",
-                      render: (row) =>
-                        row.isPlatformTotal ? (
-                          <strong>Platform total</strong>
-                        ) : (
-                          row.campaignName || <span className="muted">(unnamed)</span>
-                        ),
-                    },
-                    { key: "branch", label: "Branch", render: () => branch },
-                    { key: "spend", label: "Spend", align: "right", render: (row) => rupee(row.spend) },
-                    { key: "leads", label: "Leads", align: "right", render: (row) => fmt(row.leads) },
-                    { key: "cpl", label: "CPL", align: "right", render: (row) => rupee(row.cpl) },
-                    { key: "converted", label: "Converted", align: "right", render: (row) => fmt(row.converted) },
-                    { key: "cac", label: "CAC", align: "right", render: (row) => rupee(row.cac) },
-                    { key: "revenue", label: "Revenue", align: "right", render: (row) => rupee(row.revenue) },
-                    {
-                      key: "roas",
-                      label: "ROAS",
-                      align: "right",
-                      render: (row) => (
-                        <span style={row.roas != null ? { color: row.roas >= 1 ? "var(--pos)" : "var(--crit)", fontWeight: 700 } : undefined}>
-                          {roasFmt(row.roas)}
-                        </span>
-                      ),
-                    },
-                  ]}
-                  rows={loading ? [] : rows.map((r, i) => ({ ...r, id: `${r.platform}-${r.campaignName || "total"}-${i}`, _isTotal: r.isPlatformTotal }))}
-                />
-              </Card>
+              <input
+                type="date"
+                className="control"
+                value={custom.from}
+                onChange={(e) => setCustom((p) => ({ ...p, from: e.target.value }))}
+              />
+              <input
+                type="date"
+                className="control"
+                value={custom.to}
+                onChange={(e) => setCustom((p) => ({ ...p, to: e.target.value }))}
+              />
             </>
           )}
-        </div>
-      </div>
-    </div>
+          <button className="icon-btn" onClick={fetchSummary} disabled={loading} title="Refresh">
+            {loading ? "…" : "⟳"}
+          </button>
+        </>
+      }
+    >
+      <AiBriefPanel feature="marketing.platforms" scope={aiScope} title="Meta & Google" enabled={dateReady} aiState={platformsAi} />
+
+      {error ? (
+        <ErrorState message={error} onRetry={fetchSummary} />
+      ) : (
+        <>
+          <ManualDataNotice lastUpdatedAt={lastUpdatedAt} lastUpdatedBy={lastUpdatedBy} />
+          {note && (
+            <InlineNotice kind="info" title="Branch scope note">{note}</InlineNotice>
+          )}
+
+          <KpiRow items={kpiItems} primaryIndex={5} loading={loading} />
+
+          <Card
+            title="Platform / campaign breakdown"
+            subtitle={`${dateRange} · ${branch === "All" ? "All branches (spend only)" : `Spend scoped to ${branch}`}`}
+          >
+            <DataTable
+              tall
+              loading={loading}
+              emptyMessage={<EmptyState icon="◈" title="No ad spend for this filter" hint="Log spend on the Ad Spend Entry screen, or widen the date range." />}
+              columns={[
+                {
+                  key: "platform",
+                  label: "Platform",
+                  render: (row) => <Badge kind={row.platform === "Meta" ? "purple" : "info"}>{row.platform}</Badge>,
+                },
+                {
+                  key: "campaignName",
+                  label: "Campaign",
+                  render: (row) =>
+                    row.isPlatformTotal ? (
+                      <strong>Platform total</strong>
+                    ) : (
+                      row.campaignName || <span className="muted">(unnamed)</span>
+                    ),
+                },
+                { key: "branch", label: "Branch", render: () => branch },
+                { key: "spend", label: "Spend", align: "right", render: (row) => rupee(row.spend) },
+                { key: "leads", label: "Leads", align: "right", render: (row) => fmt(row.leads) },
+                { key: "cpl", label: "CPL", align: "right", render: (row) => rupee(row.cpl) },
+                { key: "converted", label: "Converted", align: "right", render: (row) => fmt(row.converted) },
+                { key: "cac", label: "CAC", align: "right", render: (row) => rupee(row.cac) },
+                { key: "revenue", label: "Revenue", align: "right", render: (row) => rupee(row.revenue) },
+                {
+                  key: "roas",
+                  label: "ROAS",
+                  align: "right",
+                  render: (row) => (
+                    <span style={row.roas != null ? { color: row.roas >= 1 ? "var(--pos)" : "var(--crit)", fontWeight: 700 } : undefined}>
+                      {roasFmt(row.roas)}
+                    </span>
+                  ),
+                },
+              ]}
+              rows={loading ? [] : rows.map((r, i) => ({ ...r, id: `${r.platform}-${r.campaignName || "total"}-${i}`, _isTotal: r.isPlatformTotal }))}
+            />
+          </Card>
+        </>
+      )}
+    </OwnerPage>
   );
 }
