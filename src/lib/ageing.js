@@ -9,6 +9,30 @@ export const AGEING_BUCKETS = [
   { value: "90+", label: "90+ days", min: 91, max: null },
 ];
 
+const BUCKET_VALUES = new Set(AGEING_BUCKETS.map((b) => b.value));
+
+/**
+ * "current" means not yet due, so it is the one bucket that is NOT overdue.
+ * An unrecognised bucket is not counted as overdue — better to under-report
+ * than to call a healthy balance late.
+ */
+export function isOverdueBucket(bucket) {
+  return BUCKET_VALUES.has(bucket) && bucket !== "current";
+}
+
+/** Human label for a bucket value, falling back to the raw value. */
+export function bucketLabel(bucket) {
+  return AGEING_BUCKETS.find((b) => b.value === bucket)?.label || bucket || "—";
+}
+
+/** Badge tone for a bucket value: good / warn / bad. */
+export function bucketTone(bucket) {
+  if (bucket === "current") return "good";
+  if (bucket === "1-30" || bucket === "31-60") return "warn";
+  if (bucket === "61-90" || bucket === "90+") return "bad";
+  return "neutral";
+}
+
 export function buildAgeingStages() {
   const hasDueDate = { $ne: [{ $ifNull: ["$dueDate", null] }, null] };
 

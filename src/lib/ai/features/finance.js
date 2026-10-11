@@ -10,6 +10,7 @@ import { GET as financeExpensesGET } from "@/app/api/owner/finance/expenses/rout
 import { GET as salaryIncentiveGET } from "@/app/api/owner/finance/salary-incentive/route";
 import { GET as transactionsGetAllGET } from "@/app/api/transactions/get-all/route";
 import { toISTDateKey } from "@/lib/owner/dates";
+import { isOverdueBucket } from "@/lib/ageing";
 import { callRoute } from "../sources";
 import { AI_BRIEF_MODEL, AI_DEEP_MODEL } from "../config";
 import { round, pct, topN, bottomN, capPayload, prevWindow } from "./_helpers";
@@ -181,7 +182,7 @@ const financeFeatures = {
     compute(raw, book, scope) {
       const byPurpose = raw.plain.byPurpose || [];
       const byBucket = raw.ageing.byBucket || [];
-      const overdue = byBucket.filter((b) => b._id && b._id !== "0-30").reduce((s, b) => s + (b.totalPending || 0), 0);
+      const overdue = byBucket.filter((b) => isOverdueBucket(b._id)).reduce((s, b) => s + (b.totalPending || 0), 0);
       const facts = capPayload({
         branch: scope.branch || "All",
         overall: raw.plain.overall,

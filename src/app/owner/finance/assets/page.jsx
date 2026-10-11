@@ -6,6 +6,7 @@ import { AiBriefPanel } from "@/components/owner/ai";
 import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { rupee, num } from "@/lib/owner/format";
+import { bucketTone, bucketLabel } from "@/lib/ageing";
 
 export default function FinanceAssetsPage() {
   const [filterState, setFilterState] = useState(null);
@@ -49,9 +50,9 @@ export default function FinanceAssetsPage() {
             loading={loading || !overall}
             primaryIndex={0}
             items={[
-              { label: "Total Owed", value: rupee(overall?.totalOwed), rawValue: overall?.totalOwed, format: "rupee", sub: `${num(overall?.count)} receivables`, kind: "info" },
-              { label: "Received", value: rupee(overall?.totalPaid), rawValue: overall?.totalPaid, format: "rupee", sub: "So far", kind: "good" },
-              { label: "Pending", value: rupee(overall?.totalPending), rawValue: overall?.totalPending, format: "rupee", sub: "Outstanding", kind: overall?.totalPending > 0 ? "warn" : "good" },
+              { label: "Total Owed", value: rupee(overall?.totalReceivable), rawValue: overall?.totalReceivable, format: "rupee", sub: `${num(overall?.count)} receivables · all-time`, kind: "info" },
+              { label: "Received", value: rupee(overall?.totalReceived), rawValue: overall?.totalReceived, format: "rupee", sub: "All-time", kind: "good" },
+              { label: "Pending", value: rupee(overall?.totalPending), rawValue: overall?.totalPending, format: "rupee", sub: "Outstanding now", kind: overall?.totalPending > 0 ? "warn" : "good" },
             ]}
           />
 
@@ -62,7 +63,7 @@ export default function FinanceAssetsPage() {
                 columns={[
                   { key: "purpose", label: "Purpose", render: (r) => r._id || "—" },
                   { key: "count", label: "Count", align: "right", render: (r) => num(r.count) },
-                  { key: "totalOwed", label: "Owed", align: "right", render: (r) => rupee(r.totalOwed) },
+                  { key: "totalReceivable", label: "Owed", align: "right", render: (r) => rupee(r.totalReceivable) },
                   { key: "totalPending", label: "Pending", align: "right", render: (r) => rupee(r.totalPending) },
                 ]}
                 rows={byPurpose.map((r, i) => ({ ...r, id: i }))}
@@ -72,7 +73,7 @@ export default function FinanceAssetsPage() {
               <DataTable
                 loading={loading}
                 columns={[
-                  { key: "bucket", label: "Bucket", render: (r) => <Badge kind={r._id === "0-30" ? "good" : r._id === "31-60" ? "warn" : "bad"}>{r._id || "—"}</Badge> },
+                  { key: "bucket", label: "Bucket", render: (r) => <Badge kind={bucketTone(r._id)}>{bucketLabel(r._id)}</Badge> },
                   { key: "count", label: "Count", align: "right", render: (r) => num(r.count) },
                   { key: "totalPending", label: "Pending", align: "right", render: (r) => rupee(r.totalPending) },
                 ]}

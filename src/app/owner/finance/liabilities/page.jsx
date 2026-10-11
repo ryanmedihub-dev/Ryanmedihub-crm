@@ -6,6 +6,7 @@ import { AiBriefPanel } from "@/components/owner/ai";
 import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { rupee, num } from "@/lib/owner/format";
+import { bucketTone, bucketLabel, isOverdueBucket } from "@/lib/ageing";
 
 export default function FinanceLiabilitiesPage() {
   const [filterState, setFilterState] = useState(null);
@@ -23,7 +24,8 @@ export default function FinanceLiabilitiesPage() {
   const isValidating = summaryValidating || ageingValidating;
   const load = () => { loadSummary(); loadAgeing(); };
 
-  const overdue = byBucket.filter((b) => b._id && b._id !== "0-30").reduce((s, b) => s + (b.totalPending || 0), 0);
+  // Every bucket except "current" (not yet due) is past its due date.
+  const overdue = byBucket.filter((b) => isOverdueBucket(b._id)).reduce((s, b) => s + (b.totalPending || 0), 0);
 
   const aiScope = useMemo(() => ({ branch }), [branch]);
   const liabilitiesAi = useAiInsight("finance.liabilities", aiScope, { kind: "brief", enabled: !!filterState });
@@ -51,10 +53,10 @@ export default function FinanceLiabilitiesPage() {
             loading={loading || !overall}
             primaryIndex={0}
             items={[
-              { label: "Total Owed", value: rupee(overall?.totalOwed), rawValue: overall?.totalOwed, format: "rupee", sub: `${num(overall?.count)} payables`, kind: "info" },
-              { label: "Paid", value: rupee(overall?.totalPaid), rawValue: overall?.totalPaid, format: "rupee", sub: "So far", kind: "good" },
-              { label: "Pending", value: rupee(overall?.totalPending), rawValue: overall?.totalPending, format: "rupee", sub: "Outstanding", kind: overall?.totalPending > 0 ? "warn" : "good" },
-              { label: "Overdue", value: rupee(overdue), rawValue: overdue, format: "rupee", sub: "Past 30 days", kind: overdue > 0 ? "bad" : "good" },
+              { label: "Total Owed", value: rupee(overall?.totalOwed), rawValue: overall?.totalOwed, format: "rupee", sub: `${num(overall?.count)} payables · all-time`, kind: "info" },
+              { label: "Paid", value: rupee(overall?.totalPaid), rawValue: overall?.totalPaid, format: "rupee", sub: "All-time", kind: "good" },
+              { label: "Pending", value: rupee(overall?.totalPending), rawValue: overall?.totalPending, format: "rupee", sub: "Outstanding now", kind: overall?.totalPending > 0 ? "warn" : "good" },
+              { label: "Overdue", value: rupee(overdue), rawValue: overdue, format: "rupee", sub: "Past its due date", kind: overdue > 0 ? "bad" : "good" },
             ]}
           />
 
@@ -76,7 +78,7 @@ export default function FinanceLiabilitiesPage() {
               <DataTable
                 loading={loading}
                 columns={[
-                  { key: "bucket", label: "Bucket", render: (r) => <Badge kind={r._id === "0-30" ? "good" : r._id === "31-60" ? "warn" : "bad"}>{r._id || "—"}</Badge> },
+                  { key: "bucket", label: "Bucket", render: (r) => <Badge kind={bucketTone(r._id)}>{bucketLabel(r._id)}</Badge> },
                   { key: "count", label: "Count", align: "right", render: (r) => num(r.count) },
                   { key: "totalPending", label: "Pending", align: "right", render: (r) => rupee(r.totalPending) },
                 ]}

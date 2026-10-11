@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { OwnerPage, Card, FilterBar, KpiRow, DataTable, ErrorState, Badge } from "@/components/owner";
+import { OwnerPage, Card, FilterBar, KpiRow, DataTable, ErrorState, Badge, InlineNotice } from "@/components/owner";
 import { AiBriefPanel } from "@/components/owner/ai";
 import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
@@ -12,16 +12,20 @@ const STATUS_KIND = { Paid: "good", "Partially Paid": "info", Pending: "warn", O
 export default function FinanceRentPage() {
   const [filterState, setFilterState] = useState(null);
 
+  // payables/grouped returns rollups (opening/movement/closing) and needs a
+  // specific party before it will return documents, so the per-property view
+  // is built from the flat list instead.
   const url = useMemo(() => {
     if (!filterState) return null;
     const branch = filterState.filters.branch && filterState.filters.branch !== "All" ? filterState.filters.branch : "";
-    const params = new URLSearchParams({ groupBy: "party", purpose: "RENT", page: "1", limit: "200" });
+    const params = new URLSearchParams({ purpose: "RENT", page: "1", limit: "1000" });
     if (branch) params.set("branch", branch);
-    return `/api/payables/grouped?${params.toString()}`;
+    return `/api/payables/list?${params.toString()}`;
   }, [filterState]);
 
   const { data, loading, error, isValidating, mutate: load } = useOwnerData(url);
-  const rows = data?.rows || [];
+  const rows = data?.payables || [];
+  const truncated = (data?.total ?? 0) > rows.length;
 
   const byProperty = {};
   for (const r of rows) {
@@ -76,7 +80,17 @@ export default function FinanceRentPage() {
             ]}
           />
 
-          <Card title="By Property" subtitle={loading ? "Loading…" : `${propertyRows.length} properties`}>
+          {truncated && (
+            <InlineNotice kind="warn" title="Showing the first 1000 rent payables">
+              This branch has {num(data?.total)} RENT records; the per-property totals below cover
+              only the first 1000. Narrow by branch to see complete figures.
+            </InlineNotice>
+          )}
+
+          <Card
+            title="By Property"
+            subtitle={loading ? "Loading…" : `${propertyRows.length} properties · ${num(rows.length)} payable records`}
+          >
             <DataTable
               tall
               loading={loading}
