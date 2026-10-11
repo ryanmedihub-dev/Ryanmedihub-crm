@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { OwnerPage, Card } from "@/components/owner";
+import { OwnerPage, Card, SectionLinks } from "@/components/owner";
 import { AiOrb, AiFeedTicker, NeuralCoverageMap } from "@/components/owner/ai";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 
@@ -21,11 +20,11 @@ export default function AiLanding() {
   return (
     <OwnerPage title="AI" subtitle="What each page does and what data it uses — no page here claims more certainty than the data supports">
       <Card>
-        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+        <div className="hero-row">
           <AiOrb state="idle" size={72} />
           <div>
-            <h2 style={{ margin: "0 0 4px" }}>Owner Intelligence</h2>
-            <p className="muted" style={{ margin: 0 }}>
+            <h2>Owner Intelligence</h2>
+            <p className="muted">
               Every page below reads only aggregate, already-computed numbers — grounded against real facts,
               people aliased (E07, P12, …), never a name or a number invented.
             </p>
@@ -39,21 +38,7 @@ export default function AiLanding() {
         <NeuralCoverageMap coverage={coverage} compact />
       </Card>
 
-      <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))" }}>
-        {ITEMS.map((it) => (
-          <Link key={it.href} href={it.href} className="card section-landing-card" style={{ display: "block", textDecoration: "none" }}>
-            <div className="card-title">
-              <div>
-                <h3>{it.label}</h3>
-                <p>{it.note}</p>
-              </div>
-              <span aria-hidden="true" style={{ color: it.ready ? "var(--accent)" : "var(--ink-muted)" }}>
-                {it.ready ? "›" : "soon"}
-              </span>
-            </div>
-          </Link>
-        ))}
-      </div>
+      <SectionLinks items={ITEMS} />
     </OwnerPage>
   );
 }

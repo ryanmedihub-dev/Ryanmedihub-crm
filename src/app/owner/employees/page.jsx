@@ -1,9 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { OwnerPage, Card, FilterBar, KpiRow, DataTable, ErrorState, InlineNotice } from "@/components/owner";
+import { OwnerPage, Card, FilterBar, KpiRow, DataTable, ErrorState, InlineNotice, SectionLinks } from "@/components/owner";
 import { AiBriefPanel } from "@/components/owner/ai";
 import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
@@ -17,6 +16,16 @@ const SECTION_LINKS = {
   HR: "/owner/employees/hr",
   Other: "/owner/employees/other-staff",
 };
+
+const PAGE_LINKS = [
+  { href: "/owner/employees/agents", label: "Agents", note: "Calling staff — call volume, engagement and conversion" },
+  { href: "/owner/employees/counsellors", label: "Counsellors", note: "Patients counselled, converted and amount received" },
+  { href: "/owner/employees/surgery-staff", label: "Surgery Staff", note: "Surgeons and OT staff by procedures performed" },
+  { href: "/owner/employees/hr", label: "HR", note: "The HR team's own interview and hiring throughput" },
+  { href: "/owner/employees/other-staff", label: "Other Staff", note: "Reception, housekeeping and everyone else on payroll" },
+  { href: "/owner/employees/leadership", label: "TL & Manager", note: "Team leads and managers, with their reportees rolled up" },
+  { href: "/owner/employees/links", label: "callby Links", note: "Pair an employee record with its callby user" },
+];
 
 export default function EmployeesLanding() {
   const router = useRouter();
@@ -132,21 +141,7 @@ export default function EmployeesLanding() {
           </div>
 
           <Card title="Jump to a page">
-            <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}>
-              {[
-                { href: "/owner/employees/agents", label: "Agents" },
-                { href: "/owner/employees/counsellors", label: "Counsellors" },
-                { href: "/owner/employees/surgery-staff", label: "Surgery Staff" },
-                { href: "/owner/employees/hr", label: "HR" },
-                { href: "/owner/employees/other-staff", label: "Other Staff" },
-                { href: "/owner/employees/leadership", label: "TL & Manager" },
-                { href: "/owner/employees/links", label: "callby Links" },
-              ].map((it) => (
-                <Link key={it.href} href={it.href} className="btn" style={{ textAlign: "center", textDecoration: "none" }}>
-                  {it.label}
-                </Link>
-              ))}
-            </div>
+            <SectionLinks items={PAGE_LINKS} />
           </Card>
         </>
       )}

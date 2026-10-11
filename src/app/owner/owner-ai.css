@@ -638,11 +638,13 @@
 .ai-cmdk-btn kbd { font-family: var(--font-readout); font-size: 10px; }
 
 /* -- Section landing: glass cards with a subtle tilt on hover ----------- */
-.owner-app .section-landing-card {
+.owner-app .section-landing-card,
+.owner-app .link-card {
   transition: transform 150ms cubic-bezier(.2,.8,.2,1), box-shadow 150ms;
   transform-style: preserve-3d;
 }
-.owner-app .section-landing-card:hover {
+.owner-app .section-landing-card:hover,
+.owner-app .link-card:hover {
   transform: perspective(600px) rotateX(1.5deg) rotateY(-1.5deg) translateY(-2px);
   box-shadow: var(--glow-ai);
 }

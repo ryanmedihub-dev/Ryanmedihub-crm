@@ -8,13 +8,12 @@ import {
 } from "recharts";
 import {
   OwnerPage, KpiRow, Card, Funnel, DataTable, ErrorState, EmptyState,
-  AttentionRamp, Skeleton, Badge,
+  AttentionRamp, Skeleton, Badge, FilterBar,
 } from "@/components/owner";
 import { AiBriefPanel, AiFeedTicker } from "@/components/owner/ai";
 import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { rupee, num as fmt } from "@/lib/owner/format";
-import { OWNER_BRANCHES as BRANCHES, DATE_RANGES, buildDateRange } from "@/lib/owner/filters";
 
 function fmtChartDate(iso) {
   return new Date(iso).toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
@@ -29,16 +28,14 @@ const RULE_LEVEL = { overdueFollowUps: 2, interestedNoCall: 3, bookingDoneStale:
 
 export default function OwnerDashboard() {
   const router = useRouter();
-  const [branch, setBranch] = useState("All");
-  const [dateRange, setDateRange] = useState("Today");
-  const [custom, setCustom] = useState({ from: "", to: "" });
+  const [filterState, setFilterState] = useState(null);
 
-  
-  const dateReady = !(dateRange === "Custom" && !custom.from);
+  const branch = filterState?.filters.branch ?? "All";
+  const dateRange = filterState?.filters.range ?? "Today";
+  const resolvedDates = filterState?.range ?? null;
+
   const bq = branch !== "All" ? `&branch=${encodeURIComponent(branch)}` : "";
   const bqOnly = branch !== "All" ? `?branch=${encodeURIComponent(branch)}` : "";
-
-  const resolvedDates = useMemo(() => (dateReady ? buildDateRange(dateRange, custom) : null), [dateReady, dateRange, custom]);
 
   const dashUrl = useMemo(() => {
     if (!resolvedDates) return null;
@@ -47,8 +44,8 @@ export default function OwnerDashboard() {
   }, [resolvedDates, bq]);
   const { data, loading, error, isValidating: dashValidating, mutate: loadDash } = useOwnerData(dashUrl);
 
-  const recUrl = dateReady ? `/api/receivables/summary${bqOnly}` : null;
-  const payUrl = dateReady ? `/api/payables/summary${bqOnly}` : null;
+  const recUrl = resolvedDates ? `/api/receivables/summary${bqOnly}` : null;
+  const payUrl = resolvedDates ? `/api/payables/summary${bqOnly}` : null;
   const { data: recData, loading: recLoading, isValidating: recValidating, mutate: loadRec } = useOwnerData(recUrl);
   const { data: payData, loading: payLoading, isValidating: payValidating, mutate: loadPay } = useOwnerData(payUrl);
 
@@ -110,25 +107,12 @@ export default function OwnerDashboard() {
       subtitle={`Everything below links deeper · ${branch === "All" ? "All branches" : branch}`}
       aiState={dashboardAi}
       controls={
-        <>
-          <select className="control" value={branch} onChange={(e) => setBranch(e.target.value)} aria-label="Branch">
-            {BRANCHES.map((b) => <option key={b}>{b}</option>)}
-          </select>
-          <select className="control" value={dateRange} onChange={(e) => setDateRange(e.target.value)} aria-label="Date range">
-            {DATE_RANGES.map((r) => <option key={r}>{r}</option>)}
-          </select>
-          {dateRange === "Custom" && (
-            <>
-              <input type="date" className="control" value={custom.from} onChange={(e) => setCustom((p) => ({ ...p, from: e.target.value }))} aria-label="From date" />
-              <input type="date" className="control" value={custom.to} onChange={(e) => setCustom((p) => ({ ...p, to: e.target.value }))} aria-label="To date" />
-            </>
-          )}
-          <button className="icon-btn" onClick={() => fetchAll()} disabled={isValidating} title="Refresh">
-            {isValidating ? "…" : "⟳"}
-          </button>
-        </>
+        <button className="icon-btn" onClick={() => fetchAll()} disabled={isValidating} title="Refresh">
+          {isValidating ? "…" : "⟳"}
+        </button>
       }
     >
+      <FilterBar onChange={({ filters, range }) => setFilterState({ filters, range })} />
       <AiBriefPanel
         feature="dashboard.command"
         scope={aiScope}

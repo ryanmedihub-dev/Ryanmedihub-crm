@@ -1,8 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
-import { OwnerPage, Card, FilterBar, KpiRow, DataTable, ErrorState, TrendChart, Funnel } from "@/components/owner";
+import { OwnerPage, Card, FilterBar, KpiRow, DataTable, ErrorState, TrendChart, Funnel, SectionLinks } from "@/components/owner";
 import { AiBriefPanel } from "@/components/owner/ai";
 import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
@@ -91,18 +90,7 @@ export default function PatientsLanding() {
           </div>
 
           <Card title="Jump to a page">
-            <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}>
-              {LINKS.map((it) => (
-                <Link key={it.href} href={it.href} className="card" style={{ display: "block", textDecoration: "none" }}>
-                  <div className="card-title">
-                    <div>
-                      <h3>{it.label}</h3>
-                      <p>{it.note}</p>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
+            <SectionLinks items={LINKS} />
           </Card>
         </>
       )}

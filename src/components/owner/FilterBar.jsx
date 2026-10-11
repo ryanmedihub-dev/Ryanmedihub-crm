@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Filter, X, ChevronDown, SlidersHorizontal } from "lucide-react";
-import { DATE_RANGES, OWNER_BRANCHES } from "@/lib/owner/filters";
+import { DATE_RANGES, FORWARD_DATE_RANGES, OWNER_BRANCHES } from "@/lib/owner/filters";
 import { useOwnerFilters } from "@/lib/owner/useOwnerFilters";
 
 const DEBOUNCE_MS = 450;
@@ -79,10 +79,12 @@ export default function FilterBar({
   advancedExtras = [],
   defaults,
   onChange,
+  mode = "backward",
   children,
 }) {
-  const { filters, setFilter, setFilters, range } = useOwnerFilters(defaults);
+  const { filters, setFilter, setFilters, range } = useOwnerFilters(defaults, { mode });
   const [open, setOpen] = useState(false);
+  const rangePresets = mode === "forward" ? FORWARD_DATE_RANGES : DATE_RANGES;
 
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
@@ -175,7 +177,7 @@ export default function FilterBar({
               <div className="filter-field" style={{ gridColumn: "1 / -1" }}>
                 <span>Date range</span>
                 <div className="filter-pills">
-                  {DATE_RANGES.map((r) => (
+                  {rangePresets.map((r) => (
                     <button
                       key={r}
                       type="button"

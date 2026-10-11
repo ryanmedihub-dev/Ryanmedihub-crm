@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { OwnerPage, Card, KpiRow, DataTable, Badge, ErrorState, EmptyState, InlineNotice, ManualDataNotice } from "@/components/owner";
+import { useMemo, useState } from "react";
+import { OwnerPage, Card, KpiRow, DataTable, Badge, ErrorState, EmptyState, InlineNotice, ManualDataNotice, FilterBar } from "@/components/owner";
 import { AiBriefPanel } from "@/components/owner/ai";
 import { useAiInsight } from "@/lib/ai/client/useAiInsight";
-import { ownerFetch } from "@/lib/ownerFetch";
+import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { rupee, num as fmt, roasFmt } from "@/lib/owner/format";
-import { OWNER_BRANCHES as BRANCHES, DATE_RANGES, buildDateRange } from "@/lib/owner/filters";
+
+const FILTER_DEFAULTS = { range: "Last 30 Days" };
 
 function summarize(rows) {
   const byPlatform = {};
@@ -36,49 +37,27 @@ function summarize(rows) {
 }
 
 export default function MarketingProfitabilityPage() {
-  const [branch, setBranch]       = useState("All");
-  const [dateRange, setDateRange] = useState("Last 30 Days");
-  const [custom, setCustom]       = useState({ from: "", to: "" });
+  const [filterState, setFilterState] = useState(null);
 
-  const [rows, setRows]     = useState([]);
-  const [note, setNote]     = useState(null);
-  const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
-  const [lastUpdatedBy, setLastUpdatedBy] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState(null);
+  const branch = filterState?.filters.branch ?? "All";
+  const dateRange = filterState?.filters.range ?? FILTER_DEFAULTS.range;
 
-  const dateReady = !(dateRange === "Custom" && !custom.from);
-  const aiScope = dateReady ? { branch, ...buildDateRange(dateRange, custom) } : {};
-  const platformsAi = useAiInsight("marketing.platforms", aiScope, { kind: "brief", enabled: dateReady });
+  const aiScope = useMemo(
+    () => (filterState ? { branch, from: filterState.range.from, to: filterState.range.to } : {}),
+    [filterState, branch],
+  );
+  const ready = !!filterState;
+  const platformsAi = useAiInsight("marketing.platforms", aiScope, { kind: "brief", enabled: ready });
 
-  const fetchSummary = useCallback(async ({ signal } = {}) => {
-    if (dateRange === "Custom" && !custom.from) return;
-    setLoading(true);
-    setError(null);
-    const { from, to } = buildDateRange(dateRange, custom);
-    const r = await ownerFetch("/api/owner/marketing-summary", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ branch, from, to }),
-      signal,
-    });
-    if (r.aborted) return;
-    if (r.ok) {
-      setRows(r.data?.rows || []);
-      setNote(r.data?.note ?? null);
-      setLastUpdatedAt(r.data?.lastUpdatedAt ?? null);
-      setLastUpdatedBy(r.data?.lastUpdatedBy ?? null);
-    } else {
-      setError(r.error);
-    }
-    setLoading(false);
-  }, [branch, dateRange, custom]);
-
-  useEffect(() => {
-    const ctrl = new AbortController();
-    fetchSummary({ signal: ctrl.signal });
-    return () => ctrl.abort();
-  }, [fetchSummary]);
+  const { data, loading: fetching, error, isValidating, mutate: fetchSummary } = useOwnerData(
+    ready ? "/api/owner/marketing-summary" : null,
+    { body: aiScope },
+  );
+  const rows = data?.rows || [];
+  const note = data?.note ?? null;
+  const lastUpdatedAt = data?.lastUpdatedAt ?? null;
+  const lastUpdatedBy = data?.lastUpdatedBy ?? null;
+  const loading = fetching || !data;
 
   const summary = summarize(rows);
 
@@ -97,36 +76,17 @@ export default function MarketingProfitabilityPage() {
       subtitle="What the ad spend bought — CPL, CAC, ROAS by platform and campaign"
       aiState={platformsAi}
       controls={
-        <>
-          <select className="control" value={branch} onChange={(e) => setBranch(e.target.value)}>
-            {BRANCHES.map((b) => <option key={b}>{b}</option>)}
-          </select>
-          <select className="control" value={dateRange} onChange={(e) => setDateRange(e.target.value)}>
-            {DATE_RANGES.map((r) => <option key={r}>{r}</option>)}
-          </select>
-          {dateRange === "Custom" && (
-            <>
-              <input
-                type="date"
-                className="control"
-                value={custom.from}
-                onChange={(e) => setCustom((p) => ({ ...p, from: e.target.value }))}
-              />
-              <input
-                type="date"
-                className="control"
-                value={custom.to}
-                onChange={(e) => setCustom((p) => ({ ...p, to: e.target.value }))}
-              />
-            </>
-          )}
-          <button className="icon-btn" onClick={fetchSummary} disabled={loading} title="Refresh">
-            {loading ? "…" : "⟳"}
-          </button>
-        </>
+        <button className="icon-btn" onClick={() => fetchSummary()} disabled={isValidating} title="Refresh">
+          {isValidating ? "…" : "⟳"}
+        </button>
       }
     >
-      <AiBriefPanel feature="marketing.platforms" scope={aiScope} title="Meta & Google" enabled={dateReady} aiState={platformsAi} />
+      <FilterBar
+        defaults={FILTER_DEFAULTS}
+        onChange={({ filters, range }) => setFilterState({ filters, range })}
+      />
+
+      <AiBriefPanel feature="marketing.platforms" scope={aiScope} title="Meta & Google" enabled={ready} aiState={platformsAi} />
 
       {error ? (
         <ErrorState message={error} onRetry={fetchSummary} />

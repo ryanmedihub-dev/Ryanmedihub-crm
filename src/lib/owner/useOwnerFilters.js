@@ -2,9 +2,14 @@
 
 import { useCallback, useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { DEFAULT_DATE_RANGE, buildDateRange } from "@/lib/owner/filters";
+import { DEFAULT_DATE_RANGE, buildDateRange, buildForwardDateRange } from "@/lib/owner/filters";
 
-export function useOwnerFilters(defaults = {}) {
+/**
+ * Filter state kept in the URL query, so a page reload or a shared link keeps
+ * the same view. `mode: "forward"` resolves ranges into the future — for
+ * planner pages that schedule rather than report.
+ */
+export function useOwnerFilters(defaults = {}, { mode = "backward" } = {}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -45,10 +50,10 @@ export function useOwnerFilters(defaults = {}) {
   const setFilters = useCallback((patch) => write(patch), [write]);
 
   
-  const range = useMemo(
-    () => buildDateRange(filters.range, { from: filters.from, to: filters.to }),
-    [filters.range, filters.from, filters.to],
-  );
+  const range = useMemo(() => {
+    const build = mode === "forward" ? buildForwardDateRange : buildDateRange;
+    return build(filters.range, { from: filters.from, to: filters.to });
+  }, [filters.range, filters.from, filters.to, mode]);
 
   return { filters, setFilter, setFilters, range };
 }

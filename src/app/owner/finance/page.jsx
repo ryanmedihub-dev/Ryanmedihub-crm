@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState, useCallback } from "react";
-import Link from "next/link";
-import { OwnerPage, Card, KpiRow, DataTable, ErrorState, EmptyState, TrendChart } from "@/components/owner";
+import { useMemo, useState } from "react";
+import { OwnerPage, Card, KpiRow, DataTable, ErrorState, EmptyState, TrendChart, SectionLinks, FilterBar } from "@/components/owner";
 import { AiBriefPanel } from "@/components/owner/ai";
 import { useAiInsight } from "@/lib/ai/client/useAiInsight";
-import { ownerFetch } from "@/lib/ownerFetch";
+import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { rupee, num as fmt } from "@/lib/owner/format";
-import { OWNER_BRANCHES as BRANCHES, DATE_RANGES, buildDateRange } from "@/lib/owner/filters";
+
+const FILTER_DEFAULTS = { range: "Last 30 Days" };
 
 const FINANCE_LINKS = [
   { href: "/owner/finance/transactions", label: "All Transactions", note: "Full transaction report" },
@@ -19,75 +19,54 @@ const FINANCE_LINKS = [
 ];
 
 export default function OwnerFinancePage() {
-  const [branch, setBranch]       = useState("All");
-  const [dateRange, setDateRange] = useState("Last 30 Days");
-  const [custom, setCustom]       = useState({ from: "", to: "" });
+  const [filterState, setFilterState] = useState(null);
 
-  const [pnl, setPnl]                 = useState(null);
-  const [cashFlow, setCashFlow]       = useState(null);
-  const [balanceSheet, setBalanceSheet] = useState(null);
-  const [receivable, setReceivable]   = useState(null);
-  const [payable, setPayable]         = useState(null);
-  const [branchRows, setBranchRows]   = useState([]);
-  const [daily, setDaily]             = useState([]);
+  const branch = filterState?.filters.branch ?? "All";
+  const dateRange = filterState?.filters.range ?? FILTER_DEFAULTS.range;
+  const ready = !!filterState;
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState(null);
+  const aiScope = useMemo(
+    () => (filterState ? { from: filterState.range.from, to: filterState.range.to, branch } : {}),
+    [filterState, branch],
+  );
+  const overviewAi = useAiInsight("finance.overview", aiScope, { kind: "brief", enabled: ready });
 
-  const aiScope = useMemo(() => {
-    if (dateRange === "Custom" && !custom.from) return {};
-    const { from, to } = buildDateRange(dateRange, custom);
-    return { from, to, branch };
-  }, [dateRange, custom, branch]);
-  const overviewAi = useAiInsight("finance.overview", aiScope, { kind: "brief", enabled: !!aiScope.from });
+  const qs = ready
+    ? new URLSearchParams({
+        from: aiScope.from,
+        to: aiScope.to,
+        ...(branch !== "All" ? { branch } : {}),
+      }).toString()
+    : null;
+  // The receivables/payables summaries are period-independent snapshots, so
+  // these two keys are shared with the dashboard's cache.
+  const branchQs = branch !== "All" ? `?branch=${encodeURIComponent(branch)}` : "";
 
-  const fetchData = useCallback(async ({ signal } = {}) => {
-    if (dateRange === "Custom" && !custom.from) return;
-    setLoading(true);
-    setError(null);
-    const { from, to } = buildDateRange(dateRange, custom);
-    const qs = new URLSearchParams({ from, to, ...(branch !== "All" ? { branch } : {}) }).toString();
-    const branchQs = branch !== "All" ? `?branch=${encodeURIComponent(branch)}` : "";
+  const pnlQ = useOwnerData(qs && `/api/close-book/pnl?${qs}`);
+  const cashFlowQ = useOwnerData(qs && `/api/close-book/cash-flow?${qs}`);
+  const balanceSheetQ = useOwnerData(qs && `/api/close-book/balance-sheet?${qs}`);
+  const recvQ = useOwnerData(ready ? `/api/receivables/summary${branchQs}` : null);
+  const payQ = useOwnerData(ready ? `/api/payables/summary${branchQs}` : null);
+  const branchQ = useOwnerData(ready ? "/api/owner/finance/branch-profitability" : null, {
+    body: { from: aiScope.from, to: aiScope.to },
+  });
+  const trendQ = useOwnerData(qs && `/api/owner/finance/trend?${qs}`);
 
-    const [pnlR, cashFlowR, balanceSheetR, recvR, payR, branchR, trendR] = await Promise.all([
-      ownerFetch(`/api/close-book/pnl?${qs}`, { signal }),
-      ownerFetch(`/api/close-book/cash-flow?${qs}`, { signal }),
-      ownerFetch(`/api/close-book/balance-sheet?${qs}`, { signal }),
-      ownerFetch(`/api/receivables/summary${branchQs}`, { signal }),
-      ownerFetch(`/api/payables/summary${branchQs}`, { signal }),
-      ownerFetch("/api/owner/finance/branch-profitability", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ from, to }),
-        signal,
-      }),
-      ownerFetch(`/api/owner/finance/trend?${qs}`, { signal }),
-    ]);
+  const ALL = [pnlQ, cashFlowQ, balanceSheetQ, recvQ, payQ, branchQ, trendQ];
 
-    if ([pnlR, cashFlowR, balanceSheetR, recvR, payR, branchR, trendR].some((r) => r.aborted)) return;
+  const pnl = pnlQ.data;
+  const cashFlow = cashFlowQ.data ?? null;
+  const balanceSheet = balanceSheetQ.data ?? null;
+  const receivable = recvQ.data?.overall ?? null;
+  const payable = payQ.data?.overall ?? null;
+  const branchRows = branchQ.data?.rows || [];
+  const daily = trendQ.data?.daily || [];
 
-    
-    if (!pnlR.ok || pnlR.data?.error) {
-      setError(pnlR.error || pnlR.data?.error || "Failed to load P&L");
-      setLoading(false);
-      return;
-    }
-
-    setPnl(pnlR.data);
-    setCashFlow(cashFlowR.ok ? cashFlowR.data : null);
-    setBalanceSheet(balanceSheetR.ok ? balanceSheetR.data : null);
-    setReceivable(recvR.ok ? recvR.data?.overall ?? null : null);
-    setPayable(payR.ok ? payR.data?.overall ?? null : null);
-    setBranchRows(branchR.ok ? branchR.data?.rows || [] : []);
-    setDaily(trendR.ok ? trendR.data?.daily || [] : []);
-    setLoading(false);
-  }, [branch, dateRange, custom]);
-
-  useEffect(() => {
-    const ctrl = new AbortController();
-    fetchData({ signal: ctrl.signal });
-    return () => ctrl.abort();
-  }, [fetchData]);
+  // Only the P&L is load-bearing — the rest degrade to "—" on their own.
+  const error = pnlQ.error || pnl?.error || null;
+  const loading = pnlQ.loading || !pnl;
+  const isValidating = ALL.some((q) => q.isValidating);
+  const fetchData = () => ALL.forEach((q) => q.mutate());
 
   const accountRows = balanceSheet?.accounts || [];
 
@@ -97,26 +76,17 @@ export default function OwnerFinancePage() {
       subtitle="Reuses the same close-book P&L / balance sheet / cash flow logic as /admin/close-book"
       aiState={overviewAi}
       controls={
-        <>
-          <select className="control" value={branch} onChange={(e) => setBranch(e.target.value)}>
-            {BRANCHES.map((b) => <option key={b}>{b}</option>)}
-          </select>
-          <select className="control" value={dateRange} onChange={(e) => setDateRange(e.target.value)}>
-            {DATE_RANGES.map((r) => <option key={r}>{r}</option>)}
-          </select>
-          {dateRange === "Custom" && (
-            <>
-              <input type="date" className="control" value={custom.from} onChange={(e) => setCustom((p) => ({ ...p, from: e.target.value }))} />
-              <input type="date" className="control" value={custom.to} onChange={(e) => setCustom((p) => ({ ...p, to: e.target.value }))} />
-            </>
-          )}
-          <button className="icon-btn" onClick={fetchData} disabled={loading} title="Refresh">
-            {loading ? "…" : "⟳"}
-          </button>
-        </>
+        <button className="icon-btn" onClick={fetchData} disabled={isValidating} title="Refresh">
+          {isValidating ? "…" : "⟳"}
+        </button>
       }
     >
-      <AiBriefPanel feature="finance.overview" scope={aiScope} title="Finance" variant="hero" scoreLabel="Financial Health" enabled={!!aiScope.from} aiState={overviewAi} />
+      <FilterBar
+        defaults={FILTER_DEFAULTS}
+        onChange={({ filters, range }) => setFilterState({ filters, range })}
+      />
+
+      <AiBriefPanel feature="finance.overview" scope={aiScope} title="Finance" variant="hero" scoreLabel="Financial Health" enabled={ready} aiState={overviewAi} />
 
       {error ? (
         <ErrorState message={error} onRetry={fetchData} />
@@ -184,18 +154,7 @@ export default function OwnerFinancePage() {
           </Card>
 
           <Card title="Jump to a page">
-            <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}>
-              {FINANCE_LINKS.map((it) => (
-                <Link key={it.href} href={it.href} className="card" style={{ display: "block", textDecoration: "none" }}>
-                  <div className="card-title">
-                    <div>
-                      <h3>{it.label}</h3>
-                      <p>{it.note}</p>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
+            <SectionLinks items={FINANCE_LINKS} />
           </Card>
         </>
       )}

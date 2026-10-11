@@ -771,6 +771,66 @@
 .owner-app .card-title h3 {
   font-size: var(--fs-16);
 }
+
+/* A landing's intro row: a large glyph beside a heading and one paragraph. */
+.owner-app .hero-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-5);
+}
+.owner-app .hero-row h2 {
+  margin: 0 0 4px;
+}
+.owner-app .hero-row p {
+  margin: 0;
+}
+/* A standalone explanatory line between page sections. */
+.owner-app .note-line {
+  font-size: var(--fs-13);
+}
+
+/* ---- section landing link grid (SectionLinks) ----------------------- */
+.owner-app .link-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: var(--sp-3);
+  min-width: 0;
+}
+.owner-app .link-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: var(--sp-4);
+  box-shadow: var(--shadow-1);
+  text-decoration: none;
+  color: inherit;
+  min-width: 0;
+}
+.owner-app .link-card-text {
+  min-width: 0;
+}
+.owner-app .link-card-text h3 {
+  font-size: var(--fs-15);
+}
+.owner-app .link-card-text p {
+  font-size: var(--fs-13);
+  color: var(--ink-muted);
+  margin: 4px 0 0;
+}
+.owner-app .link-card-cue {
+  color: var(--accent);
+  font-size: var(--fs-18);
+  line-height: 1;
+  flex: none;
+}
+.owner-app .link-card-cue.muted {
+  font-size: var(--fs-12);
+  color: var(--ink-muted);
+}
 .owner-app .card-title p {
   font-size: var(--fs-13);
   color: var(--ink-muted);

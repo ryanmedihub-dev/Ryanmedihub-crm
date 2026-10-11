@@ -1,11 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { OwnerPage, Card, ErrorState, EmptyState, InlineNotice, Badge } from "@/components/owner";
 import { AiBriefPanel } from "@/components/owner/ai";
 import { useAiInsight } from "@/lib/ai/client/useAiInsight";
-import { ownerFetch } from "@/lib/ownerFetch";
+import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { fmtDate } from "@/lib/owner/format";
 
 const CATEGORY_KIND = {
@@ -17,25 +16,8 @@ const CATEGORY_KIND = {
 };
 
 export default function SuggestionsPage() {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  const load = useCallback(async ({ signal } = {}) => {
-    setLoading(true);
-    setError(null);
-    const r = await ownerFetch("/api/owner/ai/suggestions", { signal });
-    if (r.aborted) return;
-    if (r.ok) setData(r.data);
-    else setError(r.error);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    const ctrl = new AbortController();
-    load({ signal: ctrl.signal });
-    return () => ctrl.abort();
-  }, [load]);
+  const { data, error, isValidating, mutate: load } = useOwnerData("/api/owner/ai/suggestions");
+  const loading = !data && !error;
 
   const observations = data?.observations || [];
   const suggestionsAi = useAiInsight("ai.suggestions", {}, { kind: "brief" });
@@ -46,8 +28,8 @@ export default function SuggestionsPage() {
       subtitle="Rules-based observations, not an LLM — every line here cites a number computed fresh, never a recommendation"
       aiState={suggestionsAi}
       controls={
-        <button className="icon-btn" onClick={() => load()} disabled={loading} title="Refresh">
-          {loading ? "…" : "⟳"}
+        <button className="icon-btn" onClick={() => load()} disabled={isValidating} title="Refresh">
+          {isValidating ? "…" : "⟳"}
         </button>
       }
     >

@@ -1,60 +1,37 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
-import { OwnerPage, Card, DataTable, Badge, KpiRow, ErrorState, EmptyState, Skeleton } from "@/components/owner";
+import { useMemo, useState } from "react";
+import { OwnerPage, Card, DataTable, Badge, KpiRow, ErrorState, EmptyState, Skeleton, FilterBar } from "@/components/owner";
 import { AiBriefPanel } from "@/components/owner/ai";
 import { useAiInsight } from "@/lib/ai/client/useAiInsight";
-import { ownerFetch } from "@/lib/ownerFetch";
+import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { fmtDate, num } from "@/lib/owner/format";
 import { toISTDateKey } from "@/lib/owner/dates";
-import { OWNER_BRANCHES as BRANCHES, FORWARD_DATE_RANGES as DATE_RANGES, buildForwardDateRange as buildDateRange } from "@/lib/owner/filters";
+
+const FILTER_DEFAULTS = { range: "Next 7 Days" };
 
 export default function SurgeryPlannerPage() {
-  const [branch, setBranch]       = useState("All");
-  const [dateRange, setDateRange] = useState("Next 7 Days");
-  const [custom, setCustom]       = useState({ from: "", to: "" });
+  const [filterState, setFilterState] = useState(null);
 
-  const [surgeries, setSurgeries] = useState([]);
-  const [capacity, setCapacity]   = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [error, setError]         = useState(null);
+  const branch = filterState?.filters.branch ?? "All";
+  const dateRange = filterState?.filters.range ?? FILTER_DEFAULTS.range;
 
-  const dateReady = !(dateRange === "Custom" && !custom.from);
-  const aiScope = useMemo(() => {
-    if (!dateReady) return {};
-    const { from, to } = buildDateRange(dateRange, custom);
-    return { branch, from, to };
-  }, [dateReady, dateRange, custom, branch]);
-  const plannerAi = useAiInsight("patients.surgeryPlanner", aiScope, { kind: "brief", enabled: dateReady });
+  const aiScope = useMemo(
+    () => (filterState ? { branch, from: filterState.range.from, to: filterState.range.to } : {}),
+    [filterState, branch],
+  );
+  const ready = !!filterState;
+  const plannerAi = useAiInsight("patients.surgeryPlanner", aiScope, { kind: "brief", enabled: ready });
   const aiTopInsight = plannerAi.status === "ready" ? plannerAi.result?.insights?.[0] : null;
   const aiFlaggedDay = aiTopInsight ? `${aiTopInsight.title || ""} ${aiTopInsight.detail || ""}`.toLowerCase() : "";
 
-  const fetchData = useCallback(async ({ signal } = {}) => {
-    if (dateRange === "Custom" && !custom.from) return;
-    setLoading(true);
-    setError(null);
-    const { from, to } = buildDateRange(dateRange, custom);
-    const r = await ownerFetch("/api/owner/surgery-planner", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ branch, from, to }),
-      signal,
-    });
-    if (r.aborted) return;
-    if (r.ok) {
-      setSurgeries(r.data?.surgeries || []);
-      setCapacity(r.data?.todayOTCapacity || []);
-    } else {
-      setError(r.error);
-    }
-    setLoading(false);
-  }, [branch, dateRange, custom]);
-
-  useEffect(() => {
-    const ctrl = new AbortController();
-    fetchData({ signal: ctrl.signal });
-    return () => ctrl.abort();
-  }, [fetchData]);
+  const { data, loading: fetching, error, isValidating, mutate: fetchData } = useOwnerData(
+    ready ? "/api/owner/surgery-planner" : null,
+    { body: aiScope },
+  );
+  const surgeries = data?.surgeries || [];
+  const capacity = data?.todayOTCapacity || [];
+  const loading = fetching || !data;
 
   const todayOTLoad = capacity.reduce((s, c) => s + (c.count || 0), 0);
   const graftsPlanned = surgeries.reduce((s, r) => s + (Number(r.graftsneed) || 0), 0);
@@ -73,26 +50,19 @@ export default function SurgeryPlannerPage() {
       subtitle="Scheduled surgeries and today's real OT load"
       aiState={plannerAi}
       controls={
-        <>
-          <select className="control" value={branch} onChange={(e) => setBranch(e.target.value)}>
-            {BRANCHES.map((b) => <option key={b}>{b}</option>)}
-          </select>
-          <select className="control" value={dateRange} onChange={(e) => setDateRange(e.target.value)}>
-            {DATE_RANGES.map((r) => <option key={r}>{r}</option>)}
-          </select>
-          {dateRange === "Custom" && (
-            <>
-              <input type="date" className="control" value={custom.from} onChange={(e) => setCustom((p) => ({ ...p, from: e.target.value }))} />
-              <input type="date" className="control" value={custom.to} onChange={(e) => setCustom((p) => ({ ...p, to: e.target.value }))} />
-            </>
-          )}
-          <button className="icon-btn" onClick={fetchData} disabled={loading} title="Refresh">
-            {loading ? "…" : "⟳"}
-          </button>
-        </>
+        <button className="icon-btn" onClick={() => fetchData()} disabled={isValidating} title="Refresh">
+          {isValidating ? "…" : "⟳"}
+        </button>
       }
     >
-      <AiBriefPanel feature="patients.surgeryPlanner" scope={aiScope} title="Surgery & OT Planner" enabled={dateReady} aiState={plannerAi} />
+      {/* Forward mode: this page schedules ahead rather than reporting back. */}
+      <FilterBar
+        mode="forward"
+        defaults={FILTER_DEFAULTS}
+        onChange={({ filters, range }) => setFilterState({ filters, range })}
+      />
+
+      <AiBriefPanel feature="patients.surgeryPlanner" scope={aiScope} title="Surgery & OT Planner" enabled={ready} aiState={plannerAi} />
 
       {error ? (
         <ErrorState message={error} onRetry={fetchData} />
