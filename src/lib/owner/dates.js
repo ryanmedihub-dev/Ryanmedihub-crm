@@ -53,3 +53,34 @@ export function periodBounds(from, to) {
   if (to) q.$lte = new Date(to);
   return Object.keys(q).length ? q : null;
 }
+
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Resolve one end of a filter window to an instant.
+ *
+ * A date-only "YYYY-MM-DD" (what an `<input type="date">` submits) is widened
+ * to the edge of that IST day. Taking it literally means UTC midnight, which
+ * is 05:30 IST — so a `$lte` would cut the last day short by 18.5 hours.
+ * A full ISO timestamp is already an instant and is passed through.
+ */
+export function istDayEdge(value, edge) {
+  if (!value) return null;
+  if (!DATE_ONLY.test(String(value).trim())) {
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  const [y, m, d] = String(value).trim().split("-").map(Number);
+  const istMidnightUTC = Date.UTC(y, m - 1, d, edge === "end" ? 23 : 0, edge === "end" ? 59 : 0, edge === "end" ? 59 : 0, edge === "end" ? 999 : 0);
+  return new Date(istMidnightUTC - 5.5 * 60 * 60 * 1000);
+}
+
+/** periodBounds, but date-only inputs cover the whole IST day. */
+export function istPeriodBounds(from, to) {
+  const q = {};
+  const start = istDayEdge(from, "start");
+  const end = istDayEdge(to, "end");
+  if (start) q.$gte = start;
+  if (end) q.$lte = end;
+  return Object.keys(q).length ? q : null;
+}

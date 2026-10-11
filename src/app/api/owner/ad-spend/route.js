@@ -7,6 +7,7 @@ import AdSpend from "@/models/AdSpend";
 import { ALL_BRANCHES } from "@/lib/branches";
 import { attributeSpendToOutcomes } from "@/lib/owner/marketingAttribution";
 import { cacheKey, cached, cacheInvalidate } from "@/lib/cache";
+import { istDayEdge, istPeriodBounds } from "@/lib/owner/dates";
 
 const ALLOWED_ROLES = ["owner", "super-admin"];
 const PLATFORMS = ["Meta", "Google"];
@@ -48,11 +49,9 @@ const getHandler = async (req) => {
     const query = {};
     if (branch && branch !== "All") query.branch = branch;
     if (platform && PLATFORMS.includes(platform)) query.platform = platform;
-    if (from || to) {
-      query.date = {};
-      if (from) query.date.$gte = new Date(from);
-      if (to) query.date.$lte = new Date(to);
-    }
+    // from/to arrive as "YYYY-MM-DD" from the filter's date inputs.
+    const bounds = istPeriodBounds(from, to);
+    if (bounds) query.date = bounds;
 
     const entries = await AdSpend.find(query)
       .populate("campaignId", "name status")
@@ -68,8 +67,8 @@ const getHandler = async (req) => {
       const { byPlatform } = await attributeSpendToOutcomes({
         platforms,
         branch,
-        from: new Date(from),
-        to: new Date(to),
+        from: istDayEdge(from, "start"),
+        to: istDayEdge(to, "end"),
       });
       response.returnByPlatform = byPlatform;
     }
