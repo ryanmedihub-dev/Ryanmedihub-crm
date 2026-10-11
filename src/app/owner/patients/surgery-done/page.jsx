@@ -15,6 +15,9 @@ const config = {
   tableId: "patients-surgery-done",
   defaultSort: "surgeryDate",
   defaultSortDir: "desc",
+  // Surgeries are not a daily event, so the panel-wide "Today" default opens
+  // this page empty most days. 132 in the last 30 days here vs 0 today.
+  filterDefaults: { range: "Last 30 Days" },
   aiFeature: "patients.preset",
   columns: [
     ...PATIENT_SHARED_COLUMNS.filter((c) => c.key !== "visitDate"),
