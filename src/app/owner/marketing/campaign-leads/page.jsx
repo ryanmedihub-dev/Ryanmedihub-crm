@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Upload, Download, FileSpreadsheet, Loader2, ArrowLeft, Undo2, RefreshCw } from "lucide-react";
-import { OwnerPage } from "@/components/owner";
+import { Download, ArrowLeft, Undo2, RefreshCw } from "lucide-react";
+import { OwnerPage, Card, DataTable, Badge, EmptyState, InlineNotice } from "@/components/owner";
 import { AiBriefPanel } from "@/components/owner/ai";
 import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useToast } from "@/components/Toast";
@@ -14,8 +14,8 @@ import { readCampaignLeadWorkbook, buildCampaignLeadTemplateBytes, downloadBytes
 import { MAX_ROWS } from "@/lib/uploads/campaignLeadRowMapper";
 import { ALL_BRANCHES } from "@/lib/branches";
 
-const inputClass =
-  "w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100";
+const SYNC_KIND = { done: "good", partial: "warn", failed: "bad" };
+const SYNC_LABEL = { done: "Done", partial: "Partial", failed: "Failed" };
 
 export default function CampaignLeadsPage() {
   const toast = useToast();
@@ -218,201 +218,170 @@ export default function CampaignLeadsPage() {
     <OwnerPage title="Campaign Leads" subtitle="Upload each morning's ad-platform lead export against a campaign" aiState={campaignLeadsAi}>
       <AiBriefPanel feature="marketing.campaignLeads" scope={{}} title="Campaign Leads" aiState={campaignLeadsAi} />
 
-      <div className="card">
-        <div className="mx-auto max-w-6xl space-y-8">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
-              <Upload className="h-5 w-5" />
+      {phase === "idle" && (
+        <>
+          <Card title="1. Pick a campaign" subtitle="Platform and branch are inherited from the campaign, not re-entered per row">
+            <div className="form-row">
+              <label className="filter-field">
+                <span>Branch</span>
+                <select className="control" value={branchFilter} onChange={(e) => setBranchFilter(e.target.value)}>
+                  <option value="">All branches</option>
+                  {ALL_BRANCHES.map((b) => <option key={b} value={b}>{b}</option>)}
+                </select>
+              </label>
+              <label className="filter-field grow">
+                <span>Campaign</span>
+                <select className="control" value={campaignId} onChange={(e) => setCampaignId(e.target.value)} disabled={campaignsLoading}>
+                  <option value="">{campaignsLoading ? "Loading campaigns…" : "Select a campaign"}</option>
+                  {visibleCampaigns.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name} — {c.platform} · {c.branch} · {c.status}</option>
+                  ))}
+                </select>
+              </label>
             </div>
-            {phase !== "idle" && (
-              <button
-                onClick={reset}
-                className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
-              >
-                <ArrowLeft className="h-3.5 w-3.5" /> Start over
-              </button>
+            {selectedCampaign && (
+              <p className="muted note-line">
+                These leads will inherit <strong>{selectedCampaign.platform}</strong> / <strong>{selectedCampaign.branch}</strong> from the campaign.
+              </p>
             )}
-          </div>
+          </Card>
 
-          {phase === "idle" && (
-            <section className="space-y-6">
-              <div>
-                <h2 className="mb-3 text-sm font-bold text-slate-900">1. Pick a campaign</h2>
-                <div className="flex flex-wrap gap-3">
-                  <select className={`${inputClass} w-48`} value={branchFilter} onChange={(e) => setBranchFilter(e.target.value)}>
-                    <option value="">All branches</option>
-                    {ALL_BRANCHES.map((b) => <option key={b} value={b}>{b}</option>)}
-                  </select>
-                  <select className={`${inputClass} w-80`} value={campaignId} onChange={(e) => setCampaignId(e.target.value)} disabled={campaignsLoading}>
-                    <option value="">{campaignsLoading ? "Loading campaigns…" : "Select a campaign"}</option>
-                    {visibleCampaigns.map((c) => (
-                      <option key={c.id} value={c.id}>{c.name} — {c.platform} · {c.branch} · {c.status}</option>
-                    ))}
-                  </select>
-                </div>
-                {selectedCampaign && (
-                  <p className="mt-2 text-xs text-slate-500">
-                    Leads uploaded here inherit <strong>{selectedCampaign.platform}</strong> / <strong>{selectedCampaign.branch}</strong> from the campaign — not re-entered per row.
-                  </p>
-                )}
-              </div>
+          <Card title="2. Download the template" subtitle="Name, Phone, Email, City and Lead Date are the fixed columns">
+            <button type="button" className="primary" onClick={downloadTemplate}>
+              <Download size={15} /> Template with examples
+            </button>
+            <p className="muted note-line">
+              Any other column (e.g. &quot;Interested In&quot;) is kept as a per-lead answer.
+            </p>
+          </Card>
 
-              <div>
-                <h2 className="mb-3 text-sm font-bold text-slate-900">2. Download the template</h2>
-                <button
-                  onClick={downloadTemplate}
-                  className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700"
-                >
-                  <Download className="h-4 w-4" /> Template with examples
-                </button>
-                <p className="mt-2 text-xs text-slate-500">
-                  Name, Phone, Email, City, Lead Date are the fixed columns. Any other column (e.g. &quot;Interested In&quot;) is kept as a per-lead answer.
-                </p>
-              </div>
+          <Card title="3. Upload the filled file">
+            <UploadDropzone onFile={handleFile} fileName={file?.name} disabled={busy || !campaignId} />
+            {!campaignId && (
+              <InlineNotice kind="warn" title="Pick a campaign above first">
+                Every uploaded lead is attributed to one campaign, so the file can&apos;t be read until one is chosen.
+              </InlineNotice>
+            )}
+          </Card>
+        </>
+      )}
 
-              <div>
-                <h2 className="mb-3 text-sm font-bold text-slate-900">3. Upload the filled file</h2>
-                <UploadDropzone onFile={handleFile} fileName={file?.name} disabled={busy || !campaignId} />
-                {!campaignId && <p className="mt-2 text-xs text-amber-600">Pick a campaign above first.</p>}
-              </div>
-            </section>
-          )}
+      {phase === "parsing" && (
+        <Card>
+          <EmptyState icon="⟳" title="Reading & validating…" hint="Checking each row against the campaign and for duplicates." />
+        </Card>
+      )}
 
-          {phase === "parsing" && (
-            <div className="flex items-center justify-center gap-2 py-20 text-slate-500">
-              <Loader2 className="h-5 w-5 animate-spin" /> Reading &amp; validating…
-            </div>
-          )}
-
-          {(phase === "preview" || phase === "committing") && validation && (
-            <section className="space-y-4">
-              {validation.sourcePreview && (
-                <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm">
-                  {validation.sourcePreview.status === "failed" ? (
-                    <p className="text-slate-500">Couldn&apos;t check callby — the upload will still work; the source sync can be retried after.</p>
-                  ) : (
-                    <p className="text-slate-700">
-                      <strong>{validation.sourcePreview.matched}</strong> of {validation.summary.total} leads found in callby — source will change for{" "}
-                      <strong>{validation.sourcePreview.wouldUpdate}</strong>, <strong>{validation.sourcePreview.alreadySet}</strong> already set,{" "}
-                      <strong>{validation.sourcePreview.unmatched}</strong> not in callby.
-                    </p>
-                  )}
-                </div>
+      {(phase === "preview" || phase === "committing") && validation && (
+        <>
+          {validation.sourcePreview && (
+            <InlineNotice
+              kind={validation.sourcePreview.status === "failed" ? "warn" : "info"}
+              title={validation.sourcePreview.status === "failed" ? "Couldn't check callby" : "callby source preview"}
+            >
+              {validation.sourcePreview.status === "failed" ? (
+                "The upload will still work — the source sync can be retried after importing."
+              ) : (
+                <>
+                  <strong>{validation.sourcePreview.matched}</strong> of {validation.summary.total} leads found in callby — source
+                  will change for <strong>{validation.sourcePreview.wouldUpdate}</strong>,{" "}
+                  <strong>{validation.sourcePreview.alreadySet}</strong> already set,{" "}
+                  <strong>{validation.sourcePreview.unmatched}</strong> not in callby.
+                </>
               )}
-              <CampaignLeadPreviewTable summary={validation.summary} results={validation.results} />
+            </InlineNotice>
+          )}
 
-              <div className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white p-4">
-                {validation.summary.error > 0 && (
-                  <label className="inline-flex items-center gap-2 text-sm text-slate-700">
-                    <input type="checkbox" checked={skipErrors} onChange={(e) => setSkipErrors(e.target.checked)} className="h-4 w-4 rounded border-slate-300 text-indigo-600" />
-                    Skip the {validation.summary.error} error row(s) and import the rest
-                  </label>
-                )}
-                <div className="ml-auto flex items-center gap-3">
-                  <input
-                    value={batchLabel}
-                    onChange={(e) => setBatchLabel(e.target.value)}
-                    placeholder="Batch label (e.g. Meta export 14 Sep)"
-                    className={`${inputClass} w-64`}
-                  />
-                  <button
-                    onClick={commit}
-                    disabled={!canCommit || phase === "committing"}
-                    className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
-                  >
-                    {phase === "committing" ? (<><Loader2 className="h-4 w-4 animate-spin" /> Importing…</>) : (<>Import {validation.summary.willCreateDocs} leads</>)}
+          <CampaignLeadPreviewTable summary={validation.summary} results={validation.results} />
+
+          <Card>
+            <div className="form-row">
+              {validation.summary.error > 0 && (
+                <label className="check-field">
+                  <input type="checkbox" checked={skipErrors} onChange={(e) => setSkipErrors(e.target.checked)} />
+                  Skip the {validation.summary.error} error row(s) and import the rest
+                </label>
+              )}
+              <div className="form-row-end">
+                <input
+                  className="control"
+                  value={batchLabel}
+                  onChange={(e) => setBatchLabel(e.target.value)}
+                  placeholder="Batch label (e.g. Meta export 14 Sep)"
+                  aria-label="Batch label"
+                />
+                <button type="button" className="primary" onClick={commit} disabled={!canCommit || phase === "committing"}>
+                  {phase === "committing" ? "Importing…" : `Import ${validation.summary.willCreateDocs} leads`}
+                </button>
+              </div>
+            </div>
+          </Card>
+        </>
+      )}
+
+      {phase === "done" && commitResult && (
+        <CampaignLeadBatchResultPanel result={commitResult} reverting={reverting} onRevert={revertBatch} onStartOver={reset} />
+      )}
+
+      <Card
+        title="Upload history"
+        subtitle={batchesLoading ? "Loading…" : `${batches.length} batch${batches.length === 1 ? "" : "es"}`}
+        actions={
+          phase !== "idle" ? (
+            <button type="button" className="btn" onClick={reset}>
+              <ArrowLeft size={14} /> Start over
+            </button>
+          ) : null
+        }
+      >
+        <DataTable
+          loading={batchesLoading}
+          emptyMessage={<EmptyState icon="⬆" title="No uploads yet" hint="Imported batches and their callby sync status appear here." />}
+          columns={[
+            { key: "batchNo", label: "Batch", render: (b) => <span className="muted">#{b.batchNo}</span> },
+            { key: "label", label: "Label" },
+            { key: "created", label: "Created", align: "right" },
+            { key: "failed", label: "Failed", align: "right", render: (b) => <span className="muted">{b.failed}</span> },
+            { key: "status", label: "Status" },
+            {
+              key: "sourceSync",
+              label: "Source Sync",
+              render: (b) =>
+                b.sourceSync ? (
+                  <span className="cell-actions">
+                    <span
+                      title={`matched ${b.sourceSync.matched} · updated ${b.sourceSync.updated} · already set ${b.sourceSync.alreadySet} · unmatched ${b.sourceSync.unmatched}${b.sourceSync.error ? ` · ${b.sourceSync.error}` : ""}`}
+                    >
+                      <Badge kind={SYNC_KIND[b.sourceSync.status] || "neutral"} dot>
+                        {SYNC_LABEL[b.sourceSync.status] || "Pending"}
+                      </Badge>
+                    </span>
+                    {(b.sourceSync.status === "failed" || b.sourceSync.status === "partial") && b.status !== "reverted" && (
+                      <button type="button" className="btn" onClick={() => retrySourceSync(b)} disabled={retryingId === b.id}>
+                        <RefreshCw size={12} /> {retryingId === b.id ? "Retrying…" : "Retry"}
+                      </button>
+                    )}
+                  </span>
+                ) : (
+                  <span className="muted">—</span>
+                ),
+            },
+            { key: "createdBy", label: "By", render: (b) => <span className="muted">{b.createdBy}</span> },
+            {
+              key: "actions",
+              label: "",
+              align: "right",
+              render: (b) =>
+                b.status !== "reverted" && b.created > 0 ? (
+                  <button type="button" className="danger-btn" onClick={() => revertHistoryBatch(b)}>
+                    <Undo2 size={12} /> Revert
                   </button>
-                </div>
-              </div>
-            </section>
-          )}
-
-          {phase === "done" && commitResult && (
-            <CampaignLeadBatchResultPanel result={commitResult} reverting={reverting} onRevert={revertBatch} onStartOver={reset} />
-          )}
-
-          <section className="space-y-3 border-t border-slate-200 pt-6">
-            <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <FileSpreadsheet className="h-4 w-4" /> Upload history
-            </h2>
-            {batchesLoading ? (
-              <p className="text-sm text-slate-400">Loading…</p>
-            ) : batches.length === 0 ? (
-              <p className="text-sm text-slate-400">No uploads yet.</p>
-            ) : (
-              <div className="overflow-x-auto rounded-xl border border-slate-200">
-                <table className="w-full text-sm">
-                  <thead className="bg-slate-50 text-left text-xs font-semibold text-slate-500">
-                    <tr>
-                      <th className="px-3 py-2">Batch</th>
-                      <th className="px-3 py-2">Label</th>
-                      <th className="px-3 py-2 text-right">Created</th>
-                      <th className="px-3 py-2 text-right">Failed</th>
-                      <th className="px-3 py-2">Status</th>
-                      <th className="px-3 py-2">Source Sync</th>
-                      <th className="px-3 py-2">By</th>
-                      <th className="px-3 py-2"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {batches.map((b) => (
-                      <tr key={b.id}>
-                        <td className="px-3 py-2 text-slate-500">#{b.batchNo}</td>
-                        <td className="px-3 py-2 text-slate-800">{b.label}</td>
-                        <td className="px-3 py-2 text-right tabular-nums">{b.created}</td>
-                        <td className="px-3 py-2 text-right tabular-nums text-slate-500">{b.failed}</td>
-                        <td className="px-3 py-2 text-slate-600">{b.status}</td>
-                        <td className="px-3 py-2">
-                          {b.sourceSync ? (
-                            <div className="flex items-center gap-1.5">
-                              <span
-                                title={`matched ${b.sourceSync.matched} · updated ${b.sourceSync.updated} · already set ${b.sourceSync.alreadySet} · unmatched ${b.sourceSync.unmatched}${b.sourceSync.error ? ` · ${b.sourceSync.error}` : ""}`}
-                                className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
-                                      b.sourceSync.status === "done"
-                                        ? "bg-emerald-100 text-emerald-700"
-                                        : b.sourceSync.status === "partial"
-                                          ? "bg-amber-100 text-amber-700"
-                                          : b.sourceSync.status === "failed"
-                                            ? "bg-rose-100 text-rose-700"
-                                            : "bg-slate-100 text-slate-600"
-                                    }`}
-                              >
-                                {b.sourceSync.status === "done" ? "Done" : b.sourceSync.status === "partial" ? "Partial" : b.sourceSync.status === "failed" ? "Failed" : "Pending"}
-                              </span>
-                              {(b.sourceSync.status === "failed" || b.sourceSync.status === "partial") && b.status !== "reverted" && (
-                                <button
-                                  onClick={() => retrySourceSync(b)}
-                                  disabled={retryingId === b.id}
-                                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-                                >
-                                  {retryingId === b.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />} Retry
-                                </button>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-slate-400">—</span>
-                          )}
-                        </td>
-                        <td className="px-3 py-2 text-slate-500">{b.createdBy}</td>
-                        <td className="px-3 py-2 text-right">
-                          {b.status !== "reverted" && b.created > 0 && (
-                            <button
-                              onClick={() => revertHistoryBatch(b)}
-                              className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-white px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50"
-                            >
-                              <Undo2 className="h-3 w-3" /> Revert
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </section>
-        </div>
-      </div>
+                ) : null,
+            },
+          ]}
+          rows={batches}
+        />
+      </Card>
     </OwnerPage>
   );
 }

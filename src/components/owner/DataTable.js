@@ -67,7 +67,11 @@ export default function DataTable({
             rows.map((row, i) => (
               <tr
                 key={row.id ?? row._id ?? i}
-                className={`${onRowClick ? "clickable" : ""}${row._isTotal ? " total-row" : ""}`.trim() || undefined}
+                className={
+                  `${onRowClick ? "clickable" : ""}${row._isTotal ? " total-row" : ""}${
+                    row._rowKind ? ` row-${row._rowKind}` : ""
+                  }`.trim() || undefined
+                }
                 onClick={onRowClick ? () => onRowClick(row) : undefined}
               >
                 {columns.map((col) => (

@@ -787,6 +787,74 @@
 /* A standalone explanatory line between page sections. */
 .owner-app .note-line {
   font-size: var(--fs-13);
+  margin: var(--sp-2) 0 0;
+}
+
+/* ---- forms (upload wizards, entry modals) --------------------------- */
+.owner-app .form-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--sp-3);
+}
+.owner-app .form-row .grow {
+  flex: 1 1 260px;
+}
+.owner-app .form-row-end {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-left: auto;
+}
+.owner-app .check-field {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-14);
+}
+.owner-app .check-field input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+}
+/* Badge plus action button inside one table cell. */
+.owner-app .cell-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+/* Per-row validation tint (DataTable `_rowKind`). */
+.owner-app tr.row-error > td {
+  background: color-mix(in srgb, var(--crit-bg) 60%, transparent);
+}
+.owner-app tr.row-warning > td {
+  background: color-mix(in srgb, var(--warn-bg) 55%, transparent);
+}
+.owner-app .row-messages {
+  margin: 0;
+  padding-left: var(--sp-4);
+  font-size: var(--fs-12);
+}
+/* Text tones — use these instead of inline `color: var(--pos)` etc. */
+.owner-app .tone-pos {
+  color: var(--pos-fg);
+}
+.owner-app .tone-warn,
+.owner-app .row-messages .warn {
+  color: var(--warn-fg);
+}
+.owner-app .tone-crit,
+.owner-app .row-messages .bad {
+  color: var(--crit-fg);
+}
+.owner-app .tone-strong {
+  font-weight: 700;
+}
+@media (max-width: 720px) {
+  .owner-app .form-row-end {
+    margin-left: 0;
+    width: 100%;
+  }
 }
 
 /* ---- section landing link grid (SectionLinks) ----------------------- */
