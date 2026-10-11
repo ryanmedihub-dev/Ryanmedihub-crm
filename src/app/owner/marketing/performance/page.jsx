@@ -11,7 +11,6 @@ import { usePagedList } from "@/lib/owner/usePagedList";
 
 const PLATFORM_OPTIONS = [{ value: "", label: "All platforms" }, { value: "Meta", label: "Meta" }, { value: "Google", label: "Google" }];
 
-const pct = (n) => (n == null ? "—" : `${Math.round(n * 100)}%`);
 const ratioMoney = (n) => (n == null ? "—" : rupee(n));
 
 function CampaignLeadsDrillThrough({ campaign, range, onClose }) {

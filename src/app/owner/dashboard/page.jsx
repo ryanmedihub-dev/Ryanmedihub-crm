@@ -132,7 +132,7 @@ export default function OwnerDashboard() {
           <Card
             title="Attention"
             subtitle={loading ? "Loading…" : `${fmt(attention.totalFlagged)} items flagged${attention.totalValueAtRisk ? ` · ${rupee(attention.totalValueAtRisk)} at risk` : ""} — threshold rules, no AI`}
-            actions={<Link href="/owner/ai/attention" className="btn" style={{ textDecoration: "none" }}>Open Attention →</Link>}
+            actions={<Link href="/owner/ai/attention" className="btn">Open Attention →</Link>}
           >
             {loading ? (
               <Skeleton variant="row" count={4} style={{ height: 32, margin: "8px 0" }} />
@@ -187,7 +187,7 @@ export default function OwnerDashboard() {
               )}
             </Card>
 
-            <Card title="Conversion Funnel" subtitle="Compact view — see Statistics for the full breakdown" actions={<Link href="/owner/statistics" className="btn" style={{ textDecoration: "none" }}>Open →</Link>}>
+            <Card title="Conversion Funnel" subtitle="Compact view — see Statistics for the full breakdown" actions={<Link href="/owner/statistics" className="btn">Open →</Link>}>
               {loading ? (
                 <Skeleton variant="chart" />
               ) : funnel.error ? (
@@ -217,7 +217,7 @@ export default function OwnerDashboard() {
               )}
             </Card>
 
-            <Card title="Performers" subtitle="Top and bottom scored employees, trailing 30 days — see /owner/employees for the methodology" actions={<Link href="/owner/employees" className="btn" style={{ textDecoration: "none" }}>Open →</Link>}>
+            <Card title="Performers" subtitle="Top and bottom scored employees, trailing 30 days — see /owner/employees for the methodology" actions={<Link href="/owner/employees" className="btn">Open →</Link>}>
               {loading ? (
                 <Skeleton variant="row" count={6} style={{ height: 18, margin: "8px 0" }} />
               ) : performers.scoredCount === 0 ? (

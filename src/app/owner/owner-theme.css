@@ -655,6 +655,18 @@
   transform: none;
   box-shadow: none;
 }
+/* Buttons are used as <button> and as <Link>, with and without a leading
+   icon — so they centre their own content and never underline. */
+.owner-app .btn,
+.owner-app .primary,
+.owner-app .danger-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-decoration: none;
+  white-space: nowrap;
+}
 .owner-app .btn {
   border: 1px solid var(--line-strong);
   border-radius: var(--r-sm);
@@ -805,6 +817,17 @@
   align-items: center;
   gap: var(--sp-3);
   margin-left: auto;
+}
+/* A stacked caption + control, as used by the entry modals. */
+.owner-app .field {
+  display: grid;
+  gap: 4px;
+  font-size: var(--fs-12);
+  color: var(--ink-muted);
+}
+.owner-app .field-stack {
+  display: grid;
+  gap: var(--sp-3);
 }
 .owner-app .check-field {
   display: inline-flex;

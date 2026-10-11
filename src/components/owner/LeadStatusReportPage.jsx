@@ -7,7 +7,6 @@ import FilterBar from "./FilterBar";
 import ReportTable from "./ReportTable";
 import KpiRow from "./KpiRow";
 import ErrorState from "./ErrorState";
-import InlineNotice from "./InlineNotice";
 import { AiBriefPanel } from "./ai";
 import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";

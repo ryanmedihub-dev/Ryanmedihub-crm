@@ -1,29 +1,22 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState } from "react";
 
-const ThemeContext = createContext({ theme: "light", toggleTheme: () => {} });
+const ThemeContext = createContext({ theme: "dark", toggleTheme: () => {} });
 
-export function ThemeProvider({ children, className = "" }) {
-  
-  
-  const [theme, setTheme] = useState("dark");
+const COOKIE = "owner-theme";
+const ONE_YEAR = 60 * 60 * 24 * 365;
 
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("owner-theme");
-      if (stored === "dark" || stored === "light") setTheme(stored);
-    } catch {
-    }
-  }, []);
+export function ThemeProvider({ children, className = "", initialTheme = "dark" }) {
+  // Seeded from a cookie the server already read, so the first paint is the
+  // user's own theme — a localStorage read in an effect would flash the
+  // default first.
+  const [theme, setTheme] = useState(initialTheme);
 
   const toggleTheme = () => {
     setTheme((t) => {
       const next = t === "dark" ? "light" : "dark";
-      try {
-        localStorage.setItem("owner-theme", next);
-      } catch {
-      }
+      document.cookie = `${COOKIE}=${next}; path=/; max-age=${ONE_YEAR}; samesite=lax`;
       return next;
     });
   };
@@ -40,3 +33,5 @@ export function ThemeProvider({ children, className = "" }) {
 export function useTheme() {
   return useContext(ThemeContext);
 }
+
+export const OWNER_THEME_COOKIE = COOKIE;

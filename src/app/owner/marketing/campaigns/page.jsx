@@ -10,7 +10,7 @@ import { useAiVerdicts } from "@/lib/ai/client/useAiVerdicts";
 import { ownerFetch } from "@/lib/ownerFetch";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { ALL_BRANCHES } from "@/lib/branches";
-import { rupee, fmtDate, num } from "@/lib/owner/format";
+import { rupee, fmtDate } from "@/lib/owner/format";
 import { useToast } from "@/components/Toast";
 
 const PLATFORMS = ["Meta", "Google"];
@@ -225,20 +225,20 @@ export default function CampaignsPage() {
       )}
 
       <Modal open={formOpen} onClose={() => setFormOpen(false)} title={editingId ? "Edit Campaign" : "New Campaign"}>
-        <form onSubmit={submit} style={{ display: "grid", gap: 12 }}>
-          <label style={{ display: "grid", gap: 4, fontSize: 12, color: "var(--ink-muted)" }}>
+        <form onSubmit={submit} className="field-stack">
+          <label className="field">
             Name
             <input className="control" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} required />
           </label>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <label style={{ display: "grid", gap: 4, fontSize: 12, color: "var(--ink-muted)" }}>
+            <label className="field">
               Platform
               <select className="control" value={form.platform} onChange={(e) => setForm((p) => ({ ...p, platform: e.target.value }))} required>
                 <option value="" disabled>Select platform</option>
                 {PLATFORMS.map((p) => <option key={p} value={p}>{p}</option>)}
               </select>
             </label>
-            <label style={{ display: "grid", gap: 4, fontSize: 12, color: "var(--ink-muted)" }}>
+            <label className="field">
               Branch
               <select className="control" value={form.branch} onChange={(e) => setForm((p) => ({ ...p, branch: e.target.value }))} required>
                 <option value="" disabled>Select branch</option>
@@ -247,31 +247,31 @@ export default function CampaignsPage() {
             </label>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <label style={{ display: "grid", gap: 4, fontSize: 12, color: "var(--ink-muted)" }}>
+            <label className="field">
               Status
               <select className="control" value={form.status} onChange={(e) => setForm((p) => ({ ...p, status: e.target.value }))}>
                 {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
             </label>
-            <label style={{ display: "grid", gap: 4, fontSize: 12, color: "var(--ink-muted)" }}>
+            <label className="field">
               Daily Budget (₹)
               <input type="number" className="control" min="0" value={form.dailyBudget} onChange={(e) => setForm((p) => ({ ...p, dailyBudget: e.target.value }))} />
             </label>
           </div>
-          <label style={{ display: "grid", gap: 4, fontSize: 12, color: "var(--ink-muted)" }}>
+          <label className="field">
             Target Locations (comma-separated)
             <input className="control" placeholder="e.g. Delhi, Noida, Gurugram" value={form.targetLocations} onChange={(e) => setForm((p) => ({ ...p, targetLocations: e.target.value }))} required />
           </label>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
-            <label style={{ display: "grid", gap: 4, fontSize: 12, color: "var(--ink-muted)" }}>
+            <label className="field">
               Min Age
               <input type="number" className="control" min="0" value={form.targetAgeMin} onChange={(e) => setForm((p) => ({ ...p, targetAgeMin: e.target.value }))} />
             </label>
-            <label style={{ display: "grid", gap: 4, fontSize: 12, color: "var(--ink-muted)" }}>
+            <label className="field">
               Max Age
               <input type="number" className="control" min="0" value={form.targetAgeMax} onChange={(e) => setForm((p) => ({ ...p, targetAgeMax: e.target.value }))} />
             </label>
-            <label style={{ display: "grid", gap: 4, fontSize: 12, color: "var(--ink-muted)" }}>
+            <label className="field">
               Gender
               <select className="control" value={form.targetGender} onChange={(e) => setForm((p) => ({ ...p, targetGender: e.target.value }))}>
                 <option value="All">All</option>
@@ -281,20 +281,20 @@ export default function CampaignsPage() {
             </label>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <label style={{ display: "grid", gap: 4, fontSize: 12, color: "var(--ink-muted)" }}>
+            <label className="field">
               Start Date
               <input type="date" className="control" value={form.startDate} onChange={(e) => setForm((p) => ({ ...p, startDate: e.target.value }))} />
             </label>
-            <label style={{ display: "grid", gap: 4, fontSize: 12, color: "var(--ink-muted)" }}>
+            <label className="field">
               End Date
               <input type="date" className="control" value={form.endDate} onChange={(e) => setForm((p) => ({ ...p, endDate: e.target.value }))} />
             </label>
           </div>
-          <label style={{ display: "grid", gap: 4, fontSize: 12, color: "var(--ink-muted)" }}>
+          <label className="field">
             Objective
             <input className="control" value={form.objective} onChange={(e) => setForm((p) => ({ ...p, objective: e.target.value }))} />
           </label>
-          <label style={{ display: "grid", gap: 4, fontSize: 12, color: "var(--ink-muted)" }}>
+          <label className="field">
             Notes
             <textarea className="control" rows={2} value={form.notes} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} />
           </label>

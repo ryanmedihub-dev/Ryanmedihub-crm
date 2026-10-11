@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { OwnerPage, Card, FilterBar, DataTable, KpiRow, ErrorState, ProgressBar, Badge } from "@/components/owner";
+import { OwnerPage, Card, FilterBar, DataTable, KpiRow, ErrorState, ProgressBar } from "@/components/owner";
 import { AiBriefPanel, AiScanOverlay, aiVerdictColumn } from "@/components/owner/ai";
 import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useAiVerdicts } from "@/lib/ai/client/useAiVerdicts";

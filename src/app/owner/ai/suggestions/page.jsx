@@ -68,7 +68,7 @@ export default function SuggestionsPage() {
               actions={<Badge kind={CATEGORY_KIND[o.category] || "neutral"}>{o.category}</Badge>}
             >
               {o.drillHref && (
-                <Link href={o.drillHref} className="btn" style={{ textDecoration: "none", display: "inline-block" }}>
+                <Link href={o.drillHref} className="btn">
                   View the underlying data →
                 </Link>
               )}

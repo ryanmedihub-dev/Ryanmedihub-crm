@@ -55,7 +55,7 @@ export default function MarketingComparisonPage() {
     return `/api/owner/marketing/comparison?${new URLSearchParams(aiScope).toString()}`;
   }, [filterState, aiScope]);
 
-  const { data, loading, error, isValidating, mutate: load } = useOwnerData(url);
+  const { data, error, isValidating, mutate: load } = useOwnerData(url);
   const comparisonAi = useAiInsight("marketing.comparison", aiScope, { kind: "brief", enabled: !!filterState });
 
   

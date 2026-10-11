@@ -163,8 +163,8 @@ export default function AdSpendPage() {
           subtitle={isEditing ? "Updating an existing spend record" : "Log a new Meta or Google spend row"}
           actions={isEditing ? <Badge kind="purple">Editing</Badge> : null}
         >
-          <form onSubmit={handleSubmit} style={{ display: "grid", gap: 12 }}>
-            <label style={{ display: "grid", gap: 4, fontSize: 12, color: "var(--ink-muted)" }}>
+          <form onSubmit={handleSubmit} className="field-stack">
+            <label className="field">
               Date
               <input
                 type="date"
@@ -175,7 +175,7 @@ export default function AdSpendPage() {
                 required
               />
             </label>
-            <label style={{ display: "grid", gap: 4, fontSize: 12, color: "var(--ink-muted)" }}>
+            <label className="field">
               Branch
               <select
                 className="control"
@@ -188,7 +188,7 @@ export default function AdSpendPage() {
                 {ALL_BRANCHES.map((b) => <option key={b} value={b}>{b}</option>)}
               </select>
             </label>
-            <label style={{ display: "grid", gap: 4, fontSize: 12, color: "var(--ink-muted)" }}>
+            <label className="field">
               Platform
               <select
                 className="control"
@@ -201,7 +201,7 @@ export default function AdSpendPage() {
                 {PLATFORMS.map((p) => <option key={p} value={p}>{p}</option>)}
               </select>
             </label>
-            <label style={{ display: "grid", gap: 4, fontSize: 12, color: "var(--ink-muted)" }}>
+            <label className="field">
               Campaign
               <select
                 className="control"
@@ -216,7 +216,7 @@ export default function AdSpendPage() {
               </select>
             </label>
             {!form.campaignId && (
-              <label style={{ display: "grid", gap: 4, fontSize: 12, color: "var(--ink-muted)" }}>
+              <label className="field">
                 Campaign name (free text, for historical/one-off entries)
                 <input
                   type="text"
@@ -228,7 +228,7 @@ export default function AdSpendPage() {
                 />
               </label>
             )}
-            <label style={{ display: "grid", gap: 4, fontSize: 12, color: "var(--ink-muted)" }}>
+            <label className="field">
               Amount (₹)
               <input
                 type="number"
@@ -242,7 +242,7 @@ export default function AdSpendPage() {
                 required
               />
             </label>
-            <label style={{ display: "grid", gap: 4, fontSize: 12, color: "var(--ink-muted)" }}>
+            <label className="field">
               Clicks (optional — enables CPC)
               <input
                 type="number"
@@ -271,7 +271,7 @@ export default function AdSpendPage() {
         </Card>
 
         <Card title="Filters" subtitle="Narrow the list below">
-          <div style={{ display: "grid", gap: 12 }}>
+          <div className="field-stack">
             <select
               className="control"
               style={{ width: "100%" }}
