@@ -4,7 +4,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { withDB } from "@/lib/withDB";
 import Patient from "@/models/Patient";
 import Employee from "@/models/Employee";
-import { byName } from "@/lib/sortOptions";
+import { byName, byKey } from "@/lib/sortOptions";
 import { cacheKey, cached } from "@/lib/cache";
 
 const handler = async (req) => {
@@ -19,24 +19,25 @@ const handler = async (req) => {
     const payload = await cached(key, 300, async () => {
       const [counsellors, agents, doctors, seniorTechs, implanters, t1, t2, t3, surgeryLocations] =
         await Promise.all([
-          Employee.distinct("name", { role: "Counsellor", isactive: true }),
-          Employee.distinct("name", { role: "Agent",      isactive: true }),
-          Employee.distinct("name", { role: "Doctor",     isactive: true }),
-          Employee.distinct("name", { role: "Technician", isactive: true }),
-          Employee.distinct("name", { role: "Implanter",  isactive: true }),
+          Employee.find({ role: "Counsellor", isactive: true }, { name: 1 }).lean(),
+          Employee.find({ role: "Agent",      isactive: true }, { name: 1 }).lean(),
+          Employee.find({ role: "Doctor",     isactive: true }, { name: 1 }).lean(),
+          Employee.find({ role: "Technician", isactive: true }, { name: 1 }).lean(),
+          Employee.find({ role: "Implanter",  isactive: true }, { name: 1 }).lean(),
           Patient.distinct("counselling.techniqueSuggested"),
           Patient.distinct("surgery.technique"),
           Patient.distinct("personal.techniqueQuoted"),
           Patient.distinct("surgery.location"),
         ]);
 
+      const byN = byKey("name");
       return {
         success: true,
-        counsellors: counsellors.filter(Boolean).sort(byName),
-        agents:      agents.filter(Boolean).sort(byName),
-        doctors:     doctors.filter(Boolean).sort(byName),
-        seniorTechs: seniorTechs.filter(Boolean).sort(byName),
-        implanters:  implanters.filter(Boolean).sort(byName),
+        counsellors: counsellors.filter((e) => e.name).sort(byN),
+        agents:      agents.filter((e) => e.name).sort(byN),
+        doctors:     doctors.filter((e) => e.name).sort(byN),
+        seniorTechs: seniorTechs.filter((e) => e.name).sort(byN),
+        implanters:  implanters.filter((e) => e.name).sort(byN),
         techniques:  [...new Set([...t1, ...t2, ...t3].filter(Boolean))].sort(byName),
         surgeryLocations: surgeryLocations.filter(Boolean).sort(byName),
       };

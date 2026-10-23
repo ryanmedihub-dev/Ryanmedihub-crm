@@ -3,7 +3,6 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { withDB } from "@/lib/withDB";
 import Patient from "@/models/Patient";
-import Employee from "@/models/Employee";
 import { COLLAB_BRANCHES } from "@/lib/branches";
 import { resolveDateRange, toDateQuery } from "@/lib/dateHelpers";
 import { cacheKey, cached } from "@/lib/cache";
@@ -50,12 +49,12 @@ const handler = async (req) => {
     const search          = searchParams.get("search") || "";
     const statuses        = split(searchParams.get("status"));
     const branches        = split(searchParams.get("branch"));
-    const counsellorNames = split(searchParams.get("counsellor"));
-    const agentNames      = split(searchParams.get("agent"));
+    const counsellorIds   = split(searchParams.get("counsellor"));
+    const agentIds        = split(searchParams.get("agent"));
     const techniques      = split(searchParams.get("technique"));
-    const doctorNames     = split(searchParams.get("doctor"));
-    const seniorTechNames = split(searchParams.get("seniorTech"));
-    const implanterNames  = split(searchParams.get("implanter"));
+    const doctorIds       = split(searchParams.get("doctor"));
+    const seniorTechIds   = split(searchParams.get("seniorTech"));
+    const implanterIds    = split(searchParams.get("implanter"));
     const surgeryLocations = split(searchParams.get("surgeryLocations"));
     const surgeryDate      = searchParams.get("surgeryDate")      || "";
     const visited          = searchParams.get("visited")          === "true";
@@ -120,41 +119,26 @@ const handler = async (req) => {
 
     if (andClauses.length) query.$and = andClauses;
 
-    const [counsellorDocs, agentDocs, doctorDocs, seniorTechDocs, implanterDocs] = await Promise.all([
-      counsellorNames.length ? Employee.find({ name: { $in: counsellorNames } }, "_id").lean() : [],
-      agentNames.length      ? Employee.find({ name: { $in: agentNames } },      "_id").lean() : [],
-      doctorNames.length     ? Employee.find({ name: { $in: doctorNames } },     "_id").lean() : [],
-      seniorTechNames.length ? Employee.find({ name: { $in: seniorTechNames } }, "_id").lean() : [],
-      implanterNames.length  ? Employee.find({ name: { $in: implanterNames } },  "_id").lean() : [],
-    ]);
-
-    if (counsellorNames.length) {
-      if (!counsellorDocs.length) return NextResponse.json({ patients: [], total: 0, page, limit, filterOptions: {} }, { status: 200 });
-      const ids = counsellorDocs.map((d) => d._id);
-      query["counselling.counsellor"] = ids.length === 1 ? ids[0] : { $in: ids };
+    if (counsellorIds.length) {
+      query["counselling.counsellor"] = counsellorIds.length === 1 ? counsellorIds[0] : { $in: counsellorIds };
     } else if (visited) {
       query["counselling.counsellor"] = { $exists: true, $ne: null };
     }
 
-    if (agentNames.length) {
-      if (!agentDocs.length) return NextResponse.json({ patients: [], total: 0, page, limit, filterOptions: {} }, { status: 200 });
-      const ids = agentDocs.map((d) => d._id);
-      query["personal.reference"] = ids.length === 1 ? ids[0] : { $in: ids };
+    if (agentIds.length) {
+      query["personal.reference"] = agentIds.length === 1 ? agentIds[0] : { $in: agentIds };
     }
 
-    if (doctorDocs.length) {
-      const ids = doctorDocs.map((d) => d._id);
-      query["surgery.doctor"] = ids.length === 1 ? ids[0] : { $in: ids };
+    if (doctorIds.length) {
+      query["surgery.doctor"] = doctorIds.length === 1 ? doctorIds[0] : { $in: doctorIds };
     }
 
-    if (seniorTechDocs.length) {
-      const ids = seniorTechDocs.map((d) => d._id);
-      query["surgery.seniorTech"] = ids.length === 1 ? ids[0] : { $in: ids };
+    if (seniorTechIds.length) {
+      query["surgery.seniorTech"] = seniorTechIds.length === 1 ? seniorTechIds[0] : { $in: seniorTechIds };
     }
 
-    if (implanterDocs.length) {
-      const ids = implanterDocs.map((d) => d._id);
-      query["surgery.implanterRight"] = ids.length === 1 ? ids[0] : { $in: ids };
+    if (implanterIds.length) {
+      query["surgery.implanterRight"] = implanterIds.length === 1 ? implanterIds[0] : { $in: implanterIds };
     }
 
     const meta = {};

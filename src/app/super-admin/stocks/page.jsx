@@ -4,8 +4,8 @@ import SuperAdminSidebar from "@/components/Sidebars/SuperAdminSidebar";
 
 const CONFIG = {
   SidebarComponent: SuperAdminSidebar,
-  title:         "Inventory Overview",
-  subtitle:      "Read-only view of stock across all branches",
+  title:         "Inventory overview",
+  subtitle:      "Read-only view across every branch",
   showAddStock:  false,
   showPurchase:  false,
   editBasePath:  null,

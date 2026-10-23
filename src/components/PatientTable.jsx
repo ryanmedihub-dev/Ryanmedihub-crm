@@ -620,7 +620,7 @@ const [drawerOpen, setDrawerOpen] = useState(false);
                     values={filters.counsellor}
                     onChange={(v) => applyFilter("counsellor", v)}
                     placeholder="All Counsellors"
-                    options={filterOptions.counsellors.map((c) => ({ label: c, value: c }))}
+                    options={filterOptions.counsellors.map((c) => ({ label: c.name, value: String(c._id) }))}
                   />
                 </DrawerField>
                 <DrawerField label="Reference (Agent)">
@@ -628,7 +628,7 @@ const [drawerOpen, setDrawerOpen] = useState(false);
                     values={filters.agent}
                     onChange={(v) => applyFilter("agent", v)}
                     placeholder="All References"
-                    options={filterOptions.agents.map((a) => ({ label: a, value: a }))}
+                    options={filterOptions.agents.map((a) => ({ label: a.name, value: String(a._id) }))}
                   />
                 </DrawerField>
                 {(filterCfg.showDoctor || filterCfg.showSeniorTech) && (
@@ -639,7 +639,7 @@ const [drawerOpen, setDrawerOpen] = useState(false);
                           values={filters.doctor}
                           onChange={(v) => applyFilter("doctor", v)}
                           placeholder="All Doctors"
-                          options={filterOptions.doctors.map((d) => ({ label: d, value: d }))}
+                          options={filterOptions.doctors.map((d) => ({ label: d.name, value: String(d._id) }))}
                         />
                       </DrawerField>
                     )}
@@ -649,7 +649,7 @@ const [drawerOpen, setDrawerOpen] = useState(false);
                           values={filters.seniorTech}
                           onChange={(v) => applyFilter("seniorTech", v)}
                           placeholder="All Techs"
-                          options={filterOptions.seniorTechs.map((t) => ({ label: t, value: t }))}
+                          options={filterOptions.seniorTechs.map((t) => ({ label: t.name, value: String(t._id) }))}
                         />
                       </DrawerField>
                     )}
@@ -661,7 +661,7 @@ const [drawerOpen, setDrawerOpen] = useState(false);
                       values={filters.implanter}
                       onChange={(v) => applyFilter("implanter", v)}
                       placeholder="All Implanters"
-                      options={filterOptions.implanters.map((i) => ({ label: i, value: i }))}
+                      options={filterOptions.implanters.map((i) => ({ label: i.name, value: String(i._id) }))}
                     />
                   </DrawerField>
                 )}

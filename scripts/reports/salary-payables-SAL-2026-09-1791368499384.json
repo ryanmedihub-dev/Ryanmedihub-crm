@@ -1,0 +1,18 @@
+{
+  "runTag": "SAL-2026-09-1791368499384",
+  "mode": "dry-run",
+  "file": "scripts/data/September_2026_Salary_Sheet.xlsx",
+  "period": {
+    "month": 9,
+    "year": 2026
+  },
+  "startedAt": "2026-10-07T10:21:39.384Z",
+  "uploadBatchId": null,
+  "toCreate": [],
+  "toUpdate": [],
+  "skipped": [],
+  "failed": [],
+  "warnings": [],
+  "totals": {},
+  "finishedAt": "2026-10-07T10:21:40.165Z"
+}

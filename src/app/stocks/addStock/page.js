@@ -3,503 +3,303 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import StockSidebar from "@/components/Sidebars/StockSidebar";
+import { Plus, Trash2, MapPin, Check, Package } from "lucide-react";
+import Sidebar from "@/components/Sidebars/StockSidebar";
 import SearchableSelect from "@/components/SearchableSelect";
+import { useToast } from "@/components/Toast";
 import {
-  Plus,
-  Trash2,
-  Package,
-  AlertCircle,
-  ArrowLeft,
-  ShoppingCart,
-  MapPin,
-} from "lucide-react";
+  Page, Card, Field, Btn, IconBtn, Chip, Row, Spinner,
+  input, textarea, inr, num, th, td, tr,
+} from "@/components/stocks/ui";
+
+const METHODS = [
+  ["cash", "Cash"], ["upi", "UPI"], ["card", "Card"], ["banking", "Net banking"],
+  ["bajaj_loan", "Bajaj loan"], ["fibe_loan", "Fibe loan"], ["other", "Other"],
+];
+
+const blankItem = () => ({ id: Date.now() + Math.random(), stockId: "", quantity: "", purchasePrice: "" });
 
 export default function StockPurchasePage() {
   const router = useRouter();
   const { data: session } = useSession();
+  const toast = useToast();
 
   const [loading, setLoading] = useState(false);
-  const [fetchLoading, setFetchLoading] = useState(true);
+  const [fetching, setFetching] = useState(true);
   const [stocks, setStocks] = useState([]);
   const [vendors, setVendors] = useState([]);
-  const [toast, setToast] = useState({ show: false, message: "", type: "" });
 
-  const [purchaseData, setPurchaseData] = useState({
+  const [head, setHead] = useState({
     vendorId: "",
     paymentMethod: "cash",
     purchaseDate: new Date().toISOString().split("T")[0],
     remarks: "",
   });
+  const [items, setItems] = useState([blankItem()]);
 
-  const [purchaseItems, setPurchaseItems] = useState([
-    {
-      id: Date.now(),
-      stockId: "",
-      stockName: "",
-      quantity: "",
-      purchasePrice: "",
-      totalAmount: 0,
-    },
-  ]);
-
-  const showToast = (message, type = "info") => {
-    setToast({ show: true, message, type });
-    setTimeout(() => {
-      setToast({ show: false, message: "", type: "" });
-    }, 3000);
-  };
+  const branchRestricted = session?.user?.branch && !["admin", "super-admin"].includes(session?.user?.role);
 
   useEffect(() => {
-    fetchData();
+    (async () => {
+      try {
+        const [stockRes, vendorRes] = await Promise.all([
+          fetch("/api/stocks/get"),
+          fetch("/api/vendors/get"),
+        ]);
+        const stockData = await stockRes.json();
+        const vendorData = await vendorRes.json();
+        if (stockData.success) setStocks(stockData.data || []);
+        if (vendorData.success) setVendors(vendorData.data || vendorData.vendors || []);
+      } catch {
+        toast.error("Could not load products and vendors");
+      } finally {
+        setFetching(false);
+      }
+    })();
   }, []);
 
-  const fetchData = async () => {
-    setFetchLoading(true);
-    try {
-      const stockRes = await fetch("/api/stocks/get");
-      const stockData = await stockRes.json();
-      if (stockData.success) {
-        setStocks(stockData.data || stockData.stocks || []);
-      }
-
-      const vendorRes = await fetch("/api/vendors/get");
-      const vendorData = await vendorRes.json();
-      if (vendorData.success) {
-        setVendors(vendorData.data || vendorData.vendors || []);
-      }
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      showToast("Failed to load data", "error");
-    } finally {
-      setFetchLoading(false);
-    }
-  };
-
-  const addItem = () => {
-    setPurchaseItems([
-      ...purchaseItems,
-      {
-        id: Date.now(),
-        stockId: "",
-        stockName: "",
-        quantity: "",
-        purchasePrice: "",
-        totalAmount: 0,
-      },
-    ]);
-  };
-
-  const removeItem = (id) => {
-    if (purchaseItems.length === 1) {
-      showToast("At least one item is required", "error");
-      return;
-    }
-    setPurchaseItems(purchaseItems.filter((item) => item.id !== id));
-  };
+  const lineTotal = (item) => (parseFloat(item.quantity) || 0) * (parseFloat(item.purchasePrice) || 0);
+  const grandTotal = items.reduce((sum, i) => sum + lineTotal(i), 0);
+  const totalUnits = items.reduce((sum, i) => sum + (parseFloat(i.quantity) || 0), 0);
+  const vendor = vendors.find((v) => v._id === head.vendorId);
 
   const updateItem = (id, field, value) => {
-    setPurchaseItems((prev) =>
+    setItems((prev) =>
       prev.map((item) => {
-        if (item.id === id) {
-          const updated = { ...item, [field]: value };
-
-          if (field === "stockId" && value) {
-            const selectedStock = stocks.find((s) => s._id === value);
-            if (selectedStock) {
-              updated.stockName = selectedStock.name;
-              updated.purchasePrice = selectedStock.purchaseAmt || "";
-            }
-          }
-
-          if (field === "quantity" || field === "purchasePrice") {
-            const qty = parseFloat(
-              field === "quantity" ? value : updated.quantity
-            );
-            const price = parseFloat(
-              field === "purchasePrice" ? value : updated.purchasePrice
-            );
-            updated.totalAmount = !isNaN(qty) && !isNaN(price) ? qty * price : 0;
-          }
-
-          return updated;
+        if (item.id !== id) return item;
+        const next = { ...item, [field]: value };
+        if (field === "stockId" && value) {
+          const picked = stocks.find((s) => s._id === value);
+          if (picked && !next.purchasePrice) next.purchasePrice = picked.purchaseAmt || "";
         }
-        return item;
+        return next;
       })
     );
   };
 
-  const calculateGrandTotal = () => {
-    return purchaseItems.reduce(
-      (sum, item) => sum + (parseFloat(item.totalAmount) || 0),
-      0
-    );
-  };
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const validateForm = () => {
-    if (!purchaseData.vendorId) {
-      showToast("Please select a vendor", "error");
-      return false;
-    }
-
-    if (purchaseItems.length === 0) {
-      showToast("Please add at least one item", "error");
-      return false;
-    }
-
-    for (const item of purchaseItems) {
-      if (!item.stockId) {
-        showToast("Please select stock for all items", "error");
-        return false;
-      }
-      if (!item.quantity || parseFloat(item.quantity) <= 0) {
-        showToast("Please enter valid quantity for all items", "error");
-        return false;
-      }
-      if (!item.purchasePrice || parseFloat(item.purchasePrice) <= 0) {
-        showToast("Please enter valid purchase price for all items", "error");
-        return false;
-      }
-    }
-
-    return true;
+  const removeItem = (id) => {
+    if (items.length === 1) return toast.info("A purchase needs at least one line");
+    setItems((prev) => prev.filter((i) => i.id !== id));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!validateForm()) return;
+    if (!head.vendorId) return toast.error("Pick the vendor this stock came from");
+    for (const item of items) {
+      if (!item.stockId)                            return toast.error("Every line needs a product");
+      if (!item.quantity || +item.quantity <= 0)    return toast.error("Every line needs a quantity above zero");
+      if (!item.purchasePrice || +item.purchasePrice <= 0) return toast.error("Every line needs a purchase price");
+    }
 
     setLoading(true);
     try {
-      const payload = {
-        vendorId: purchaseData.vendorId,
-        paymentMethod: purchaseData.paymentMethod,
-        purchaseDate: purchaseData.purchaseDate,
-        remarks: purchaseData.remarks,
-        items: purchaseItems.map((item) => ({
-          stockId: item.stockId,
-          quantity: parseFloat(item.quantity),
-          purchasePrice: parseFloat(item.purchasePrice),
-          totalAmount: parseFloat(item.totalAmount),
-        })),
-      };
-
-      const response = await fetch("/api/stocks/purchase", {
+      const res = await fetch("/api/stocks/purchase", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          vendorId: head.vendorId,
+          paymentMethod: head.paymentMethod,
+          purchaseDate: head.purchaseDate,
+          remarks: head.remarks,
+          items: items.map((i) => ({
+            stockId: i.stockId,
+            quantity: parseFloat(i.quantity),
+            purchasePrice: parseFloat(i.purchasePrice),
+            totalAmount: lineTotal(i),
+          })),
+        }),
       });
-
-      const data = await response.json();
-
+      const data = await res.json();
       if (data.success) {
-        showToast(
-          `Stock purchase completed! ${data.itemsProcessed} items processed`,
-          "success"
-        );
-        setTimeout(() => {
-          router.push("/stocks/dashboard");
-        }, 1500);
+        toast.success(`Purchase recorded — ${data.itemsProcessed} ${data.itemsProcessed === 1 ? "line" : "lines"} added to stock`);
+        router.push("/stocks/dashboard");
       } else {
-        showToast(data.message || "Failed to process purchase", "error");
+        toast.error(data.message || "Could not record the purchase");
       }
-    } catch (error) {
-      console.error("Error:", error);
-      showToast("An error occurred", "error");
+    } catch {
+      toast.error("Could not reach the server. Try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  if (fetchLoading) {
+  if (fetching) {
     return (
-      <div className="flex min-h-screen bg-[#f8f9fc]">
-        <StockSidebar />
-        <main className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-8 h-8 border-2 border-gray-200 border-t-emerald-600 rounded-full animate-spin mx-auto" />
-            <p className="mt-3 text-sm text-gray-500">Loading data...</p>
-          </div>
-        </main>
-      </div>
+      <Page sidebar={Sidebar} section="Inventory" title="Record purchase">
+        <Card><Spinner note="Loading products and vendors" /></Card>
+      </Page>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-[#f8f9fc]">
-      <StockSidebar />
-
-      {toast.show && (
-        <div className="fixed top-4 right-4 z-50 animate-fade-in">
-          <div
-            className={`px-6 py-4 rounded-xl shadow-lg border-2 flex items-center gap-3 ${
-              toast.type === "success"
-                ? "bg-emerald-50 border-emerald-200 text-emerald-800"
-                : toast.type === "error"
-                ? "bg-red-50 border-red-200 text-red-800"
-                : "bg-blue-50 border-blue-200 text-blue-800"
-            }`}
-          >
-            {toast.type === "success" && (
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                  clipRule="evenodd"
+    <Page
+      sidebar={Sidebar}
+      section="Inventory"
+      title="Record purchase"
+      lead="Bring stock in from a vendor and raise the quantity on hand"
+      back="/stocks/dashboard"
+      actions={
+        <>
+          {branchRestricted && <Chip icon={MapPin}>{session.user.branch}</Chip>}
+          <Btn onClick={() => router.push("/stocks/dashboard")} disabled={loading}>Cancel</Btn>
+          <Btn variant="primary" icon={Check} busy={loading} onClick={handleSubmit}>Record purchase</Btn>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+        <div className="space-y-5 lg:col-span-2">
+          <Card title="Purchase">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field label="Vendor" required className="sm:col-span-2">
+                <SearchableSelect
+                  options={vendors.map((v) => ({ value: v._id, label: v.contact ? `${v.name} — ${v.contact}` : v.name }))}
+                  value={head.vendorId}
+                  onChange={(value) => setHead({ ...head, vendorId: value })}
+                  placeholder="Search vendors"
                 />
-              </svg>
-            )}
-            {toast.type === "error" && (
-              <AlertCircle className="w-5 h-5" />
-            )}
-            <span className="font-medium">{toast.message}</span>
-          </div>
-        </div>
-      )}
+              </Field>
 
-      <main className="flex-1 flex flex-col min-h-screen">
-        <div className="bg-white border-b border-gray-100 shadow-sm px-6 py-4 sticky top-0 z-10">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => router.back()}
-              className="p-1.5 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <div className="w-10 h-10 bg-linear-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shrink-0 shadow-sm">
-              <ShoppingCart className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900 leading-tight">Stock Purchase</h1>
-              <p className="text-xs text-gray-500 flex items-center gap-1.5">
-                Record a new stock purchase from a vendor
-                {session?.user?.branch && !["admin", "super-admin"].includes(session?.user?.role) && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium">
-                    <MapPin className="w-3 h-3" /> {session.user.branch}
-                  </span>
-                )}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex-1 px-6 py-6">
-          <form onSubmit={handleSubmit} className="space-y-5 max-w-5xl">
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
-              <div className="px-6 py-4 border-b border-gray-100">
-                <div className="flex items-center gap-2">
-                  <div className="w-1 h-5 bg-emerald-500 rounded-full" />
-                  <h2 className="text-base font-semibold text-gray-900">Purchase Details</h2>
-                </div>
-              </div>
-              <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Vendor <span className="text-red-500">*</span>
-                    </label>
-                    <SearchableSelect
-                      options={vendors.map((v) => ({
-                        value: v._id,
-                        label: `${v.name} - ${v.contact || "N/A"}`,
-                      }))}
-                      value={purchaseData.vendorId}
-                      onChange={(value) =>
-                        setPurchaseData({ ...purchaseData, vendorId: value })
-                      }
-                      placeholder="Select vendor"
-                      className="w-full"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Payment Method <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={purchaseData.paymentMethod}
-                      onChange={(e) => setPurchaseData({ ...purchaseData, paymentMethod: e.target.value })}
-                      className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white"
-                      required
-                    >
-                      <option value="cash">Cash</option>
-                      <option value="upi">UPI</option>
-                      <option value="card">Card</option>
-                      <option value="banking">Net Banking</option>
-                      <option value="bajaj_loan">Bajaj Loan</option>
-                      <option value="fibe_loan">Fibe Loan</option>
-                      <option value="other">Other</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Purchase Date <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      value={purchaseData.purchaseDate}
-                      onChange={(e) => setPurchaseData({ ...purchaseData, purchaseDate: e.target.value })}
-                      className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                      required
-                    />
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Remarks</label>
-                    <textarea
-                      value={purchaseData.remarks}
-                      onChange={(e) => setPurchaseData({ ...purchaseData, remarks: e.target.value })}
-                      placeholder="Additional notes..."
-                      rows="2"
-                      className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
-              <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-1 h-5 bg-emerald-500 rounded-full" />
-                  <h2 className="text-base font-semibold text-gray-900">Stock Items</h2>
-                </div>
-                <button
-                  type="button"
-                  onClick={addItem}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 text-white text-sm font-medium rounded-xl hover:bg-emerald-700"
+              <Field label="Paid by">
+                <select
+                  value={head.paymentMethod}
+                  onChange={(e) => setHead({ ...head, paymentMethod: e.target.value })}
+                  className={input}
                 >
-                  <Plus size={16} />
-                  Add Item
-                </button>
-              </div>
-              <div className="p-6">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="bg-emerald-50/50 border-b border-gray-100">
-                        <th className="text-left py-2.5 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">#</th>
-                        <th className="text-left py-2.5 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wide min-w-48">Stock Item</th>
-                        <th className="text-left py-2.5 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Quantity</th>
-                        <th className="text-left py-2.5 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Purchase Price</th>
-                        <th className="text-left py-2.5 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Total</th>
-                        <th className="py-2.5 px-3"></th>
+                  {METHODS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                </select>
+              </Field>
+
+              <Field label="Purchase date">
+                <input
+                  type="date"
+                  value={head.purchaseDate}
+                  onChange={(e) => setHead({ ...head, purchaseDate: e.target.value })}
+                  className={input}
+                  required
+                />
+              </Field>
+
+              <Field label="Note" className="sm:col-span-2">
+                <textarea
+                  rows="2"
+                  value={head.remarks}
+                  onChange={(e) => setHead({ ...head, remarks: e.target.value })}
+                  placeholder="Invoice number, delivery details"
+                  className={`${textarea} resize-none`}
+                />
+              </Field>
+            </div>
+          </Card>
+
+          <Card
+            flush
+            title="Lines"
+            note="Quantity is added to whatever is already on hand"
+            action={<Btn variant="ghost" icon={Plus} onClick={() => setItems([...items, blankItem()])}>Add line</Btn>}
+          >
+            <div className="overflow-x-auto">
+              <table className="w-full" style={{ minWidth: 720 }}>
+                <thead>
+                  <tr className="bg-slate-50/70">
+                    <th className={`${th} w-10 text-center`}>#</th>
+                    <th className={th}>Product</th>
+                    <th className={`${th} w-28`}>Quantity</th>
+                    <th className={`${th} w-32`}>Unit price</th>
+                    <th className={`${th} w-28 text-right`}>Line total</th>
+                    <th className={`${th} w-12`} />
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((item, i) => {
+                    const picked = stocks.find((s) => s._id === item.stockId);
+                    return (
+                      <tr key={item.id} className="border-t border-slate-100">
+                        <td className={`${td} text-center text-xs text-slate-400`}>{i + 1}</td>
+                        <td className="px-4 py-2.5">
+                          <SearchableSelect
+                            options={stocks.map((s) => ({
+                              value: s._id,
+                              label: `${s.name} — ${num(s.totalQuantity || 0)} on hand${s.location ? ` · ${s.location}` : ""}`,
+                            }))}
+                            value={item.stockId}
+                            onChange={(value) => updateItem(item.id, "stockId", value)}
+                            placeholder="Search products"
+                          />
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <input
+                            type="number" step="0.01" min="0"
+                            value={item.quantity}
+                            onChange={(e) => updateItem(item.id, "quantity", e.target.value)}
+                            placeholder="0"
+                            className={`${input} text-right tabular-nums`}
+                            required
+                          />
+                          {picked?.unit && <p className="mt-1 text-xs text-slate-400">{picked.unit}</p>}
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <input
+                            type="number" step="0.01" min="0"
+                            value={item.purchasePrice}
+                            onChange={(e) => updateItem(item.id, "purchasePrice", e.target.value)}
+                            placeholder="0"
+                            className={`${input} text-right tabular-nums`}
+                            required
+                          />
+                        </td>
+                        <td className={`${td} text-right font-semibold tabular-nums text-slate-900`}>
+                          {lineTotal(item) ? inr(lineTotal(item)) : "—"}
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <IconBtn
+                            icon={Trash2}
+                            tone="rose"
+                            label="Remove line"
+                            onClick={() => removeItem(item.id)}
+                            disabled={items.length === 1}
+                          />
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {purchaseItems.map((item, index) => (
-                        <tr key={item.id}>
-                          <td className="py-3 px-3 text-gray-400 text-xs">{index + 1}</td>
-                          <td className="py-3 px-3">
-                            <SearchableSelect
-                              options={stocks.map((s) => ({
-                                value: s._id,
-                                label: `${s.name} (Qty: ${s.totalQuantity || 0})`,
-                              }))}
-                              value={item.stockId}
-                              onChange={(value) => updateItem(item.id, "stockId", value)}
-                              placeholder="Select stock"
-                              className="w-full"
-                            />
-                          </td>
-                          <td className="py-3 px-3">
-                            <input
-                              type="number" step="0.01" min="0"
-                              value={item.quantity}
-                              onChange={(e) => updateItem(item.id, "quantity", e.target.value)}
-                              placeholder="Qty"
-                              className="w-24 px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm"
-                              required
-                            />
-                          </td>
-                          <td className="py-3 px-3">
-                            <input
-                              type="number" step="0.01" min="0"
-                              value={item.purchasePrice}
-                              onChange={(e) => updateItem(item.id, "purchasePrice", e.target.value)}
-                              placeholder="₹"
-                              className="w-28 px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm"
-                              required
-                            />
-                          </td>
-                          <td className="py-3 px-3 font-semibold text-gray-900">{formatCurrency(item.totalAmount)}</td>
-                          <td className="py-3 px-3">
-                            <button
-                              type="button"
-                              onClick={() => removeItem(item.id)}
-                              disabled={purchaseItems.length === 1}
-                              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                <div className="mt-4 pt-4 border-t border-gray-100 flex justify-end">
-                  <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-5 py-3 min-w-56">
-                    <div className="flex justify-between text-sm text-gray-600 mb-1">
-                      <span>Items:</span>
-                      <span className="font-medium text-gray-900">{purchaseItems.length}</span>
-                    </div>
-                    <div className="flex justify-between text-sm text-gray-600 mb-2">
-                      <span>Total Qty:</span>
-                      <span className="font-medium text-gray-900">
-                        {purchaseItems.reduce((sum, item) => sum + (parseFloat(item.quantity) || 0), 0)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center pt-2 border-t border-emerald-200">
-                      <span className="text-sm font-semibold text-gray-700">Grand Total</span>
-                      <span className="text-lg font-bold text-emerald-600">{formatCurrency(calculateGrandTotal())}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
-
-            <div className="flex gap-3">
-              <button
-                type="submit"
-                disabled={loading}
-                className="px-5 py-2.5 bg-emerald-600 text-white text-sm font-medium rounded-xl hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-2 shadow-sm"
-              >
-                {loading ? (
-                  <>
-                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    Processing...
-                  </>
-                ) : (
-                  "Complete Purchase"
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={() => router.back()}
-                disabled={loading}
-                className="px-5 py-2.5 bg-white text-sm font-medium text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-50 shadow-sm"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
+          </Card>
         </div>
-      </main>
-    </div>
+
+        <div className="lg:sticky lg:top-24 lg:self-start">
+          <Card title="Summary">
+            {vendor ? (
+              <>
+                <p className="text-[15px] font-medium text-slate-900">{vendor.name}</p>
+                <p className="mt-0.5 text-xs text-slate-400">
+                  {vendor.DealsIn || "Vendor"}
+                  {vendor.contact ? ` · ${vendor.contact}` : ""}
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-slate-400">No vendor picked yet</p>
+            )}
+
+            <div className="mt-4">
+              <Row label="Lines">{num(items.length)}</Row>
+              <Row label="Units coming in">{num(totalUnits)}</Row>
+              <Row label="Paid by">{METHODS.find(([v]) => v === head.paymentMethod)?.[1]}</Row>
+            </div>
+
+            <div className="mt-4 flex items-baseline justify-between border-t border-slate-200 pt-4">
+              <span className="text-sm font-medium text-slate-700">Total</span>
+              <span className="text-xl font-semibold tabular-nums text-slate-900">{inr(grandTotal)}</span>
+            </div>
+
+            <p className="mt-4 flex items-start gap-1.5 text-xs text-slate-400">
+              <Package className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              Each line also updates that product&apos;s purchase price and vendor.
+            </p>
+          </Card>
+        </div>
+      </form>
+    </Page>
   );
 }

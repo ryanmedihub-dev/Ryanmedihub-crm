@@ -517,7 +517,7 @@ function PatientDashboardContent() {
                         values={filters.counsellor}
                         onChange={(v) => applyFilter("counsellor", v)}
                         placeholder="All Counsellors"
-                        options={filterOptions.counsellors.map((c) => ({ label: c, value: c }))}
+                        options={filterOptions.counsellors.map((c) => ({ label: c.name, value: String(c._id) }))}
                       />
                     </Field>
                     <Field label="Reference">
@@ -525,10 +525,7 @@ function PatientDashboardContent() {
                         values={filters.agent}
                         onChange={(v) => applyFilter("agent", v)}
                         placeholder="All References"
-                        options={filterOptions.agents.map((a) => ({
-                            label: a,
-                            value: a,
-                          }))}
+                        options={filterOptions.agents.map((a) => ({ label: a.name, value: String(a._id) }))}
                       />
                     </Field>
                   </Section>

@@ -99,6 +99,55 @@ export async function GET(req) {
       }
     }
 
+    if (!eventType || eventType === "ALL" || eventType === "TRANSFER") {
+      for (const stock of stocks) {
+        for (const editor of (stock.editors || [])) {
+          const outField = editor.updatedFields?.find(f => f.name === "transferOut");
+          const inField  = editor.updatedFields?.find(f => f.name === "transferIn");
+          const qtyField = outField || inField;
+          if (!qtyField) continue;
+
+          const prevQty = parseFloat(qtyField.previousValue) || 0;
+          const newQty  = parseFloat(qtyField.newValue)      || 0;
+          const moved   = Math.abs(newQty - prevQty);
+          if (moved <= 0) continue;
+
+          const counterpart = editor.updatedFields?.find(
+            f => f.name === (outField ? "transferTo" : "transferFrom")
+          );
+          const remarks = editor.updatedFields?.find(f => f.name === "remarks");
+
+          const eventDate = editor.date ? new Date(editor.date) : null;
+          if (from && eventDate && eventDate < new Date(from)) continue;
+          if (to   && eventDate && eventDate > new Date(new Date(to).setHours(23, 59, 59, 999))) continue;
+
+          events.push({
+            type:        "TRANSFER",
+            direction:   outField ? "OUT" : "IN",
+            stockId:     stock._id.toString(),
+            stockName:   stock.name,
+            location:    stock.location || "—",
+            date:        editor.date || null,
+            quantity:    moved,
+            unitPrice:   0,
+            totalAmount: 0,
+            remarks:     remarks?.newValue || "",
+            party: {
+              type: "location",
+              name: counterpart?.newValue || "—",
+              id:   "",
+            },
+            by: {
+              name:   editor.name   || "—",
+              email:  editor.email  || "",
+              branch: editor.branch || "—",
+            },
+            profit: null,
+          });
+        }
+      }
+    }
+
     if (!eventType || eventType === "ALL" || eventType === "SALE") {
       for (const tx of saleTxns) {
         const stockRef = stockMap[tx.medicineId?.toString()];
@@ -161,6 +210,8 @@ export async function GET(req) {
         purchaseAmt:     stock.purchaseAmt || 0,
         unitsSold:       0,
         unitsPurchased:  0,
+        unitsTransferredIn:  0,
+        unitsTransferredOut: 0,
         totalRevenue:    0,
         totalCost:       0,
         totalProfit:     0,
@@ -170,7 +221,11 @@ export async function GET(req) {
     for (const ev of events) {
       const s = summaryMap[ev.stockId];
       if (!s) continue;
-      if (ev.type === "PURCHASE") {
+      if (ev.type === "TRANSFER") {
+        // movement only — never revenue, cost or profit
+        if (ev.direction === "OUT") s.unitsTransferredOut += ev.quantity;
+        else                        s.unitsTransferredIn  += ev.quantity;
+      } else if (ev.type === "PURCHASE") {
         s.unitsPurchased += ev.quantity;
         s.totalCost      += ev.totalAmount;
       } else {

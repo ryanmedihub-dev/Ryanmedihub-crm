@@ -1,9 +1,18 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { ArrowLeft, Store } from "lucide-react";
+import { Check } from "lucide-react";
 import Sidebar from "@/components/Sidebars/StockSidebar";
 import { useToast } from "@/components/Toast";
+import {
+  Page, Card, Field, Btn, Row, Spinner, input, inputEdited, textarea, day,
+} from "@/components/stocks/ui";
+
+const CATEGORIES = [
+  "Surgical Equipment", "Medicines", "Hair Care", "Lab Supplies",
+  "Consumables", "PPE Kits", "Instruments", "Cosmetics",
+];
 
 export default function EditVendorPage() {
   const router = useRouter();
@@ -14,29 +23,23 @@ export default function EditVendorPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
+  const [createdAt, setCreatedAt] = useState(null);
   const [formData, setFormData] = useState({
-    name: "",
-    contact: "",
-    email: "",
-    address: "",
-    gstNumber: "",
-    DealsIn: "",
+    name: "", contact: "", email: "", address: "", gstNumber: "", DealsIn: "",
   });
   const [originalData, setOriginalData] = useState({});
 
-  useEffect(() => {
-    if (vendorId) fetchVendor();
-  }, [vendorId]);
+  useEffect(() => { if (vendorId) fetchVendor(); }, [vendorId]);
 
   const fetchVendor = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/vendors/get?id=${vendorId}`);
-      const data = await response.json();
+      const res = await fetch(`/api/vendors/get?id=${vendorId}`);
+      const data = await res.json();
       if (data.success) {
         const vendor = data.data || data.vendor || data;
         if (!vendor || !vendor.name) {
-          toast.error("Vendor data is incomplete");
+          toast.error("That vendor record is incomplete");
           router.push("/stocks/vendors");
           return;
         }
@@ -50,57 +53,49 @@ export default function EditVendorPage() {
         };
         setFormData(vendorData);
         setOriginalData(vendorData);
+        setCreatedAt(vendor.createdAt || null);
       } else {
-        toast.error(data.message || "Failed to fetch vendor details");
+        toast.error(data.message || "Could not load the vendor");
         router.push("/stocks/vendors");
       }
-    } catch (error) {
-      console.error("Error fetching vendor:", error);
-      toast.error("Failed to fetch vendor details");
+    } catch {
+      toast.error("Could not load the vendor");
       router.push("/stocks/vendors");
     } finally {
       setLoading(false);
     }
   };
 
-  const validateForm = () => {
-    const newErrors = {};
-    if (!formData.name.trim()) newErrors.name = "Vendor name is required";
-    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
-      newErrors.email = "Please enter a valid email address";
-    if (
-      formData.contact &&
-      !/^\d{10}$/.test(formData.contact.replace(/\D/g, ""))
-    )
-      newErrors.contact = "Please enter a valid 10-digit phone number";
-    if (formData.gstNumber && formData.gstNumber.length !== 15)
-      newErrors.gstNumber = "GST number must be 15 characters";
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  const changed = (field) => formData[field] !== originalData[field];
+  const changedFields = Object.keys(formData).filter(changed);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
+    setFormData((p) => ({ ...p, [name]: value }));
+    if (errors[name]) setErrors((p) => ({ ...p, [name]: "" }));
   };
 
-  const hasChanges = () =>
-    JSON.stringify(formData) !== JSON.stringify(originalData);
-
-  const isFieldModified = (fieldName) =>
-    formData[fieldName] !== originalData[fieldName];
+  const validate = () => {
+    const errs = {};
+    if (!formData.name.trim()) errs.name = "A vendor needs a name";
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
+      errs.email = "Check this email address";
+    if (formData.contact && !/^\d{10}$/.test(formData.contact.replace(/\D/g, "")))
+      errs.contact = "Phone numbers are 10 digits";
+    if (formData.gstNumber && formData.gstNumber.length !== 15)
+      errs.gstNumber = "GST numbers are exactly 15 characters";
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
-    if (!hasChanges()) {
-      toast.info("No changes to save");
-      return;
-    }
+    if (!validate()) return;
+    if (changedFields.length === 0) return toast.info("Nothing has changed yet");
+
     setSaving(true);
     try {
-      const response = await fetch("/api/vendors/update", {
+      const res = await fetch("/api/vendors/update", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -113,265 +108,122 @@ export default function EditVendorPage() {
           DealsIn: formData.DealsIn || undefined,
         }),
       });
-      const data = await response.json();
+      const data = await res.json();
       if (data.success) {
-        toast.success("Vendor updated successfully!");
-        setTimeout(() => router.push("/stocks/vendors"), 1000);
+        toast.success(`${formData.name} updated`);
+        router.push("/stocks/vendors");
       } else {
-        toast.error(data.message || "Failed to update vendor");
+        toast.error(data.message || "Could not save the changes");
       }
-    } catch (error) {
-      console.error("Error updating vendor:", error);
-      toast.error("An error occurred while updating the vendor");
+    } catch {
+      toast.error("Could not reach the server. Try again.");
     } finally {
       setSaving(false);
     }
   };
 
   const handleCancel = () => {
-    if (hasChanges()) {
-      if (confirm("You have unsaved changes. Are you sure you want to leave?")) {
-        router.push("/stocks/vendors");
-      }
-    } else {
-      router.push("/stocks/vendors");
-    }
+    if (changedFields.length && !confirm("Leave without saving your changes?")) return;
+    router.push("/stocks/vendors");
   };
 
-  const baseInput =
-    "w-full px-3 py-2.5 text-sm border rounded-xl focus:outline-none focus:ring-2 bg-white transition-colors";
-  const normalInput = `${baseInput} border-gray-200 focus:ring-emerald-300 focus:border-emerald-400`;
-  const modifiedInput = `${baseInput} border-amber-300 focus:ring-amber-200 focus:border-amber-400`;
-  const errorInput = `${baseInput} border-red-400 focus:ring-red-200 focus:border-red-400`;
-
-  const getInputClass = (fieldName) => {
-    if (errors[fieldName]) return errorInput;
-    if (isFieldModified(fieldName)) return modifiedInput;
-    return normalInput;
-  };
-
-  const labelClass =
-    "block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5";
+  const cls = (field) => (changed(field) ? inputEdited : input);
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-[#f8f9fc]">
-        <Sidebar />
-        <main className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-9 h-9 border-2 border-emerald-100 border-t-emerald-500 rounded-full animate-spin mx-auto" />
-            <p className="mt-3 text-sm text-gray-500">
-              Loading vendor details...
-            </p>
-          </div>
-        </main>
-      </div>
+      <Page sidebar={Sidebar} section="Vendors" title="Edit vendor">
+        <Card><Spinner note="Loading vendor" /></Card>
+      </Page>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-[#f8f9fc]">
-      <Sidebar />
+    <Page
+      sidebar={Sidebar}
+      section="Vendors"
+      title={originalData.name || "Edit vendor"}
+      lead={changedFields.length ? `${changedFields.length} unsaved ${changedFields.length === 1 ? "change" : "changes"}` : "No changes yet"}
+      back="/stocks/vendors"
+      actions={
+        <>
+          <Btn onClick={handleCancel} disabled={saving}>Cancel</Btn>
+          <Btn variant="primary" icon={Check} busy={saving} onClick={handleSubmit} disabled={!changedFields.length}>
+            Save changes
+          </Btn>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+        <div className="space-y-5 lg:col-span-2">
+          <Card title="Vendor">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field label="Name" required error={errors.name} className="sm:col-span-2">
+                <input name="name" value={formData.name} onChange={handleChange} className={cls("name")} required />
+              </Field>
 
-      <div className="flex-1 flex flex-col min-h-screen">
-        <header className="bg-white border-b border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] px-6 py-4 sticky top-0 z-10">
-          <div className="max-w-3xl mx-auto flex items-center gap-4">
-            <button
-              type="button"
-              onClick={handleCancel}
-              className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back
-            </button>
+              <Field label="Phone" error={errors.contact}>
+                <input
+                  name="contact" value={formData.contact} onChange={handleChange}
+                  inputMode="numeric" className={`${cls("contact")} tabular-nums`}
+                />
+              </Field>
 
-            <div className="flex items-center gap-3 flex-1">
-              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-sm shrink-0">
-                <Store className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-base font-bold text-gray-900 leading-tight">
-                    Edit Vendor
-                  </h1>
-                  {hasChanges() && (
-                    <span className="inline-flex items-center text-xs px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-full font-medium">
-                      Unsaved changes
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-gray-500 leading-tight">
-                  Update supplier information
-                </p>
-              </div>
+              <Field label="Email" error={errors.email}>
+                <input type="email" name="email" value={formData.email} onChange={handleChange} className={cls("email")} />
+              </Field>
+
+              <Field label="Deals in" className="sm:col-span-2">
+                <input name="DealsIn" list="vendor-category-options" value={formData.DealsIn} onChange={handleChange} className={cls("DealsIn")} />
+                <datalist id="vendor-category-options">
+                  {CATEGORIES.map((c) => <option key={c} value={c} />)}
+                </datalist>
+              </Field>
             </div>
-          </div>
-        </header>
+          </Card>
 
-        <main className="flex-1 px-4 py-6 lg:px-8">
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden max-w-3xl mx-auto mt-6">
-            <div className="px-6 py-5 border-b border-gray-50">
-              <div className="border-l-4 border-emerald-500 pl-4">
-                <h2 className="text-sm font-bold text-gray-900">
-                  Vendor Information
-                </h2>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  Update the fields below — modified fields are highlighted in
-                  amber
-                </p>
-              </div>
+          <Card title="Billing">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field label="GST number" error={errors.gstNumber} hint="15 characters">
+                <input
+                  name="gstNumber" value={formData.gstNumber} onChange={handleChange} maxLength={15}
+                  className={`${cls("gstNumber")} font-mono uppercase`}
+                />
+              </Field>
+
+              <Field label="Address" className="sm:col-span-2">
+                <textarea
+                  name="address" rows="3" value={formData.address} onChange={handleChange}
+                  className={`${textarea} resize-none ${changed("address") ? "border-amber-300 bg-amber-50/40" : ""}`}
+                />
+              </Field>
             </div>
+          </Card>
+        </div>
 
-            <form onSubmit={handleSubmit}>
-              <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div>
-                    <label className={labelClass}>
-                      Vendor Name{" "}
-                      <span className="text-red-500 normal-case">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      className={getInputClass("name")}
-                      placeholder="Enter vendor name"
-                    />
-                    {errors.name && (
-                      <p className="mt-1.5 text-xs text-red-500">
-                        {errors.name}
-                      </p>
-                    )}
+        <div className="lg:sticky lg:top-24 lg:self-start">
+          <Card title="Unsaved changes">
+            {changedFields.length === 0 ? (
+              <p className="text-sm text-slate-400">Edit a field and it shows up here before you save.</p>
+            ) : (
+              <div className="space-y-3">
+                {changedFields.map((f) => (
+                  <div key={f} className="text-sm">
+                    <p className="text-xs text-slate-500">{f === "DealsIn" ? "Deals in" : f === "gstNumber" ? "GST number" : f}</p>
+                    <p className="mt-0.5 text-slate-400 line-through">{originalData[f] || "empty"}</p>
+                    <p className="font-medium text-slate-900">{formData[f] || "empty"}</p>
                   </div>
-
-                  <div>
-                    <label className={labelClass}>Contact Number</label>
-                    <input
-                      type="tel"
-                      name="contact"
-                      value={formData.contact}
-                      onChange={handleChange}
-                      className={getInputClass("contact")}
-                      placeholder="Enter 10-digit contact number"
-                    />
-                    {errors.contact && (
-                      <p className="mt-1.5 text-xs text-red-500">
-                        {errors.contact}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className={labelClass}>Email</label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      className={getInputClass("email")}
-                      placeholder="vendor@example.com"
-                    />
-                    {errors.email && (
-                      <p className="mt-1.5 text-xs text-red-500">
-                        {errors.email}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className={labelClass}>GST Number</label>
-                    <input
-                      type="text"
-                      name="gstNumber"
-                      value={formData.gstNumber}
-                      onChange={handleChange}
-                      maxLength={15}
-                      className={`${getInputClass("gstNumber")} uppercase`}
-                      placeholder="e.g., 27AABCU9603R1ZM"
-                    />
-                    {errors.gstNumber && (
-                      <p className="mt-1.5 text-xs text-red-500">
-                        {errors.gstNumber}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className={labelClass}>Deals In</label>
-                    <input
-                      type="text"
-                      name="DealsIn"
-                      value={formData.DealsIn}
-                      onChange={handleChange}
-                      className={getInputClass("DealsIn")}
-                      placeholder="e.g., Surgical Equipment, Medicines"
-                    />
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className={labelClass}>Address</label>
-                    <textarea
-                      name="address"
-                      value={formData.address}
-                      onChange={handleChange}
-                      rows={3}
-                      className={getInputClass("address")}
-                      placeholder="Enter full address"
-                    />
-                  </div>
-                </div>
+                ))}
               </div>
+            )}
 
-              <div className="px-6 py-4 border-t border-gray-50 bg-gray-50/40 flex gap-3">
-                <button
-                  type="submit"
-                  disabled={saving || !hasChanges()}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-xl disabled:opacity-50 transition-colors shadow-sm"
-                >
-                  {saving ? (
-                    <>
-                      <svg
-                        className="animate-spin h-4 w-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        />
-                      </svg>
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Store className="w-4 h-4" />
-                      Update Vendor
-                    </>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCancel}
-                  disabled={saving}
-                  className="px-5 py-2.5 bg-white text-sm font-medium text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-50 transition-colors"
-                >
-                  Cancel
-                </button>
+            {createdAt && (
+              <div className="mt-4 border-t border-slate-100 pt-3">
+                <Row label="Vendor since">{day(createdAt)}</Row>
               </div>
-            </form>
-          </div>
-        </main>
-      </div>
-    </div>
+            )}
+          </Card>
+        </div>
+      </form>
+    </Page>
   );
 }

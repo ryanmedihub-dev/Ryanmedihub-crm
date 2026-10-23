@@ -1,14 +1,30 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { ArrowLeft, PackagePlus } from "lucide-react";
+import { Check, MapPin, Eye } from "lucide-react";
 import Sidebar from "@/components/Sidebars/StockSidebar";
+import { useToast } from "@/components/Toast";
+import {
+  Page, Card, Field, Btn, Chip, Row, Spinner,
+  input, inputEdited, inr,
+} from "@/components/stocks/ui";
+
+const UNITS = ["pieces", "boxes", "bottles", "packets", "kg", "grams", "liters", "ml"];
+const BRANCHES = ["Delhi", "Mumbai", "Hyderabad", "Noida"];
+
+const LABELS = {
+  name: "Name", location: "Branch", mrp: "MRP", gstNo: "GST number",
+  weight: "Weight", unit: "Unit", expiry: "Expiry",
+  purchaseAmt: "Purchase price", soldAmt: "Selling price",
+};
 
 export default function EditStockPage() {
   const router = useRouter();
   const params = useParams();
   const { data: session } = useSession();
+  const toast = useToast();
   const stockId = params.id;
 
   const isAdmin = session?.user?.role === "admin";
@@ -16,31 +32,21 @@ export default function EditStockPage() {
   const branchRestricted = !isAdmin && userBranch;
 
   const [loading, setLoading] = useState(false);
-  const [fetchingStock, setFetchingStock] = useState(true);
+  const [fetching, setFetching] = useState(true);
+  const [onHand, setOnHand] = useState(0);
   const [originalData, setOriginalData] = useState(null);
   const [formData, setFormData] = useState({
-    name: "",
-    location: "",
-    mrp: "",
-    gstNo: "",
-    weight: "",
-    unit: "",
-    expiry: "",
-    purchaseAmt: "",
-    soldAmt: "",
+    name: "", location: "", mrp: "", gstNo: "",
+    weight: "", unit: "", expiry: "", purchaseAmt: "", soldAmt: "",
   });
 
-  useEffect(() => {
-    if (stockId) {
-      fetchStock();
-    }
-  }, [stockId]);
+  useEffect(() => { if (stockId) fetchStock(); }, [stockId]);
 
   const fetchStock = async () => {
     try {
-      setFetchingStock(true);
-      const response = await fetch(`/api/stocks/get?id=${stockId}`);
-      const data = await response.json();
+      setFetching(true);
+      const res = await fetch(`/api/stocks/get?id=${stockId}`);
+      const data = await res.json();
 
       if (data.success && data.data) {
         const stock = data.data;
@@ -53,22 +59,20 @@ export default function EditStockPage() {
           unit: stock.unit || "",
           soldAmt: stock.soldAmt || "",
           purchaseAmt: stock.purchaseAmt || "",
-          expiry: stock.expiry
-            ? new Date(stock.expiry).toISOString().split("T")[0]
-            : "",
+          expiry: stock.expiry ? new Date(stock.expiry).toISOString().split("T")[0] : "",
         };
         setFormData(stockData);
         setOriginalData(stockData);
+        setOnHand(stock.totalQuantity || 0);
       } else {
-        alert("Failed to fetch stock details");
-        router.back();
+        toast.error(data.message || "Could not load this product");
+        router.push("/stocks/dashboard");
       }
-    } catch (error) {
-      console.error("Error fetching stock:", error);
-      alert("An error occurred while fetching stock details");
-      router.back();
+    } catch {
+      toast.error("Could not load this product");
+      router.push("/stocks/dashboard");
     } finally {
-      setFetchingStock(false);
+      setFetching(false);
     }
   };
 
@@ -79,31 +83,28 @@ export default function EditStockPage() {
 
   const getChangedFields = () => {
     if (!originalData) return [];
-    const changedFields = [];
-    Object.keys(formData).forEach((key) => {
-      const oldValue = originalData[key]?.toString() || "";
-      const newValue = formData[key]?.toString() || "";
-      if (oldValue !== newValue) {
-        changedFields.push({ name: key, previousValue: oldValue, newValue });
-      }
-    });
-    return changedFields;
+    return Object.keys(formData)
+      .map((key) => ({
+        name: key,
+        previousValue: originalData[key]?.toString() || "",
+        newValue: formData[key]?.toString() || "",
+      }))
+      .filter((f) => f.previousValue !== f.newValue);
   };
+
+  const changedFields = getChangedFields();
+  const isEdited = (field) => changedFields.some((f) => f.name === field);
+  const cls = (field) => (isEdited(field) ? inputEdited : input);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.mrp) {
-      alert("Product name and MRP are required");
-      return;
-    }
-    const changedFields = getChangedFields();
-    if (changedFields.length === 0) {
-      alert("No changes detected");
-      return;
-    }
+    if (!formData.name.trim()) return toast.error("The product needs a name");
+    if (!formData.mrp)         return toast.error("MRP is required");
+    if (changedFields.length === 0) return toast.info("Nothing has changed yet");
+
     setLoading(true);
     try {
-      const response = await fetch("/api/stocks/update", {
+      const res = await fetch("/api/stocks/update", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -120,364 +121,152 @@ export default function EditStockPage() {
           updatedFields: changedFields,
         }),
       });
-      const data = await response.json();
+      const data = await res.json();
       if (data.success) {
-        alert("Stock item updated successfully!");
+        toast.success(`${formData.name} updated`);
         router.push("/stocks/dashboard");
       } else {
-        alert(data.message || "Failed to update stock item");
+        toast.error(data.message || "Could not save the changes");
       }
-    } catch (error) {
-      console.error("Error updating stock:", error);
-      alert("An error occurred while updating the stock item");
+    } catch {
+      toast.error("Could not reach the server. Try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  if (fetchingStock) {
+  const handleCancel = () => {
+    if (changedFields.length && !confirm("Leave without saving your changes?")) return;
+    router.push("/stocks/dashboard");
+  };
+
+  if (fetching) {
     return (
-      <section className="flex min-h-screen bg-[#f8f9fc]">
-        <Sidebar />
-        <main className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-8 h-8 border-2 border-gray-200 border-t-emerald-600 rounded-full animate-spin mx-auto" />
-            <p className="mt-3 text-sm text-gray-500">
-              Loading stock details...
-            </p>
-          </div>
-        </main>
-      </section>
+      <Page sidebar={Sidebar} section="Catalogue" title="Edit product">
+        <Card><Spinner note="Loading product" /></Card>
+      </Page>
     );
   }
 
-  const changedFieldsCount = getChangedFields().length;
-
-  const normalInput =
-    "w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-emerald-400 bg-white transition-colors";
-  const modifiedInput =
-    "w-full px-3 py-2.5 text-sm border border-amber-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-200 bg-amber-50/30 transition-colors";
-  const labelClass =
-    "block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5";
-  const modifiedBadge =
-    "text-xs px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-full font-medium";
-
-  const isModified = (field) =>
-    originalData &&
-    originalData[field]?.toString() !== formData[field]?.toString();
+  const margin = (parseFloat(formData.soldAmt) || 0) - (parseFloat(formData.purchaseAmt) || 0);
 
   return (
-    <section className="flex min-h-screen bg-[#f8f9fc]">
-      <Sidebar />
+    <Page
+      sidebar={Sidebar}
+      section="Catalogue"
+      title={originalData?.name || "Edit product"}
+      lead={changedFields.length ? `${changedFields.length} unsaved ${changedFields.length === 1 ? "change" : "changes"}` : "No changes yet"}
+      back="/stocks/dashboard"
+      actions={
+        <>
+          <Btn icon={Eye} onClick={() => router.push(`/stocks/view/${stockId}`)}>View</Btn>
+          <Btn onClick={handleCancel} disabled={loading}>Cancel</Btn>
+          <Btn variant="primary" icon={Check} busy={loading} onClick={handleSubmit} disabled={!changedFields.length}>
+            Save changes
+          </Btn>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+        <div className="space-y-5 lg:col-span-2">
+          <Card title="Product">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field label="Name" required className="sm:col-span-2">
+                <input name="name" value={formData.name} onChange={handleChange} className={cls("name")} required />
+              </Field>
 
-      <main className="flex-1 flex flex-col min-h-screen">
-        <div className="sticky top-0 z-10 bg-[#f8f9fc] border-b border-gray-100 px-4 py-4 lg:px-8">
-          <div className="max-w-3xl mx-auto">
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 mb-3 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back
-            </button>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-sm shrink-0">
-                <PackagePlus className="w-5 h-5 text-white" />
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-xl font-bold text-gray-900 leading-tight">
-                    Edit Stock Item
-                  </h1>
-                  {changedFieldsCount > 0 && (
-                    <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-700 border border-amber-200 rounded-full font-semibold">
-                      {changedFieldsCount} field{changedFieldsCount > 1 ? "s" : ""} changed
-                    </span>
-                  )}
-                </div>
-                {formData.name && (
-                  <p className="text-sm text-gray-500 truncate">{formData.name}</p>
+              <Field label="Branch">
+                {branchRestricted ? (
+                  <div className="flex h-10 items-center">
+                    <Chip icon={MapPin} tone="emerald">{userBranch}</Chip>
+                  </div>
+                ) : (
+                  <select name="location" value={formData.location} onChange={handleChange} className={cls("location")}>
+                    <option value="">Unassigned</option>
+                    {BRANCHES.map((b) => <option key={b} value={b}>{b}</option>)}
+                  </select>
                 )}
-              </div>
+              </Field>
+
+              <Field label="Expiry">
+                <input type="date" name="expiry" value={formData.expiry} onChange={handleChange} className={cls("expiry")} />
+              </Field>
+
+              <Field label="Unit">
+                <select name="unit" value={formData.unit} onChange={handleChange} className={cls("unit")}>
+                  <option value="">Not set</option>
+                  {UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
+                </select>
+              </Field>
+
+              <Field label="Weight or volume">
+                <input
+                  type="number" step="0.01" min="0"
+                  name="weight" value={formData.weight} onChange={handleChange}
+                  className={cls("weight")}
+                />
+              </Field>
             </div>
-          </div>
+          </Card>
+
+          <Card title="Pricing">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <Field label="MRP" required>
+                <input type="number" step="0.01" min="0" name="mrp" value={formData.mrp} onChange={handleChange} className={cls("mrp")} required />
+              </Field>
+              <Field label="Purchase price">
+                <input type="number" step="0.01" min="0" name="purchaseAmt" value={formData.purchaseAmt} onChange={handleChange} className={cls("purchaseAmt")} />
+              </Field>
+              <Field label="Selling price">
+                <input type="number" step="0.01" min="0" name="soldAmt" value={formData.soldAmt} onChange={handleChange} className={cls("soldAmt")} />
+              </Field>
+            </div>
+          </Card>
+
+          <Card title="Tax">
+            <Field label="GST number">
+              <input
+                name="gstNo" value={formData.gstNo} onChange={handleChange}
+                className={`${cls("gstNo")} font-mono uppercase sm:max-w-xs`}
+              />
+            </Field>
+          </Card>
         </div>
 
-        <div className="flex-1 px-4 py-6 lg:px-8 lg:py-8">
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden max-w-3xl mx-auto">
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-3">
-              <div className="w-1 h-5 rounded-full bg-green-500" />
-              <h2 className="text-sm font-semibold text-gray-800">
-                Product Details
-              </h2>
+        <div className="space-y-5 lg:sticky lg:top-24 lg:self-start">
+          <Card title="On hand">
+            <p className="text-[26px] font-semibold leading-none tracking-tight tabular-nums text-slate-900">
+              {onHand}
+              {formData.unit && <span className="ml-1.5 text-sm font-normal text-slate-400">{formData.unit}</span>}
+            </p>
+            <p className="mt-2 text-xs text-slate-400">
+              Quantity is not editable here. Use Record purchase to add stock, or Transfer stock to move it.
+            </p>
+            <div className="mt-4">
+              <Row label="Stock value">{inr(onHand * (parseFloat(formData.mrp) || 0))}</Row>
+              <Row label="Margin per unit" tone={margin > 0 ? "emerald" : margin < 0 ? "rose" : undefined}>
+                {formData.purchaseAmt && formData.soldAmt ? inr(margin) : "—"}
+              </Row>
             </div>
+          </Card>
 
-            <form onSubmit={handleSubmit}>
-              <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div>
-                    <label className={labelClass}>
-                      <span className="flex items-center gap-2">
-                        Product Name <span className="text-red-500">*</span>
-                        {isModified("name") && (
-                          <span className={modifiedBadge}>Modified</span>
-                        )}
-                      </span>
-                    </label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      required
-                      className={isModified("name") ? modifiedInput : normalInput}
-                      placeholder="Enter product name"
-                    />
+          <Card title="Unsaved changes">
+            {changedFields.length === 0 ? (
+              <p className="text-sm text-slate-400">Every edit is logged against your name once saved.</p>
+            ) : (
+              <div className="space-y-3">
+                {changedFields.map((f) => (
+                  <div key={f.name} className="text-sm">
+                    <p className="text-xs text-slate-500">{LABELS[f.name] || f.name}</p>
+                    <p className="mt-0.5 text-slate-400 line-through">{f.previousValue || "empty"}</p>
+                    <p className="font-medium text-slate-900">{f.newValue || "empty"}</p>
                   </div>
-
-                  <div>
-                    <label className={labelClass}>
-                      <span className="flex items-center gap-2">
-                        Branch / Location
-                        {!branchRestricted && isModified("location") && (
-                          <span className={modifiedBadge}>Modified</span>
-                        )}
-                      </span>
-                    </label>
-                    {branchRestricted ? (
-                      <div className="flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl">
-                        {userBranch}
-                      </div>
-                    ) : (
-                      <select
-                        name="location"
-                        value={formData.location}
-                        onChange={handleChange}
-                        className={
-                          isModified("location") ? modifiedInput : normalInput
-                        }
-                      >
-                        <option value="">Select branch</option>
-                        <option value="Delhi">Delhi</option>
-                        <option value="Mumbai">Mumbai</option>
-                        <option value="Hyderabad">Hyderabad</option>
-                        <option value="Noida">Noida</option>
-                      </select>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className={labelClass}>
-                      <span className="flex items-center gap-2">
-                        MRP (₹) <span className="text-red-500">*</span>
-                        {isModified("mrp") && (
-                          <span className={modifiedBadge}>Modified</span>
-                        )}
-                      </span>
-                    </label>
-                    <input
-                      type="number"
-                      name="mrp"
-                      value={formData.mrp}
-                      onChange={handleChange}
-                      required
-                      min="0"
-                      step="0.01"
-                      className={isModified("mrp") ? modifiedInput : normalInput}
-                      placeholder="0.00"
-                    />
-                  </div>
-
-                  <div>
-                    <label className={labelClass}>
-                      <span className="flex items-center gap-2">
-                        Purchase Amount (₹) <span className="text-red-500">*</span>
-                        {isModified("purchaseAmt") && (
-                          <span className={modifiedBadge}>Modified</span>
-                        )}
-                      </span>
-                    </label>
-                    <input
-                      type="number"
-                      name="purchaseAmt"
-                      value={formData.purchaseAmt}
-                      onChange={handleChange}
-                      required
-                      min="0"
-                      step="0.01"
-                      className={
-                        isModified("purchaseAmt") ? modifiedInput : normalInput
-                      }
-                      placeholder="0.00"
-                    />
-                  </div>
-
-                  <div>
-                    <label className={labelClass}>
-                      <span className="flex items-center gap-2">
-                        Sell Price (₹) <span className="text-red-500">*</span>
-                        {isModified("soldAmt") && (
-                          <span className={modifiedBadge}>Modified</span>
-                        )}
-                      </span>
-                    </label>
-                    <input
-                      type="number"
-                      name="soldAmt"
-                      value={formData.soldAmt}
-                      onChange={handleChange}
-                      required
-                      min="0"
-                      step="0.01"
-                      className={
-                        isModified("soldAmt") ? modifiedInput : normalInput
-                      }
-                      placeholder="0.00"
-                    />
-                  </div>
-
-                  <div>
-                    <label className={labelClass}>
-                      <span className="flex items-center gap-2">
-                        Weight
-                        {isModified("weight") && (
-                          <span className={modifiedBadge}>Modified</span>
-                        )}
-                      </span>
-                    </label>
-                    <input
-                      type="number"
-                      name="weight"
-                      value={formData.weight}
-                      onChange={handleChange}
-                      min="0"
-                      step="0.01"
-                      className={
-                        isModified("weight") ? modifiedInput : normalInput
-                      }
-                      placeholder="Enter weight"
-                    />
-                  </div>
-
-                  <div>
-                    <label className={labelClass}>
-                      <span className="flex items-center gap-2">
-                        Unit
-                        {isModified("unit") && (
-                          <span className={modifiedBadge}>Modified</span>
-                        )}
-                      </span>
-                    </label>
-                    <select
-                      name="unit"
-                      value={formData.unit}
-                      onChange={handleChange}
-                      className={isModified("unit") ? modifiedInput : normalInput}
-                    >
-                      <option value="">Select unit</option>
-                      <option value="pieces">Pieces</option>
-                      <option value="kg">Kilograms (kg)</option>
-                      <option value="grams">Grams (g)</option>
-                      <option value="liters">Liters (L)</option>
-                      <option value="ml">Milliliters (ml)</option>
-                      <option value="boxes">Boxes</option>
-                      <option value="bottles">Bottles</option>
-                      <option value="packets">Packets</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className={labelClass}>
-                      <span className="flex items-center gap-2">
-                        GST Number
-                        {isModified("gstNo") && (
-                          <span className={modifiedBadge}>Modified</span>
-                        )}
-                      </span>
-                    </label>
-                    <input
-                      type="text"
-                      name="gstNo"
-                      value={formData.gstNo}
-                      onChange={handleChange}
-                      className={
-                        isModified("gstNo") ? modifiedInput : normalInput
-                      }
-                      placeholder="Enter GST number"
-                    />
-                  </div>
-
-                  <div>
-                    <label className={labelClass}>
-                      <span className="flex items-center gap-2">
-                        Expiry Date
-                        {isModified("expiry") && (
-                          <span className={modifiedBadge}>Modified</span>
-                        )}
-                      </span>
-                    </label>
-                    <input
-                      type="date"
-                      name="expiry"
-                      value={formData.expiry}
-                      onChange={handleChange}
-                      className={
-                        isModified("expiry") ? modifiedInput : normalInput
-                      }
-                    />
-                  </div>
-                </div>
+                ))}
               </div>
-
-              <div className="px-6 py-4 border-t border-gray-100 flex gap-3">
-                <button
-                  type="submit"
-                  disabled={loading || changedFieldsCount === 0}
-                  className="px-5 py-2.5 bg-emerald-600 text-white text-sm font-semibold rounded-xl hover:bg-emerald-700 disabled:opacity-50 transition-colors flex items-center gap-2"
-                >
-                  {loading ? (
-                    <>
-                      <svg
-                        className="animate-spin h-4 w-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        />
-                      </svg>
-                      Updating...
-                    </>
-                  ) : (
-                    <>
-                      Update Stock Item
-                      {changedFieldsCount > 0 && ` (${changedFieldsCount})`}
-                    </>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => router.back()}
-                  className="px-5 py-2.5 bg-white text-sm font-semibold text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
+            )}
+          </Card>
         </div>
-      </main>
-    </section>
+      </form>
+    </Page>
   );
 }
