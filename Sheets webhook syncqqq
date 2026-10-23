@@ -1,0 +1,164 @@
+[1mdiff --git a/src/app/api/leads/create/route.js b/src/app/api/leads/create/route.js[m
+[1mindex 1d073f6..848a426 100644[m
+[1m--- a/src/app/api/leads/create/route.js[m
+[1m+++ b/src/app/api/leads/create/route.js[m
+[36m@@ -2,6 +2,7 @@[m [mimport { NextResponse } from "next/server";[m
+ import { withDB } from "@/lib/withDB";[m
+ import Leads from "@/models/Leads";[m
+ import { cacheInvalidate } from "@/lib/cache";[m
+[32m+[m[32mimport { fireGoogleLeadsSheetWebhook } from "@/lib/googleLeadsSheetWebhook";[m
+ [m
+ const handler = async (req) => {[m
+   const { name, phone, email, location, visitPlan, visitDate, remarks, tag } =[m
+[36m@@ -27,6 +28,10 @@[m [mconst handler = async (req) => {[m
+ [m
+   await newLead.save();[m
+ [m
+[32m+[m[32m  if (newLead.tag === "Google Leads") {[m
+[32m+[m[32m    fireGoogleLeadsSheetWebhook(newLead);[m
+[32m+[m[32m  }[m
+[32m+[m
+   await cacheInvalidate("patients", "owner");[m
+   return NextResponse.json([m
+     { success: true, message: "Lead created successfully", lead: newLead },[m
+[1mdiff --git a/src/lib/googleLeadsSheetWebhook.js b/src/lib/googleLeadsSheetWebhook.js[m
+[1mnew file mode 100644[m
+[1mindex 0000000..db39acc[m
+[1m--- /dev/null[m
+[1m+++ b/src/lib/googleLeadsSheetWebhook.js[m
+[36m@@ -0,0 +1,135 @@[m
+[32m+[m[32mimport { after } from "next/server";[m
+[32m+[m
+[32m+[m[32mconst TIMEOUT_MS = 8000;[m
+[32m+[m
+[32m+[m[32m/**[m
+[32m+[m[32m * Formats date/time into India Standard Time (IST) strings.[m
+[32m+[m[32m */[m
+[32m+[m[32mexport const fmtISTDateTime = (v) =>[m
+[32m+[m[32m  v ? new Date(v).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }) : "";[m
+[32m+[m
+[32m+[m[32mexport const fmtISTDay = (v) =>[m
+[32m+[m[32m  v ? new Date(v).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" }) : "";[m
+[32m+[m
+[32m+[m[32m/**[m
+[32m+[m[32m * Maps a Lead mongoose document / plain object to the Google Sheets row shape.[m
+[32m+[m[32m * Reusable by both real-time ingestion and historical backfill scripts.[m
+[32m+[m[32m */[m
+[32m+[m[32mexport function formatGoogleLeadRow(doc) {[m
+[32m+[m[32m  if (!doc) return null;[m
+[32m+[m[32m  return {[m
+[32m+[m[32m    "Lead ID": String(doc._id || ""),[m
+[32m+[m[32m    "Received At (IST)": fmtISTDateTime(doc.createdAt || new Date()),[m
+[32m+[m[32m    "Name": doc.name || "",[m
+[32m+[m[32m    "Phone": doc.phone || "",[m
+[32m+[m[32m    "Email": doc.email || "-",[m
+[32m+[m[32m    "City / Location": doc.city || doc.location || "-",[m
+[32m+[m[32m    "Tag": doc.tag || "Google Leads",[m
+[32m+[m[32m    "Visit Date": fmtISTDay(doc.visitDate),[m
+[32m+[m[32m    "Visit Plan": doc.visitPlan || "-",[m
+[32m+[m[32m    "Remarks": doc.remarks || "-",[m
+[32m+[m[32m  };[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32m/**[m
+[32m+[m[32m * Sends a single formatted row to the Google Apps Script Web App.[m
+[32m+[m[32m * Enforces an 8-second timeout, validates the response body, and never exposes PII in logs.[m
+[32m+[m[32m */[m
+[32m+[m[32mexport async function sendLeadRow(row) {[m
+[32m+[m[32m  const url = process.env.GOOGLE_LEADS_SHEET_WEBHOOK_URL;[m
+[32m+[m[32m  if (!url) {[m
+[32m+[m[32m    console.warn("[googleLeadsWebhook] GOOGLE_LEADS_SHEET_WEBHOOK_URL is not set — skipped.");[m
+[32m+[m[32m    return { success: false, reason: "URL_NOT_CONFIGURED" };[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  const leadId = row?.["Lead ID"] || "UNKNOWN";[m
+[32m+[m[32m  const controller = new AbortController();[m
+[32m+[m[32m  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);[m
+[32m+[m
+[32m+[m[32m  try {[m
+[32m+[m[32m    const payload = {[m
+[32m+[m[32m      row,[m
+[32m+[m[32m      secret: process.env.GOOGLE_LEADS_SHEET_WEBHOOK_SECRET || "",[m
+[32m+[m[32m    };[m
+[32m+[m
+[32m+[m[32m    const res = await fetch(url, {[m
+[32m+[m[32m      method: "POST",[m
+[32m+[m[32m      headers: { "Content-Type": "application/json" },[m
+[32m+[m[32m      body: JSON.stringify(payload),[m
+[32m+[m[32m      signal: controller.signal,[m
+[32m+[m[32m    });[m
+[32m+[m
+[32m+[m[32m    if (!res.ok) {[m
+[32m+[m[32m      console.error([m
+[32m+[m[32m        `[googleLeadsWebhook] HTTP error status=${res.status} for leadId=${leadId}`[m
+[32m+[m[32m      );[m
+[32m+[m[32m      return { success: false, status: res.status, leadId };[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    const text = await res.text().catch(() => "");[m
+[32m+[m[32m    let parsed = null;[m
+[32m+[m[32m    try {[m
+[32m+[m[32m      parsed = JSON.parse(text);[m
+[32m+[m[32m    } catch {[m
+[32m+[m[32m      // Body may be HTML if Google redirects to a login or permission error page[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    if (!parsed || parsed.success !== true) {[m
+[32m+[m[32m      const isHtml = typeof text === "string" && text.trim().startsWith("<");[m
+[32m+[m[32m      const failureReason = isHtml[m
+[32m+[m[32m        ? "Received HTML response (possible Google login redirect or permission error)"[m
+[32m+[m[32m        : (parsed?.error || "Invalid response format from Apps Script");[m
+[32m+[m
+[32m+[m[32m      console.error([m
+[32m+[m[32m        `[googleLeadsWebhook] Webhook reported failure for leadId=${leadId}: ${failureReason}`[m
+[32m+[m[32m      );[m
+[32m+[m[32m      return { success: false, error: failureReason, leadId };[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    return { success: true, leadId };[m
+[32m+[m[32m  } catch (err) {[m
+[32m+[m[32m    const isTimeout = err.name === "AbortError";[m
+[32m+[m[32m    console.error([m
+[32m+[m[32m      `[googleLeadsWebhook] Webhook dispatch failed for leadId=${leadId}: ${[m
+[32m+[m[32m        isTimeout ? `Timeout after ${TIMEOUT_MS}ms` : err.message[m
+[32m+[m[32m      }`[m
+[32m+[m[32m    );[m
+[32m+[m[32m    return { success: false, error: err.message, leadId };[m
+[32m+[m[32m  } finally {[m
+[32m+[m[32m    clearTimeout(timer);[m
+[32m+[m[32m  }[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32m/**[m
+[32m+[m[32m * Fires the Google Leads webhook asynchronously using Next.js after().[m
+[32m+[m[32m * Fails safely and completely isolates errors from the main request cycle.[m
+[32m+[m[32m */[m
+[32m+[m[32mexport function fireGoogleLeadsSheetWebhook(doc) {[m
+[32m+[m[32m  if (!doc || doc.tag !== "Google Leads") return;[m
+[32m+[m
+[32m+[m[32m  const task = async () => {[m
+[32m+[m[32m    try {[m
+[32m+[m[32m      const row = formatGoogleLeadRow(doc);[m
+[32m+[m[32m      if (row) {[m
+[32m+[m[32m        await sendLeadRow(row);[m
+[32m+[m[32m      }[m
+[32m+[m[32m    } catch (err) {[m
+[32m+[m[32m      console.error([m
+[32m+[m[32m        `[googleLeadsWebhook] Background task error for leadId=${doc?._id}:`,[m
+[32m+[m[32m        err.message[m
+[32m+[m[32m      );[m
+[32m+[m[32m    }[m
+[32m+[m[32m  };[m
+[32m+[m
+[32m+[m[32m  try {[m
+[32m+[m[32m    after(task);[m
+[32m+[m[32m  } catch {[m
+[32m+[m[32m    // Fallback if called outside a Next.js server request context[m
+[32m+[m[32m    task().catch((err) => {[m
+[32m+[m[32m      console.error([m
+[32m+[m[32m        `[googleLeadsWebhook] Fallback unhandled error for leadId=${doc?._id}:`,[m
+[32m+[m[32m        err.message[m
+[32m+[m[32m      );[m
+[32m+[m[32m    });[m
+[32m+[m[32m  }[m
+[32m+[m[32m}[m

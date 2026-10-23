@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { withDB } from "@/lib/withDB";
 import Leads from "@/models/Leads";
 import { cacheInvalidate } from "@/lib/cache";
+import { fireGoogleLeadsSheetWebhook } from "@/lib/googleLeadsSheetWebhook";
 
 const handler = async (req) => {
   const { name, phone, email, location, visitPlan, visitDate, remarks, tag } =
@@ -26,6 +27,10 @@ const handler = async (req) => {
   });
 
   await newLead.save();
+
+  if (newLead.tag === "Google Leads") {
+    fireGoogleLeadsSheetWebhook(newLead);
+  }
 
   await cacheInvalidate("patients", "owner");
   return NextResponse.json(

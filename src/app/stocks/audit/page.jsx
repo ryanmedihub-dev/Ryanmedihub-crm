@@ -222,6 +222,7 @@ export default function StockAuditPage() {
         </div>
       )}
 
+<<<<<<< HEAD
       {summary && (
         <Stats
           items={[
@@ -232,6 +233,88 @@ export default function StockAuditPage() {
           ]}
         />
       )}
+=======
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3 text-red-700">
+            <AlertCircle className="w-5 h-5 shrink-0" />
+            <p className="text-sm">{error}</p>
+          </div>
+        )}
+
+        {summary && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+            <KpiCard
+              label="Total Revenue"
+              value={fmt(summary.totalRevenue)}
+              icon={DollarSign}
+              color="bg-linear-to-br from-emerald-500 to-teal-600"
+              sub={`${summary.unitsSold} units sold`}
+            />
+            <KpiCard
+              label="Total Cost"
+              value={fmt(summary.totalCost)}
+              icon={ArrowDownToLine}
+              color="bg-linear-to-br from-blue-500 to-indigo-600"
+              sub={`${summary.unitsPurchased} units bought`}
+            />
+            <KpiCard
+              label="Gross Profit"
+              value={fmt(summary.totalProfit)}
+              icon={summary.totalProfit >= 0 ? TrendingUp : TrendingDown}
+              color={summary.totalProfit >= 0 ? "bg-linear-to-br from-green-500 to-emerald-600" : "bg-linear-to-br from-red-500 to-rose-600"}
+              sub={summary.totalRevenue ? `${((summary.totalProfit / summary.totalRevenue) * 100).toFixed(1)}% margin` : ""}
+            />
+            <KpiCard
+              label="Units Purchased"
+              value={summary.unitsPurchased}
+              icon={PackageOpen}
+              color="bg-linear-to-br from-violet-500 to-purple-600"
+            />
+            <KpiCard
+              label="Products Tracked"
+              value={summary.totalStocks}
+              icon={Package}
+              color="bg-linear-to-br from-orange-500 to-amber-600"
+            />
+          </div>
+        )}
+
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+          <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+            <div className="relative flex-1 min-w-48">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search stock, patient, vendor…"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-300"
+              />
+            </div>
+
+            <select
+              value={eventType}
+              onChange={e => setEventType(e.target.value)}
+              className="px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-300 bg-white"
+            >
+              <option value="ALL">All Events</option>
+              <option value="PURCHASE">Purchases Only</option>
+              <option value="SALE">Sales Only</option>
+            </select>
+
+            <select
+              value={location}
+              onChange={e => setLocation(e.target.value)}
+              className="px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-300 bg-white"
+            >
+              <option value="All">All Locations</option>
+              <option value="Delhi">Delhi</option>
+              <option value="Mumbai">Mumbai</option>
+              <option value="Hyderabad">Hyderabad</option>
+              <option value="Noida">Noida</option>
+              <option value="Gurgaon">Gurgaon</option>
+            </select>
+>>>>>>> 61494038b829dc998ade6b72a564481bdbbf80db
 
       <Card flush>
         <div className="flex flex-wrap items-end gap-3 p-4">

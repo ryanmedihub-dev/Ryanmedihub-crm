@@ -12,6 +12,7 @@ const BRANCH_LOGO = {
   Hyderabad: LogoDelhi.src,
   Mumbai:    LogoMumbai.src,
   Noida:     LogoDelhi.src,
+  Gurgaon:   LogoDelhi.src,
 };
 
 const T = {

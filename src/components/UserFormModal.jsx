@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 
 const ROLES = ['sales', 'reception', 'surgery', 'admin', 'counsellor', 'stock', 'hr'];
-const BRANCHES = ['Delhi', 'Mumbai', 'Hyderabad', 'Noida', 'All'];
+const BRANCHES = ['Delhi', 'Mumbai', 'Hyderabad', 'Noida', 'Gurgaon', 'All'];
 
 export default function UserFormModal({ isOpen, onClose, user = null, onSuccess }) {
   const isEditMode = !!user;

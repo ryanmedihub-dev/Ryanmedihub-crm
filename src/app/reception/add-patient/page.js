@@ -1021,6 +1021,7 @@ export default function PatientRegistration() {
                       { value: "Mumbai", label: "Mumbai" },
                       { value: "Hyderabad", label: "Hyderabad" },
                       { value: "Noida", label: "Noida" },
+                      { value: "Gurgaon", label: "Gurgaon" },
                     ]}
                   />
 

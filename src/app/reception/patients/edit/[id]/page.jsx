@@ -246,6 +246,7 @@ const TransactionManager = ({ transactions, onChange, onAdd, onRemove }) => (
               { value: "Mumbai", label: "Mumbai" },
               { value: "Hyderabad", label: "Hyderabad" },
               { value: "Noida", label: "Noida" },
+              { value: "Gurgaon", label: "Gurgaon" },
             ]}
           />
           <InputField
@@ -1307,7 +1308,8 @@ export default function PatientEditDetails() {
                       { value: "Delhi", label: "Delhi" },
                       { value: "Mumbai", label: "Mumbai" },
                       { value: "Hyderabad", label: "Hyderabad" },
-              { value: "Noida", label: "Noida" },
+                      { value: "Noida", label: "Noida" },
+                      { value: "Gurgaon", label: "Gurgaon" },
                     ]}
                   />
 

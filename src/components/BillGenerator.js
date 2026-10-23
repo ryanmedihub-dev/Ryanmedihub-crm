@@ -50,6 +50,15 @@ const CLINIC_BRANCHES = {
     website: "https://clinicryan.com",
     gstin: "",
   },
+  Gurgaon: {
+    img: Logo,
+    name: "RYAN CLINIC",
+    address: "Ryan Clinic, Gurgaon",
+    city: "Gurgaon, Haryana",
+    phone: "",
+    website: "https://clinicryan.com",
+    gstin: "",
+  },
   ...Object.fromEntries(
     COLLAB_BRANCHES.map((city) => [
       city,

@@ -5,7 +5,7 @@ import { Crown, Plus, Search, Shield, Trash2, Edit3, X, Eye, EyeOff } from "luci
 import SuperAdminSidebar from "@/components/Sidebars/SuperAdminSidebar";
 
 const ALL_ROLES = ["super-admin", "admin", "sales", "reception", "collab", "surgery", "counsellor", "stock", "hr"];
-const BRANCHES = ["Delhi", "Mumbai", "Hyderabad", "Noida", "Collab", "All"];
+const BRANCHES = ["Delhi", "Mumbai", "Hyderabad", "Noida", "Gurgaon", "Collab", "All"];
 
 const ROLE_COLOR = {
   "super-admin": "bg-amber-100 text-amber-700 border-amber-200",

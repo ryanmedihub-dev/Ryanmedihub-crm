@@ -19,7 +19,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 
-const BRANCHES = ["Delhi", "Mumbai", "Hyderabad", "Noida"];
+const BRANCHES = ["Delhi", "Mumbai", "Hyderabad", "Noida", "Gurgaon"];
 const GENDERS  = ["MALE", "FEMALE", "OTHER"];
 const TECHNIQUES = [
   "Sapphire FUE", "DHI", "Turkish DHI", "Beard Transplant",

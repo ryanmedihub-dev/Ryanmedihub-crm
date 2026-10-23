@@ -192,6 +192,7 @@ export default function BookAppointment() {
                 { value: "Mumbai", label: "Mumbai" },
                 { value: "Hyderabad", label: "Hyderabad" },
                 { value: "Noida", label: "Noida" },
+                { value: "Gurgaon", label: "Gurgaon" },
               ]}
             />
 

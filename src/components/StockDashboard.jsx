@@ -12,7 +12,7 @@ import {
   input, inr, compact, num, day, td, tr,
 } from "@/components/stocks/ui";
 
-const BRANCHES = ["All", "Delhi", "Mumbai", "Hyderabad", "Noida"];
+const BRANCHES = ["All", "Delhi", "Mumbai", "Hyderabad", "Noida", "Gurgaon"];
 
 export default function StockDashboard({ config = {} }) {
   const {

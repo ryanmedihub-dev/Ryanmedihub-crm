@@ -423,7 +423,7 @@ function DataTable({ category, rows, onDelete, onSort, sortConfig, pagination, o
 }
 
 export default function SalesTransactionsPage() {
-  const tenantBranches = ["Delhi", "Mumbai", "Hyderabad", "Noida"];
+  const tenantBranches = ["Delhi", "Mumbai", "Hyderabad", "Noida", "Gurgaon"];
 
   const router = useRouter();
   const [transactions, setTransactions] = useState([]);

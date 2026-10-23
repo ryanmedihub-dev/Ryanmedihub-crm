@@ -129,6 +129,29 @@ const BANK_ROUTING_MAP = {
       fibe_loan: { receiptMode: "", furtherMode: "Fibe Loan" },
     },
   },
+  Gurgaon: {
+    TRANSPLANT: {
+      cash: { receiptMode: "In Cash", furtherMode: "Cash Book" },
+      card: { receiptMode: "", furtherMode: "" },
+      upi: { receiptMode: "", furtherMode: "" },
+      bajaj_loan: { receiptMode: "Bajaj Statement", furtherMode: "Bajaj Loan" },
+      fibe_loan: { receiptMode: "Fibe Statement", furtherMode: "Fibe Loan" },
+    },
+    SERVICE: {
+      cash: { receiptMode: "In Cash", furtherMode: "Cash Book" },
+      card: { receiptMode: "", furtherMode: "" },
+      upi: { receiptMode: "", furtherMode: "" },
+      bajaj_loan: { receiptMode: "Bajaj Statement", furtherMode: "Bajaj Loan" },
+      fibe_loan: { receiptMode: "Fibe Statement", furtherMode: "Fibe Loan" },
+    },
+    MEDICINE: {
+      cash: { receiptMode: "In Cash", furtherMode: "Cash Book" },
+      card: { receiptMode: "", furtherMode: "" },
+      upi: { receiptMode: "", furtherMode: "" },
+      bajaj_loan: { receiptMode: "Bajaj Statement", furtherMode: "Bajaj Loan" },
+      fibe_loan: { receiptMode: "Fibe Statement", furtherMode: "Fibe Loan" },
+    },
+  },
 };
 
 export function getBankRoutingDefaults(branch, transactionCategory, method) {
