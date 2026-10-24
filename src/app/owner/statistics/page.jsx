@@ -7,6 +7,7 @@ import { AiBriefPanel } from "@/components/owner/ai";
 import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { num } from "@/lib/owner/format";
+import { RotateCw } from "lucide-react";
 
 const STAGE_LINKS = {
   leadsCreated: "/owner/leads/report",
@@ -90,7 +91,7 @@ export default function StatisticsPage() {
       aiState={statsAi}
       controls={
         <button className="icon-btn" onClick={() => load()} disabled={isValidating} title="Refresh">
-          {isValidating ? "…" : "⟳"}
+          <RotateCw size={15} className={isValidating ? "ai-spin-icon" : ""} />
         </button>
       }
     >

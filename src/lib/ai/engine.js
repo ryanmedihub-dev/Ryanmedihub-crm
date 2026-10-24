@@ -7,7 +7,7 @@ import { OWNER_LINKS, isAllowedLink } from "./links";
 import { BUSINESS_CONTEXT } from "./context";
 import { SCHEMAS, validate } from "./schemas";
 import { checkGrounding } from "./grounding";
-import { streamStructured, completeStructured, PIIError } from "./openai";
+import { streamStructured, completeStructured, PIIError, OpenAIProviderError } from "./openai";
 import { capPayload } from "./features/_helpers";
 import {
   AI_ENABLED, AI_MONTHLY_BUDGET_USD, AI_RATE_LIMIT, AI_DEFAULT_TTL_MIN,
@@ -199,9 +199,39 @@ export async function runInsight({ featureKey, kind, rawScope, session, force = 
   } catch (err) {
     const pii = err instanceof PIIError;
     const timeout = err?.name === "AbortError";
+    const isOpenAi = err instanceof OpenAIProviderError || err?.name === "OpenAIProviderError";
     const outcome = pii ? "pii_blocked" : timeout ? "timeout" : "error";
-    emit({ type: "error", code: outcome, message: pii ? "Blocked: the outgoing payload looked like it contained personal data." : (err?.message || "AI request failed") });
-    await logRun({ ...base, outcome, stageMs, latencyMs: Date.now() - startedAt, payloadChars, rowsAnalyzed, errorMessage: err?.message?.slice(0, 300) });
+
+    let safeMsg = "AI analysis is temporarily unavailable.";
+    let safeLogMsg = "Unknown error";
+
+    if (pii) {
+      safeMsg = "Blocked: the outgoing payload looked like it contained personal data.";
+      safeLogMsg = "PII check violation blocked payload";
+    } else if (timeout) {
+      safeMsg = "AI request timed out. Please try again.";
+      safeLogMsg = "Request aborted due to timeout";
+    } else if (isOpenAi) {
+      safeMsg = err.status === 401
+        ? "AI analysis is temporarily unavailable. OpenAI authentication failed (HTTP 401)."
+        : err.status === 429
+        ? "AI analysis is temporarily unavailable due to rate limits. Please try again shortly."
+        : "AI analysis is temporarily unavailable. Check the server's OpenAI API configuration.";
+      safeLogMsg = `OpenAI HTTP ${err.status}`;
+    } else {
+      safeLogMsg = "Internal processing error";
+    }
+
+    emit({ type: "error", code: outcome, message: safeMsg });
+    await logRun({
+      ...base,
+      outcome,
+      stageMs,
+      latencyMs: Date.now() - startedAt,
+      payloadChars,
+      rowsAnalyzed,
+      errorMessage: safeLogMsg,
+    });
     return;
   }
 
@@ -221,7 +251,8 @@ export async function runInsight({ featureKey, kind, rawScope, session, force = 
       cleaned = validate(kind, parsed);
     } catch (err2) {
       emit({ type: "error", code: "schema_invalid", message: "AI response did not match the expected shape." });
-      await logRun({ ...base, outcome: "schema_invalid", stageMs, latencyMs: Date.now() - startedAt, promptTokens, completionTokens, costUsd: costUsd(model, promptTokens, completionTokens), payloadChars, rowsAnalyzed, errorMessage: err2?.message?.slice(0, 300) });
+      const safeErr2Msg = err2 instanceof OpenAIProviderError ? `OpenAI HTTP ${err2.status}` : "Schema validation failure";
+      await logRun({ ...base, outcome: "schema_invalid", stageMs, latencyMs: Date.now() - startedAt, promptTokens, completionTokens, costUsd: costUsd(model, promptTokens, completionTokens), payloadChars, rowsAnalyzed, errorMessage: safeErr2Msg });
       return;
     }
   }

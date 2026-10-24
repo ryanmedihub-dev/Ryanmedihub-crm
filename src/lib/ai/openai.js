@@ -32,9 +32,15 @@ function combineSignals(signal) {
   };
 }
 
+export class OpenAIProviderError extends Error {
+  constructor(status, message) {
+    super(message || `OpenAI request failed with status ${status}`);
+    this.name = "OpenAIProviderError";
+    this.status = status;
+  }
+}
+
 async function callOpenAI(body, signal) {
-  
-  
   assertNoPII(JSON.parse(body.messages[1].content));
   if (AI_LOG_PAYLOADS) console.log("[ai] outgoing payload:\n" + JSON.stringify(body, null, 2));
   const res = await fetch(OPENAI_URL, {
@@ -44,8 +50,16 @@ async function callOpenAI(body, signal) {
     signal,
   });
   if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`OpenAI ${res.status}: ${text.slice(0, 300)}`);
+    await res.text().catch(() => "");
+    let safeMessage = `OpenAI request failed with status ${res.status}`;
+    if (res.status === 401) {
+      safeMessage = "OpenAI authentication failed: Invalid or expired API key (HTTP 401)";
+    } else if (res.status === 429) {
+      safeMessage = "OpenAI quota or rate limit exceeded (HTTP 429)";
+    } else if (res.status >= 500) {
+      safeMessage = `OpenAI service error (HTTP ${res.status})`;
+    }
+    throw new OpenAIProviderError(res.status, safeMessage);
   }
   return res;
 }

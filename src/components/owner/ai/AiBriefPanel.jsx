@@ -61,11 +61,11 @@ export default function AiBriefPanel({ feature, scope, title, enabled = true, co
         : "Analyzed just now"
       : "";
 
-  if (compact && !expanded) {
+  if (!expanded) {
     return (
       <button type="button" className="ai-brief-panel ai-brief-compact" onClick={() => setExpanded(true)}>
         <AiOrb state={orb} size={28} pulseKey={pulseKey} />
-        <span className="ai-brief-compact-headline">{failed ? "AI analysis unavailable" : headline || "Analyzing…"}</span>
+        <span className="ai-brief-compact-headline">{failed ? "AI analysis unavailable" : headline || "AI Analysis · Click to expand"}</span>
         {ready && ai.result?.healthScore != null && <span className="ai-brief-compact-score">{ai.result.healthScore}</span>}
         <span className="ai-brief-compact-chevron" aria-hidden="true">▾</span>
       </button>
@@ -81,7 +81,7 @@ export default function AiBriefPanel({ feature, scope, title, enabled = true, co
     >
       <header className="ai-brief-header">
         <div className="ai-brief-header-left">
-          <AiOrb state={orb} size={hero ? 88 : 40} pulseKey={pulseKey} />
+          <AiOrb state={orb} size={hero ? 44 : 36} pulseKey={pulseKey} />
           <div>
             <div className="ai-brief-eyebrow">AI Analysis · {title}</div>
             {!failed && <div className="ai-brief-status">{statusText}</div>}
@@ -91,7 +91,7 @@ export default function AiBriefPanel({ feature, scope, title, enabled = true, co
           {ai.meta?.model && <span className="ai-model-chip">{ai.meta.model}</span>}
           <button type="button" className="ai-ghost-btn" onClick={ai.refresh} disabled={running}>↻ Re-analyze</button>
           <button type="button" className="ai-ghost-btn" onClick={() => setDrawerOpen(true)} disabled={!ai.facts}>What AI saw</button>
-          {compact && <button type="button" className="ai-ghost-btn" onClick={() => setExpanded(false)} aria-label="Collapse">▴</button>}
+          <button type="button" className="ai-ghost-btn" onClick={() => setExpanded(false)} aria-label="Collapse">▴ Collapse</button>
         </div>
       </header>
 

@@ -7,6 +7,7 @@ import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { num, rupee } from "@/lib/owner/format";
 import { PATIENT_STATUS_LABELS } from "@/lib/owner/patientStatus";
+import { RotateCw } from "lucide-react";
 
 const STATUS_ORDER = ["NEW", "NOT_VISITED", "NOT_CONVERTED", "BOOKING_DONE", "SURGERY_BOOKED", "CLOSED"];
 
@@ -17,6 +18,7 @@ const LINKS = [
   { href: "/owner/patients/converted", label: "Converted", note: "Fully paid" },
   { href: "/owner/patients/surgery-done", label: "Surgery Done", note: "Completed surgeries + clinical detail" },
   { href: "/owner/patients/direct", label: "Direct", note: "Walk-in / no agent" },
+  { href: "/owner/patients/surgery-planner", label: "Surgery & OT Planner", note: "Scheduled surgeries and OT load" },
 ];
 
 export default function PatientsLanding() {
@@ -47,7 +49,7 @@ export default function PatientsLanding() {
       aiState={overviewAi}
       controls={
         <button className="icon-btn" onClick={() => load()} disabled={isValidating} title="Refresh">
-          {isValidating ? "…" : "⟳"}
+          <RotateCw size={15} className={isValidating ? "ai-spin-icon" : ""} />
         </button>
       }
     >

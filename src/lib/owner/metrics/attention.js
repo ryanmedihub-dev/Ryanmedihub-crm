@@ -29,7 +29,15 @@ export async function overdueFollowUps() {
       error: null,
     };
   } catch (err) {
-    return { items: [], error: err instanceof CallbyError ? err.message : "Failed to load lead data" };
+    const isAuth = err instanceof CallbyError && (err.status === 401 || err.message?.toLowerCase().includes("token"));
+    return {
+      items: [],
+      error: isAuth
+        ? "Lead service authentication error (invalid or expired token)"
+        : err instanceof CallbyError
+        ? err.message
+        : "Failed to load lead data",
+    };
   }
 }
 
@@ -52,7 +60,15 @@ export async function interestedNoRecentCall() {
       error: null,
     };
   } catch (err) {
-    return { items: [], error: err instanceof CallbyError ? err.message : "Failed to load lead data" };
+    const isAuth = err instanceof CallbyError && (err.status === 401 || err.message?.toLowerCase().includes("token"));
+    return {
+      items: [],
+      error: isAuth
+        ? "Lead service authentication error (invalid or expired token)"
+        : err instanceof CallbyError
+        ? err.message
+        : "Failed to load lead data",
+    };
   }
 }
 

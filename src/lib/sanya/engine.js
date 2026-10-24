@@ -53,8 +53,7 @@ async function openai(body, { signal } = {}) {
     signal,
   });
   if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`OpenAI ${res.status}: ${text.slice(0, 300)}`);
+    throw new Error(`OpenAI HTTP ${res.status}`);
   }
   return res;
 }
@@ -185,12 +184,17 @@ export async function runSanyaTurn({ user, messages, emit, signal }) {
     });
   } catch (err) {
     const pii = err instanceof PIIError;
+    const isAiError = err?.message?.startsWith("OpenAI");
     const message = pii
       ? "Blocked: a tool result contained something that looked personal, so nothing was sent to the model. This is logged."
-      : err?.name === "AbortError" ? "Cancelled." : err?.message || "Sanya failed";
-    console.error("[sanya] turn error:", err);
+      : err?.name === "AbortError"
+      ? "Cancelled."
+      : isAiError
+      ? "AI analysis is temporarily unavailable. Check the server's OpenAI API configuration."
+      : "Sanya failed";
+    console.error("[sanya] turn error:", err?.name, isAiError ? err?.message : "");
     emit({ type: "error", message, code: pii ? "pii_blocked" : "error" });
-    await finish(pii ? "pii_blocked" : "error", err?.message);
+    await finish(pii ? "pii_blocked" : "error", isAiError ? err?.message : "Internal error");
   }
 }
 

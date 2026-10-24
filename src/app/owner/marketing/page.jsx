@@ -6,6 +6,7 @@ import { AiBriefPanel } from "@/components/owner/ai";
 import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { ownerFetch } from "@/lib/ownerFetch";
 import { rupee, num, roasFmt } from "@/lib/owner/format";
+import { RotateCw } from "lucide-react";
 
 const LINKS = [
   { href: "/owner/marketing/campaigns", label: "Active Ads", note: "Campaign CRUD, targeting, budgets" },
@@ -80,7 +81,7 @@ export default function MarketingLanding() {
       aiState={overviewAi}
       controls={
         <button className="icon-btn" onClick={() => load()} disabled={loading} title="Refresh">
-          {loading ? "…" : "⟳"}
+          <RotateCw size={15} className={loading ? "ai-spin-icon" : ""} />
         </button>
       }
     >

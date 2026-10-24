@@ -8,7 +8,7 @@ function anomalyDot(highlightLabel) {
   return (props) => {
     const { cx, cy, payload } = props;
     if (!needle || !String(payload.date).toLowerCase().split(/\s+/).some((w) => needle.includes(w) && w.length > 1)) return null;
-    return <circle key={payload.date} cx={cx} cy={cy} r={5} fill="var(--ai-violet)" stroke="var(--ai-cyan)" strokeWidth={2} />;
+    return <circle key={payload.date} cx={cx} cy={cy} r={5} fill="var(--accent)" stroke="#ffffff" strokeWidth={2} />;
   };
 }
 

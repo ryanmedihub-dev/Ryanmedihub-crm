@@ -6,6 +6,7 @@ import { AiBriefPanel } from "@/components/owner/ai";
 import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { num } from "@/lib/owner/format";
+import { RotateCw } from "lucide-react";
 
 const LINKS = [
   { href: "/owner/leads/report", label: "Lead Report", note: "Full lead report, filterable" },
@@ -40,7 +41,7 @@ export default function LeadsLanding() {
       aiState={leadsAi}
       controls={
         <button className="icon-btn" onClick={() => load()} disabled={isValidating} title="Refresh">
-          {isValidating ? "…" : "⟳"}
+          <RotateCw size={15} className={isValidating ? "ai-spin-icon" : ""} />
         </button>
       }
     >

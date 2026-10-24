@@ -10,12 +10,11 @@ const COPY = {
   pii_blocked: "AI analysis was blocked by the privacy guard before anything was sent. This has been logged.",
   schema_invalid: "AI returned something unexpected and couldn't be shown. Your data below is unaffected.",
   timeout: "AI took too long to respond. Your data below is unaffected.",
-  error: "AI analysis failed. Your data below is unaffected.",
+  error: "AI analysis is temporarily unavailable. Check the server's OpenAI API configuration.",
 };
 
 export default function AiNotice({ status, message, onRetry }) {
-  const base = COPY[status] || COPY.error;
-  const text = status === "error" && message ? `AI analysis failed: ${message}. Your data below is unaffected.` : base;
+  const text = COPY[status] || COPY.error;
   const retryable = ["error", "timeout", "schema_invalid", "rate_limited"].includes(status);
 
   return (

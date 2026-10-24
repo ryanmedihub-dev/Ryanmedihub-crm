@@ -6,7 +6,6 @@ import { AiBriefPanel } from "@/components/owner/ai";
 import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { rupee, num as fmt } from "@/lib/owner/format";
-
 const FILTER_DEFAULTS = { range: "Last 30 Days" };
 
 const FINANCE_LINKS = [

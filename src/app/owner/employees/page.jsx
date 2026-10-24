@@ -8,6 +8,7 @@ import { useAiInsight } from "@/lib/ai/client/useAiInsight";
 import { useOwnerData } from "@/lib/owner/useOwnerData";
 import { rupee, num } from "@/lib/owner/format";
 import { SECTION_LABELS } from "@/lib/owner/employeeSections";
+import { RotateCw } from "lucide-react";
 
 const SECTION_LINKS = {
   Agent: "/owner/employees/agents",
@@ -58,7 +59,7 @@ export default function EmployeesLanding() {
       aiState={overviewAi}
       controls={
         <button className="icon-btn" onClick={() => load()} disabled={isValidating} title="Refresh">
-          {isValidating ? "…" : "⟳"}
+          <RotateCw size={15} className={isValidating ? "ai-spin-icon" : ""} />
         </button>
       }
     >

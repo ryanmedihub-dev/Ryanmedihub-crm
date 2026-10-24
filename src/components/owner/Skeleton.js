@@ -12,12 +12,21 @@ export default function Skeleton({ variant, width, height, style, className = ""
   return <div className={base} style={{ width, height, ...style }} />;
 }
 
-export function KpiSkeleton({ support = 4 }) {
+export function KpiSkeleton({ count = 6, balanced = true }) {
+  if (balanced) {
+    return (
+      <div className="kpi-grid">
+        {Array.from({ length: count }).map((_, i) => (
+          <div key={i} className="skeleton skeleton-kpi" style={{ minHeight: 96 }} />
+        ))}
+      </div>
+    );
+  }
   return (
     <div className="kpi-band">
       <div className="skeleton skeleton-kpi lead" />
       <div className="kpi-support">
-        {Array.from({ length: support }).map((_, i) => (
+        {Array.from({ length: Math.max(1, count - 1) }).map((_, i) => (
           <div key={i} className="skeleton skeleton-kpi" />
         ))}
       </div>
