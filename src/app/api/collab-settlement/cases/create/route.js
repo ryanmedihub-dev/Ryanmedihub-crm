@@ -4,6 +4,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
 import Patient from "@/models/Patient";
 import { createCollabCaseAtomic } from "@/lib/collabDerivation";
+import { deriveCaseSplit } from "@/lib/collabFormula";
 import { COLLAB_BRANCHES } from "@/lib/branches";
 import { cacheInvalidate } from "@/lib/cache";
 
@@ -76,8 +77,10 @@ export async function POST(req) {
         { status: 400 },
       );
     }
-    const totalPackage = Math.round((grossPackage - discountNum) * 100) / 100;
-    if (totalPackage <= 0) {
+
+
+    const { netChargeable } = deriveCaseSplit({ grossPackage, discount: discountNum });
+    if (netChargeable <= 0) {
       return NextResponse.json(
         { error: "Net chargeable amount after discount must be greater than zero" },
         { status: 400 },
@@ -90,20 +93,24 @@ export async function POST(req) {
     if (!Number.isFinite(clinicShareNum) || clinicShareNum < 0) {
       return NextResponse.json({ error: "Clinic share must be a non-negative number" }, { status: 400 });
     }
-    const ourShareNum = Math.round((totalPackage - clinicShareNum) * 100) / 100;
+    const { ourShare: ourShareNum } = deriveCaseSplit({
+      grossPackage,
+      discount: discountNum,
+      clinicShare: clinicShareNum,
+    });
     if (ourShareNum < 0) {
       return NextResponse.json(
-        { error: `Clinic share (${clinicShareNum}) cannot exceed the package total (${totalPackage})` },
+        { error: `Clinic share (${clinicShareNum}) cannot exceed the chargeable amount (${netChargeable})` },
         { status: 400 },
       );
     }
     if (ourReceivedNum < 0 || clinicReceivedNum < 0) {
       return NextResponse.json({ error: "Collected amounts cannot be negative" }, { status: 400 });
     }
-    if (ourReceivedNum + clinicReceivedNum - totalPackage > 0.01) {
+    if (ourReceivedNum + clinicReceivedNum - netChargeable > 0.01) {
       return NextResponse.json(
         {
-          error: `Collected amount exceeds the package: ${ourReceivedNum} + ${clinicReceivedNum} = ${ourReceivedNum + clinicReceivedNum}, package is ${totalPackage}`,
+          error: `Collected amount exceeds the package: ${ourReceivedNum} + ${clinicReceivedNum} = ${ourReceivedNum + clinicReceivedNum}, chargeable is ${netChargeable}`,
         },
         { status: 400 },
       );
@@ -114,7 +121,7 @@ export async function POST(req) {
       patientName: patientDoc.personal?.name,
       clinic,
       procedure,
-      totalPackage,
+      totalPackage: grossPackage,
       discount: discountNum,
       ourShare: ourShareNum,
       clinicShare: clinicShareNum,

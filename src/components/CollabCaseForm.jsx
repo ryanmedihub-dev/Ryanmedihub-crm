@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import SearchableSelect from "@/components/SearchableSelect";
 import BankRoutingFields from "@/components/BankRoutingFields";
 import { COLLAB_BRANCHES } from "@/lib/branches";
-import { deriveCrystallisation } from "@/lib/collabFormula";
+import { deriveCaseSplit, deriveCrystallisation } from "@/lib/collabFormula";
 import { REVENUE_METHODS } from "@/constants/paymentMethods";
 import { Building2, Loader2, TrendingDown, TrendingUp } from "lucide-react";
 import { formatCurrency } from "@/lib/financeUI";
@@ -98,8 +98,11 @@ export default function CollabCaseForm({
 
   const grossPackage = selectedPatient?.payments?.totalAmount || 0;
   const discountNum = Number(discount) || 0;
-  const totalPackage = Math.round((grossPackage - discountNum) * 100) / 100;
-  const ourShare = Math.round((totalPackage - (Number(clinicShare) || 0)) * 100) / 100;
+  const { netChargeable: totalPackage, ourShare } = deriveCaseSplit({
+    grossPackage,
+    discount: discountNum,
+    clinicShare: Number(clinicShare) || 0,
+  });
   const discountInvalid = discountNum < 0 || discountNum > grossPackage;
 
   useEffect(() => {
@@ -233,14 +236,12 @@ export default function CollabCaseForm({
               <p className="text-lg font-bold text-gray-900">{formatCurrency(grossPackage)}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-500 uppercase tracking-wide">Net Chargeable</p>
-              <p className="text-lg font-bold text-gray-900">
-                {formatCurrency(totalPackage)}
-                {discountNum > 0 && (
-                  <span className="block text-[11px] font-medium text-amber-600">
-                    after −{formatCurrency(discountNum)}
-                  </span>
-                )}
+              <p className="text-xs text-gray-500 uppercase tracking-wide">Discount</p>
+              <p className="text-lg font-bold text-amber-600">
+                {discountNum > 0 ? `−${formatCurrency(discountNum)}` : formatCurrency(0)}
+                <span className="block text-[11px] font-medium text-gray-500">
+                  patient pays {formatCurrency(totalPackage)}
+                </span>
               </p>
             </div>
             <div>
@@ -253,9 +254,8 @@ export default function CollabCaseForm({
             </div>
           </div>
           <p className="text-[11px] text-gray-500 mt-3 text-center">
-            Package is read from the patient record and never modified here — a discount is
-            applied on top instead. Our share is always the remainder of the net, so the split
-            always equals what is actually chargeable.
+            The case keeps the patient&apos;s full package — a discount never shrinks it. The
+            clinic&apos;s share stays whole, so the discount comes out of our share alone.
           </p>
         </div>
       )}

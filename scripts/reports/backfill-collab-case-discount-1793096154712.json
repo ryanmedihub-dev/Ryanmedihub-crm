@@ -1,0 +1,1309 @@
+{
+  "written": 113,
+  "fixable": [
+    {
+      "caseId": "6a882851c2abcd5c6a8248ea",
+      "patient": "Jogendra",
+      "clinic": "Jaipur",
+      "packageAmount": 61905,
+      "patientTotal": 70000,
+      "gap": 8095,
+      "creationDiscount": 8095,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a882bd9c2abcd5c6a82490c",
+      "patient": "Alok",
+      "clinic": "Ranchi",
+      "packageAmount": 48057,
+      "patientTotal": 55000,
+      "gap": 6943,
+      "creationDiscount": 6943,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a884170daa8ef7b5fcadde9",
+      "patient": "Vishal",
+      "clinic": "Ahmedabad",
+      "packageAmount": 50132,
+      "patientTotal": 55000,
+      "gap": 4868,
+      "creationDiscount": 4868,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a88480d4d99d6924ccce660",
+      "patient": "Prajapati manojkumar chimanlal",
+      "clinic": "Ahmedabad",
+      "packageAmount": 42770,
+      "patientTotal": 45000,
+      "gap": 2230,
+      "creationDiscount": 2230,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a893ae90a90e6523f08b390",
+      "patient": "Vinod",
+      "clinic": "Patna",
+      "packageAmount": 35374,
+      "patientTotal": 40000,
+      "gap": 4626,
+      "creationDiscount": 4626,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a893f350a90e6523f08b3a1",
+      "patient": "Ramzan",
+      "clinic": "Ahmedabad",
+      "packageAmount": 38551,
+      "patientTotal": 45000,
+      "gap": 6449,
+      "creationDiscount": 6449,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a8944ee4b807660c0370c7c",
+      "patient": "Shakti",
+      "clinic": "Patna",
+      "packageAmount": 51940,
+      "patientTotal": 60000,
+      "gap": 8060,
+      "creationDiscount": 8060,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a89468ed1851e1d16396363",
+      "patient": "Narendra Kumar",
+      "clinic": "Ahmedabad",
+      "packageAmount": 48639,
+      "patientTotal": 55000,
+      "gap": 6361,
+      "creationDiscount": 6361,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a894a262f9b0b1fcaf30b3c",
+      "patient": "Faiz Alam",
+      "clinic": "Ahmedabad",
+      "packageAmount": 48007,
+      "patientTotal": 55000,
+      "gap": 6993,
+      "creationDiscount": 6993,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a894b102f9b0b1fcaf30b4c",
+      "patient": "Saumya Ranjan",
+      "clinic": "Bengaluru",
+      "packageAmount": 43014,
+      "patientTotal": 50000,
+      "gap": 6986,
+      "creationDiscount": 6986,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a896455722bfb4eb35db214",
+      "patient": "Dipakk",
+      "clinic": "Ahmedabad",
+      "packageAmount": 53061,
+      "patientTotal": 60000,
+      "gap": 6939,
+      "creationDiscount": 6939,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a896882206ebe970437982b",
+      "patient": "biswjit sinha",
+      "clinic": "Jammu",
+      "packageAmount": 34047,
+      "patientTotal": 38500,
+      "gap": 4453,
+      "creationDiscount": 4453,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a896b5d206ebe9704379838",
+      "patient": "Sambhu",
+      "clinic": "Ranchi",
+      "packageAmount": 53061,
+      "patientTotal": 60000,
+      "gap": 6939,
+      "creationDiscount": 6939,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a896d2f2246855f1a14d1e5",
+      "patient": "Bhagwan",
+      "clinic": "Pune",
+      "packageAmount": 42449,
+      "patientTotal": 50000,
+      "gap": 7551,
+      "creationDiscount": 7551,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a896dd2fe1839c0ceb65262",
+      "patient": "Moazzam",
+      "clinic": "Pune",
+      "packageAmount": 46401,
+      "patientTotal": 50000,
+      "gap": 3599,
+      "creationDiscount": 3599,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a896e5f8ea2833730f4e4e9",
+      "patient": "Santosh anand",
+      "clinic": "Ranchi",
+      "packageAmount": 44218,
+      "patientTotal": 50000,
+      "gap": 5782,
+      "creationDiscount": 5782,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a8be6b1fd664cbf44f37da5",
+      "patient": "Sukant Ghosh",
+      "clinic": "Kolkata",
+      "packageAmount": 53061,
+      "patientTotal": 60000,
+      "gap": 6939,
+      "creationDiscount": 6939,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a954169328f80c1ff4efe85",
+      "patient": "Jayesh",
+      "clinic": "Ahmedabad",
+      "packageAmount": 65374,
+      "patientTotal": 70000,
+      "gap": 4626,
+      "creationDiscount": 4626,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a9543ce2ff8a2530ba75a11",
+      "patient": "SHARUKH",
+      "clinic": "Ahmedabad",
+      "packageAmount": 40205,
+      "patientTotal": 45000,
+      "gap": 4795,
+      "creationDiscount": 4795,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a95465c55d18849c48508e3",
+      "patient": "Subhajit",
+      "clinic": "Bengaluru",
+      "packageAmount": 44218,
+      "patientTotal": 50000,
+      "gap": 5782,
+      "creationDiscount": 5782,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a9554938785ee691591892d",
+      "patient": "Aditya Kumar",
+      "clinic": "Patna",
+      "packageAmount": 45374,
+      "patientTotal": 50000,
+      "gap": 4626,
+      "creationDiscount": 4626,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a96aba5013b0b62770be35f",
+      "patient": "Anuj pal",
+      "clinic": "Bengaluru",
+      "packageAmount": 48639,
+      "patientTotal": 55000,
+      "gap": 6361,
+      "creationDiscount": 6361,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a96aeb1028e10fb44a09012",
+      "patient": "Vikash",
+      "clinic": "Pune",
+      "packageAmount": 32960,
+      "patientTotal": 40000,
+      "gap": 7040,
+      "creationDiscount": 7040,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a96b070b1d1ba8ff84d988f",
+      "patient": "Anuj",
+      "clinic": "Ahmedabad",
+      "packageAmount": 43544,
+      "patientTotal": 50000,
+      "gap": 6456,
+      "creationDiscount": 6456,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a96b1eb028e10fb44a0906a",
+      "patient": "Sunny",
+      "clinic": "Bengaluru",
+      "packageAmount": 50396,
+      "patientTotal": 60000,
+      "gap": 9604,
+      "creationDiscount": 9604,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a96b324e3ea1c9c51592d9b",
+      "patient": "Ajay",
+      "clinic": "Ranchi",
+      "packageAmount": 44218,
+      "patientTotal": 50000,
+      "gap": 5782,
+      "creationDiscount": 5782,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a96b3b49356c1456472ff4d",
+      "patient": "Amritesh",
+      "clinic": "Kolkata",
+      "packageAmount": 42769,
+      "patientTotal": 45000,
+      "gap": 2231,
+      "creationDiscount": 2231,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a96b77ab05da274654e2ec7",
+      "patient": "Abdul Rahman khan",
+      "clinic": "Ahmedabad",
+      "packageAmount": 53061,
+      "patientTotal": 60000,
+      "gap": 6939,
+      "creationDiscount": 6939,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a96b9b512fdee51164dc366",
+      "patient": "Bhanu PRATAP SINGH",
+      "clinic": "Jaipur",
+      "packageAmount": 40374,
+      "patientTotal": 45000,
+      "gap": 4626,
+      "creationDiscount": 4626,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a96bb832f698a4d38e2da55",
+      "patient": "Jatin",
+      "clinic": "Ahmedabad",
+      "packageAmount": 50205,
+      "patientTotal": 55000,
+      "gap": 4795,
+      "creationDiscount": 4795,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a96bc4b797766f2f97ade62",
+      "patient": "Mahesh Jetva",
+      "clinic": "Ahmedabad",
+      "packageAmount": 35374,
+      "patientTotal": 40000,
+      "gap": 4626,
+      "creationDiscount": 4626,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a96bd6e593028f51ed14065",
+      "patient": "Kaushal Kumar",
+      "clinic": "Bengaluru",
+      "packageAmount": 48639,
+      "patientTotal": 55000,
+      "gap": 6361,
+      "creationDiscount": 6361,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a96be403727244f0f9a18e8",
+      "patient": "Ashwin",
+      "clinic": "Ahmedabad",
+      "packageAmount": 53061,
+      "patientTotal": 60000,
+      "gap": 6939,
+      "creationDiscount": 6939,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a96bfe5a32798e832274552",
+      "patient": "Jaydeep",
+      "clinic": "Ahmedabad",
+      "packageAmount": 44218,
+      "patientTotal": 50000,
+      "gap": 5782,
+      "creationDiscount": 5782,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a96c3ad2a474e3f5b04b2a6",
+      "patient": "ARIF",
+      "clinic": "Jaipur",
+      "packageAmount": 43544,
+      "patientTotal": 50000,
+      "gap": 6456,
+      "creationDiscount": 6456,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a96c69d16132a487be555ff",
+      "patient": "DHRUP",
+      "clinic": "Ahmedabad",
+      "packageAmount": 43544,
+      "patientTotal": 50000,
+      "gap": 6456,
+      "creationDiscount": 6456,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a96c90c16132a487be55607",
+      "patient": "Manish",
+      "clinic": "Ahmedabad",
+      "packageAmount": 54690,
+      "patientTotal": 60000,
+      "gap": 5310,
+      "creationDiscount": 5310,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a990e41da4af8256d0d2964",
+      "patient": "Shabir Ulhassan Pala",
+      "clinic": "Chennai",
+      "packageAmount": 38851,
+      "patientTotal": 45000,
+      "gap": 6149,
+      "creationDiscount": 6149,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a9a71ea4b20b47780d2fcfb",
+      "patient": "Amit",
+      "clinic": "Ahmedabad",
+      "packageAmount": 34688,
+      "patientTotal": 40000,
+      "gap": 5312,
+      "creationDiscount": 5312,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a9a73971000144bfe4bb12a",
+      "patient": "ABHISHEK",
+      "clinic": "Ahmedabad",
+      "packageAmount": 52470,
+      "patientTotal": 60000,
+      "gap": 7530,
+      "creationDiscount": 7530,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a9a78d2f2c491d6ee62f371",
+      "patient": "ANSARI IRFAN",
+      "clinic": "Ahmedabad",
+      "packageAmount": 43594,
+      "patientTotal": 50000,
+      "gap": 6406,
+      "creationDiscount": 6406,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a9bf835fc66239dc81e2b13",
+      "patient": "Parth",
+      "clinic": "Ahmedabad",
+      "packageAmount": 57483,
+      "patientTotal": 65000,
+      "gap": 7517,
+      "creationDiscount": 7517,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a9bff4b1856df40d0b3e352",
+      "patient": "Pradeep",
+      "clinic": "Chandigarh",
+      "packageAmount": 10145,
+      "patientTotal": 15000,
+      "gap": 4855,
+      "creationDiscount": 4855,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a9c00c4d26582f2b61bce98",
+      "patient": "Varun",
+      "clinic": "Jammu",
+      "packageAmount": 44218,
+      "patientTotal": 50000,
+      "gap": 5782,
+      "creationDiscount": 5782,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a9c0b926e5895e548f5aa2a",
+      "patient": "Gautam",
+      "clinic": "Ahmedabad",
+      "packageAmount": 41760,
+      "patientTotal": 45000,
+      "gap": 3240,
+      "creationDiscount": 3240,
+      "txCount": 1
+    },
+    {
+      "caseId": "6aa8d9910b723b0e5dd9a8ae",
+      "patient": "JITENDER SINGH",
+      "clinic": "Jaipur",
+      "packageAmount": 53274,
+      "patientTotal": 60000,
+      "gap": 6726,
+      "creationDiscount": 6726,
+      "txCount": 1
+    },
+    {
+      "caseId": "6aabdafa5e51860bedfd9390",
+      "patient": "PRABHU",
+      "clinic": "Ahmedabad",
+      "packageAmount": 39081,
+      "patientTotal": 45000,
+      "gap": 5919,
+      "creationDiscount": 5919,
+      "txCount": 1
+    },
+    {
+      "caseId": "6aabdf7b7a0c29a287e41956",
+      "patient": "JITENDER SINGH",
+      "clinic": "Jaipur",
+      "packageAmount": 53274,
+      "patientTotal": 60000,
+      "gap": 6726,
+      "creationDiscount": 6726,
+      "txCount": 1
+    },
+    {
+      "caseId": "6aace959b8f5462c7616e967",
+      "patient": "AMIT KUMAR",
+      "clinic": "Jaipur",
+      "packageAmount": 51097,
+      "patientTotal": 55000,
+      "gap": 3903,
+      "creationDiscount": 3903,
+      "txCount": 1
+    },
+    {
+      "caseId": "6aad0ea3cb2e611c8486df25",
+      "patient": "AMIT",
+      "clinic": "Jaipur",
+      "packageAmount": 51098,
+      "patientTotal": 55000,
+      "gap": 3902,
+      "creationDiscount": 3902,
+      "txCount": 1
+    },
+    {
+      "caseId": "6aad302f40ac0600c936959c",
+      "patient": "SHIVAM",
+      "clinic": "Ahmedabad",
+      "packageAmount": 51150,
+      "patientTotal": 60000,
+      "gap": 8850,
+      "creationDiscount": 8850,
+      "txCount": 1
+    },
+    {
+      "caseId": "6aae3846e8c6488b5abf29e9",
+      "patient": "Niketan Kumar",
+      "clinic": "Bengaluru",
+      "packageAmount": 43594,
+      "patientTotal": 50000,
+      "gap": 6406,
+      "creationDiscount": 6406,
+      "txCount": 1
+    },
+    {
+      "caseId": "6aafbaa18ac54588288de9ac",
+      "patient": "Mahendar Banana",
+      "clinic": "Ahmedabad",
+      "packageAmount": 53780,
+      "patientTotal": 60000,
+      "gap": 6220,
+      "creationDiscount": 6220,
+      "txCount": 1
+    },
+    {
+      "caseId": "6aafbb598ac54588288de9ba",
+      "patient": "ALOK",
+      "clinic": "Kolkata",
+      "packageAmount": 46401,
+      "patientTotal": 50000,
+      "gap": 3599,
+      "creationDiscount": 3599,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ab0fe2f8655078c797b3dab",
+      "patient": "SAMEER KUMAR",
+      "clinic": "Bengaluru",
+      "packageAmount": 64218,
+      "patientTotal": 70000,
+      "gap": 5782,
+      "creationDiscount": 5782,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ab276449853cbd32f88078b",
+      "patient": "Vijay Kumar Singh",
+      "clinic": "Patna",
+      "packageAmount": 55374,
+      "patientTotal": 60000,
+      "gap": 4626,
+      "creationDiscount": 4626,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ab36e36c3ceda3a4a8811f2",
+      "patient": "BARNWAL SUMAN KUMAR",
+      "clinic": "Ranchi",
+      "packageAmount": 44218,
+      "patientTotal": 50000,
+      "gap": 5782,
+      "creationDiscount": 5782,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ab36f2e2bcd3420b5cd43ee",
+      "patient": "Shahbaz Asari",
+      "clinic": "Ranchi",
+      "packageAmount": 41893,
+      "patientTotal": 50000,
+      "gap": 8107,
+      "creationDiscount": 8107,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ab376cb05bfc28eb30a22a4",
+      "patient": "Sunil Kumar",
+      "clinic": "Ahmedabad",
+      "packageAmount": 53061,
+      "patientTotal": 60000,
+      "gap": 6939,
+      "creationDiscount": 6939,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ab399adc6c505001939ff06",
+      "patient": "Jitendra",
+      "clinic": "Ahmedabad",
+      "packageAmount": 39796,
+      "patientTotal": 45000,
+      "gap": 5204,
+      "creationDiscount": 5204,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ab3b3edf3b271bffb761feb",
+      "patient": "Avinash",
+      "clinic": "Nagpur",
+      "packageAmount": 44488,
+      "patientTotal": 50000,
+      "gap": 5512,
+      "creationDiscount": 5512,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ab4dfa6ed507c267afff4dc",
+      "patient": "NARENDER",
+      "clinic": "Dehradun",
+      "packageAmount": 35096,
+      "patientTotal": 40000,
+      "gap": 4904,
+      "creationDiscount": 4904,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ab4e138cf5493682a8c5b7a",
+      "patient": "MAKSUD KHAN",
+      "clinic": "Ahmedabad",
+      "packageAmount": 70748,
+      "patientTotal": 80000,
+      "gap": 9252,
+      "creationDiscount": 9252,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ab4e3aded507c267afff4ea",
+      "patient": "Sanwar",
+      "clinic": "Jaipur",
+      "packageAmount": 41760,
+      "patientTotal": 45000,
+      "gap": 3240,
+      "creationDiscount": 3240,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ab4e5ed9c4f7db0361b1905",
+      "patient": "VISHAL RAGHUWANSHI",
+      "clinic": "Indore",
+      "packageAmount": 57483,
+      "patientTotal": 65000,
+      "gap": 7517,
+      "creationDiscount": 7517,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ab69609311433d9b76ccc4d",
+      "patient": "SUKUL KUMAR",
+      "clinic": "Ahmedabad",
+      "packageAmount": 44635,
+      "patientTotal": 50000,
+      "gap": 5365,
+      "creationDiscount": 5365,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ab697ad9fcebe1a9cb8364d",
+      "patient": "Aejaj jahirmiya Malek",
+      "clinic": "Ahmedabad",
+      "packageAmount": 36460,
+      "patientTotal": 40000,
+      "gap": 3540,
+      "creationDiscount": 3540,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ab69b4172de2a1c57be71d3",
+      "patient": "MITHILESH CHOUDHARY",
+      "clinic": "Patna",
+      "packageAmount": 53061,
+      "patientTotal": 60000,
+      "gap": 6939,
+      "creationDiscount": 6939,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ab8ea5ceddd09ce0f7489a9",
+      "patient": "SANJAY YADAV",
+      "clinic": "Lucknow",
+      "packageAmount": 38122,
+      "patientTotal": 45000,
+      "gap": 6878,
+      "creationDiscount": 6878,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ab900f9bd50d3d10be97ab3",
+      "patient": "Vinay kumar",
+      "clinic": "Ahmedabad",
+      "packageAmount": 44218,
+      "patientTotal": 50000,
+      "gap": 5782,
+      "creationDiscount": 5782,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ab93806c135dae34c054ab4",
+      "patient": "ARBAZ HASNAN",
+      "clinic": "Bengaluru",
+      "packageAmount": 44218,
+      "patientTotal": 50000,
+      "gap": 5782,
+      "creationDiscount": 5782,
+      "txCount": 1
+    },
+    {
+      "caseId": "6aba40eca98803bbcd00d6dd",
+      "patient": "PRADEEP",
+      "clinic": "Lucknow",
+      "packageAmount": 39796,
+      "patientTotal": 45000,
+      "gap": 5204,
+      "creationDiscount": 5204,
+      "txCount": 1
+    },
+    {
+      "caseId": "6aba4417af5d3ea21822b1b0",
+      "patient": "KAMLESH RAJA PANDIT",
+      "clinic": "Lucknow",
+      "packageAmount": 44218,
+      "patientTotal": 50000,
+      "gap": 5782,
+      "creationDiscount": 5782,
+      "txCount": 1
+    },
+    {
+      "caseId": "6abd1fd61e9370e62ba32891",
+      "patient": "MITESH",
+      "clinic": "Ahmedabad",
+      "packageAmount": 49258,
+      "patientTotal": 55000,
+      "gap": 5742,
+      "creationDiscount": 5742,
+      "txCount": 1
+    },
+    {
+      "caseId": "6abe8142532a8ab5b5edac7c",
+      "patient": "JAYDEEP",
+      "clinic": "Ahmedabad",
+      "packageAmount": 39796,
+      "patientTotal": 45000,
+      "gap": 5204,
+      "creationDiscount": 5204,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ac09823c44666fa7949cd88",
+      "patient": "Ajay patel",
+      "clinic": "Ahmedabad",
+      "packageAmount": 52035,
+      "patientTotal": 60000,
+      "gap": 7965,
+      "creationDiscount": 7965,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ac099352856e15f5201b353",
+      "patient": "Rohit Kumar",
+      "clinic": "Kolkata",
+      "packageAmount": 35374,
+      "patientTotal": 40000,
+      "gap": 4626,
+      "creationDiscount": 4626,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ac21477bdd0db7693a2a327",
+      "patient": "CHANDAN",
+      "clinic": "Ahmedabad",
+      "packageAmount": 43544,
+      "patientTotal": 50000,
+      "gap": 6456,
+      "creationDiscount": 6456,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ac21642c13942a74b0f296b",
+      "patient": "AYUSH KUMAR",
+      "clinic": "Patna",
+      "packageAmount": 37542,
+      "patientTotal": 45000,
+      "gap": 7458,
+      "creationDiscount": 7458,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ac308b11feaa4874dcdd1a4",
+      "patient": "SHEIKH IMTIAZ",
+      "clinic": "Ahmedabad",
+      "packageAmount": 51261,
+      "patientTotal": 55000,
+      "gap": 3739,
+      "creationDiscount": 3739,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ac3096c457203d4cba63066",
+      "patient": "SHEIKH IMTIAZ",
+      "clinic": "Ahmedabad",
+      "packageAmount": 51396,
+      "patientTotal": 55000,
+      "gap": 3604,
+      "creationDiscount": 3604,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ac616b092a4359f87ab21f8",
+      "patient": "RAVI SHADU",
+      "clinic": "Ahmedabad",
+      "packageAmount": 43544,
+      "patientTotal": 50000,
+      "gap": 6456,
+      "creationDiscount": 6456,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ac63c4dc6eb76b1cbd7fd16",
+      "patient": "DEVA MARENE",
+      "clinic": "Indore",
+      "packageAmount": 37419,
+      "patientTotal": 43000,
+      "gap": 5581,
+      "creationDiscount": 5581,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ac63d029c93e6558729222e",
+      "patient": "KISHORI",
+      "clinic": "Bhopal",
+      "packageAmount": 38122,
+      "patientTotal": 45000,
+      "gap": 6878,
+      "creationDiscount": 6878,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ac7784e0ce157bdb1822189",
+      "patient": "VILASH CHOUHAN",
+      "clinic": "Indore",
+      "packageAmount": 44218,
+      "patientTotal": 50000,
+      "gap": 5782,
+      "creationDiscount": 5782,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ac7bca36580a2a683db7f2c",
+      "patient": "RAVINDRA",
+      "clinic": "Indore",
+      "packageAmount": 42423,
+      "patientTotal": 50000,
+      "gap": 7577,
+      "creationDiscount": 7577,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ac8984aaf207e691d723799",
+      "patient": "RAJU",
+      "clinic": "Ahmedabad",
+      "packageAmount": 40063,
+      "patientTotal": 45000,
+      "gap": 4937,
+      "creationDiscount": 4937,
+      "txCount": 1
+    },
+    {
+      "caseId": "6acb4a0d937558e1c9e127d8",
+      "patient": "PRASANT",
+      "clinic": "Ahmedabad",
+      "packageAmount": 48057,
+      "patientTotal": 55000,
+      "gap": 6943,
+      "creationDiscount": 6943,
+      "txCount": 1
+    },
+    {
+      "caseId": "6acb7370c135a371588b0613",
+      "patient": "MD ABDULLA",
+      "clinic": "Ahmedabad",
+      "packageAmount": 56933,
+      "patientTotal": 65000,
+      "gap": 8067,
+      "creationDiscount": 8067,
+      "txCount": 1
+    },
+    {
+      "caseId": "6acb7896778897f454c7f29a",
+      "patient": "waseem",
+      "clinic": "Jammu",
+      "packageAmount": 57483,
+      "patientTotal": 65000,
+      "gap": 7517,
+      "creationDiscount": 7517,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ad0ab9a6de94389541ba93d",
+      "patient": "BHAVESH PATEL",
+      "clinic": "Ahmedabad",
+      "packageAmount": 48639,
+      "patientTotal": 55000,
+      "gap": 6361,
+      "creationDiscount": 6361,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ad35918c7be6f544d18d9cf",
+      "patient": "KAHAR NILESH",
+      "clinic": "Ahmedabad",
+      "packageAmount": 43594,
+      "patientTotal": 50000,
+      "gap": 6406,
+      "creationDiscount": 6406,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ad57f750fdb9732bdf6b409",
+      "patient": "ARPAN",
+      "clinic": "Lucknow",
+      "packageAmount": 50138,
+      "patientTotal": 55000,
+      "gap": 4862,
+      "creationDiscount": 4862,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ad5e8930c39b2b21d425e2a",
+      "patient": "NILESH BHAI GOSWAMI",
+      "clinic": "Ahmedabad",
+      "packageAmount": 53061,
+      "patientTotal": 60000,
+      "gap": 6939,
+      "creationDiscount": 6939,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ad8844cd573bb63c285f331",
+      "patient": "ASHWIM MUDE",
+      "clinic": "Nagpur",
+      "packageAmount": 40721,
+      "patientTotal": 45000,
+      "gap": 4279,
+      "creationDiscount": 4279,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ad8852fd573bb63c285f344",
+      "patient": "RITAM",
+      "clinic": "Bengaluru",
+      "packageAmount": 53061,
+      "patientTotal": 60000,
+      "gap": 6939,
+      "creationDiscount": 6939,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ad885cf9d1362c99f9b305d",
+      "patient": "MESURIYA ANIL SHAMATBHAI",
+      "clinic": "Ahmedabad",
+      "packageAmount": 39131,
+      "patientTotal": 45000,
+      "gap": 5869,
+      "creationDiscount": 5869,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ad9950965291348d329425a",
+      "patient": "SAQIB ALI",
+      "clinic": "Ahmedabad",
+      "packageAmount": 43594,
+      "patientTotal": 50000,
+      "gap": 6406,
+      "creationDiscount": 6406,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ad9dcae2d9fd91467711568",
+      "patient": "Tribhuvan",
+      "clinic": "Patna",
+      "packageAmount": 46401,
+      "patientTotal": 50000,
+      "gap": 3599,
+      "creationDiscount": 3599,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ad9e5f72397884f2eaf573a",
+      "patient": "sajal hari",
+      "clinic": "Kolkata",
+      "packageAmount": 37931,
+      "patientTotal": 45000,
+      "gap": 7069,
+      "creationDiscount": 7069,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ad9f58006a6d21b0dba316d",
+      "patient": "BABLU PANDEY",
+      "clinic": "Kolkata",
+      "packageAmount": 46244,
+      "patientTotal": 55000,
+      "gap": 8756,
+      "creationDiscount": 8756,
+      "txCount": 1
+    },
+    {
+      "caseId": "6adaf64c678c50c0495e9fe7",
+      "patient": "NILESH MALVIYA",
+      "clinic": "Indore",
+      "packageAmount": 51770,
+      "patientTotal": 62000,
+      "gap": 10230,
+      "creationDiscount": 10230,
+      "txCount": 1
+    },
+    {
+      "caseId": "6adb19f03ec883f1782f2f35",
+      "patient": "SK ASSIQ",
+      "clinic": "Bengaluru",
+      "packageAmount": 41760,
+      "patientTotal": 45000,
+      "gap": 3240,
+      "creationDiscount": 3240,
+      "txCount": 1
+    },
+    {
+      "caseId": "6adb3b78f035762b68451442",
+      "patient": "PAWAN KUMAR",
+      "clinic": "Ranchi",
+      "packageAmount": 51047,
+      "patientTotal": 60000,
+      "gap": 8953,
+      "creationDiscount": 8953,
+      "txCount": 1
+    },
+    {
+      "caseId": "6adc6469b616707f05c57338",
+      "patient": "RAJIV",
+      "clinic": "Lucknow",
+      "packageAmount": 41893,
+      "patientTotal": 50000,
+      "gap": 8107,
+      "creationDiscount": 8107,
+      "txCount": 1
+    },
+    {
+      "caseId": "6adc8f995c29291ca8c655c9",
+      "patient": "SHIBU KUMAR",
+      "clinic": "Patna",
+      "packageAmount": 41893,
+      "patientTotal": 50000,
+      "gap": 8107,
+      "creationDiscount": 8107,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ade105239511f899699b487",
+      "patient": "AKASH",
+      "clinic": "Jammu",
+      "packageAmount": 35374,
+      "patientTotal": 40000,
+      "gap": 4626,
+      "creationDiscount": 4626,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ade14e51f8af1b7a4e5976d",
+      "patient": "AKASH",
+      "clinic": "Ahmedabad",
+      "packageAmount": 50595,
+      "patientTotal": 60000,
+      "gap": 9405,
+      "creationDiscount": 9405,
+      "txCount": 1
+    },
+    {
+      "caseId": "6aded70d44c0cd52f0eb9b5b",
+      "patient": "SOURABH",
+      "clinic": "Indore",
+      "packageAmount": 45844,
+      "patientTotal": 55000,
+      "gap": 9156,
+      "creationDiscount": 9156,
+      "txCount": 1
+    },
+    {
+      "caseId": "6adf2bc879131905e14063cf",
+      "patient": "BAKUL ROY",
+      "clinic": "Kolkata",
+      "packageAmount": 44218,
+      "patientTotal": 50000,
+      "gap": 5782,
+      "creationDiscount": 5782,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ae033d3fee307e144c76bfe",
+      "patient": "KARAN MAHESHWARI",
+      "clinic": "Jaipur",
+      "packageAmount": 41081,
+      "patientTotal": 50000,
+      "gap": 8919,
+      "creationDiscount": 8919,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ae0514290926dd86ee01497",
+      "patient": "muktchand",
+      "clinic": "Nagpur",
+      "packageAmount": 44218,
+      "patientTotal": 50000,
+      "gap": 5782,
+      "creationDiscount": 5782,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ae0640e820e9f6a7be9ddb8",
+      "patient": "KADEER",
+      "clinic": "Nagpur",
+      "packageAmount": 40138,
+      "patientTotal": 45000,
+      "gap": 4862,
+      "creationDiscount": 4862,
+      "txCount": 1
+    }
+  ],
+  "reversed": [
+    {
+      "caseId": "6a88366543c36cec83b9ee26",
+      "patient": "BIKRAM BISWAS",
+      "clinic": "Kolkata",
+      "packageAmount": 43544,
+      "patientTotal": 50000,
+      "gap": 6456,
+      "creationDiscount": 6456,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a893d070a90e6523f08b397",
+      "patient": "Mohammad Salim",
+      "clinic": "Bengaluru",
+      "packageAmount": 43594,
+      "patientTotal": 50000,
+      "gap": 6406,
+      "creationDiscount": 6406,
+      "txCount": 1
+    }
+  ],
+  "ambiguous": [
+    {
+      "caseId": "6a882d36cc85f531ed474a98",
+      "patient": "Indal",
+      "clinic": "Patna",
+      "packageAmount": 43027,
+      "patientTotal": 47000,
+      "gap": 3973,
+      "creationDiscount": 5010,
+      "txCount": 1
+    },
+    {
+      "caseId": "6a927f81dff1145984600834",
+      "patient": "Romin",
+      "clinic": "Kolkata",
+      "packageAmount": 47160,
+      "patientTotal": 48600,
+      "gap": 1440,
+      "creationDiscount": 0,
+      "txCount": 3
+    },
+    {
+      "caseId": "6aabdb485e51860bedfd9398",
+      "patient": "ANSARI MASIULLAH ABDULLAH",
+      "clinic": "Ahmedabad",
+      "packageAmount": 53061,
+      "patientTotal": 60000,
+      "gap": 6939,
+      "creationDiscount": 0,
+      "txCount": 1
+    },
+    {
+      "caseId": "6aabdebf848ec9b395fc54db",
+      "patient": "Biplab Kumar",
+      "clinic": "Ranchi",
+      "packageAmount": 61905,
+      "patientTotal": 70000,
+      "gap": 8095,
+      "creationDiscount": 0,
+      "txCount": 1
+    },
+    {
+      "caseId": "6aabdf437a0c29a287e41950",
+      "patient": "GUDDU",
+      "clinic": "Bengaluru",
+      "packageAmount": 48761,
+      "patientTotal": 50000,
+      "gap": 1239,
+      "creationDiscount": 0,
+      "txCount": 1
+    },
+    {
+      "caseId": "6aabdfd27a0c29a287e4195e",
+      "patient": "DHAVAL PRAJAPATI",
+      "clinic": "Ahmedabad",
+      "packageAmount": 44218,
+      "patientTotal": 50000,
+      "gap": 5782,
+      "creationDiscount": 0,
+      "txCount": 1
+    },
+    {
+      "caseId": "6aabe12c7a0c29a287e4196a",
+      "patient": "MUZAFFAR KHAN",
+      "clinic": "Pune",
+      "packageAmount": 52274,
+      "patientTotal": 55000,
+      "gap": 2726,
+      "creationDiscount": 0,
+      "txCount": 1
+    },
+    {
+      "caseId": "6aace619b8f5462c7616e956",
+      "patient": "WASEEM",
+      "clinic": "Patna",
+      "packageAmount": 42449,
+      "patientTotal": 48000,
+      "gap": 5551,
+      "creationDiscount": 0,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ab5044d172b2fe3e312e421",
+      "patient": "VISHAL RAGHUWANSHI",
+      "clinic": "Indore",
+      "packageAmount": 57483,
+      "patientTotal": 65000,
+      "gap": 7517,
+      "creationDiscount": 0,
+      "txCount": 0
+    },
+    {
+      "caseId": "6ab699b4c04891d4f0a58df4",
+      "patient": "MUKESH SINGH",
+      "clinic": "Kolkata",
+      "packageAmount": 50000,
+      "patientTotal": 45000,
+      "gap": -5000,
+      "creationDiscount": 0,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ab699c6c04891d4f0a58df9",
+      "patient": "MUKESH SINGH",
+      "clinic": "Kolkata",
+      "packageAmount": 50000,
+      "patientTotal": 45000,
+      "gap": -5000,
+      "creationDiscount": 0,
+      "txCount": 0
+    },
+    {
+      "caseId": "6abc8b63d67884479ea01729",
+      "patient": "SHEIKH IMTIAZ",
+      "clinic": "Ahmedabad",
+      "packageAmount": 45396,
+      "patientTotal": 55000,
+      "gap": 9604,
+      "creationDiscount": 0,
+      "txCount": 0
+    },
+    {
+      "caseId": "6acb73f40256e023a5273b08",
+      "patient": "SK ASSIQ",
+      "clinic": "Bengaluru",
+      "packageAmount": 50000,
+      "patientTotal": 45000,
+      "gap": -5000,
+      "creationDiscount": 0,
+      "txCount": 1
+    },
+    {
+      "caseId": "6ad879499d1362c99f9b3019",
+      "patient": "ASHWIM MUDE",
+      "clinic": "Nagpur",
+      "packageAmount": 40721,
+      "patientTotal": 45000,
+      "gap": 4279,
+      "creationDiscount": 0,
+      "txCount": 0
+    },
+    {
+      "caseId": "6ad883f9d573bb63c285f32b",
+      "patient": "ASHWIM MUDE",
+      "clinic": "Nagpur",
+      "packageAmount": 40721,
+      "patientTotal": 45000,
+      "gap": 4279,
+      "creationDiscount": 0,
+      "txCount": 1
+    }
+  ]
+}

@@ -2,6 +2,7 @@
 
 import Patient from "@/models/Patient";
 import { createCollabCaseAtomic } from "@/lib/collabDerivation";
+import { deriveCaseSplit } from "@/lib/collabFormula";
 import { COLLAB_BRANCHES } from "@/lib/branches";
 
 export async function createCollabCase({ payload, session: authSession }) {
@@ -22,22 +23,24 @@ export async function createCollabCase({ payload, session: authSession }) {
   if (!Number.isFinite(discountNum) || discountNum < 0 || discountNum > grossPackage) {
     return { error: `Discount must be between 0 and the package total (${grossPackage})`, status: 400 };
   }
-  const totalPackage = Math.round((grossPackage - discountNum) * 100) / 100;
-  if (totalPackage <= 0) return { error: "Net chargeable amount after discount must be greater than zero", status: 400 };
+
+
+  const netChargeable = deriveCaseSplit({ grossPackage, discount: discountNum }).netChargeable;
+  if (netChargeable <= 0) return { error: "Net chargeable amount after discount must be greater than zero", status: 400 };
 
   const clinicShareNum = Number(clinicShare);
   const ourReceivedNum = Number(ourReceived) || 0;
   const clinicReceivedNum = Number(clinicReceived) || 0;
   if (!Number.isFinite(clinicShareNum) || clinicShareNum < 0) return { error: "Clinic share must be a non-negative number", status: 400 };
-  const ourShareNum = Math.round((totalPackage - clinicShareNum) * 100) / 100;
-  if (ourShareNum < 0) return { error: `Clinic share (${clinicShareNum}) cannot exceed the package total (${totalPackage})`, status: 400 };
+  const ourShareNum = deriveCaseSplit({ grossPackage, discount: discountNum, clinicShare: clinicShareNum }).ourShare;
+  if (ourShareNum < 0) return { error: `Clinic share (${clinicShareNum}) cannot exceed the chargeable amount (${netChargeable})`, status: 400 };
   if (ourReceivedNum < 0 || clinicReceivedNum < 0) return { error: "Collected amounts cannot be negative", status: 400 };
-  if (ourReceivedNum + clinicReceivedNum - totalPackage > 0.01) {
-    return { error: `Collected amount exceeds the package: ${ourReceivedNum} + ${clinicReceivedNum} = ${ourReceivedNum + clinicReceivedNum}, package is ${totalPackage}`, status: 400 };
+  if (ourReceivedNum + clinicReceivedNum - netChargeable > 0.01) {
+    return { error: `Collected amount exceeds the package: ${ourReceivedNum} + ${clinicReceivedNum} = ${ourReceivedNum + clinicReceivedNum}, chargeable is ${netChargeable}`, status: 400 };
   }
 
   const result = await createCollabCaseAtomic({
-    patientId: patient, patientName: patientDoc.personal?.name, clinic, procedure, totalPackage, discount: discountNum,
+    patientId: patient, patientName: patientDoc.personal?.name, clinic, procedure, totalPackage: grossPackage, discount: discountNum,
     ourShare: ourShareNum, clinicShare: clinicShareNum, ourReceived: ourReceivedNum, clinicReceived: clinicReceivedNum,
     method, paymentId, receiptMode, furtherMode, date, remarks,
     actor: { name: authSession.user.name, email: authSession.user.email, branch: authSession.user.branch },

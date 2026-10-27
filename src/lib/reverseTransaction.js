@@ -138,6 +138,10 @@ export async function reverseTransaction({
       {
         ...doc,
         amount: -Math.abs(requested),
+        // A waiver belongs to the collection row as a whole, so only a full
+        // reversal gives it back. Otherwise the discount stays counted — against
+        // the case balance and the patient's dues — on a payment that is gone.
+        discount: isFullReversal ? -Math.abs(original.discount || 0) : 0,
         isSettlement: original.isSettlement === true,
         reversalOf: original._id,
         reversalReason: String(reason).trim(),
@@ -201,6 +205,15 @@ export async function reverseTransaction({
       if (patient.payments.amountReceived < 0) patient.payments.amountReceived = 0;
       patient.payments.transactions = patient.payments.transactions || [];
       patient.payments.transactions.push(reversal._id);
+
+
+
+      const linkedTransactions = await Transactions.find({
+        _id: { $in: patient.payments.transactions },
+        costType: "Revenue",
+      }).session(dbSession);
+      patient.payments.discount =
+        Math.round(linkedTransactions.reduce((sum, t) => sum + (t.discount || 0), 0) * 100) / 100;
 
       const total = patient.payments.totalAmount || patient.counselling?.finlpackage || 0;
       patient.payments.pendingAmount = Math.max(

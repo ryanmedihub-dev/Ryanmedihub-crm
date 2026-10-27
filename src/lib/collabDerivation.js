@@ -5,7 +5,7 @@ import Patient from "@/models/Patient";
 import Payable from "@/models/Payable";
 import Receivable from "@/models/Receivable";
 import { COLLAB_BRANCHES } from "@/lib/branches";
-import { deriveClinicSettlement, round2 } from "@/lib/collabFormula";
+import { deriveClinicSettlement, isCaseSettleable, round2 } from "@/lib/collabFormula";
 import { checkPeriodLock } from "@/lib/periodLock";
 import { reverseTransaction, ReversalError } from "@/lib/reverseTransaction";
 
@@ -46,60 +46,8 @@ async function createCollectionTransaction({
   remarks,
   createdBy,
 }) {
-  if (collectedBy === "US") {
-    await assertNotLocked(furtherMode, when, "this collection");
-
-    const [transaction] = await Transactions.create(
-      [
-        {
-          transactionCategory: categoryForProcedure(procedure),
-          costType: "Revenue",
-          patient: patientId,
-          procedure,
-          amount,
-          discount: discount || 0,
-          method: method || "cash",
-          paymentId: paymentId || "",
-          receiptMode: receiptMode || "",
-          furtherMode: furtherMode || "",
-          branch,
-          date: when,
-          remarks: remarks || "",
-          approvalStatus: "APPROVED",
-          collabRef: { caseId: collabCase._id },
-          createdBy,
-        },
-      ],
-      { session, ordered: true },
-    );
-
-    const patient = await Patient.findById(patientId).session(session);
-    if (patient) {
-      patient.payments = patient.payments || {};
-      patient.payments.amountReceived = round2((patient.payments.amountReceived || 0) + amount);
-      patient.payments.transactions = patient.payments.transactions || [];
-      patient.payments.transactions.push(transaction._id);
-
-      const linkedTransactions = await Transactions.find({
-        _id: { $in: patient.payments.transactions },
-        costType: "Revenue",
-      }).session(session);
-      patient.payments.discount = round2(
-        linkedTransactions.reduce((sum, t) => sum + (t.discount || 0), 0),
-      );
-
-      const total = patient.payments.totalAmount || patient.counselling?.finlpackage || 0;
-      patient.payments.pendingAmount = Math.max(
-        0,
-        round2(total - patient.payments.amountReceived - patient.payments.discount),
-      );
-      await patient.save({ session });
-    }
-
-    return transaction;
-  }
-
-  await assertNotLocked("", when, "this collection");
+  const isUs = collectedBy === "US";
+  await assertNotLocked(isUs ? furtherMode : "", when, "this collection");
 
   const [transaction] = await Transactions.create(
     [
@@ -110,26 +58,57 @@ async function createCollectionTransaction({
         procedure,
         amount,
         discount: discount || 0,
-        method: "paid_to_external",
+        method: isUs ? method || "cash" : "paid_to_external",
         paymentId: paymentId || "",
-        receiptMode: "",
-        furtherMode: "",
+        receiptMode: isUs ? receiptMode || "" : "",
+        furtherMode: isUs ? furtherMode || "" : "",
         branch,
         date: when,
         remarks: remarks || "",
         approvalStatus: "APPROVED",
-        externalParty: {
-          direction: "RECEIVED_BY",
-          name: branch,
-          partyKind: "MANUAL",
-          method: collectionMode || "",
-        },
+        ...(isUs
+          ? {}
+          : {
+              externalParty: {
+                direction: "RECEIVED_BY",
+                name: branch,
+                partyKind: "MANUAL",
+                method: collectionMode || "",
+              },
+            }),
         collabRef: { caseId: collabCase._id },
         createdBy,
       },
     ],
     { session, ordered: true },
   );
+
+  // Patient is the third party here: money that lands with the clinic still
+  // settles the patient's dues, so their outstanding clears either way. What we
+  // have to get back rides the clinic's receivable, not the patient — the same
+  // shape paid_to_external has everywhere else (entryCore/createRevenue.js).
+  const patient = await Patient.findById(patientId).session(session);
+  if (patient) {
+    patient.payments = patient.payments || {};
+    patient.payments.amountReceived = round2((patient.payments.amountReceived || 0) + amount);
+    patient.payments.transactions = patient.payments.transactions || [];
+    patient.payments.transactions.push(transaction._id);
+
+    const linkedTransactions = await Transactions.find({
+      _id: { $in: patient.payments.transactions },
+      costType: "Revenue",
+    }).session(session);
+    patient.payments.discount = round2(
+      linkedTransactions.reduce((sum, t) => sum + (t.discount || 0), 0),
+    );
+
+    const total = patient.payments.totalAmount || patient.counselling?.finlpackage || 0;
+    patient.payments.pendingAmount = Math.max(
+      0,
+      round2(total - patient.payments.amountReceived - patient.payments.discount),
+    );
+    await patient.save({ session });
+  }
 
   return transaction;
 }
@@ -232,7 +211,11 @@ export async function computeCaseBalance(caseId, session = null) {
 }
 
 export function isFullyCollected(collabCase, balance) {
-  return round2(collabCase.packageAmount - balance.totalCollected - balance.totalDiscount) <= 0.005;
+  return isCaseSettleable({
+    packageAmount: collabCase.packageAmount,
+    collected: balance.totalCollected,
+    discount: balance.totalDiscount,
+  });
 }
 
 export async function crystalliseClinicShare({
@@ -371,7 +354,9 @@ export async function unwindClinicShareCrystallisation({ session, collabCase, ac
   const crystallisationTx = await Transactions.find({
     "collabRef.caseId": collabCase._id,
     "collabRef.crystallisation": true,
-    reversalOf: { $exists: false },
+    // reversalOf/settlementId schema mein default null hain — $exists: false
+    // kuch match nahi karta aur unwind chupchaap khali chal jata hai.
+    reversalOf: null,
     isReversed: { $ne: true },
   }).session(session);
 
@@ -488,14 +473,25 @@ export async function createCollabCaseAtomic({
       created.collabCase = collabCase;
 
       const ourReceivedNum = Number(ourReceived) || 0;
-      if (ourReceivedNum > 0) {
+      const clinicReceivedNum = Number(clinicReceived) || 0;
+      const discountNum = Number(discount) || 0;
+
+
+
+
+
+
+      // The discount rides exactly one revenue transaction, so the case balance
+      // (package − collected − tx discounts) counts it once. With nothing collected
+      // that means a zero-amount transaction — otherwise the discount would vanish.
+      if (ourReceivedNum > 0 || (discountNum > 0 && clinicReceivedNum === 0)) {
         const tx = await createCollectionTransaction({
           session,
           collabCase,
           patientId,
           procedure,
           amount: ourReceivedNum,
-          discount: discount || 0,
+          discount: discountNum,
           collectedBy: "US",
           method,
           paymentId,
@@ -509,14 +505,13 @@ export async function createCollabCaseAtomic({
         created.ourTransaction = tx;
       }
 
-      const clinicReceivedNum = Number(clinicReceived) || 0;
       if (clinicReceivedNum > 0) {
         const tx = await createCollectionTransaction({
           session,
           collabCase,
           patientId,
           procedure,
-          discount: ourReceivedNum > 0 ? 0 : discount || 0,
+          discount: ourReceivedNum > 0 ? 0 : discountNum,
           amount: clinicReceivedNum,
           collectedBy: "CLINIC",
           collectionMode: method,

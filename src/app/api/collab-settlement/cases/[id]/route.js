@@ -15,10 +15,6 @@ import { cacheInvalidate } from "@/lib/cache";
 
 const ALLOWED_ROLES = ["admin", "super-admin"];
 
-function round2(n) {
-  return Math.round((Number(n) || 0) * 100) / 100;
-}
-
 export async function PATCH(req, { params }) {
   try {
     const session = await getServerSession(authOptions);
@@ -89,13 +85,13 @@ export async function PATCH(req, { params }) {
         await dbSession.withTransaction(async () => {
           const linkedTx = await Transactions.find({
             "collabRef.caseId": collabCase._id,
-            "collabRef.settlementId": { $exists: false },
-            reversalOf: { $exists: false },
+            "collabRef.settlementId": null,
+            reversalOf: null,
             isReversed: { $ne: true },
           }).session(dbSession);
 
           for (const tx of linkedTx) {
-            const result = await reverseTransaction({
+            await reverseTransaction({
               transactionId: tx._id,
               reason,
               remarks: `Collab case ${collabCase._id} cancelled`,
@@ -103,22 +99,6 @@ export async function PATCH(req, { params }) {
               dbSession,
             });
             reversedCount += 1;
-
-            if (tx.method === "paid_to_external" && tx.costType === "Revenue" && tx.patient) {
-              const patient = await Patient.findById(tx.patient).session(dbSession);
-              if (patient) {
-                patient.payments = patient.payments || {};
-                patient.payments.amountReceived = round2(
-                  (patient.payments.amountReceived || 0) + result.requested,
-                );
-                const total = patient.payments.totalAmount || patient.counselling?.finlpackage || 0;
-                patient.payments.pendingAmount = Math.max(
-                  0,
-                  round2(total - patient.payments.amountReceived - (patient.payments.discount || 0)),
-                );
-                await patient.save({ session: dbSession });
-              }
-            }
           }
 
           if (collabCase.clinicSharePayable) {
@@ -251,10 +231,10 @@ export async function DELETE(req, { params }) {
       .select("transactionCategory costType amount date method receivableId collabRef")
       .lean();
 
-    const ourReceivedTotal = linkedTx.reduce(
+    const patientCreditTotal = linkedTx.reduce(
       (sum, t) =>
         sum +
-        (t.costType === "Revenue" && t.method !== "paid_to_external" && !t.receivableId
+        (t.costType === "Revenue" && !t.receivableId
           ? t.amount || 0
           : 0),
       0,
@@ -317,13 +297,13 @@ export async function DELETE(req, { params }) {
         if (receivableIds.length) {
           await Receivable.deleteMany({ _id: { $in: receivableIds } }, { session: dbSession });
         }
-        if (ourReceivedTotal > 0 && collabCase.patient) {
+        if (patientCreditTotal > 0 && collabCase.patient) {
           const patient = await Patient.findById(collabCase.patient).session(dbSession);
           if (patient) {
             patient.payments = patient.payments || {};
             patient.payments.amountReceived = Math.max(
               0,
-              Math.round(((patient.payments.amountReceived || 0) - ourReceivedTotal) * 100) / 100,
+              Math.round(((patient.payments.amountReceived || 0) - patientCreditTotal) * 100) / 100,
             );
             patient.payments.transactions = (patient.payments.transactions || []).filter(
               (txId) => !linkedTx.some((t) => String(t._id) === String(txId)),

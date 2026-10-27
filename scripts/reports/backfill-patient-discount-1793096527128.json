@@ -1,0 +1,184 @@
+{
+  "written": 14,
+  "fixable": [
+    {
+      "patientId": "6a61ec39dd3703bda928c58e",
+      "name": "Narendra Kumar",
+      "total": 55000,
+      "received": 48639,
+      "storedDiscount": 0,
+      "newDiscount": 6361,
+      "storedPending": 6361,
+      "newPending": 0,
+      "hasReversal": false
+    },
+    {
+      "patientId": "6a62fc368c04286105d49bd9",
+      "name": "Saumya Ranjan",
+      "total": 50000,
+      "received": 43014,
+      "storedDiscount": 0,
+      "newDiscount": 6986,
+      "storedPending": 6986,
+      "newPending": 0,
+      "hasReversal": false
+    },
+    {
+      "patientId": "6a6870458c238e34125b8b50",
+      "name": "Sambhu",
+      "total": 60000,
+      "received": 53061,
+      "storedDiscount": 0,
+      "newDiscount": 6939,
+      "storedPending": 6939,
+      "newPending": 0,
+      "hasReversal": false
+    },
+    {
+      "patientId": "6a6af2053998f175e391caa0",
+      "name": "biswjit sinha",
+      "total": 38500,
+      "received": 34047,
+      "storedDiscount": 0,
+      "newDiscount": 4453,
+      "storedPending": 4453,
+      "newPending": 0,
+      "hasReversal": false
+    },
+    {
+      "patientId": "6a6b46c19ed5874aba46fd10",
+      "name": "Bhagwan",
+      "total": 50000,
+      "received": 42449,
+      "storedDiscount": 0,
+      "newDiscount": 7551,
+      "storedPending": 7551,
+      "newPending": 0,
+      "hasReversal": false
+    },
+    {
+      "patientId": "6a6c782c8098417fc606dfcc",
+      "name": "Moazzam",
+      "total": 50000,
+      "received": 46401,
+      "storedDiscount": 0,
+      "newDiscount": 3599,
+      "storedPending": 3599,
+      "newPending": 0,
+      "hasReversal": false
+    },
+    {
+      "patientId": "6a6c8103d3fca9681cd25a6d",
+      "name": "Santosh anand",
+      "total": 50000,
+      "received": 44218,
+      "storedDiscount": 0,
+      "newDiscount": 5782,
+      "storedPending": 5782,
+      "newPending": 0,
+      "hasReversal": false
+    },
+    {
+      "patientId": "6a6f40a4679577b21faf86d1",
+      "name": "Sukant Ghosh",
+      "total": 60000,
+      "received": 53061,
+      "storedDiscount": 0,
+      "newDiscount": 6939,
+      "storedPending": 6939,
+      "newPending": 0,
+      "hasReversal": false
+    },
+    {
+      "patientId": "6a88255767a32d0fe45cefb4",
+      "name": "Alok",
+      "total": 55000,
+      "received": 48057,
+      "storedDiscount": 0,
+      "newDiscount": 6943,
+      "storedPending": 6943,
+      "newPending": 0,
+      "hasReversal": false
+    },
+    {
+      "patientId": "6a88455d205c230f875ea106",
+      "name": "Prajapati manojkumar chimanlal",
+      "total": 45000,
+      "received": 42770,
+      "storedDiscount": 0,
+      "newDiscount": 2230,
+      "storedPending": 2230,
+      "newPending": 0,
+      "hasReversal": false
+    },
+    {
+      "patientId": "6a8938970a90e6523f08b38f",
+      "name": "Vinod",
+      "total": 40000,
+      "received": 35374,
+      "storedDiscount": 0,
+      "newDiscount": 4626,
+      "storedPending": 4626,
+      "newPending": 0,
+      "hasReversal": false
+    },
+    {
+      "patientId": "6a893e8003f74f75b4fa7063",
+      "name": "Ramzan",
+      "total": 45000,
+      "received": 38551,
+      "storedDiscount": 0,
+      "newDiscount": 6449,
+      "storedPending": 6449,
+      "newPending": 0,
+      "hasReversal": false
+    },
+    {
+      "patientId": "6a893fca0a90e6523f08b3a8",
+      "name": "Shakti",
+      "total": 60000,
+      "received": 51940,
+      "storedDiscount": 0,
+      "newDiscount": 8060,
+      "storedPending": 8060,
+      "newPending": 0,
+      "hasReversal": false
+    },
+    {
+      "patientId": "6a896378acbc6cff367d142d",
+      "name": "Dipakk",
+      "total": 60000,
+      "received": 53061,
+      "storedDiscount": 0,
+      "newDiscount": 6939,
+      "storedPending": 6939,
+      "newPending": 0,
+      "hasReversal": false
+    }
+  ],
+  "reversed": [
+    {
+      "patientId": "6a882783c2abcd5c6a8248df",
+      "name": "BIKRAM BISWAS",
+      "total": 50000,
+      "received": 0,
+      "storedDiscount": 0,
+      "newDiscount": 6456,
+      "storedPending": 50000,
+      "newPending": 43544,
+      "hasReversal": true
+    },
+    {
+      "patientId": "6a893c100a90e6523f08b396",
+      "name": "Mohammad Salim",
+      "total": 50000,
+      "received": 0,
+      "storedDiscount": 0,
+      "newDiscount": 6406,
+      "storedPending": 50000,
+      "newPending": 43594,
+      "hasReversal": true
+    }
+  ],
+  "manualDiscount": []
+}
