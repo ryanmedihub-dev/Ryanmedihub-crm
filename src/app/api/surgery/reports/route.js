@@ -1,15 +1,20 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Patient from "@/models/Patient";
+import { requireSession, resolveBranchScope } from "@/lib/apiGuard";
+
+const ALLOWED_ROLES = ["super-admin", "admin", "surgery", "owner"];
 
 export async function GET(req) {
+  const { session, error: authError } = await requireSession(ALLOWED_ROLES);
+  if (authError) return authError;
+
   try {
     await connectDB();
 
     const { searchParams } = new URL(req.url);
-    const branch = searchParams.get("branch") || "All";
+    const requestedBranch = searchParams.get("branch") || "All";
     const dateRange = searchParams.get("dateRange") || "This Month";
-    const reportType = searchParams.get("reportType") || "all";
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
 
@@ -17,7 +22,7 @@ export async function GET(req) {
     if (startDate && endDate) {
       dateFilter = {
         $gte: new Date(startDate),
-        $lte: new Date(endDate)
+        $lte: new Date(endDate),
       };
     } else if (dateRange === "Today") {
       const today = new Date();
@@ -36,20 +41,17 @@ export async function GET(req) {
       dateFilter = { $gte: firstDay };
     }
 
-    let branchFilter = {};
-    if (branch !== "All") {
-      branchFilter = { "personal.branch": branch };
-    }
+    const branchFilter = resolveBranchScope(session, requestedBranch, "personal.branch");
 
     const surgeries = await Patient.find({
       ...branchFilter,
-      "surgery.surgeryDate": dateFilter
+      "surgery.surgeryDate": dateFilter,
     })
       .select("personal surgery payments")
       .lean();
 
     const totalSurgeries = surgeries.length;
-    const completedSurgeries = surgeries.filter(s => s.surgery?.graftsImplanted > 0).length;
+    const completedSurgeries = surgeries.filter((s) => s.surgery?.graftsImplanted > 0).length;
     const pendingSurgeries = totalSurgeries - completedSurgeries;
 
     const totalGrafts = surgeries.reduce((sum, s) => sum + (s.surgery?.graftsImplanted || 0), 0);
@@ -59,7 +61,7 @@ export async function GET(req) {
     const averageRevenue = totalSurgeries > 0 ? Math.round(totalRevenue / totalSurgeries) : 0;
 
     const techniqueBreakdown = {};
-    surgeries.forEach(s => {
+    surgeries.forEach((s) => {
       const technique = s.surgery?.technique;
       if (technique) {
         if (!techniqueBreakdown[technique]) {
@@ -69,13 +71,13 @@ export async function GET(req) {
       }
     });
 
-    Object.keys(techniqueBreakdown).forEach(technique => {
+    Object.keys(techniqueBreakdown).forEach((technique) => {
       techniqueBreakdown[technique].percentage =
         ((techniqueBreakdown[technique].count / totalSurgeries) * 100).toFixed(1);
     });
 
     const locationBreakdown = {};
-    surgeries.forEach(s => {
+    surgeries.forEach((s) => {
       const location = s.surgery?.location || s.personal?.branch;
       if (location) {
         if (!locationBreakdown[location]) {
@@ -85,7 +87,7 @@ export async function GET(req) {
       }
     });
 
-    Object.keys(locationBreakdown).forEach(location => {
+    Object.keys(locationBreakdown).forEach((location) => {
       locationBreakdown[location].percentage =
         ((locationBreakdown[location].count / totalSurgeries) * 100).toFixed(1);
     });
@@ -102,13 +104,12 @@ export async function GET(req) {
         totalGrafts,
         averageGrafts,
         totalRevenue,
-        averageRevenue
+        averageRevenue,
       },
       techniqueBreakdown,
       locationBreakdown,
-      recentSurgeries
+      recentSurgeries,
     });
-
   } catch (error) {
     console.error("Error fetching reports:", error);
     return NextResponse.json(

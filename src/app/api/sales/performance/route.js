@@ -6,7 +6,14 @@ import Patient from "@/models/Patient";
 import Transactions from "@/models/Transactions.js";
 import { SETTLEMENT_EXCLUSION } from "@/constants/bankRouting";
 import { unsettledMethodsSync } from "@/lib/masterData";
+import { requireSession, resolveBranchScope } from "@/lib/apiGuard";
+
+const ALLOWED_ROLES = ["super-admin", "admin", "sales", "owner"];
+
 export async function GET(request) {
+  const { session, error: authError } = await requireSession(ALLOWED_ROLES);
+  if (authError) return authError;
+
   try {
     await dbConnect();
 
@@ -28,7 +35,9 @@ export async function GET(request) {
       }
     }
 
-    const branch = searchParams.get("branch");
+    const requestedBranch = searchParams.get("branch");
+    const branchScope = resolveBranchScope(session, requestedBranch, "branch");
+    const branch = typeof branchScope.branch === "string" ? branchScope.branch : (requestedBranch || undefined);
 
     const branchFilter = { costType: "Revenue", method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION, ...dateFilter };
     const branches = ["Delhi", "Mumbai", "Hyderabad", "Noida", "Gurgaon"];

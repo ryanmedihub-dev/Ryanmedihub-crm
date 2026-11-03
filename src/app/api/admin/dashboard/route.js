@@ -6,12 +6,22 @@ import { ALL_BRANCHES } from "@/lib/branches";
 import { SETTLEMENT_EXCLUSION } from "@/constants/bankRouting";
 import { unsettledMethodsSync } from "@/lib/masterData";
 import { cacheKey, cached } from "@/lib/cache";
+import { requireAdmin } from "@/lib/apiGuard";
+
 const VALID_BRANCHES = ["All", ...ALL_BRANCHES];
 
 const handler = async (req) => {
+  const { session, error: authError } = await requireAdmin();
+  if (authError) return authError;
+
   try {
     const data = await req.json();
-    const { branch = "All", from, to } = data;
+    let { branch = "All", from, to } = data;
+
+    // If an admin user is scoped to a specific branch, enforce it
+    if (session.user.role === "admin" && session.user.branch && session.user.branch !== "All") {
+      branch = session.user.branch;
+    }
 
     if (!VALID_BRANCHES.includes(branch)) {
       return NextResponse.json(

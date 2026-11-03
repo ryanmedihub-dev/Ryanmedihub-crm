@@ -7,14 +7,25 @@ import {
   formatISTDate,
   getDateRangeFromFilter
 } from "@/lib/dateHelpers.js";
+import { requireSession, resolveBranchScope } from "@/lib/apiGuard";
 
+const ALLOWED_ROLES = ["super-admin", "admin", "surgery", "owner"];
 const VALID_BRANCHES = ["All", "Delhi", "Mumbai", "Hyderabad", "Noida", "Gurgaon"];
 
 const handler = async (req) => {
+  const { session, error: authError } = await requireSession(ALLOWED_ROLES);
+  if (authError) return authError;
+
   try {
     const { searchParams } = new URL(req.url);
-    const branch = searchParams.get("branch") || "All";
+    const requestedBranch = searchParams.get("branch") || "All";
     const dateRange = searchParams.get("dateRange") || "Today";
+
+    const isPrivileged = ["super-admin", "admin", "owner"].includes(session.user.role);
+    let branch = requestedBranch;
+    if (!isPrivileged && session.user.branch && session.user.branch !== "All") {
+      branch = session.user.branch;
+    }
 
     if (!VALID_BRANCHES.includes(branch)) {
       return NextResponse.json(

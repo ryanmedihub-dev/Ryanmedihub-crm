@@ -2,19 +2,33 @@ import Employee from "@/models/Employee";
 import Patient from "@/models/Patient";
 import { withDB } from "@/lib/withDB";
 import { NextResponse } from "next/server";
+import { requireSession, resolveBranchScope } from "@/lib/apiGuard";
+
+const ALLOWED_ROLES = ["super-admin", "admin", "sales", "owner"];
 
 const handler = async (req) => {
+  const { session, error: authError } = await requireSession(ALLOWED_ROLES);
+  if (authError) return authError;
+
   try {
-    const data = await Employee.find({
+    const { searchParams } = new URL(req.url);
+    const requestedBranch = searchParams.get("branch");
+    const branchFilter = resolveBranchScope(session, requestedBranch, "branch");
+
+    const employeeQuery = {
       role: { $regex: "agent", $options: "i" },
-    })
+      ...branchFilter,
+    };
+
+    const data = await Employee.find(employeeQuery)
       .populate({
         path: "patient",
         select:
           "personal.name personal.visitDate surgery.technique surgery.graftsImplanted surgery.surgeryDate payments.amountReceived counselling.readyForSurgery counselling.counsellor counselling.converted ops.status createdAt",
         options: { sort: { createdAt: -1 } },
       })
-      .sort({ name: 1 });
+      .sort({ name: 1 })
+      .lean();
 
     const agentsData = data.map((employee) => {
       const patients = employee.patient || [];
@@ -51,6 +65,7 @@ const handler = async (req) => {
         name: employee.name,
         email: employee.email,
         phone: employee.phone,
+        branch: employee.branch,
         totalPatients: totalPatients,
         visitedPatients: visitedPatients,
         readyForSurgery: readyForSurgery,

@@ -4,21 +4,25 @@ import Patient from "@/models/Patient";
 import Employee from "@/models/Employee";
 import Transactions from "@/models/Transactions.js";
 import { cacheKey, cached } from "@/lib/cache";
+import { requireAdmin } from "@/lib/apiGuard";
 
 const handler = async (req) => {
-    try {
-        const { searchParams } = new URL(req.url);
-        const id = searchParams.get('id');
+  const { session, error: authError } = await requireAdmin();
+  if (authError) return authError;
 
-        if (!id) {
-            return NextResponse.json(
-                { 
-                    success: false, 
-                    error: "Patient ID is required" 
-                },
-                { status: 400 }
-            );
-        }
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: "Patient ID is required" 
+        },
+        { status: 400 }
+      );
+    }
 
         const meta = {};
         const key = cacheKey("patients", { route: "admin-patient-data", id });

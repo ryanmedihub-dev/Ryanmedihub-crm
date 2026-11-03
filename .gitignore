@@ -38,6 +38,9 @@ yarn-error.log*
 
 # generated patient reports (contain PII, never commit)
 /downloads/
+/data/
+scripts/reports/commit_direct_import_*
+scripts/reports/dryrun_direct_import_*
 
 # typescript
 *.tsbuildinfo

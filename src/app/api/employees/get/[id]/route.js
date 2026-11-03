@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
 import Employee from "@/models/Employee";
 import dbConnect from "@/lib/db";
+import { requireAuth } from "@/lib/apiGuard";
+
+const COMPENSATION_ROLES = ["super-admin", "admin", "owner"];
 
 export async function GET(request, { params }) {
+  const { session, error: authError } = await requireAuth();
+  if (authError) return authError;
+
   try {
     await dbConnect();
 
@@ -15,7 +21,7 @@ export async function GET(request, { params }) {
       );
     }
 
-    const employee = await Employee.findById(id);
+    const employee = await Employee.findById(id).lean();
 
     if (!employee) {
       return NextResponse.json(
@@ -24,10 +30,16 @@ export async function GET(request, { params }) {
       );
     }
 
+    // Mask compensation data for non-privileged roles
+    if (!COMPENSATION_ROLES.includes(session.user.role)) {
+      delete employee.salaryStructure;
+      delete employee.incentiveRate;
+    }
+
     return NextResponse.json(
       {
         success: true,
-        data: employee
+        data: employee,
       },
       { status: 200 }
     );

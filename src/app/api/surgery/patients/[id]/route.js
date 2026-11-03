@@ -1,12 +1,20 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Patient from "@/models/Patient";
+import { requireSession } from "@/lib/apiGuard";
+import { cacheInvalidate } from "@/lib/cache";
+
+const ALLOWED_ROLES = ["super-admin", "admin", "surgery", "owner"];
 
 export async function GET(req, { params }) {
+  const { session, error: authError } = await requireSession(ALLOWED_ROLES);
+  if (authError) return authError;
+
   try {
     await connectDB();
-    
-    const patient = await Patient.findById(params.id)
+    const { id } = await params;
+
+    const patient = await Patient.findById(id)
       .populate("personal.reference", "name")
       .populate("counselling.counsellor", "name")
       .populate("surgery.doctor", "name")
@@ -20,8 +28,18 @@ export async function GET(req, { params }) {
       );
     }
 
-    return NextResponse.json({ patient });
+    // Branch authorization check
+    const isPrivileged = ["super-admin", "admin", "owner"].includes(session.user.role);
+    if (!isPrivileged && session.user.branch && session.user.branch !== "All") {
+      if (patient.personal?.branch && patient.personal.branch !== session.user.branch) {
+        return NextResponse.json(
+          { error: "Forbidden: Access to patients outside your assigned branch is denied" },
+          { status: 403 }
+        );
+      }
+    }
 
+    return NextResponse.json({ patient });
   } catch (error) {
     console.error("Error fetching patient:", error);
     return NextResponse.json(
@@ -32,34 +50,51 @@ export async function GET(req, { params }) {
 }
 
 export async function PUT(req, { params }) {
+  const { session, error: authError } = await requireSession(ALLOWED_ROLES);
+  if (authError) return authError;
+
   try {
     await connectDB();
-    
-    const data = await req.json();
-    
-    const updateData = {};
-    if (data.surgery) updateData.surgery = data.surgery;
-    if (data.medical) updateData.medical = data.medical;
-    if (data.documents) updateData.documents = data.documents;
+    const { id } = await params;
 
-    const patient = await Patient.findByIdAndUpdate(
-      params.id,
-      { $set: updateData },
-      { new: true, runValidators: true }
-    );
-
-    if (!patient) {
+    const existingPatient = await Patient.findById(id);
+    if (!existingPatient) {
       return NextResponse.json(
         { error: "Patient not found" },
         { status: 404 }
       );
     }
 
-    return NextResponse.json({ 
-      success: true,
-      patient 
-    });
+    // Branch authorization check
+    const isPrivileged = ["super-admin", "admin", "owner"].includes(session.user.role);
+    if (!isPrivileged && session.user.branch && session.user.branch !== "All") {
+      if (existingPatient.personal?.branch && existingPatient.personal.branch !== session.user.branch) {
+        return NextResponse.json(
+          { error: "Forbidden: Modifying patients outside your assigned branch is denied" },
+          { status: 403 }
+        );
+      }
+    }
 
+    const data = await req.json();
+
+    const updateData = {};
+    if (data.surgery) updateData.surgery = data.surgery;
+    if (data.medical) updateData.medical = data.medical;
+    if (data.documents) updateData.documents = data.documents;
+
+    const patient = await Patient.findByIdAndUpdate(
+      id,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    );
+
+    await cacheInvalidate("finance", "owner", "patients");
+
+    return NextResponse.json({
+      success: true,
+      patient,
+    });
   } catch (error) {
     console.error("Error updating patient:", error);
     return NextResponse.json(

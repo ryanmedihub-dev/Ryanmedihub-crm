@@ -1,5 +1,7 @@
 import { v2 as cloudinary } from "cloudinary";
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -10,7 +12,42 @@ cloudinary.config({
 export const maxDuration = 300;
 export const dynamic = "force-dynamic";
 
+// ── Allowlists ─────────────────────────────────────────────────────────────
+const ALLOWED_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "application/pdf",
+]);
+
+const ALLOWED_EXTENSIONS = new Set([
+  ".jpg", ".jpeg", ".png", ".webp", ".gif", ".pdf",
+]);
+
+// Roles that are permitted to upload patient documents / receipts.
+const UPLOAD_ROLES = new Set([
+  "super-admin", "admin", "sales", "reception",
+  "surgery", "counsellor", "collab",
+]);
+// ──────────────────────────────────────────────────────────────────────────
+
+function ext(filename = "") {
+  return filename.slice(filename.lastIndexOf(".")).toLowerCase();
+}
+
 export async function POST(request) {
+  // ── Auth ──────────────────────────────────────────────────────────────────
+  const session = await getServerSession(authOptions);
+  if (!session?.user || !UPLOAD_ROLES.has(session.user.role)) {
+    return NextResponse.json(
+      { success: false, message: "Unauthorized" },
+      { status: 401 }
+    );
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
   try {
     const formData = await request.formData();
     const file = formData.get("file");
@@ -23,6 +60,20 @@ export async function POST(request) {
         { status: 400 }
       );
     }
+
+    // ── MIME + extension validation ─────────────────────────────────────────
+    const fileExt = ext(file.name);
+    if (!ALLOWED_MIME_TYPES.has(file.type) || !ALLOWED_EXTENSIONS.has(fileExt)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "File type not allowed. Only JPEG, PNG, WebP, GIF, and PDF files are accepted.",
+        },
+        { status: 415 }
+      );
+    }
+    // ───────────────────────────────────────────────────────────────────────
 
     const MAX_FILE_SIZE = 10 * 1024 * 1024;
     if (file.size > MAX_FILE_SIZE) {
@@ -42,7 +93,7 @@ export async function POST(request) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    const isPDF = file.name.toLowerCase().endsWith(".pdf");
+    const isPDF = fileExt === ".pdf";
     const resourceType = isPDF ? "raw" : "image";
 
     const uploadPromise = new Promise((resolve, reject) => {
@@ -120,6 +171,16 @@ export async function POST(request) {
 }
 
 export async function DELETE(request) {
+  // ── Auth ──────────────────────────────────────────────────────────────────
+  const session = await getServerSession(authOptions);
+  if (!session?.user || !UPLOAD_ROLES.has(session.user.role)) {
+    return NextResponse.json(
+      { success: false, message: "Unauthorized" },
+      { status: 401 }
+    );
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
   try {
     const { publicId, resourceType } = await request.json();
 
@@ -130,10 +191,13 @@ export async function DELETE(request) {
       );
     }
 
-    console.log("Attempting to delete from Cloudinary:", {
-      publicId,
-      resourceType,
-    });
+    // Restrict deletion to files inside the ryan-clinic folder only.
+    if (!String(publicId).startsWith("ryan-clinic/")) {
+      return NextResponse.json(
+        { success: false, message: "Forbidden: cannot delete files outside ryan-clinic folder." },
+        { status: 403 }
+      );
+    }
 
     const result = await cloudinary.uploader.destroy(publicId, {
       resource_type: resourceType || "image",
@@ -141,7 +205,9 @@ export async function DELETE(request) {
       invalidate: true,
     });
 
-    console.log("Cloudinary delete result:", result);
+    console.log(
+      `User ${session.user.email} deleted Cloudinary asset: ${publicId} — result: ${result.result}`
+    );
 
     const isSuccess = result.result === "ok";
     const isNotFound = result.result === "not found";

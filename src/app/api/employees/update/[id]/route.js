@@ -3,8 +3,15 @@ import Employee from "@/models/Employee";
 import dbConnect from "@/lib/db";
 import { normalizeEmployeeRoleForSave } from "@/constants/employeeRoles";
 import { cacheInvalidate } from "@/lib/cache";
+import { requireSession } from "@/lib/apiGuard";
+
+const ALLOWED_ROLES = ["super-admin", "admin", "hr", "owner"];
+const COMPENSATION_ROLES = ["super-admin", "admin", "owner"];
 
 export async function PUT(request, { params }) {
+  const { session, error: authError } = await requireSession(ALLOWED_ROLES);
+  if (authError) return authError;
+
   try {
     await dbConnect();
 
@@ -31,7 +38,6 @@ export async function PUT(request, { params }) {
         { status: 400 }
       );
     }
-    
 
     if (data.email && data.email.trim()) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -53,20 +59,30 @@ export async function PUT(request, { params }) {
       }
     }
 
+    const canModifyCompensation = COMPENSATION_ROLES.includes(session.user.role);
+
     const updateData = {
       name: data.name.trim(),
       phone: data.phone?.trim() || undefined,
-      email: data.email?.trim() || undefined,
+      email: data.email?.trim()?.toLowerCase() || undefined,
       employeeId: (data.employeeId ?? "").trim(),
       role: normalizeEmployeeRoleForSave(data.role),
       isactive: data.isactive !== undefined ? data.isactive : true,
-      salaryStructure: data.salaryStructure || undefined,
-      incentiveRate: data.incentiveRate !== undefined ? data.incentiveRate : undefined,
     };
 
-    
-    
-    
+    if (data.branch) {
+      updateData.branch = data.branch;
+    }
+
+    if (canModifyCompensation) {
+      if (data.salaryStructure !== undefined) {
+        updateData.salaryStructure = data.salaryStructure;
+      }
+      if (data.incentiveRate !== undefined) {
+        updateData.incentiveRate = data.incentiveRate;
+      }
+    }
+
     if (data.dateOfJoining !== undefined) {
       updateData.dateOfJoining = data.dateOfJoining || null;
     }
@@ -82,7 +98,7 @@ export async function PUT(request, { params }) {
       updateData,
       {
         new: true,
-        runValidators: true
+        runValidators: true,
       }
     );
 
@@ -98,7 +114,7 @@ export async function PUT(request, { params }) {
       {
         success: true,
         data: employee,
-        message: "Employee updated successfully"
+        message: "Employee updated successfully",
       },
       { status: 200 }
     );
@@ -121,7 +137,7 @@ export async function PUT(request, { params }) {
     }
 
     if (error.name === "ValidationError") {
-      const messages = Object.values(error.errors).map(err => err.message);
+      const messages = Object.values(error.errors).map((err) => err.message);
       return NextResponse.json(
         { success: false, message: messages.join(", ") },
         { status: 400 }

@@ -4,11 +4,17 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
 import Interviewer from "@/models/Interviewer";
 
-const ALLOWED_ROLES = ["hr", "super-admin", "admin"];
+const ALLOWED_ROLES = ["hr", "super-admin", "admin", "owner"];
 
 export async function PUT(req, { params }) {
   try {
     const session = await getServerSession(authOptions);
+    if (!session?.user || !ALLOWED_ROLES.includes(session.user.role)) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized. HR access required." },
+        { status: 403 }
+      );
+    }
 
     await connectDB();
 
@@ -39,6 +45,12 @@ export async function PUT(req, { params }) {
 export async function DELETE(req, { params }) {
   try {
     const session = await getServerSession(authOptions);
+    if (!session?.user || !ALLOWED_ROLES.includes(session.user.role)) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized. HR access required." },
+        { status: 403 }
+      );
+    }
 
     await connectDB();
 

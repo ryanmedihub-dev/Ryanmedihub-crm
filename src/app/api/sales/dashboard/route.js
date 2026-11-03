@@ -5,6 +5,9 @@ import Transactions from "@/models/Transactions";
 import Employee from "@/models/Employee";
 import { SETTLEMENT_EXCLUSION } from "@/constants/bankRouting";
 import { unsettledMethodsSync } from "@/lib/masterData";
+import { requireSession } from "@/lib/apiGuard";
+
+const ALLOWED_ROLES = ["super-admin", "admin", "sales", "owner"];
 const VALID_BRANCHES = ["All", "Delhi", "Mumbai", "Hyderabad", "Noida", "Gurgaon"];
 
 const getISTStartOfDay = (date = null) => {
@@ -30,9 +33,17 @@ const getISTEndOfDay = (date = null) => {
 };
 
 const handler = async (req) => {
+  const { session, error: authError } = await requireSession(ALLOWED_ROLES);
+  if (authError) return authError;
+
   try {
     const data = await req.json();
-    const { branch = "All", from, to } = data;
+    let { branch = "All", from, to } = data;
+
+    const isPrivileged = ["super-admin", "admin", "owner"].includes(session.user.role);
+    if (!isPrivileged && session.user.branch && session.user.branch !== "All") {
+      branch = session.user.branch;
+    }
 
     if (!VALID_BRANCHES.includes(branch)) {
       return NextResponse.json(

@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
-import { normalizePhone } from "@/lib/phone";
-import { ALL_BRANCHES } from "@/lib/branches";
+import { normalizePhone } from "../lib/phone.js";
+import { ALL_BRANCHES } from "../lib/branches.js";
 
 const patientSchema = new mongoose.Schema(
   {
@@ -283,6 +283,16 @@ patientSchema.pre("save", async function () {
   const amountReceived = patient.payments?.amountReceived || 0;
   const totalAmount    = patient.payments?.totalAmount    || 0;
   const pendingAmount  = patient.payments?.pendingAmount;
+
+  // ── Bulk-import override (in-memory only, never stored in MongoDB) ──────────
+  // The authorized bulk-import API sets patient.$locals.preserveImportedStatus
+  // before calling save(). When set, the hook skips auto-recalculation so the
+  // explicitly-assigned CLOSED status is preserved for historical patients.
+  // Normal patient creates/updates are completely unaffected.
+  if (patient.$locals?.preserveImportedStatus) {
+    return;
+  }
+  // ────────────────────────────────────────────────────────────────────────────
 
   if (patient.surgery?.surgeryDate) {
     patient.ops.status = "CLOSED";

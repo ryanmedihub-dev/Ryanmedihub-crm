@@ -4,8 +4,14 @@ import Interviewer from "@/models/Interviewer";
 import { withDB } from "@/lib/withDB";
 import { canonicalEmployeeRole, employeeRoleBucket } from "@/constants/employeeRoles";
 import { NextResponse } from "next/server";
+import { requireSession } from "@/lib/apiGuard";
+
+const ALLOWED_ROLES = ["super-admin", "admin", "hr", "owner"];
 
 const handler = async (req) => {
+  const { session, error: authError } = await requireSession(ALLOWED_ROLES);
+  if (authError) return authError;
+
   try {
     const { searchParams } = new URL(req.url);
     const dateFrom  = searchParams.get("dateFrom");

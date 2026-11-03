@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Interviewer from "@/models/Interviewer";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+
+const ALLOWED_HR_ROLES = ["hr", "super-admin", "admin", "owner"];
 
 function withCORS(response) {
   response.headers.set("Access-Control-Allow-Origin", "*");
@@ -14,6 +18,14 @@ export async function OPTIONS() {
 }
 
 export async function GET(req) {
+  // Candidate data (PII, phone, resume, evaluation) requires HR or admin authentication
+  const session = await getServerSession(authOptions);
+  if (!session?.user || !ALLOWED_HR_ROLES.includes(session.user.role)) {
+    return withCORS(
+      NextResponse.json({ success: false, message: "Unauthorized. HR access required." }, { status: 403 })
+    );
+  }
+
   try {
     await connectDB();
 
@@ -71,6 +83,14 @@ export async function POST(req) {
     const body = await req.json();
 
     if (Array.isArray(body)) {
+      // Bulk import must be strictly authorized
+      const session = await getServerSession(authOptions);
+      if (!session?.user || !ALLOWED_HR_ROLES.includes(session.user.role)) {
+        return withCORS(
+          NextResponse.json({ success: false, message: "Unauthorized. HR access required for bulk upload." }, { status: 403 })
+        );
+      }
+
       if (body.length === 0) {
         return withCORS(
           NextResponse.json({ success: false, message: "Array is empty" }, { status: 400 })
@@ -132,6 +152,7 @@ export async function POST(req) {
       );
     }
 
+    // Single candidate submission
     if (!body.name || !body.position) {
       return withCORS(
         NextResponse.json(
@@ -141,9 +162,19 @@ export async function POST(req) {
       );
     }
 
-    const VALID_STATUSES = ["Applied", "Interview Scheduled", "Selected", "Rejected", "On Hold"];
-    if (body.status && !VALID_STATUSES.includes(body.status)) {
+    const session = await getServerSession(authOptions);
+    const isAuthenticatedHR = session?.user && ALLOWED_HR_ROLES.includes(session.user.role);
+
+    // Unauthenticated applicants cannot set internal HR statuses
+    if (!isAuthenticatedHR) {
       body.status = "Applied";
+      delete body.assignedHr;
+      delete body.interviewerFeedback;
+    } else {
+      const VALID_STATUSES = ["Applied", "Interview Scheduled", "Selected", "Rejected", "On Hold"];
+      if (body.status && !VALID_STATUSES.includes(body.status)) {
+        body.status = "Applied";
+      }
     }
 
     const candidate = await Interviewer.create(body);

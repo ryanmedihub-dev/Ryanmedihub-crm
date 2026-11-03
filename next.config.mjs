@@ -34,9 +34,103 @@ const OWNER_V2_REDIRECTS = {
   "/saniya": "/owner/ai/sanya",
 };
 
+// ---------------------------------------------------------------------------
+// Security Header Definitions
+// ---------------------------------------------------------------------------
+// Applied to every route via the `headers()` function below.
+// These are defence-in-depth headers; they do NOT replace API-level auth guards.
+//
+// CSP strategy:
+//  - script-src: 'self' + 'unsafe-inline' retained for Next.js inline hydration
+//    chunks; tighten to nonce-based CSP in a future hardening sprint.
+//  - img-src: 'self' blob: data: + res.cloudinary.com for patient photo uploads.
+//  - font-src: 'self' + Google Fonts CDN.
+//  - connect-src: 'self' + Atlas Data API / Upstash Redis REST endpoints.
+// ---------------------------------------------------------------------------
+const SECURITY_HEADERS = [
+  // Enforce HTTPS for 1 year; includeSubDomains covers *.ryanmedihub.com.
+  // preload is intentionally omitted until the domain is on the HSTS preload list.
+  {
+    key: "Strict-Transport-Security",
+    value: "max-age=31536000; includeSubDomains",
+  },
+  // Prevent the application from being embedded in iframes on foreign origins
+  // (clickjacking protection).
+  {
+    key: "X-Frame-Options",
+    value: "SAMEORIGIN",
+  },
+  // Prevent browsers from MIME-sniffing a response away from the declared
+  // Content-Type (e.g., serving a JS file as text/plain).
+  {
+    key: "X-Content-Type-Options",
+    value: "nosniff",
+  },
+  // Send full URL as Referer only to same-origin; send origin only to HTTPS
+  // cross-origin; send nothing over HTTP.
+  {
+    key: "Referrer-Policy",
+    value: "strict-origin-when-cross-origin",
+  },
+  // Restrict access to sensitive browser APIs. camera/microphone are unused;
+  // geolocation is unused; payment is unused.
+  {
+    key: "Permissions-Policy",
+    value: "camera=(), microphone=(), geolocation=(), payment=()",
+  },
+  // Content-Security-Policy — pragmatic baseline for a Next.js SSR app.
+  // TODO: Migrate to nonce-based strict CSP in a future hardening sprint
+  // to eliminate 'unsafe-inline' from script-src.
+  {
+    key: "Content-Security-Policy",
+    value: [
+      "default-src 'self'",
+      // Next.js injects inline scripts for hydration; unsafe-inline is required
+      // until nonce support is configured.  unsafe-eval is needed by some
+      // recharts/jspdf internals.
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      // Inline styles are common in React component libraries.
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      // Patient photos are served from Cloudinary; blob: for jsPDF canvas export.
+      "img-src 'self' blob: data: https://res.cloudinary.com",
+      // Google Fonts font files.
+      "font-src 'self' https://fonts.gstatic.com",
+      // API calls are same-origin; Upstash Redis REST is called server-side only
+      // (not from the browser), so connect-src stays narrow.
+      "connect-src 'self'",
+      // PDF/xlsx generation uses object URLs only; no plugin embeds.
+      "object-src 'none'",
+      // Disallow <base> tag hijacking.
+      "base-uri 'self'",
+      // All form submissions must stay same-origin.
+      "form-action 'self'",
+      // Prevent this page from being embedded in foreign frames (CSP complement
+      // to X-Frame-Options for modern browsers).
+      "frame-ancestors 'self'",
+      // Allow embedding patient document PDFs (e.g. lab reports, prescriptions)
+      // inside iframe preview modals from Cloudinary CDN and blob URLs.
+      "frame-src 'self' blob: https://res.cloudinary.com",
+    ].join("; "),
+  },
+];
+
 const nextConfig = {
+  images: {
+    unoptimized: true,
+  },
   experimental: {
     optimizePackageImports: ["lucide-react", "recharts"],
+  },
+
+  // Apply security headers to every route served by Next.js.
+  async headers() {
+    return [
+      {
+        // Match all routes including API routes, page routes, and static assets.
+        source: "/:path*",
+        headers: SECURITY_HEADERS,
+      },
+    ];
   },
 
   async redirects() {

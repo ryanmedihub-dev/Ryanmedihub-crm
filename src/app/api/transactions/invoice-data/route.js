@@ -2,8 +2,12 @@ import { NextResponse } from "next/server";
 import { withDB } from "@/lib/withDB";
 import Transactions from "@/models/Transactions";
 import Patient from "@/models/Patient";
+import { requireAuth } from "@/lib/apiGuard";
 
 const handler = async (req) => {
+  const { session, error: authError } = await requireAuth();
+  if (authError) return authError;
+
   try {
     const { searchParams } = new URL(req.url);
     const newId = searchParams.get("id");
@@ -28,6 +32,17 @@ const handler = async (req) => {
       });
 
     if (patient) {
+      // Branch check
+      const isPrivileged = ["super-admin", "admin", "owner"].includes(session.user.role);
+      if (!isPrivileged && session.user.branch && session.user.branch !== "All") {
+        if (patient.personal?.branch && patient.personal.branch !== session.user.branch) {
+          return NextResponse.json(
+            { error: "Forbidden: Access to invoice outside your assigned branch is denied" },
+            { status: 403 }
+          );
+        }
+      }
+
       const transplantPayments = patient.payments?.transactions?.filter(
         (t) => t && (t.transactionCategory === "TRANSPLANT" || !t.transactionCategory)
       ) || [];
@@ -84,6 +99,17 @@ const handler = async (req) => {
         { error: "Record not found" },
         { status: 404 },
       );
+    }
+
+    // Branch check for transaction
+    const isPrivileged = ["super-admin", "admin", "owner"].includes(session.user.role);
+    if (!isPrivileged && session.user.branch && session.user.branch !== "All") {
+      if (transaction.branch && transaction.branch !== session.user.branch) {
+        return NextResponse.json(
+          { error: "Forbidden: Access to invoice outside your assigned branch is denied" },
+          { status: 403 }
+        );
+      }
     }
 
     const category = transaction.transactionCategory || "GENERAL";

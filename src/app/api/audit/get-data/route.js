@@ -2,15 +2,23 @@ import { NextResponse } from "next/server";
 import { withDB } from "@/lib/withDB";
 import Audit from "@/models/Audit";
 import { resolveDateRange, toDateQuery } from "@/lib/dateHelpers";
+import { requireAdmin, resolveBranchScope } from "@/lib/apiGuard";
 
 const MAX_ROWS = 2000;
 
 const handler = async (req) => {
+  const { session, error: authError } = await requireAdmin();
+  if (authError) return authError;
+
   const { searchParams } = new URL(req.url);
 
   const dateRange = resolveDateRange(searchParams);
   const dateQuery = toDateQuery(dateRange);
   const query = dateQuery ? { date: dateQuery } : {};
+
+  const requestedBranch = searchParams.get("branch");
+  const branchFilter = resolveBranchScope(session, requestedBranch, "branch");
+  Object.assign(query, branchFilter);
 
   const data = await Audit.find(query)
     .select(

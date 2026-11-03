@@ -7,24 +7,30 @@ import {
   OTHER_EMPLOYEE_ROLE,
 } from "@/constants/employeeRoles";
 import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/apiGuard";
 
 const handler = async (req) => {
-  try {
-    const data = await Employee.find({ mergedInto: null }).sort({ name: 1 }).collation(NAME_COLLATION);
+  const { session, error: authError } = await requireAuth();
+  if (authError) return authError;
 
-    
-    
+  try {
+    const data = await Employee.find({ mergedInto: null })
+      .select("_id name role branch")
+      .sort({ name: 1 })
+      .collation(NAME_COLLATION)
+      .lean();
+
     const employeesByRole = {};
     for (const r of [...EMPLOYEE_ROLE_OPTIONS, OTHER_EMPLOYEE_ROLE]) employeesByRole[r] = [];
 
     for (const employee of data) {
-      
-      
       const role = canonicalEmployeeRole(employee.role);
-      employeesByRole[role].push({
-        name: employee.name,
-        _id: employee._id,
-      });
+      if (employeesByRole[role]) {
+        employeesByRole[role].push({
+          name: employee.name,
+          _id: employee._id,
+        });
+      }
     }
 
     return NextResponse.json({

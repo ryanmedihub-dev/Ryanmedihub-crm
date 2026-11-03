@@ -8,11 +8,24 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { cacheInvalidate } from "@/lib/cache";
 
+import { COLLAB_BRANCHES } from "@/lib/branches";
+
+const ALLOWED_ROLES = [
+  "super-admin", "admin", "sales", "reception",
+  "collab", "surgery", "counsellor", "owner"
+];
+
 const handler = async (req) => {
   const session = await getServerSession(authOptions);
+  if (!session?.user || !ALLOWED_ROLES.includes(session.user.role)) {
+    return NextResponse.json(
+      { success: false, error: "Unauthorized. Insufficient permissions to create patients." },
+      { status: 401 }
+    );
+  }
 
-
-  const userBranch = session?.user?.branch || null;
+  const userBranch = session.user.branch || null;
+  const isPrivileged = ["super-admin", "admin", "owner"].includes(session.user.role);
 
   const {
     personal,
@@ -33,6 +46,19 @@ const handler = async (req) => {
       },
       { status: 400 },
     );
+  }
+
+  if (!isPrivileged && userBranch && userBranch !== "All") {
+    if (userBranch === "Collab") {
+      if (personal.branch && !COLLAB_BRANCHES.includes(personal.branch)) {
+        return NextResponse.json(
+          { success: false, error: `Collab users can only create patients in collab branches.` },
+          { status: 403 }
+        );
+      }
+    } else {
+      personal.branch = userBranch;
+    }
   }
 
   const phone = personal.phone.trim();

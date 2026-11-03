@@ -8,12 +8,19 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/route";
 import { cacheInvalidate } from "@/lib/cache";
 
+import { COLLAB_BRANCHES } from "@/lib/branches";
+
+const ALLOWED_ROLES = [
+  "super-admin", "admin", "sales", "reception",
+  "collab", "surgery", "counsellor", "owner"
+];
+
 const handler = async (req) => {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.name || !session?.user?.email || !session?.user?.branch) {
+    if (!session?.user?.name || !session?.user?.email || !ALLOWED_ROLES.includes(session?.user?.role)) {
       return NextResponse.json(
-        { success: false, message: "Unauthorized. Please login." },
+        { success: false, message: "Unauthorized. Please login with appropriate permissions." },
         { status: 401 }
       );
     }
@@ -36,7 +43,30 @@ const handler = async (req) => {
       );
     }
 
+    const isPrivileged = ["super-admin", "admin", "owner"].includes(session.user.role);
+    const userBranch = session.user.branch;
+    if (!isPrivileged && userBranch && userBranch !== "All") {
+      if (userBranch === "Collab") {
+        if (patient.personal?.branch && !COLLAB_BRANCHES.includes(patient.personal.branch)) {
+          return NextResponse.json(
+            { success: false, message: "Forbidden: Modifying patients outside collab branches is denied." },
+            { status: 403 }
+          );
+        }
+      } else if (patient.personal?.branch && patient.personal.branch !== userBranch) {
+        return NextResponse.json(
+          { success: false, message: "Forbidden: Modifying patients outside your assigned branch is denied." },
+          { status: 403 }
+        );
+      }
+    }
+
     const data = await req.json();
+
+    // Preserve historical CLOSED status against accidental downgrades by non-super-admins
+    if (patient.ops?.status === "CLOSED" && data.ops?.status && data.ops.status !== "CLOSED" && session.user.role !== "super-admin") {
+      delete data.ops.status;
+    }
 
     if (data.personal?.phone && data.personal.phone !== patient.personal?.phone) {
       const phoneNormalized = normalizePhone(data.personal.phone);

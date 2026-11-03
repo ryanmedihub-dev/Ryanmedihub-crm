@@ -295,7 +295,7 @@ export default function AdminSidebar() {
             />
           </NavSection>
 
-          {(session?.user?.role === "admin" || session?.user?.role === "super-admin") && (
+          {(session?.user?.role === "admin" || session?.user?.role === "super-admin" || session?.user?.role === "owner") && (
             <NavSection title="Bulk Tools">
               <NavItem
                 label="Uploads"
@@ -304,6 +304,15 @@ export default function AdminSidebar() {
                 active={isActive("/admin/uploads")}
                 onClick={close}
               />
+              {(session?.user?.role === "super-admin" || session?.user?.role === "owner") && (
+                <NavItem
+                  label="Patient Bulk Import"
+                  href="/admin/patient-bulk-import"
+                  icon={HeartPulse}
+                  active={isActive("/admin/patient-bulk-import")}
+                  onClick={close}
+                />
+              )}
             </NavSection>
           )}
 
