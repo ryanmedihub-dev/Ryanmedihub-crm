@@ -139,7 +139,7 @@ const handler = async (req) => {
                 patient: savedPatient._id,
               },
             },
-            { new: true },
+            { returnDocument: 'after' },
           ).catch((error) => {
             console.error(
               `Error updating employee ${fieldName} with ID ${employeeId}:`,

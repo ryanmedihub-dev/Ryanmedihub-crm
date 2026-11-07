@@ -52,7 +52,7 @@ async function handleApprovalButton(fromPhone, buttonId) {
         approvalActionBy: { phone: matchedAdmin, date: new Date() },
       },
     },
-    { new: true },
+    { returnDocument: 'after' },
   );
 
   if (!transaction) {

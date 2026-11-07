@@ -125,7 +125,7 @@ export async function POST(req) {
             },
           },
         },
-        { new: true }
+        { returnDocument: 'after' }
       );
 
       updatedStocks.push(updatedStock);

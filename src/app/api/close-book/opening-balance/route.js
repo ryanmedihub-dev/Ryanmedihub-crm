@@ -159,7 +159,7 @@ export async function POST(req) {
               : "Manually entered opening balance"),
         },
       },
-      { new: true, upsert: true, setDefaultsOnInsert: true },
+      { returnDocument: 'after', upsert: true, setDefaultsOnInsert: true },
     );
 
     return NextResponse.json({ success: true, openingBalance: seed }, { status: 201 });

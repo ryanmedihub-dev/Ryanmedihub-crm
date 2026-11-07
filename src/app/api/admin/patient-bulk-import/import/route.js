@@ -333,7 +333,7 @@ export async function POST(req) {
           ...(isLastBatch ? { completedAt: new Date() } : {}),
         },
       },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     );
 
     if (isLastBatch && mode === "commit") {

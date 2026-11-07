@@ -86,7 +86,7 @@ export async function PUT(req, { params }) {
     const patient = await Patient.findByIdAndUpdate(
       id,
       { $set: updateData },
-      { new: true, runValidators: true }
+      { returnDocument: 'after', runValidators: true }
     );
 
     await cacheInvalidate("finance", "owner", "patients");

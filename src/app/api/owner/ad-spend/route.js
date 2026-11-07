@@ -137,7 +137,7 @@ const putHandler = async (req) => {
       amount: Number(amount),
       clicks: clicks === "" || clicks == null ? null : Number(clicks),
     },
-    { new: true, runValidators: true }
+    { returnDocument: 'after', runValidators: true }
   );
 
   if (!entry) {

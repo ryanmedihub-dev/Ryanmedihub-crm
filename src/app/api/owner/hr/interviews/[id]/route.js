@@ -20,7 +20,7 @@ export async function PATCH(req, { params }) {
     const body = await req.json();
 
     if (body.hiredEmployeeId === null) {
-      const interview = await Interviewer.findByIdAndUpdate(id, { hiredEmployeeId: null }, { new: true });
+      const interview = await Interviewer.findByIdAndUpdate(id, { hiredEmployeeId: null }, { returnDocument: 'after' });
       if (!interview) return NextResponse.json({ success: false, message: "Interview not found" }, { status: 404 });
       return NextResponse.json({ success: true, interview });
     }
@@ -54,7 +54,7 @@ export async function PATCH(req, { params }) {
       );
     }
 
-    const updated = await Interviewer.findByIdAndUpdate(id, { hiredEmployeeId: employee._id }, { new: true });
+    const updated = await Interviewer.findByIdAndUpdate(id, { hiredEmployeeId: employee._id }, { returnDocument: 'after' });
     return NextResponse.json({ success: true, interview: updated, employee: { name: employee.name } });
   } catch (err) {
     console.error("owner hr interview patch error:", err);

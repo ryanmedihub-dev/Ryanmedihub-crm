@@ -97,7 +97,7 @@ export async function PUT(request, { params }) {
       id,
       updateData,
       {
-        new: true,
+        returnDocument: 'after',
         runValidators: true,
       }
     );

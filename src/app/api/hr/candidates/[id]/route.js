@@ -27,7 +27,7 @@ export async function PUT(req, { params }) {
     }
 
     const candidate = await Interviewer.findByIdAndUpdate(id, body, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     });
 

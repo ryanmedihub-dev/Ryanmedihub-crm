@@ -32,7 +32,7 @@ export async function POST(req, { params }) {
   const updated = await AiInsight.findOneAndUpdate(
     { key },
     { $inc: inc, $set: { "feedback.lastBy": session.user.email } },
-    { new: true },
+    { returnDocument: 'after' },
   ).lean();
 
   if (!updated) return NextResponse.json({ success: false, message: "No matching insight to vote on" }, { status: 404 });

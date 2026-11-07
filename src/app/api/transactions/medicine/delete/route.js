@@ -109,7 +109,7 @@ export async function DELETE(req) {
       await Stock.findByIdAndUpdate(
         medicineId,
         { $inc: { totalQuantity: quantityToRestore } },
-        { new: true }
+        { returnDocument: 'after' }
       );
 
       restoredItems.push({

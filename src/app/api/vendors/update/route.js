@@ -108,7 +108,7 @@ export async function PUT(req) {
         ...updateData,
         $push: { editors: editorInfo },
       },
-      { new: true, runValidators: true }
+      { returnDocument: 'after', runValidators: true }
     );
 
     await cacheInvalidate("finance", "owner");

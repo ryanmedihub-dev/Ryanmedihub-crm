@@ -146,7 +146,7 @@ const postHandler = async (req) => {
   const employee = await Employee.findByIdAndUpdate(
     employeeId,
     { callbyUserId: cid },
-    { new: true, runValidators: true },
+    { returnDocument: 'after', runValidators: true },
   ).select("name callbyUserId");
 
   if (!employee) {
@@ -169,7 +169,7 @@ const deleteHandler = async (req) => {
   const employee = await Employee.findByIdAndUpdate(
     employeeId,
     { callbyUserId: null },
-    { new: true },
+    { returnDocument: 'after' },
   ).select("name callbyUserId");
 
   if (!employee) {

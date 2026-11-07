@@ -181,7 +181,7 @@ export const POST = withCallbyRoute(async (req, session) => {
         },
         $setOnInsert: { employeeId, date: dayStart },
       },
-      { upsert: true, new: true },
+      { upsert: true, returnDocument: 'after' },
     ).lean();
     results.push({ employeeId, ok: true, status: doc.status });
   }

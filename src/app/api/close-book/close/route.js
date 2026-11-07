@@ -155,7 +155,7 @@ export async function POST(req) {
                 },
               },
             },
-            { new: true, upsert: true, setDefaultsOnInsert: true, session: dbSession },
+            { returnDocument: 'after', upsert: true, setDefaultsOnInsert: true, session: dbSession },
           ).then((d) => [d]);
           closed.push(doc);
         }

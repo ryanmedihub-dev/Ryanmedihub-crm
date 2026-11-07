@@ -98,7 +98,7 @@ export async function PATCH(req, { params }) {
       }
     }
 
-    const campaign = await AdCampaign.findByIdAndUpdate(id, update, { new: true, runValidators: true });
+    const campaign = await AdCampaign.findByIdAndUpdate(id, update, { returnDocument: 'after', runValidators: true });
     if (!campaign) return NextResponse.json({ success: false, message: "Campaign not found" }, { status: 404 });
     return NextResponse.json({ success: true, campaign });
   } catch (err) {
@@ -117,7 +117,7 @@ export async function DELETE(req, { params }) {
     const campaign = await AdCampaign.findByIdAndUpdate(
       id,
       { status: "Ended", updatedBy: { name: session.user.name, email: session.user.email } },
-      { new: true },
+      { returnDocument: 'after' },
     );
     if (!campaign) return NextResponse.json({ success: false, message: "Campaign not found" }, { status: 404 });
     return NextResponse.json({ success: true, campaign, message: "Campaign ended" });

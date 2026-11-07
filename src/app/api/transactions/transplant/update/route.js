@@ -181,7 +181,7 @@ export async function PUT(req) {
             $set: { ...updateData, ...(patch || {}) },
             $push: { editors: editorEntry },
           },
-          { new: true, runValidators: true, session: dbSession },
+          { returnDocument: 'after', runValidators: true, session: dbSession },
         );
 
         if (linkedWarning && data.updateLinked) {

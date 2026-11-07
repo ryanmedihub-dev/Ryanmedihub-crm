@@ -144,7 +144,7 @@ export async function POST(req) {
           },
         },
       },
-      { new: true }
+      { returnDocument: 'after' }
     );
     if (!updatedSource) return fail("Insufficient quantity available, please reload and retry");
 
@@ -173,7 +173,7 @@ export async function POST(req) {
         ? await Stock.findByIdAndUpdate(
             existing._id,
             { $inc: { totalQuantity: qty }, $push: { editors: inEntry } },
-            { new: true }
+            { returnDocument: 'after' }
           )
         : await Stock.create({
             name: source.name,
