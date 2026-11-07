@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { withDB } from "@/lib/withDB";
 import Patient from "@/models/Patient";
+// side-effect import: registers the Employee schema for the populate() calls below
+import "@/models/Employee";
 import {
   getISTStartOfDay,
   getISTEndOfDay,

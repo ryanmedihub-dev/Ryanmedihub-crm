@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Patient from "@/models/Patient";
+// side-effect import: registers the Employee schema for the populate() calls below
+import "@/models/Employee";
 import { requireSession } from "@/lib/apiGuard";
 import { cacheInvalidate } from "@/lib/cache";
 

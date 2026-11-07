@@ -3,6 +3,8 @@ import { withDB } from "@/lib/withDB";
 import { normalizePhone } from "@/lib/phone";
 import Patient from "@/models/Patient";
 import Employee from "@/models/Employee";
+// side-effect import: registers the Transactions schema for populate("payments.transactions")
+import "@/models/Transactions";
 import mongoose from "mongoose";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/route";

@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { withDB } from "@/lib/withDB";
 import Patient from "@/models/Patient";
+// side-effect import: registers the Employee schema for the populate() calls below
+import "@/models/Employee";
 import { COLLAB_BRANCHES } from "@/lib/branches";
 import { resolveDateRange, toDateQuery } from "@/lib/dateHelpers";
 import { cacheKey, cached } from "@/lib/cache";
