@@ -1,6 +1,8 @@
 // ---------------------------------------------------------------------------
 // scripts/backfill-collab-case-discount.mjs
 //
+
+
 // Collab cases banaye gaye the discount ko DO BAAR minus karke:
 //     packageAmount = patient ka package − discount      (case pe)
 //     + wahi discount creation revenue transaction pe bhi
