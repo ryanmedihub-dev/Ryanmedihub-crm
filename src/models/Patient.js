@@ -243,6 +243,8 @@ patientSchema.pre("save", async function () {
   const isVisitDatePast =
     patient.personal?.visitDate && patient.personal.visitDate < currentDate;
 
+    
+
   if (!patient.ops) {
     patient.ops = {};
   }
