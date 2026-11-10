@@ -5,6 +5,7 @@ import { useToast } from "@/components/Toast";
 import InputField from "@/components/InputField";
 import SurgerySidebar from "@/components/Sidebars/SurgerySidebar";
 import { prepareFileForUpload, formatBytes } from "@/utils/compressImage";
+import { isPdfUrl as isPDF, fileNameFromUrl as getFileName, normalizeFileUrl } from "@/utils/fileUrl";
 import {
   Eye, Download, Plus,
   Upload,
@@ -113,8 +114,6 @@ const MultiSelectEmployee = ({ label, options, selectedIds, onChange }) => {
 
 const DocumentUpload = ({ title, icon: Icon, files, onUpload, onRemove, accept, uploadId, isUploading }) => {
   const [viewingFile, setViewingFile] = useState(null);
-  const isPDF = (f) => f.toLowerCase().endsWith(".pdf");
-  const getFileName = (url) => { try { return decodeURIComponent(url.split("/").pop().split("?")[0]); } catch { return url; } };
 
   return (
     <>
@@ -139,8 +138,8 @@ const DocumentUpload = ({ title, icon: Icon, files, onUpload, onRemove, accept, 
                       <span className="text-sm font-medium text-gray-700 block truncate">{getFileName(filePath)}</span>
                     </div>
                     <div className="flex items-center space-x-2 ml-2 shrink-0">
-                      <button type="button" onClick={() => setViewingFile(filePath)} className="p-2 text-blue-600 hover:bg-blue-100 rounded transition-colors"><Eye size={16} /></button>
-                      <button type="button" onClick={() => { const a = Object.assign(document.createElement("a"), { href: filePath, download: getFileName(filePath), target: "_blank" }); a.click(); }} className="p-2 text-green-600 hover:bg-green-100 rounded transition-colors"><Download size={16} /></button>
+                      <button type="button" onClick={() => setViewingFile(normalizeFileUrl(filePath))} className="p-2 text-blue-600 hover:bg-blue-100 rounded transition-colors"><Eye size={16} /></button>
+                      <button type="button" onClick={() => { const a = Object.assign(document.createElement("a"), { href: normalizeFileUrl(filePath), download: getFileName(filePath), target: "_blank" }); a.click(); }} className="p-2 text-green-600 hover:bg-green-100 rounded transition-colors"><Download size={16} /></button>
                       <button type="button" onClick={() => onRemove(index)} className="p-2 text-red-600 hover:bg-red-100 rounded transition-colors"><X size={16} /></button>
                     </div>
                   </div>
@@ -233,8 +232,9 @@ export default function SurgeryAddPatient() {
         if (wasCompressed) compressionNotes.push(`${file.name}: ${formatBytes(originalSize)} → ${formatBytes(compressedSize)}`);
         const fd = new FormData(); fd.append("file", preparedFile); fd.append("section", section); fd.append("patientId", "temp");
         const res = await fetch("/api/upload", { method: "POST", body: fd });
-        if (!res.ok) throw new Error(`Failed to upload ${file.name}`);
-        return (await res.json()).filePath;
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.message || `Failed to upload ${file.name}`);
+        return data.filePath;
       }));
       setFormData((prev) => ({ ...prev, documents: { ...prev.documents, [section]: [...prev.documents[section], ...paths] } }));
       toast.success([`Uploaded ${paths.length} file(s)`, ...compressionNotes].join(" · "));
@@ -432,9 +432,9 @@ export default function SurgeryAddPatient() {
                 <StepHeader icon={FileUp} title="Document Upload" description="Upload patient images and forms" color="indigo" />
                 <div className="space-y-8">
                   <DocumentUpload title="Patient Images" icon={Image} files={formData.documents.images} onUpload={(f) => handleFileUpload("images",f)} onRemove={(i) => removeFile("images",i)} accept="image/*" uploadId="images-upload" isUploading={uploadingFiles.images} />
-                  <DocumentUpload title="Consent Forms" icon={FileText} files={formData.documents.consentForm} onUpload={(f) => handleFileUpload("consentForm",f)} onRemove={(i) => removeFile("consentForm",i)} accept=".pdf,.doc,.docx" uploadId="consent-upload" isUploading={uploadingFiles.consentForm} />
-                  <DocumentUpload title="Surgery Forms" icon={FileText} files={formData.documents.suregeryForm} onUpload={(f) => handleFileUpload("suregeryForm",f)} onRemove={(i) => removeFile("suregeryForm",i)} accept=".pdf,.doc,.docx" uploadId="surgery-upload" isUploading={uploadingFiles.suregeryForm} />
-                  <DocumentUpload title="Consultation Forms" icon={Calendar} files={formData.documents.consultForm} onUpload={(f) => handleFileUpload("consultForm",f)} onRemove={(i) => removeFile("consultForm",i)} accept=".pdf,.doc,.docx" uploadId="consult-upload" isUploading={uploadingFiles.consultForm} />
+                  <DocumentUpload title="Consent Forms" icon={FileText} files={formData.documents.consentForm} onUpload={(f) => handleFileUpload("consentForm",f)} onRemove={(i) => removeFile("consentForm",i)} accept=".pdf" uploadId="consent-upload" isUploading={uploadingFiles.consentForm} />
+                  <DocumentUpload title="Surgery Forms" icon={FileText} files={formData.documents.suregeryForm} onUpload={(f) => handleFileUpload("suregeryForm",f)} onRemove={(i) => removeFile("suregeryForm",i)} accept=".pdf" uploadId="surgery-upload" isUploading={uploadingFiles.suregeryForm} />
+                  <DocumentUpload title="Consultation Forms" icon={Calendar} files={formData.documents.consultForm} onUpload={(f) => handleFileUpload("consultForm",f)} onRemove={(i) => removeFile("consultForm",i)} accept=".pdf" uploadId="consult-upload" isUploading={uploadingFiles.consultForm} />
                 </div>
               </div>
             )}

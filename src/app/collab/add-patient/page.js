@@ -6,6 +6,11 @@ import InputField from "@/components/InputField";
 import CollabSidebar from "@/components/Sidebars/CollabSidebar";
 import { prepareFileForUpload, formatBytes } from "@/utils/compressImage";
 import {
+  isPdfUrl as isPDF,
+  fileNameFromUrl as getFileName,
+  normalizeFileUrl,
+} from "@/utils/fileUrl";
+import {
   Eye, Download, Plus,
   Upload,
   X,
@@ -207,29 +212,14 @@ const DocumentUpload = ({
 }) => {
   const [viewingFile, setViewingFile] = useState(null);
 
-  const isPDF = (filename) => {
-    return filename.toLowerCase().endsWith(".pdf");
-  };
-
-  const getFileName = (url) => {
-    try {
-      const parts = url.split("/");
-      const fileNameWithParams = parts[parts.length - 1];
-      const fileName = fileNameWithParams.split("?")[0];
-      return decodeURIComponent(fileName);
-    } catch (error) {
-      return url;
-    }
-  };
-
   const handleViewFile = (fileUrl) => {
-    setViewingFile(fileUrl);
+    setViewingFile(normalizeFileUrl(fileUrl));
   };
 
   const handleDownloadFile = (fileUrl) => {
     const fileName = getFileName(fileUrl);
     const link = document.createElement("a");
-    link.href = fileUrl;
+    link.href = normalizeFileUrl(fileUrl);
     link.download = fileName;
     link.target = "_blank";
     document.body.appendChild(link);
@@ -653,11 +643,10 @@ export default function PatientRegistration() {
           body: formDataUpload,
         });
 
-        if (!response.ok) {
-          throw new Error(`Failed to upload ${file.name}`);
-        }
-
         const data = await response.json();
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || `Failed to upload ${file.name}`);
+        }
         return data.filePath;
       });
 
@@ -1686,7 +1675,7 @@ export default function PatientRegistration() {
                     files={formData.documents.consentForm}
                     onUpload={(files) => handleFileUpload("consentForm", files)}
                     onRemove={(index) => removeFile("consentForm", index)}
-                    accept=".pdf,.doc,.docx"
+                    accept=".pdf"
                     uploadId="consent-upload"
                     isUploading={uploadingFiles.consentForm}
                   />
@@ -1700,7 +1689,7 @@ export default function PatientRegistration() {
                       handleFileUpload("suregeryForm", files)
                     }
                     onRemove={(index) => removeFile("suregeryForm", index)}
-                    accept=".pdf,.doc,.docx"
+                    accept=".pdf"
                     uploadId="surgery-upload"
                     isUploading={uploadingFiles.suregeryForm}
                   />
@@ -1712,7 +1701,7 @@ export default function PatientRegistration() {
                     files={formData.documents.consultForm}
                     onUpload={(files) => handleFileUpload("consultForm", files)}
                     onRemove={(index) => removeFile("consultForm", index)}
-                    accept=".pdf,.doc,.docx"
+                    accept=".pdf"
                     uploadId="consult-upload"
                     isUploading={uploadingFiles.consultForm}
                   />

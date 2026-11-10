@@ -8,6 +8,11 @@ import { useParams } from "next/navigation";
 import InputField from "@/components/InputField";
 import { prepareFileForUpload, formatBytes } from "@/utils/compressImage";
 import {
+  isPdfUrl as isPDF,
+  fileNameFromUrl as getFileName,
+  normalizeFileUrl,
+} from "@/utils/fileUrl";
+import {
   Upload,
   X,
   FileText,
@@ -91,29 +96,14 @@ const DocumentUpload = ({
 }) => {
   const [viewingFile, setViewingFile] = useState(null);
 
-  const isPDF = (filename) => {
-    return filename.toLowerCase().endsWith(".pdf");
-  };
-
-  const getFileName = (url) => {
-    try {
-      const parts = url.split("/");
-      const fileNameWithParams = parts[parts.length - 1];
-      const fileName = fileNameWithParams.split("?")[0];
-      return decodeURIComponent(fileName);
-    } catch (error) {
-      return url;
-    }
-  };
-
   const handleViewFile = (fileUrl) => {
-    setViewingFile(fileUrl);
+    setViewingFile(normalizeFileUrl(fileUrl));
   };
 
   const handleDownloadFile = (fileUrl) => {
     const fileName = getFileName(fileUrl);
     const link = document.createElement("a");
-    link.href = fileUrl;
+    link.href = normalizeFileUrl(fileUrl);
     link.download = fileName;
     link.target = "_blank";
     document.body.appendChild(link);
@@ -546,44 +536,14 @@ export default function PatientEditDetails() {
     }
 
     try {
-      const extractPublicId = (url) => {
-        if (!url.includes("cloudinary.com")) return null;
-
-        const parts = url.split("/upload/");
-        if (parts.length !== 2) return null;
-
-        const pathPart = parts[1];
-        const segments = pathPart.split("/");
-
-        let publicIdParts = [];
-        let foundPath = false;
-
-        for (const segment of segments) {
-          if (!foundPath && /^[a-z]+_/.test(segment)) {
-            continue;
-          }
-          foundPath = true;
-          publicIdParts.push(segment);
-        }
-
-        const publicId = publicIdParts.join("/");
-        return publicId.replace(/\.[^/.]+$/, "");
-      };
-
-      const publicId = extractPublicId(filePath);
-      const resourceType = filePath.toLowerCase().endsWith(".pdf")
-        ? "raw"
-        : "image";
-
       const response = await fetch("/api/upload", {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          publicId: publicId,
-          resourceType: resourceType,
-        }),
+        // The route derives publicId + resourceType from the URL: a raw PDF
+        // keeps its extension in the public_id, and legacy PDF URLs have none.
+        body: JSON.stringify({ filePath }),
       });
 
       const result = await response.json();

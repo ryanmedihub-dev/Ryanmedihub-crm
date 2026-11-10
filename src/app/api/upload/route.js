@@ -2,6 +2,7 @@ import { v2 as cloudinary } from "cloudinary";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { parseCloudinaryUrl } from "@/utils/fileUrl";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -96,6 +97,17 @@ export async function POST(request) {
     const isPDF = fileExt === ".pdf";
     const resourceType = isPDF ? "raw" : "image";
 
+    // A raw asset carries its extension inside the public_id. upload_stream has
+    // no filename to derive one from, so with no explicit public_id Cloudinary
+    // hands back an extensionless URL - every client check for ".pdf" then
+    // mis-reads the PDF as an image and downloads land without an extension.
+    const rawPublicId = isPDF
+      ? `${file.name
+          .slice(0, file.name.lastIndexOf("."))
+          .replace(/[^a-zA-Z0-9_-]+/g, "_")
+          .slice(0, 80) || "document"}_${Date.now()}.pdf`
+      : null;
+
     const uploadPromise = new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
@@ -104,13 +116,18 @@ export async function POST(request) {
             : `ryan-clinic/receipts/${section}`,
           resource_type: resourceType,
           timeout: 120000,
+          // Incoming transformation: the stored asset is capped and quality-
+          // optimized server-side too, so an uncompressed client upload (or a
+          // caller that skips prepareFileForUpload) still lands small.
+          // `fetch_format` is deliberately absent: f_auto only works at
+          // delivery, and a format-switched URL would make the saved file's
+          // extension lie about its bytes.
           ...(resourceType === "image" && {
             quality: "auto:good",
-            fetch_format: "auto",
+            width: 2000,
+            crop: "limit",
           }),
-          ...(isPDF && {
-            flags: "attachment:false",
-          }),
+          ...(isPDF && { public_id: rawPublicId }),
         },
         (error, result) => {
           if (error) {
@@ -134,14 +151,11 @@ export async function POST(request) {
 
     const result = await Promise.race([uploadPromise, timeoutPromise]);
 
-    let filePath = result.secure_url;
-    if (isPDF) {
-      filePath = filePath.replace("/upload/", "/upload/fl_attachment:false/");
-    }
-
+    // No fl_attachment rewrite for PDFs: raw assets accept no transformations,
+    // so that URL segment broke delivery. A raw .pdf already serves inline.
     return NextResponse.json({
       success: true,
-      filePath: filePath,
+      filePath: result.secure_url,
       publicId: result.public_id,
     });
   } catch (error) {
@@ -182,7 +196,11 @@ export async function DELETE(request) {
   // ─────────────────────────────────────────────────────────────────────────
 
   try {
-    const { publicId, resourceType } = await request.json();
+    const body = await request.json();
+    // Callers send either an explicit publicId or just the stored file URL.
+    const parsed = body.publicId ? null : parseCloudinaryUrl(body.filePath);
+    const publicId = body.publicId || parsed?.publicId;
+    const resourceType = body.resourceType || parsed?.resourceType;
 
     if (!publicId) {
       return NextResponse.json(

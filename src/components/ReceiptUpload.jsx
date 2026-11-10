@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { FileText, Image as ImageIcon, Loader2, Trash2, Upload } from "lucide-react";
 import { useToast } from "@/components/Toast";
 import { prepareFileForUpload, formatBytes } from "@/utils/compressImage";
+import { normalizeFileUrl } from "@/utils/fileUrl";
 
 export default function ReceiptUpload({ receipts = [], onChange, section, patientId }) {
   const { data: authSession } = useSession();
@@ -98,7 +99,7 @@ export default function ReceiptUpload({ receipts = [], onChange, section, patien
               <ImageIcon className="w-4 h-4 text-blue-500 shrink-0" />
             )}
             <a
-              href={receipt.url}
+              href={normalizeFileUrl(receipt.url)}
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-indigo-600 hover:underline max-w-[160px] truncate"
