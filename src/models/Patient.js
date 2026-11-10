@@ -311,6 +311,9 @@ patientSchema.pre("save", async function () {
 
 patientSchema.index({ "personal.branch": 1, "ops.status": 1 });
 
+// Status-scoped scans sorted newest-first (entries report / audit sweeps).
+patientSchema.index({ "ops.status": 1, createdAt: -1 });
+
 patientSchema.index({ "personal.branch": 1, "ops.status": 1, createdAt: -1 });
 patientSchema.index({ "personal.branch": 1, "personal.visitDate": -1 });
 patientSchema.index({ "surgery.surgeryDate": -1 });

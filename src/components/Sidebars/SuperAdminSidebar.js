@@ -214,6 +214,13 @@ export default function SuperAdminSidebar() {
               active={isActive("/super-admin/performance")}
               onClick={close}
             />
+            <NavItem
+              label="Entries Report"
+              href="/super-admin/entries-report"
+              icon={ClipboardList}
+              active={isActive("/super-admin/entries-report")}
+              onClick={close}
+            />
           </NavSection>
 
           <NavSection title="System">
