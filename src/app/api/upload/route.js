@@ -97,15 +97,17 @@ export async function POST(request) {
     const isPDF = fileExt === ".pdf";
     const resourceType = isPDF ? "raw" : "image";
 
-    // A raw asset carries its extension inside the public_id. upload_stream has
-    // no filename to derive one from, so with no explicit public_id Cloudinary
-    // hands back an extensionless URL - every client check for ".pdf" then
-    // mis-reads the PDF as an image and downloads land without an extension.
+    // Readable public_id so the asset is identifiable in the Cloudinary console
+    // (upload_stream has no filename to derive one from). Deliberately WITHOUT
+    // a .pdf extension: this account restricts PDF delivery, so Cloudinary
+    // answers 401 for any asset it recognises as a PDF - signed URLs included.
+    // PDFs are therefore read back through /api/files/pdf, which does not care
+    // about the extension. Do not "fix" this by appending .pdf.
     const rawPublicId = isPDF
       ? `${file.name
           .slice(0, file.name.lastIndexOf("."))
           .replace(/[^a-zA-Z0-9_-]+/g, "_")
-          .slice(0, 80) || "document"}_${Date.now()}.pdf`
+          .slice(0, 80) || "document"}_${Date.now()}`
       : null;
 
     const uploadPromise = new Promise((resolve, reject) => {

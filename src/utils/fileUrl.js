@@ -14,14 +14,25 @@ export function isPdfUrl(url = "") {
   return u.endsWith(".pdf") || u.includes("/raw/upload/");
 }
 
-/** Strip transformation segments that break `raw` delivery. */
+/** Our own endpoint for a stored PDF. See src/app/api/files/pdf/route.js. */
+export function pdfProxyUrl(url, { download = false } = {}) {
+  const params = new URLSearchParams({ url: String(url) });
+  if (download) params.set("download", "1");
+  return `/api/files/pdf?${params}`;
+}
+
+/**
+ * The URL to actually put in a `src` or `href`.
+ *
+ * Images are served straight from Cloudinary. PDFs are not: Cloudinary serves
+ * every `raw` asset as an octet-stream attachment (so a preview iframe reports
+ * a failed download) and returns 401 for anything it recognises as a PDF,
+ * because this account restricts PDF delivery. They go through our API instead,
+ * which also puts patient documents behind a login.
+ */
 export function normalizeFileUrl(url = "") {
   const u = String(url);
-  if (!u.includes("/raw/upload/")) return u;
-  return u.replace(
-    /\/raw\/upload\/(?:[a-z]{1,3}_[^/]*\/)+/,
-    "/raw/upload/"
-  );
+  return u.includes("/raw/upload/") ? pdfProxyUrl(u) : u;
 }
 
 /**

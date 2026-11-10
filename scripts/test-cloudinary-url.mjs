@@ -76,12 +76,16 @@ assert.equal(isPdfUrl(CURRENT), true);
 assert.equal(isPdfUrl(IMG), false);
 assert.equal(isPdfUrl(""), false);
 
-// the invalid transformation segment is dropped, nothing else is
+// PDFs go through our own endpoint (Cloudinary 401s on .pdf and forces
+// attachment on raw); images are served straight from Cloudinary.
 assert.equal(
   normalizeFileUrl(LEGACY),
-  `${B}/raw/upload/v1731/ryan-clinic/p1/aadhar/kw9xq2abc`
+  `/api/files/pdf?url=${encodeURIComponent(LEGACY)}`
 );
-assert.equal(normalizeFileUrl(CURRENT), CURRENT);
+assert.equal(
+  normalizeFileUrl(CURRENT),
+  `/api/files/pdf?url=${encodeURIComponent(CURRENT)}`
+);
 assert.equal(normalizeFileUrl(IMG), IMG);
 
 // filenames keep .pdf so saved files open

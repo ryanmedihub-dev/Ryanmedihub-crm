@@ -16,6 +16,7 @@ import {
   Ban,
 } from "lucide-react";
 import AddIncentiveModal from "@/components/finance/AddIncentiveModal";
+import { normalizeFileUrl } from "@/utils/fileUrl";
 
 const PatientProfile = () => {
   const params = useParams();
@@ -1522,7 +1523,7 @@ const PatientProfile = () => {
                               Image {idx + 1}
                             </span>
                             <a
-                              href={img}
+                              href={normalizeFileUrl(img)}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
@@ -1566,7 +1567,7 @@ const PatientProfile = () => {
                               Consent {idx + 1}
                             </span>
                             <a
-                              href={doc}
+                              href={normalizeFileUrl(doc)}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
@@ -1610,7 +1611,7 @@ const PatientProfile = () => {
                               Surgery Form {idx + 1}
                             </span>
                             <a
-                              href={doc}
+                              href={normalizeFileUrl(doc)}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
@@ -1654,7 +1655,7 @@ const PatientProfile = () => {
                               Consult {idx + 1}
                             </span>
                             <a
-                              href={doc}
+                              href={normalizeFileUrl(doc)}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
