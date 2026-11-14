@@ -179,59 +179,71 @@ const PAGE_SIZE = 25;
 export default function AppliedPage() {
   const [candidates, setCandidates] = useState([]);
   const [loading, setLoading]       = useState(true);
+  const [fetchError, setFetchError] = useState(null);
   const [search, setSearch]         = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage]             = useState(1);
+  const [total, setTotal]           = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [viewing, setViewing]       = useState(null);
   const [editing, setEditing]       = useState(null);
   const [hrEmployees, setHrEmployees] = useState([]);
 
   const fetchCandidates = useCallback(async () => {
     setLoading(true);
+    setFetchError(null);
     try {
-      const res  = await fetch("/api/hr/candidates?source=direct");
+      const params = new URLSearchParams({
+        source: "direct",
+        page: String(page),
+        limit: String(PAGE_SIZE),
+        ...(statusFilter && { status: statusFilter }),
+        ...(search && { search }),
+      });
+      const res  = await fetch(`/api/hr/candidates?${params}`);
       const json = await res.json();
-      if (json.success) setCandidates(json.candidates || []);
+      if (!res.ok || !json.success) {
+        setFetchError(json.message || "Failed to load candidates");
+        setCandidates([]);
+        return;
+      }
+      setCandidates(json.candidates || []);
+      setTotal(json.total ?? 0);
+      setTotalPages(json.totalPages ?? 1);
+    } catch {
+      setFetchError("Network error — please try again");
+      setCandidates([]);
     } finally { setLoading(false); }
-  }, []);
+  }, [page, statusFilter, search]);
 
   useEffect(() => {
     fetchCandidates();
     fetch("/api/hr/employees").then((r) => r.json()).then((d) => { if (d.success) setHrEmployees(d.employees); }).catch(() => {});
-  }, [fetchCandidates]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const filtered = candidates.filter((c) => {
-    if (statusFilter && c.status !== statusFilter) return false;
-    if (!search) return true;
-    const q = search.toLowerCase();
-    return (
-      c.name?.toLowerCase().includes(q) ||
-      c.position?.toLowerCase().includes(q) ||
-      c.phone?.toLowerCase().includes(q) ||
-      c.email?.toLowerCase().includes(q)
-    );
-  });
+  useEffect(() => { fetchCandidates(); }, [fetchCandidates]);
 
   useEffect(() => { setPage(1); }, [search, statusFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  // candidates is already the current page from server
+  const paged = candidates;
 
   const statusCounts = {
-    "": candidates.length,
-    Applied: candidates.filter(c => c.status === "Applied").length,
-    "Interview Scheduled": candidates.filter(c => c.status === "Interview Scheduled").length,
-    Selected: candidates.filter(c => c.status === "Selected").length,
-    Rejected: candidates.filter(c => c.status === "Rejected").length,
-    "On Hold": candidates.filter(c => c.status === "On Hold").length,
+    "": total,
+    Applied: statusFilter === "Applied" ? total : "—",
+    "Interview Scheduled": statusFilter === "Interview Scheduled" ? total : "—",
+    Selected: statusFilter === "Selected" ? total : "—",
+    Rejected: statusFilter === "Rejected" ? total : "—",
+    "On Hold": statusFilter === "On Hold" ? total : "—",
   };
 
   const kpi = {
-    total:     candidates.length,
-    selected:  candidates.filter(c => c.status === "Selected").length,
-    rejected:  candidates.filter(c => c.status === "Rejected").length,
-    scheduled: candidates.filter(c => c.status === "Interview Scheduled").length,
-    freshers:  candidates.filter(c => c.experienceType === "Fresher").length,
+    total,
+    selected:  statusFilter === "Selected"             ? total : "…",
+    rejected:  statusFilter === "Rejected"             ? total : "…",
+    scheduled: statusFilter === "Interview Scheduled"  ? total : "…",
+    freshers:  "…",
   };
 
   const STATUS_TABS = [
@@ -259,7 +271,7 @@ export default function AppliedPage() {
               </div>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold text-indigo-600">{candidates.length}</p>
+              <p className="text-2xl font-bold text-indigo-600">{total}</p>
               <p className="text-xs text-gray-400">total applied</p>
             </div>
           </div>
@@ -308,12 +320,18 @@ export default function AppliedPage() {
                   <X className="w-4 h-4 text-gray-400" />
                 </button>
               )}
-              <span className="text-xs text-gray-500 font-medium ml-auto">{filtered.length} candidates</span>
+              <span className="text-xs text-gray-500 font-medium ml-auto">{total} candidates</span>
             </div>
 
             {loading ? (
               <div className="flex items-center justify-center h-48">
                 <div className="w-7 h-7 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : fetchError ? (
+              <div className="text-center py-16 text-gray-400">
+                <Globe className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                <p className="text-sm text-red-500 font-medium">{fetchError}</p>
+                <button onClick={fetchCandidates} className="mt-3 text-xs text-indigo-600 hover:underline font-semibold">Retry</button>
               </div>
             ) : paged.length === 0 ? (
               <div className="text-center py-16 text-gray-400">
@@ -388,10 +406,10 @@ export default function AppliedPage() {
               </div>
             )}
 
-            {!loading && filtered.length > PAGE_SIZE && (
+            {!loading && !fetchError && total > PAGE_SIZE && (
               <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100 bg-gray-50/60">
                 <p className="text-xs text-gray-500">
-                  Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}
+                  Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} of {total}
                 </p>
                 <div className="flex items-center gap-1">
                   <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}

@@ -632,92 +632,94 @@ function CandidatesContent() {
   const [page, setPage]       = useState(1);
   const [perPage, setPerPage] = useState(25);
 
+  const [total, setTotal]           = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [fetchError, setFetchError] = useState(null);
+
   const fetchCandidates = useCallback(async () => {
     setLoading(true);
+    setFetchError(null);
     try {
-      const res  = await fetch("/api/hr/candidates");
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: String(perPage),
+        ...(activeStatus && { status: activeStatus }),
+        ...(search && { search }),
+        ...(filters.experienceType && { experienceType: filters.experienceType }),
+        ...(filters.source && { source: filters.source }),
+        ...(filters.position && { position: filters.position }),
+        ...(filters.assignedHr && { assignedHr: filters.assignedHr }),
+        ...(filters.appliedFrom && { appliedFrom: filters.appliedFrom }),
+        ...(filters.appliedTo && { appliedTo: filters.appliedTo }),
+        ...(filters.interviewFrom && { interviewFrom: filters.interviewFrom }),
+        ...(filters.interviewTo && { interviewTo: filters.interviewTo }),
+        ...(filters.salaryMin && { salaryMin: filters.salaryMin }),
+        ...(filters.salaryMax && { salaryMax: filters.salaryMax }),
+        ...(filters.sortBy && { sortBy: filters.sortBy }),
+      });
+      const res  = await fetch(`/api/hr/candidates?${params}`);
       const data = await res.json();
-      if (data.success) setCandidates(data.candidates);
-    } catch (err) { console.error(err); }
-    finally { setLoading(false); }
-  }, []);
+      if (!res.ok || !data.success) {
+        setFetchError(data.message || "Failed to load candidates");
+        setCandidates([]);
+        return;
+      }
+      setCandidates(data.candidates || []);
+      setTotal(data.total ?? 0);
+      setTotalPages(data.totalPages ?? 1);
+    } catch {
+      setFetchError("Network error — please try again");
+      setCandidates([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [page, perPage, activeStatus, search, filters]);
 
   useEffect(() => {
     fetchCandidates();
+  }, [fetchCandidates]);
+
+  useEffect(() => {
     fetch("/api/hr/employees")
       .then((r) => r.json())
       .then((d) => { if (d.success) setHrEmployees(d.employees); })
       .catch(() => {});
-  }, [fetchCandidates]);
+  }, []);
 
   useEffect(() => { setPage(1); }, [search, activeStatus, filters]);
 
-  const positions = useMemo(() => [...new Set(candidates.map((c) => c.position).filter(Boolean))].sort(byName), [candidates]);
-  const sources   = useMemo(() => [...new Set(candidates.map((c) => c.source).filter(Boolean))].sort(byName), [candidates]);
-
-  const statusCounts = useMemo(() => {
-    const counts = { "": candidates.length };
-    STATUSES.forEach((s) => { counts[s] = candidates.filter((c) => c.status === s).length; });
-    return counts;
-  }, [candidates]);
-
-  const filtered = useMemo(() => {
-    let list = [...candidates];
-
-    if (activeStatus) list = list.filter((c) => c.status === activeStatus);
-    if (search) {
-      const q = search.toLowerCase();
-      list = list.filter((c) =>
-        c.name?.toLowerCase().includes(q) ||
-        c.email?.toLowerCase().includes(q) ||
-        c.phone?.includes(q) ||
-        c.position?.toLowerCase().includes(q) ||
-        c.previousCompany?.toLowerCase().includes(q)
-      );
-    }
-    if (filters.experienceType) list = list.filter((c) => c.experienceType === filters.experienceType);
-    if (filters.source)         list = list.filter((c) => c.source === filters.source);
-    if (filters.position)       list = list.filter((c) => c.position === filters.position);
-    if (filters.assignedHr === "unassigned") {
-      list = list.filter((c) => !c.assignedHr);
-    } else if (filters.assignedHr) {
-      list = list.filter((c) => {
-        const id = c.assignedHr?._id || c.assignedHr;
-        return String(id) === filters.assignedHr;
+  const [knownPositions, setKnownPositions] = useState([]);
+  useEffect(() => {
+    if (candidates.length > 0) {
+      setKnownPositions((prev) => {
+        const set = new Set([...prev, ...candidates.map((c) => c.position).filter(Boolean)]);
+        return [...set].sort(byName);
       });
     }
-    if (filters.appliedFrom)    list = list.filter((c) => c.createdAt && new Date(c.createdAt) >= new Date(filters.appliedFrom));
-    if (filters.appliedTo)      list = list.filter((c) => c.createdAt && new Date(c.createdAt) <= new Date(filters.appliedTo));
-    if (filters.interviewFrom)  list = list.filter((c) => c.interviewDate && new Date(c.interviewDate) >= new Date(filters.interviewFrom));
-    if (filters.interviewTo)    list = list.filter((c) => c.interviewDate && new Date(c.interviewDate) <= new Date(filters.interviewTo));
-    if (filters.salaryMin)      list = list.filter((c) => Number(c.expectedSalary) >= Number(filters.salaryMin));
-    if (filters.salaryMax)      list = list.filter((c) => Number(c.expectedSalary) <= Number(filters.salaryMax));
-    if (filters.minRating)      list = list.filter((c) => { const a = avgRating(c); return a !== null && parseFloat(a) >= Number(filters.minRating); });
+  }, [candidates]);
+  const positions = knownPositions;
+  const sources   = useMemo(() => ["direct", "qr"], []);
 
-    switch (filters.sortBy) {
-      case "oldest":        list.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)); break;
-      case "name":          list.sort((a, b) => (a.name || "").localeCompare(b.name || "")); break;
-      case "salary_asc":    list.sort((a, b) => Number(a.expectedSalary || 0) - Number(b.expectedSalary || 0)); break;
-      case "salary_desc":   list.sort((a, b) => Number(b.expectedSalary || 0) - Number(a.expectedSalary || 0)); break;
-      case "rating":        list.sort((a, b) => parseFloat(avgRating(b) || 0) - parseFloat(avgRating(a) || 0)); break;
-      case "interview_asc": list.sort((a, b) => new Date(a.interviewDate || 0) - new Date(b.interviewDate || 0)); break;
-      default:              list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    }
+  const statusCounts = useMemo(() => {
+    return {
+      "": total,
+      Applied: activeStatus === "Applied" ? total : "—",
+      "Interview Scheduled": activeStatus === "Interview Scheduled" ? total : "—",
+      Selected: activeStatus === "Selected" ? total : "—",
+      Rejected: activeStatus === "Rejected" ? total : "—",
+      "On Hold": activeStatus === "On Hold" ? total : "—",
+    };
+  }, [total, activeStatus]);
 
-    return list;
-  }, [candidates, activeStatus, search, filters]);
+  const rows = candidates;
+  const pageStart = (page - 1) * perPage;
 
   const kpi = useMemo(() => ({
-    total:     filtered.length,
-    selected:  filtered.filter((c) => c.status === "Selected").length,
-    rejected:  filtered.filter((c) => c.status === "Rejected").length,
-    scheduled: filtered.filter((c) => c.status === "Interview Scheduled").length,
-  }), [filtered]);
-
-  const totalPages  = Math.max(1, Math.ceil(filtered.length / perPage));
-  const currentPage = Math.min(page, totalPages);
-  const pageStart   = (currentPage - 1) * perPage;
-  const rows        = filtered.slice(pageStart, pageStart + perPage);
+    total,
+    selected:  activeStatus === "Selected" ? total : candidates.filter((c) => c.status === "Selected").length,
+    rejected:  activeStatus === "Rejected" ? total : candidates.filter((c) => c.status === "Rejected").length,
+    scheduled: activeStatus === "Interview Scheduled" ? total : candidates.filter((c) => c.status === "Interview Scheduled").length,
+  }), [total, activeStatus, candidates]);
 
   const activeFilterCount = [
     filters.experienceType, filters.source, filters.position, filters.assignedHr,
@@ -745,7 +747,7 @@ function CandidatesContent() {
             <div>
               <h1 className="text-xl font-bold text-gray-900 tracking-tight">Candidates</h1>
               <p className="text-xs text-gray-500 mt-0.5">
-                {loading ? "Loading…" : `${filtered.length} of ${candidates.length} candidates`}
+                {loading ? "Loading…" : `${total} candidates`}
               </p>
             </div>
             <button
@@ -759,10 +761,10 @@ function CandidatesContent() {
         <div className="p-5 lg:p-6 space-y-5 flex-1">
 
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-            <KPICard label="Showing"             value={kpi.total}     total={candidates.length} icon={Users}        accent="violet" />
-            <KPICard label="Selected"            value={kpi.selected}  total={kpi.total}         icon={UserCheck}    accent="emerald" />
-            <KPICard label="Rejected"            value={kpi.rejected}  total={kpi.total}         icon={UserX}        accent="red" />
-            <KPICard label="Interview Scheduled" value={kpi.scheduled} total={kpi.total}         icon={CalendarDays} accent="blue" />
+            <KPICard label="Matching"            value={kpi.total}     total={total}     icon={Users}        accent="violet" />
+            <KPICard label="Selected"            value={kpi.selected}  total={kpi.total} icon={UserCheck}    accent="emerald" />
+            <KPICard label="Rejected"            value={kpi.rejected}  total={kpi.total} icon={UserX}        accent="red" />
+            <KPICard label="Interview Scheduled" value={kpi.scheduled} total={kpi.total} icon={CalendarDays} accent="blue" />
           </div>
 
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
@@ -833,6 +835,16 @@ function CandidatesContent() {
               <div className="flex items-center justify-center h-52 gap-3">
                 <div className="w-6 h-6 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
                 <span className="text-sm text-gray-500 font-medium">Loading candidates…</span>
+              </div>
+            ) : fetchError ? (
+              <div className="flex flex-col items-center justify-center h-52 gap-3">
+                <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center">
+                  <Users className="w-7 h-7 text-red-400" />
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-semibold text-red-600">{fetchError}</p>
+                  <button onClick={fetchCandidates} className="mt-2 text-xs text-violet-600 hover:underline font-semibold">Retry</button>
+                </div>
               </div>
             ) : rows.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-52 gap-3">
@@ -954,14 +966,14 @@ function CandidatesContent() {
               </div>
             )}
 
-            {!loading && filtered.length > 0 && (
+            {!loading && !fetchError && total > 0 && (
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-5 py-3 border-t border-gray-100 bg-gray-50/60">
                 <p className="text-xs text-gray-500">
                   Showing{" "}
                   <span className="font-bold text-gray-700">{pageStart + 1}</span>–
-                  <span className="font-bold text-gray-700">{Math.min(pageStart + perPage, filtered.length)}</span>
+                  <span className="font-bold text-gray-700">{Math.min(pageStart + perPage, total)}</span>
                   {" "}of{" "}
-                  <span className="font-bold text-gray-700">{filtered.length}</span> candidates
+                  <span className="font-bold text-gray-700">{total}</span> candidates
                 </p>
                 <div className="flex items-center gap-2.5">
                   <select
@@ -974,16 +986,16 @@ function CandidatesContent() {
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
-                      disabled={currentPage <= 1}
+                      disabled={page <= 1}
                       className="p-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors btn-animate">
                       <ChevronLeft className="w-3.5 h-3.5" />
                     </button>
                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      const p = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
+                      const p = Math.max(1, Math.min(totalPages - 4, page - 2)) + i;
                       return (
                         <button key={p} onClick={() => setPage(p)}
                           className={`w-7 h-7 rounded-lg text-xs font-semibold transition-all btn-animate ${
-                            p === currentPage
+                            p === page
                               ? "bg-violet-600 text-white shadow-sm"
                               : "border border-gray-200 bg-white hover:bg-gray-50 text-gray-600"
                           }`}>
@@ -993,7 +1005,7 @@ function CandidatesContent() {
                     })}
                     <button
                       onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                      disabled={currentPage >= totalPages}
+                      disabled={page >= totalPages}
                       className="p-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors btn-animate">
                       <ChevronRight className="w-3.5 h-3.5" />
                     </button>

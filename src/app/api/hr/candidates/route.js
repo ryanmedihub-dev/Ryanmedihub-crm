@@ -4,6 +4,12 @@ import Interviewer from "@/models/Interviewer";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { validatePublicAssignedHr } from "@/lib/hrValidation";
+import {
+  parsePaginationParams,
+  buildCandidateQuery,
+  buildCandidateSort,
+  calculatePaginationMeta,
+} from "@/lib/hrPagination";
 
 const ALLOWED_HR_ROLES = ["hr", "super-admin", "admin", "owner"];
 
@@ -31,43 +37,23 @@ export async function GET(req) {
     await connectDB();
 
     const { searchParams } = new URL(req.url);
-    const status   = searchParams.get("status");
-    const source   = searchParams.get("source");
-    const position = searchParams.get("position");
-    const from     = searchParams.get("from");
-    const to       = searchParams.get("to");
-    const search   = searchParams.get("search");
+    const query = buildCandidateQuery(searchParams);
+    const sort  = buildCandidateSort(searchParams);
+    const { page, limit, skip } = parsePaginationParams(searchParams);
 
-    const query = {};
+    const [candidates, total] = await Promise.all([
+      Interviewer.find(query)
+        .populate("assignedHr", "name")
+        .sort(sort)
+        .skip(skip)
+        .limit(limit),
+      Interviewer.countDocuments(query),
+    ]);
 
-    if (status)   query.status   = status;
-    if (source)   query.source   = source;
-    if (position) query.position = { $regex: position, $options: "i" };
-
-    if (from || to) {
-      query.createdAt = {};
-      if (from) query.createdAt.$gte = new Date(from);
-      if (to) {
-        const toDate = new Date(to);
-        toDate.setHours(23, 59, 59, 999);
-        query.createdAt.$lte = toDate;
-      }
-    }
-
-    if (search) {
-      query.$or = [
-        { name:  { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } },
-        { phone: { $regex: search, $options: "i" } },
-      ];
-    }
-
-    const candidates = await Interviewer.find(query)
-      .populate("assignedHr", "name")
-      .sort({ createdAt: -1 });
+    const { totalPages } = calculatePaginationMeta(total, limit, page);
 
     return withCORS(
-      NextResponse.json({ success: true, candidates })
+      NextResponse.json({ success: true, candidates, total, page, limit, totalPages })
     );
   } catch (err) {
     console.error("Candidates GET error:", err);
