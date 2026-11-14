@@ -3,6 +3,7 @@ import connectDB from "@/lib/db";
 import Interviewer from "@/models/Interviewer";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { validatePublicAssignedHr } from "@/lib/hrValidation";
 
 const ALLOWED_HR_ROLES = ["hr", "super-admin", "admin", "owner"];
 
@@ -165,11 +166,21 @@ export async function POST(req) {
     const session = await getServerSession(authOptions);
     const isAuthenticatedHR = session?.user && ALLOWED_HR_ROLES.includes(session.user.role);
 
-    // Unauthenticated applicants cannot set internal HR statuses
+    // Unauthenticated applicants cannot set internal HR statuses or evaluations.
+    // They may supply assignedHr as a referring HR employee only if that employee
+    // is confirmed against the Employee collection as an authorized, active HR reference
+    // (or the legitimate 'Other' record). Arbitrary employee IDs, non-HR employees,
+    // inactive HRs, or malformed values are safely stripped.
     if (!isAuthenticatedHR) {
       body.status = "Applied";
-      delete body.assignedHr;
       delete body.interviewerFeedback;
+
+      if (body.assignedHr) {
+        const isValid = await validatePublicAssignedHr(body.assignedHr);
+        if (!isValid) {
+          delete body.assignedHr;
+        }
+      }
     } else {
       const VALID_STATUSES = ["Applied", "Interview Scheduled", "Selected", "Rejected", "On Hold"];
       if (body.status && !VALID_STATUSES.includes(body.status)) {
