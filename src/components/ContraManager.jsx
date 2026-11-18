@@ -174,8 +174,8 @@ export default function ContraManager() {
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center shrink-0">
-              <ArrowLeftRight className="w-5 h-5 text-violet-600" />
+            <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center shrink-0">
+              <ArrowLeftRight className="w-5 h-5 text-indigo-600" />
             </div>
             <div>
               <p className="text-xs text-gray-500">Moved between own accounts</p>
@@ -206,7 +206,7 @@ export default function ContraManager() {
                   onClick={() => setStatus(t.value)}
                   className={`flex-1 px-2 py-2 rounded-lg text-sm font-medium transition-colors ${
                     status === t.value
-                      ? "bg-violet-500 text-white"
+                      ? "bg-indigo-500 text-white"
                       : "bg-gray-50 text-gray-600 hover:bg-gray-100"
                   }`}
                 >
@@ -282,7 +282,7 @@ export default function ContraManager() {
                     <td className="px-4 py-3">
                       <span className="inline-flex items-center gap-1.5 text-gray-900 font-medium whitespace-nowrap">
                         {r.fromAccount}
-                        <ArrowRight className="w-3.5 h-3.5 text-violet-500 shrink-0" />
+                        <ArrowRight className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
                         {r.toAccount}
                       </span>
                     </td>
@@ -357,7 +357,7 @@ export default function ContraManager() {
 function StatusPill({ row }) {
   const [cls, label] = row.isCancelled
     ? ["bg-gray-100 text-gray-500 border-gray-200 line-through", "Cancelled"]
-    : ["bg-violet-100 text-violet-700 border-violet-200", "Active"];
+    : ["bg-indigo-100 text-indigo-700 border-indigo-200", "Active"];
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold border ${cls}`}>
       {label}
@@ -376,7 +376,7 @@ function RowActions({ row, busy, onEdit, onCancel, onReinstate, onDelete }) {
       </button>
       {row.isCancelled ? (
         <button onClick={onReinstate} disabled={busy} title="Reinstate — moves balances again"
-          className={`${btn} text-violet-600 hover:bg-violet-50`}>
+          className={`${btn} text-indigo-600 hover:bg-indigo-50`}>
           <RotateCcw size={16} />
         </button>
       ) : (
@@ -408,7 +408,7 @@ function EditModal({ form, setForm, row, busy, onClose, onSave }) {
 
         <div className="p-6 space-y-4">
           {!row.isCancelled && (
-            <div className="text-xs text-violet-700 bg-violet-50 border border-violet-200 rounded-lg px-3 py-2">
+            <div className="text-xs text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg px-3 py-2">
               This transfer is moving both balances. Changing the amount or either account shifts
               money between them in Close Book.
             </div>

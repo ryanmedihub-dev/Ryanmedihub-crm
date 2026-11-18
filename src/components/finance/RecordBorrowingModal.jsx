@@ -178,7 +178,7 @@ export default function RecordBorrowingModal({ open, onClose, onSuccess, mode, p
             {}
             <div
               className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
-                isRepayment ? "bg-rose-100 text-rose-600" : "bg-violet-100 text-violet-600"
+                isRepayment ? "bg-rose-100 text-rose-600" : "bg-indigo-100 text-indigo-600"
               }`}
             >
               {isRepayment ? (
@@ -231,7 +231,7 @@ export default function RecordBorrowingModal({ open, onClose, onSuccess, mode, p
 
 }
             {payable && (
-              <div className="rounded-xl border border-violet-200 bg-violet-50 p-4">
+              <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 
                   <div className="min-w-0">
@@ -246,7 +246,7 @@ export default function RecordBorrowingModal({ open, onClose, onSuccess, mode, p
 
                   <div className="sm:text-right">
                     <p className="text-xs font-medium text-gray-500">Remaining</p>
-                    <p className="mt-1 text-lg font-semibold text-violet-600 sm:text-xl">{formatCurrency(pending)}</p>
+                    <p className="mt-1 text-lg font-semibold text-indigo-600 sm:text-xl">{formatCurrency(pending)}</p>
                   </div>
 
                 </div>
@@ -284,12 +284,12 @@ export default function RecordBorrowingModal({ open, onClose, onSuccess, mode, p
                           }}
                           className={`rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${
                             selected
-                              ? "border-violet-500 bg-violet-50 text-violet-700 ring-1 ring-violet-500"
+                              ? "border-indigo-500 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-500"
                               : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
                           }`}
                         >
                           <div className="flex items-center justify-center gap-2">
-                            <span className={`h-2 w-2 rounded-full ${selected ? "bg-violet-600" : "bg-slate-300"}`} />
+                            <span className={`h-2 w-2 rounded-full ${selected ? "bg-indigo-600" : "bg-slate-300"}`} />
                             {kind.label}
                           </div>
                         </button>
@@ -417,7 +417,7 @@ export default function RecordBorrowingModal({ open, onClose, onSuccess, mode, p
 
                   {isRepayment && (
                     <p className="mt-1.5 text-xs text-slate-400">
-                      Outstanding: <span className="font-semibold text-violet-600">{formatCurrency(pending)}</span>
+                      Outstanding: <span className="font-semibold text-indigo-600">{formatCurrency(pending)}</span>
                     </p>
                   )}
                 </div>

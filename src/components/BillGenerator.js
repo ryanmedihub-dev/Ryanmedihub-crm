@@ -601,17 +601,15 @@ export default function BillGenerator({ transactionId, onClose }) {
 
   return (
     <div className="fixed inset-0 overlay-in bg-gray-950/40 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full my-8">
-        <div className="bg-linear-to-r from-indigo-600 to-purple-600 px-6 py-4 rounded-t-2xl flex items-center justify-between no-print">
+      <div className="bg-white rounded-xl shadow-2xl max-w-5xl w-full my-8">
+        <div className="px-6 py-4 border-b border-gray-200 rounded-t-xl flex items-center justify-between no-print">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-              <Bill className="w-6 h-6 text-white" />
-            </div>
+            <Bill className="w-5 h-5 text-gray-400" aria-hidden />
             <div>
-              <h2 className="text-xl font-bold text-white">
+              <h2 className="text-base font-semibold text-gray-900">
                 {category === "TRANSPLANT" ? "Transplant Invoice" : category === "SERVICE" ? "Service Invoice" : category === "MEDICINE" ? "Medicine Invoice" : "Invoice"}
               </h2>
-              <p className="text-white/80 text-sm">
+              <p className="text-gray-500 text-sm">
                 {isBatch && category === "MEDICINE"
                   ? `Batch Invoice (${transactions.length} items)`
                   : category === "TRANSPLANT"
@@ -620,8 +618,8 @@ export default function BillGenerator({ transactionId, onClose }) {
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
-            <CloseIcon className="w-5 h-5 text-white" />
+          <button onClick={onClose} aria-label="Close" className="p-2 rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
+            <CloseIcon className="w-5 h-5" />
           </button>
         </div>
 
@@ -639,12 +637,12 @@ export default function BillGenerator({ transactionId, onClose }) {
           </div>
         </div>
 
-        <div className="px-6 py-4 bg-gray-50 rounded-b-2xl flex gap-3 no-print">
-          <button onClick={handlePrint} className="flex-1 px-6 py-3 bg-linear-to-r from-indigo-500 to-purple-600 text-white rounded-xl hover:from-indigo-600 hover:to-purple-700 transition-all font-semibold flex items-center justify-center gap-2">
-            <Printer className="w-5 h-5" />
+        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-xl flex gap-3 no-print">
+          <button onClick={handlePrint} className="press flex-1 h-10 px-4 bg-white border border-gray-200 text-gray-800 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-colors text-sm font-medium flex items-center justify-center gap-2">
+            <Printer className="w-4 h-4" />
             Print Invoice
           </button>
-          <button onClick={handleDownloadPDF} disabled={generating} className="flex-1 px-6 py-3 bg-linear-to-r from-emerald-500 to-green-600 text-white rounded-xl hover:from-emerald-600 hover:to-green-700 transition-all font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
+          <button onClick={handleDownloadPDF} disabled={generating} className="press flex-1 h-10 px-4 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50">
             {generating ? (
               <><Loader2 className="w-5 h-5 animate-spin" />Generating...</>
             ) : (

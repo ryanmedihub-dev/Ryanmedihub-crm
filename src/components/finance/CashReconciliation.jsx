@@ -13,7 +13,7 @@ const TILE_TONES = {
   rose: "text-rose-700",
   sky: "text-sky-700",
   amber: "text-amber-700",
-  violet: "text-violet-700",
+  violet: "text-indigo-700",
   teal: "text-teal-700",
 };
 

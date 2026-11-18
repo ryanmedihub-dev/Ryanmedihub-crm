@@ -106,7 +106,7 @@ export default function EditBorrowingModal({ borrowing, onClose, onSuccess, toas
         {}
         <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 py-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-600">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
               <HandCoins className="h-5 w-5" />
             </div>
             <div className="min-w-0">

@@ -48,9 +48,9 @@ const PROC_CONFIG = {
     label: "GFC",
     gradient: "violet",
     badgeBg: "bg-violet-100 text-violet-700",
-    dotBg: "bg-violet-500",
-    activeBorder: "border-violet-500 bg-violet-50 text-violet-700",
-    saveBtnBg: "bg-violet-600 hover:bg-violet-700",
+    dotBg: "bg-indigo-500",
+    activeBorder: "border-indigo-500 bg-violet-50 text-violet-700",
+    saveBtnBg: "bg-indigo-600 hover:bg-indigo-700",
     icon: FlaskConical,
   },
   Canacot: {

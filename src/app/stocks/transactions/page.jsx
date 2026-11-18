@@ -342,11 +342,11 @@ function DataTable({ category, rows, onDelete, onSort, sortConfig, pagination, o
                       {rowCategory === "TRANSPLANT" && (<>
                         <div className="px-2 py-3"><div className="text-sm font-semibold text-slate-900 truncate">{getPatientName(row)}</div><div className="text-xs text-slate-600 font-medium">{getPatientPhone(row) || "No phone"}</div></div>
                         <div className="px-2 py-3"><span className={`inline-flex items-center h-5 px-2 rounded-md text-xs font-medium border ${getProcedureColor(row.procedure)}`}>{row.procedure}</span></div>
-                        <div className="px-2 py-3"><span className="inline-flex px-2 py-1 rounded-lg text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200">{row.paymentType}</span></div>
+                        <div className="px-2 py-3">{row.paymentType ? <span className="inline-flex items-center h-5 px-2 rounded-md bg-gray-100 text-xs font-medium text-gray-700">{row.paymentType}</span> : <span className="text-gray-400">—</span>}</div>
                         <div className="px-2 py-3"><div className="text-center"><div className="text-sm font-semibold text-emerald-700">{formatCurrency(netAmount)}</div>{hasDiscount && (<div className="flex items-center justify-center gap-1 mt-1"><Tag className="w-3 h-3 text-amber-500" /><span className="text-xs text-amber-600 font-medium">-{formatCurrency(row.discount)}</span></div>)}</div></div>
                         <div className="px-2 py-3"><span className={`inline-flex items-center h-5 px-2 rounded-md text-xs font-medium border ${getMethodColor(row.method)}`}>{row.method?.replace(/_/g, " ").toUpperCase()}</span></div>
                         <div className="px-2 py-3">{row.paymentId ? <div className="bg-slate-100 px-2 py-1 rounded text-xs font-mono text-slate-700 truncate">{row.paymentId}</div> : <span className="text-xs text-slate-400">-</span>}</div>
-                        <div className="px-2 py-3"><span className="inline-flex px-2 py-1 rounded-lg text-xs font-semibold bg-purple-100 text-purple-700 border border-purple-200">{row.branch}</span></div>
+                        <div className="px-2 py-3"><span className="text-sm text-gray-700">{row.branch}</span></div>
                       </>)}
 
                       {rowCategory === "SERVICE" && (<>
@@ -358,7 +358,7 @@ function DataTable({ category, rows, onDelete, onSort, sortConfig, pagination, o
                         <div className="px-2 py-3"><span className={`inline-flex items-center h-5 px-2 rounded-md text-xs font-medium border ${getMethodColor(row.method)}`}>{row.method?.replace(/_/g, " ").toUpperCase()}</span></div>
                         <div className="px-2 py-3">{row.paymentId ? <div className="bg-slate-100 px-2 py-1 rounded text-xs font-mono text-slate-700 truncate">{row.paymentId}</div> : <span className="text-xs text-slate-400">-</span>}</div>
                         <div className="px-2 py-3">{row.batchId ? <div className="flex items-center gap-1"><Package className="w-3 h-3 text-indigo-600" /><span className="text-xs font-mono text-indigo-700">{row.batchId.slice(-8)}</span></div> : <span className="text-xs text-slate-400">-</span>}</div>
-                        <div className="px-2 py-3"><span className="inline-flex px-2 py-1 rounded-lg text-xs font-semibold bg-purple-100 text-purple-700 border border-purple-200">{row.branch}</span></div>
+                        <div className="px-2 py-3"><span className="text-sm text-gray-700">{row.branch}</span></div>
                       </>)}
 
                       {rowCategory === "MEDICINE" && (<>
@@ -370,7 +370,7 @@ function DataTable({ category, rows, onDelete, onSort, sortConfig, pagination, o
                         <div className="px-2 py-3"><span className={`inline-flex items-center h-5 px-2 rounded-md text-xs font-medium border ${getMethodColor(row.method)}`}>{row.method?.replace(/_/g, " ").toUpperCase()}</span></div>
                         <div className="px-2 py-3">{row.paymentId ? <div className="bg-slate-100 px-2 py-1 rounded text-xs font-mono text-slate-700 truncate">{row.paymentId}</div> : <span className="text-xs text-slate-400">-</span>}</div>
                         <div className="px-2 py-3">{row.batchId ? <div className="flex items-center gap-1"><Package className="w-3 h-3 text-indigo-600" /><span className="text-xs font-mono text-indigo-700">{row.batchId.slice(-8)}</span></div> : <span className="text-xs text-slate-400">-</span>}</div>
-                        <div className="px-2 py-3"><span className="inline-flex px-2 py-1 rounded-lg text-xs font-semibold bg-purple-100 text-purple-700 border border-purple-200">{row.branch}</span></div>
+                        <div className="px-2 py-3"><span className="text-sm text-gray-700">{row.branch}</span></div>
                       </>)}
 
                       {rowCategory === "EXPENSE" && (<>
@@ -380,15 +380,15 @@ function DataTable({ category, rows, onDelete, onSort, sortConfig, pagination, o
                         <div className="px-2 py-3 text-right"><div className="text-sm font-semibold text-rose-600">{formatCurrency(row.amount)}</div></div>
                         <div className="px-2 py-3"><span className={`inline-flex items-center h-5 px-2 rounded-md text-xs font-medium border ${getMethodColor(row.method)}`}>{row.method?.replace(/_/g, " ").toUpperCase()}</span></div>
                         <div className="px-2 py-3">{row.paymentId ? <div className="bg-slate-100 px-2 py-1 rounded text-xs font-mono text-slate-700 truncate">{row.paymentId}</div> : <span className="text-xs text-slate-400">-</span>}</div>
-                        <div className="px-2 py-3"><span className="inline-flex px-2 py-1 rounded-lg text-xs font-semibold bg-purple-100 text-purple-700 border border-purple-200">{row.branch}</span></div>
+                        <div className="px-2 py-3"><span className="text-sm text-gray-700">{row.branch}</span></div>
                         <div className="px-2 py-3"><ApprovalBadge status={row.approvalStatus} /></div>
                       </>)}
 
                       <div className="px-2 py-3">
                         <div className="flex items-center gap-2">
-                          <button onClick={() => onGenerateBill(row)} className="p-2 hover:bg-emerald-100 rounded-lg transition-colors text-emerald-600 hover:text-emerald-800" title="Generate Bill"><Bill size={18} /></button>
-                          <button onClick={() => router.push(`/stocks/transactions/edit/${row._id}`)} className="p-2 hover:bg-indigo-100 rounded-lg transition-colors text-indigo-600 hover:text-indigo-800" title="Edit record"><Edit2 size={18} /></button>
-                          <button onClick={() => onDelete(row)} className="p-2 hover:bg-red-100 rounded-lg transition-colors text-red-600 hover:text-red-800" title="Delete record"><Trash2 size={18} /></button>
+                          <button onClick={() => onGenerateBill(row)} className="p-2 rounded-md transition-colors text-gray-400 hover:bg-gray-100 hover:text-gray-800" title="Generate Bill"><Bill size={18} /></button>
+                          <button onClick={() => router.push(`/stocks/transactions/edit/${row._id}`)} className="p-2 rounded-md transition-colors text-gray-400 hover:bg-gray-100 hover:text-gray-800" title="Edit record"><Edit2 size={18} /></button>
+                          <button onClick={() => onDelete(row)} className="p-2 rounded-md transition-colors text-gray-400 hover:bg-rose-50 hover:text-rose-600" title="Delete record"><Trash2 size={18} /></button>
                         </div>
                       </div>
                     </div>
@@ -420,7 +420,7 @@ function DataTable({ category, rows, onDelete, onSort, sortConfig, pagination, o
                             <div><p className="text-xs text-slate-500 mb-1">{rowCategory === "SERVICE" ? "Sessions" : "Quantity"}</p><p className="text-sm font-semibold text-indigo-700">{row.quantity || 1}</p></div>
                             <div><p className="text-xs text-slate-500 mb-1">{rowCategory === "SERVICE" ? "Per Session" : "Per Unit"}</p><p className="text-sm font-semibold text-slate-700">{formatCurrency(rowCategory === "SERVICE" ? row.perSessionCost : row.perUnitCost)}</p></div>
                           </>)}
-                          {rowCategory === "TRANSPLANT" && <div><p className="text-xs text-slate-500 mb-1">Payment Type</p><p className="text-sm font-semibold text-blue-700">{row.paymentType || "N/A"}</p></div>}
+                          {rowCategory === "TRANSPLANT" && <div><p className="text-xs text-slate-500 mb-1">Payment Type</p><p className="text-sm font-medium text-gray-900">{row.paymentType || "N/A"}</p></div>}
                           {rowCategory === "EXPENSE" && <div><p className="text-xs text-slate-500 mb-1">Expense Category</p><p className="text-sm font-semibold text-rose-700">{row.expense || row.expenseCategory || "N/A"}</p></div>}
                           {rowCategory === "EXPENSE" && <div><p className="text-xs text-slate-500 mb-1">Expense Type</p><p className="text-sm font-semibold text-rose-700">{row.expenseType || "N/A"}</p></div>}
                           <div><p className="text-xs text-slate-500 mb-1">Branch</p><p className="text-sm font-semibold text-purple-700">{row.branch}</p></div>
@@ -652,7 +652,7 @@ export default function StocksTransactionsPage() {
   );
 
   return (
-    <div className="flex min-h-screen bg-linear-to-br from-blue-50 via-indigo-50 to-purple-50">
+    <div className="flex min-h-screen bg-gray-50">
       <StockSidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
       <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full lg:w-auto min-w-0">

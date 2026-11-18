@@ -11,7 +11,7 @@ const TONE = {
   emerald: "text-emerald-600 bg-emerald-50",
   rose: "text-rose-600 bg-rose-50",
   amber: "text-amber-600 bg-amber-50",
-  violet: "text-violet-600 bg-violet-50",
+  violet: "text-indigo-600 bg-indigo-50",
   teal: "text-teal-600 bg-teal-50",
 };
 

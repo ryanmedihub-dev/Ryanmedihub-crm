@@ -60,7 +60,7 @@ const COLOR_MAP = {
   blue:   { accent: "bg-blue-500",    soft: "bg-blue-50",    text: "text-blue-600",    border: "border-blue-100"    },
   green:  { accent: "bg-emerald-500", soft: "bg-emerald-50", text: "text-emerald-600", border: "border-emerald-100" },
   red:    { accent: "bg-red-500",     soft: "bg-red-50",     text: "text-red-600",     border: "border-red-100"     },
-  purple: { accent: "bg-purple-500",  soft: "bg-purple-50",  text: "text-purple-600",  border: "border-purple-100"  },
+  purple: { accent: "bg-indigo-500",  soft: "bg-purple-50",  text: "text-purple-600",  border: "border-purple-100"  },
   indigo: { accent: "bg-indigo-500",  soft: "bg-indigo-50",  text: "text-indigo-600",  border: "border-indigo-100"  },
   teal:   { accent: "bg-teal-500",    soft: "bg-teal-50",    text: "text-teal-600",    border: "border-teal-100"    },
 };

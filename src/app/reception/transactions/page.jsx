@@ -531,7 +531,7 @@ function DataTable({
 
               return (
                 <div key={row._id || i}>
-                  <div className="group transition-all duration-200 hover:bg-indigo-50/30">
+                  <div className="group transition-colors duration-150 hover:bg-gray-50/70">
                     <div
                       className="hidden md:grid items-center min-h-16 px-2"
                       style={{ gridTemplateColumns }}
@@ -564,9 +564,7 @@ function DataTable({
                             </span>
                           </div>
                           <div className="px-2 py-3">
-                            <span className="inline-flex px-2 py-1 rounded-lg text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200">
-                              {row.paymentType}
-                            </span>
+                            {row.paymentType ? <span className="inline-flex items-center h-5 px-2 rounded-md bg-gray-100 text-xs font-medium text-gray-700">{row.paymentType}</span> : <span className="text-gray-400">—</span>}
                           </div>
                           <div className="px-2 py-3">
                             <div className="text-center">
@@ -600,7 +598,7 @@ function DataTable({
                             )}
                           </div>
                           <div className="px-2 py-3">
-                            <span className="inline-flex px-2 py-1 rounded-lg text-xs font-semibold bg-purple-100 text-purple-700 border border-purple-200">
+                            <span className="text-sm text-gray-700">
                               {row.branch}
                             </span>
                           </div>
@@ -680,7 +678,7 @@ function DataTable({
                             )}
                           </div>
                           <div className="px-2 py-3">
-                            <span className="inline-flex px-2 py-1 rounded-lg text-xs font-semibold bg-purple-100 text-purple-700 border border-purple-200">
+                            <span className="text-sm text-gray-700">
                               {row.branch}
                             </span>
                           </div>
@@ -758,7 +756,7 @@ function DataTable({
                             )}
                           </div>
                           <div className="px-2 py-3">
-                            <span className="inline-flex px-2 py-1 rounded-lg text-xs font-semibold bg-purple-100 text-purple-700 border border-purple-200">
+                            <span className="text-sm text-gray-700">
                               {row.branch}
                             </span>
                           </div>
@@ -804,7 +802,7 @@ function DataTable({
                             )}
                           </div>
                           <div className="px-2 py-3">
-                            <span className="inline-flex px-2 py-1 rounded-lg text-xs font-semibold bg-purple-100 text-purple-700 border border-purple-200">
+                            <span className="text-sm text-gray-700">
                               {row.branch}
                             </span>
                           </div>
@@ -818,14 +816,14 @@ function DataTable({
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => onGenerateBill(row)}
-                            className="p-2 hover:bg-emerald-100 rounded-lg transition-colors text-emerald-600 hover:text-emerald-800"
+                            className="p-2 rounded-md transition-colors text-gray-400 hover:bg-gray-100 hover:text-gray-800"
                             title="Generate Bill"
                           >
                             <Bill size={18} />
                           </button>
                           <button
                             onClick={() => onDelete(row)}
-                            className="p-2 hover:bg-red-100 rounded-lg transition-colors text-red-600 hover:text-red-800"
+                            className="p-2 rounded-md transition-colors text-gray-400 hover:bg-rose-50 hover:text-rose-600"
                             title="Delete record"
                           >
                             <Trash2 size={18} />
@@ -1357,7 +1355,7 @@ export default function AllTransactionsPage() {
           <p className="text-gray-600 mb-4">{error}</p>
           <button
             onClick={handleRefresh}
-            className="px-6 py-2.5 bg-indigo-500 text-white rounded-xl hover:bg-indigo-600 transition-all font-medium"
+            className="press h-9 px-4 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
           >
             Try Again
           </button>
@@ -1366,7 +1364,7 @@ export default function AllTransactionsPage() {
     );
 
   return (
-    <div className="flex min-h-screen bg-linear-to-br from-blue-50 via-indigo-50 to-purple-50">
+    <div className="flex min-h-screen bg-gray-50">
       <AdminSidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
       <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full lg:w-auto min-w-0">
@@ -1512,7 +1510,7 @@ export default function AllTransactionsPage() {
                       <button
                         key={preset.value}
                         onClick={() => applyQuickFilter(preset.value)}
-                        className="px-3 sm:px-4 py-1.5 sm:py-2 bg-white border-2 border-indigo-200 text-indigo-700 rounded-lg hover:bg-indigo-50 transition-all text-xs sm:text-sm font-semibold"
+                        className="press h-8 px-3 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-colors text-[13px] font-medium"
                       >
                         {preset.label}
                       </button>

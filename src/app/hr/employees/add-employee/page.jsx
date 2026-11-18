@@ -30,7 +30,7 @@ const colorClasses = {
   green:  { bg: "bg-green-50",  border: "border-green-500",  text: "text-green-600",  textDark: "text-green-900",  textMedium: "text-green-700",  textLight: "text-green-800" },
   red:    { bg: "bg-red-50",    border: "border-red-500",    text: "text-red-600",    textDark: "text-red-900",    textMedium: "text-red-700",    textLight: "text-red-800" },
   orange: { bg: "bg-orange-50", border: "border-orange-500", text: "text-orange-600", textDark: "text-orange-900", textMedium: "text-orange-700", textLight: "text-orange-800" },
-  purple: { bg: "bg-purple-50", border: "border-purple-500", text: "text-purple-600", textDark: "text-purple-900", textMedium: "text-purple-700", textLight: "text-purple-800" },
+  purple: { bg: "bg-purple-50", border: "border-indigo-500", text: "text-purple-600", textDark: "text-purple-900", textMedium: "text-purple-700", textLight: "text-purple-800" },
   indigo: { bg: "bg-indigo-50", border: "border-indigo-500", text: "text-indigo-600", textDark: "text-indigo-900", textMedium: "text-indigo-700", textLight: "text-indigo-800" },
   pink:   { bg: "bg-pink-50",   border: "border-pink-500",   text: "text-pink-600",   textDark: "text-pink-900",   textMedium: "text-pink-700",   textLight: "text-pink-800" },
 };

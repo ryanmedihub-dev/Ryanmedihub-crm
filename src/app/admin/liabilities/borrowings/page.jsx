@@ -94,7 +94,7 @@ export default function LiabilitiesBorrowingsPage() {
       </div>
       <Link
         href="/admin/financing?tab=borrowings"
-        className="inline-flex items-center gap-1 text-xs font-semibold text-violet-700 hover:text-violet-800"
+        className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-700 hover:text-indigo-800"
       >
         Manage all loans <ArrowUpRight className="w-3.5 h-3.5" />
       </Link>

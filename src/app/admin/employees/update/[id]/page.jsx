@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useToast } from "@/components/Toast";
 import InputField from "@/components/InputField";
+import { buttonClass, FormSection, FormActions } from "@/components/ui";
 
 import {
   UserPlus,
@@ -335,201 +336,65 @@ export default function EmployeeUpdate() {
 
   return (
     <section className="flex min-h-screen">
+      <main className="flex-1 min-w-0 px-4 sm:px-6 lg:px-8 py-6 lg:py-7">
+        <div className="max-w-5xl">
+          <nav aria-label="Breadcrumb" className="mb-2 text-[13px] text-gray-500">
+            <button type="button" onClick={() => router.back()} className="hover:text-gray-900 transition-colors">Employees</button>
+            <span className="mx-1.5 text-gray-300">/</span>
+            <span className="text-gray-700">Edit</span>
+          </nav>
+          <h1 className="text-xl font-semibold tracking-tight text-gray-900">{formData.name || "Edit employee"}</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Changes apply to every patient record linked to this employee. Inactive employees are hidden from new registrations.
+          </p>
 
-      <main className="flex-1 min-w-0 px-4 md:px-12 py-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div className="px-6 py-5 border-b border-gray-200">
-              <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
-                <div>
-                  <h1 className="text-xl font-semibold tracking-tight text-gray-900">Update Employee</h1>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Edit employee information for RyanCRM
-                  </p>
+          <form onSubmit={handleSubmit} className="mt-6 bg-white rounded-xl border border-gray-200">
+            <FormSection title="Profile" description="Who they are and how to reach them.">
+              <InputField label="Full name" required value={formData.name} onChange={createChangeHandler("name")} placeholder="As it should appear on payslips" className="sm:col-span-2" />
+              <InputField label="Phone" type="tel" value={formData.phone} onChange={createChangeHandler("phone")} placeholder="98765 43210" hint="10 digits, no country code." />
+              <InputField label="Email" type="email" value={formData.email} onChange={createChangeHandler("email")} placeholder="name@example.com" />
+            </FormSection>
+
+            <FormSection title="Role" description="Designation decides what they handle in the CRM.">
+              <InputField label="Designation" type="combobox" required value={formData.role} onChange={createChangeHandler("role")} options={roleOptions} placeholder="Type any post, or pick one" />
+              <InputField label="Employee ID" value={formData.employeeId} onChange={createChangeHandler("employeeId")} placeholder="RYN-014" hint="Optional staff code." />
+              {formData.role && (
+                <div className="sm:col-span-2">
+                  <RoleDescriptionCard role={formData.role} />
                 </div>
-                <div className="text-right hidden md:block">
-                  <p className="text-xs text-gray-500">Current Status</p>
-                  <p className="text-sm font-medium text-gray-900">Editing Employee</p>
-                </div>
+              )}
+              <InputField label="Date of joining" type="date" value={formData.dateOfJoining} onChange={createChangeHandler("dateOfJoining")} />
+              <div className="sm:pt-7">
+                <InputField label="Active" type="checkbox" value={formData.isactive} onChange={createChangeHandler("isactive")} />
               </div>
-            </div>
+            </FormSection>
 
+            <FormSection title="Pay" description="Base salary and the incentive usually paid per patient." last>
+              <InputField label="Base salary (₹)" type="number" value={formData.salaryStructure.baseSalary} onChange={(e) => handleSalaryChange("baseSalary", e.target.value)} placeholder="0" />
+              <InputField
+                label="Salary type"
+                type="select"
+                value={formData.salaryStructure.salaryType}
+                onChange={(e) => handleSalaryChange("salaryType", e.target.value)}
+                options={[
+                  { value: "Monthly", label: "Monthly" },
+                  { value: "Daily", label: "Daily" },
+                  { value: "Hourly", label: "Hourly" },
+                ]}
+              />
+              <InputField label="Effective from" type="date" value={formData.salaryStructure.effectiveFrom} onChange={(e) => handleSalaryChange("effectiveFrom", e.target.value)} />
+              <InputField label="Incentive per patient (₹)" type="number" value={formData.incentiveRate} onChange={(e) => handleChange("incentiveRate", e.target.value)} placeholder="0" />
+            </FormSection>
 
-            <div className="px-8 pt-6">
-              <button
-                onClick={() => router.back()}
-                className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors duration-200"
-              >
-                <ArrowLeft size={16} className="mr-1" />
-                Back
+            <FormActions>
+              <button type="button" onClick={() => router.back()} className={buttonClass("secondary")}>Cancel</button>
+              <button type="submit" disabled={isSubmitting} className={buttonClass("primary")}>
+                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden /> : <CheckCircle className="w-4 h-4" aria-hidden />}
+                {isSubmitting ? "Saving…" : "Save changes"}
               </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="px-8 py-8">
-              <div className="space-y-8">
-                <div className="text-center mb-8">
-                  <User className="mx-auto h-16 w-16 text-blue-500 mb-4" />
-                  <h3 className="text-xl font-semibold tracking-tight text-gray-900">Employee Information</h3>
-                  <p className="text-gray-600">Update the employee details below</p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 gap-x-12">
-                  <InputField
-                    label="Full Name"
-                    required
-                    value={formData.name}
-                    onChange={createChangeHandler("name")}
-                    placeholder="Enter employee's full name"
-                    className="md:col-span-2"
-                  />
-
-                  <InputField
-                    label="Employee ID"
-                    value={formData.employeeId}
-                    onChange={createChangeHandler("employeeId")}
-                    placeholder="e.g. RYN-014 (optional staff code)"
-                    className="md:col-span-2"
-                  />
-
-                  <InputField
-                    label="Phone Number"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={createChangeHandler("phone")}
-                    placeholder="10-digit mobile number"
-                  />
-
-                  <InputField
-                    label="Email Address"
-                    type="email"
-                    value={formData.email}
-                    onChange={createChangeHandler("email")}
-                    placeholder="employee@example.com"
-                  />
-
-                  <InputField
-                    label="Designation / Role"
-                    type="combobox"
-                    required
-                    value={formData.role}
-                    onChange={createChangeHandler("role")}
-                    options={roleOptions}
-                    placeholder="Type any post, or pick a common one"
-                    className="md:col-span-2"
-                  />
-
-                  {formData.role && (
-                    <div className="md:col-span-2">
-                      <RoleDescriptionCard role={formData.role} />
-                    </div>
-                  )}
-
-                  <InputField
-                    label="Date of Joining"
-                    type="date"
-                    value={formData.dateOfJoining}
-                    onChange={createChangeHandler("dateOfJoining")}
-                  />
-
-                  <InputField
-                    label="Active Status"
-                    type="checkbox"
-                    value={formData.isactive}
-                    onChange={createChangeHandler("isactive")}
-                  />
-
-                  <div className="md:col-span-2 pt-4 border-t border-gray-200">
-                    <h4 className="text-sm font-semibold text-gray-900 mb-4">Salary Structure</h4>
-                  </div>
-
-                  <InputField
-                    label="Base Salary (₹)"
-                    type="number"
-                    value={formData.salaryStructure.baseSalary}
-                    onChange={(e) => handleSalaryChange("baseSalary", e.target.value)}
-                    placeholder="0"
-                  />
-
-                  <InputField
-                    label="Salary Type"
-                    type="select"
-                    value={formData.salaryStructure.salaryType}
-                    onChange={(e) => handleSalaryChange("salaryType", e.target.value)}
-                    options={[
-                      { value: "Monthly", label: "Monthly" },
-                      { value: "Daily", label: "Daily" },
-                      { value: "Hourly", label: "Hourly" },
-                    ]}
-                  />
-
-                  <InputField
-                    label="Effective From"
-                    type="date"
-                    value={formData.salaryStructure.effectiveFrom}
-                    onChange={(e) => handleSalaryChange("effectiveFrom", e.target.value)}
-                  />
-
-                  <InputField
-                    label="Usual Incentive Rate (₹ per patient)"
-                    type="number"
-                    value={formData.incentiveRate}
-                    onChange={(e) => handleChange("incentiveRate", e.target.value)}
-                    placeholder="0"
-                  />
-                </div>
-
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <div className="flex items-start">
-                    <AlertCircle className="text-yellow-600 mr-3 shrink-0 mt-0.5" size={20} />
-                    <div>
-                      <h4 className="text-sm font-semibold text-yellow-900 mb-1">
-                        Update Information
-                      </h4>
-                      <ul className="text-sm text-yellow-700 space-y-1">
-                        <li>• Changes will affect all existing patient records linked to this employee</li>
-                        <li>• Setting employee to inactive will hide them from new patient registrations</li>
-                        <li>• Ensure all information is accurate before updating</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex justify-between pt-6 border-t border-gray-200">
-                  <button
-                    type="button"
-                    onClick={() => router.back()}
-                    className="inline-flex items-center px-6 py-3 border border-gray-300 shadow-sm text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200"
-                  >
-                    Cancel
-                  </button>
-
-                  <button
-                    type="submit"
-                    className="inline-flex items-center px-8 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <div className="animate-spin mr-2 h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
-                        Updating Employee...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle className="mr-2" size={20} />
-                        Update Employee
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </form>
-
-            <div className="px-8 py-4 bg-gray-50 border-t border-gray-200">
-              <p className="text-xs text-gray-600 text-center">
-                Record ID: {employeeId} • Last updated information will be reflected immediately
-              </p>
-            </div>
-          </div>
+            </FormActions>
+          </form>
+          <p className="mt-3 text-xs text-gray-400 tabular-nums">Record ID {employeeId}</p>
         </div>
       </main>
     </section>

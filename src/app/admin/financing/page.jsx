@@ -35,7 +35,7 @@ import { settlementLinesFor } from "@/lib/advanceSettlements";
 import { useToast } from "@/components/Toast";
 
 const STAT_TONES = {
-  violet: "text-violet-600 bg-violet-50",
+  violet: "text-indigo-600 bg-indigo-50",
   teal: "text-teal-600 bg-teal-50",
   amber: "text-amber-600 bg-amber-50",
   emerald: "text-emerald-600 bg-emerald-50",
@@ -65,7 +65,7 @@ function StatCard({ icon: Icon, tone = "indigo", label, value, sub, loading }) {
 
 function ProgressBar({ pct, tone = "indigo" }) {
   const barCls =
-    tone === "violet" ? "bg-violet-500" : tone === "teal" ? "bg-teal-500" : "bg-indigo-500";
+    tone === "violet" ? "bg-indigo-500" : tone === "teal" ? "bg-teal-500" : "bg-indigo-500";
   const clamped = Math.max(0, Math.min(100, pct || 0));
   return (
     <div className="h-1.5 w-full rounded-full bg-gray-100 overflow-hidden">

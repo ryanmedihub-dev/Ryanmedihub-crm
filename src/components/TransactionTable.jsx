@@ -39,7 +39,7 @@ const PROCEDURE_COLORS = {
 };
 
 const METHOD_COLORS = {
-  upi:            "bg-purple-500 text-white",
+  upi:            "bg-indigo-500 text-white",
   cash:           "bg-green-500 text-white",
   card:           "bg-sky-500 text-white",
   banking:        "bg-blue-500 text-white",

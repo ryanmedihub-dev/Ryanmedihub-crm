@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import HRSidebar from "@/components/Sidebars/HRSidebar";
 import { useToast } from "@/components/Toast";
 import InputField from "@/components/InputField";
+import { buttonClass, FormSection, FormActions } from "@/components/ui";
 import {
   CheckCircle,
   User,
@@ -28,7 +29,7 @@ const colorClasses = {
   green:  { bg: "bg-green-50",  border: "border-green-500",  text: "text-green-600",  textDark: "text-green-900",  textMedium: "text-green-700",  textLight: "text-green-800" },
   red:    { bg: "bg-red-50",    border: "border-red-500",    text: "text-red-600",    textDark: "text-red-900",    textMedium: "text-red-700",    textLight: "text-red-800" },
   orange: { bg: "bg-orange-50", border: "border-orange-500", text: "text-orange-600", textDark: "text-orange-900", textMedium: "text-orange-700", textLight: "text-orange-800" },
-  purple: { bg: "bg-purple-50", border: "border-purple-500", text: "text-purple-600", textDark: "text-purple-900", textMedium: "text-purple-700", textLight: "text-purple-800" },
+  purple: { bg: "bg-purple-50", border: "border-indigo-500", text: "text-purple-600", textDark: "text-purple-900", textMedium: "text-purple-700", textLight: "text-purple-800" },
   indigo: { bg: "bg-indigo-50", border: "border-indigo-500", text: "text-indigo-600", textDark: "text-indigo-900", textMedium: "text-indigo-700", textLight: "text-indigo-800" },
   pink:   { bg: "bg-pink-50",   border: "border-pink-500",   text: "text-pink-600",   textDark: "text-pink-900",   textMedium: "text-pink-700",   textLight: "text-pink-800" },
 };
@@ -161,71 +162,40 @@ export default function HRUpdateEmployee() {
   return (
     <section className="flex min-h-screen">
       <HRSidebar />
-      <main className="flex-1 min-w-0 px-4 md:px-12 py-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div className="px-6 py-5 border-b border-gray-200">
-              <h1 className="text-xl font-semibold tracking-tight text-gray-900">Update Employee</h1>
-              <p className="text-sm text-gray-500 mt-1">Edit employee information</p>
-            </div>
+      <main className="flex-1 min-w-0 px-4 sm:px-6 lg:px-8 py-6 lg:py-7">
+        <div className="max-w-5xl">
+          <nav aria-label="Breadcrumb" className="mb-2 text-[13px] text-gray-500">
+            <button type="button" onClick={() => router.push("/hr/employees")} className="hover:text-gray-900 transition-colors">Employees</button>
+            <span className="mx-1.5 text-gray-300">/</span>
+            <span className="text-gray-700">Edit</span>
+          </nav>
+          <h1 className="text-xl font-semibold tracking-tight text-gray-900">{formData.name || "Edit employee"}</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Changes apply to every patient record linked to this employee. Inactive employees are hidden from new registrations.
+          </p>
 
-            <div className="px-8 pt-6">
-              <button onClick={() => router.push("/hr/employees")}
-                className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors">
-                <ArrowLeft size={16} className="mr-1" />Back to Employees
+          <form onSubmit={handleSubmit} className="mt-6 bg-white rounded-xl border border-gray-200">
+            <FormSection title="Profile" description="Who they are and how to reach them.">
+              <InputField label="Full name" required value={formData.name} onChange={createChangeHandler("name")} placeholder="As it should appear on payslips" className="sm:col-span-2" />
+              <InputField label="Phone" type="tel" value={formData.phone} onChange={createChangeHandler("phone")} placeholder="98765 43210" hint="10 digits, no country code." />
+              <InputField label="Email" type="email" value={formData.email} onChange={createChangeHandler("email")} placeholder="name@example.com" />
+            </FormSection>
+
+            <FormSection title="Role" description="Designation decides what they handle in the CRM." last>
+              <InputField label="Designation" type="combobox" required value={formData.role} onChange={createChangeHandler("role")} options={roleOptions} placeholder="Type any post, or pick one" />
+              <InputField label="Employee ID" value={formData.employeeId} onChange={createChangeHandler("employeeId")} placeholder="RYN-014" hint="Optional staff code." />
+              {formData.role && <div className="sm:col-span-2"><RoleDescriptionCard role={formData.role} /></div>}
+              <InputField label="Active" type="checkbox" value={formData.isactive} onChange={createChangeHandler("isactive")} className="sm:col-span-2" />
+            </FormSection>
+
+            <FormActions>
+              <button type="button" onClick={() => router.push("/hr/employees")} className={buttonClass("secondary")}>Cancel</button>
+              <button type="submit" disabled={isSubmitting} className={buttonClass("primary")}>
+                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden /> : <CheckCircle className="w-4 h-4" aria-hidden />}
+                {isSubmitting ? "Saving…" : "Save changes"}
               </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="px-8 py-8">
-              <div className="space-y-8">
-                <div className="text-center mb-8">
-                  <User className="mx-auto h-16 w-16 text-indigo-500 mb-4" />
-                  <h3 className="text-xl font-semibold tracking-tight text-gray-900">Employee Information</h3>
-                  <p className="text-gray-600">Update the employee details below</p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 gap-x-12">
-                  <InputField label="Full Name" required value={formData.name} onChange={createChangeHandler("name")} placeholder="Enter employee's full name" className="md:col-span-2" />
-                  <InputField label="Employee ID" value={formData.employeeId} onChange={createChangeHandler("employeeId")} placeholder="e.g. RYN-014 (optional staff code)" className="md:col-span-2" />
-                  <InputField label="Phone Number" type="tel" value={formData.phone} onChange={createChangeHandler("phone")} placeholder="10-digit mobile number" />
-                  <InputField label="Email Address" type="email" value={formData.email} onChange={createChangeHandler("email")} placeholder="employee@example.com" />
-                  <InputField label="Designation / Role" type="combobox" required value={formData.role} onChange={createChangeHandler("role")} options={roleOptions} placeholder="Type any post, or pick a common one" />
-                  {formData.role && <div className="md:col-span-2"><RoleDescriptionCard role={formData.role} /></div>}
-                  <InputField label="Active Status" type="checkbox" value={formData.isactive} onChange={createChangeHandler("isactive")} className="md:col-span-2" />
-                </div>
-
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <div className="flex items-start">
-                    <AlertCircle className="text-yellow-600 mr-3 shrink-0 mt-0.5" size={20} />
-                    <ul className="text-sm text-yellow-700 space-y-1">
-                      <li>• Changes will affect all existing patient records linked to this employee</li>
-                      <li>• Setting employee to inactive will hide them from new patient registrations</li>
-                      <li>• Ensure all information is accurate before updating</li>
-                    </ul>
-                  </div>
-                </div>
-
-                <div className="flex justify-between pt-6 border-t border-gray-200">
-                  <button type="button" onClick={() => router.push("/hr/employees")}
-                    className="inline-flex items-center px-6 py-3 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors">
-                    Cancel
-                  </button>
-                  <button type="submit" disabled={isSubmitting}
-                    className="inline-flex items-center px-8 py-3 rounded-md text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors">
-                    {isSubmitting ? (
-                      <><div className="animate-spin mr-2 h-5 w-5 border-2 border-white border-t-transparent rounded-full" />Updating...</>
-                    ) : (
-                      <><CheckCircle className="mr-2" size={20} />Update Employee</>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </form>
-
-            <div className="px-8 py-4 bg-gray-50 border-t border-gray-200">
-              <p className="text-xs text-gray-600 text-center">Record ID: {employeeId} • Changes will be reflected immediately</p>
-            </div>
-          </div>
+            </FormActions>
+          </form>
         </div>
       </main>
     </section>

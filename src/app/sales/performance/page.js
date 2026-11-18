@@ -94,7 +94,7 @@ export default function PerformancePage() {
   const topPatients = topBy("patients");
 
   return (
-    <div className="flex min-h-screen bg-linear-to-br from-gray-50 to-gray-100">
+    <div className="flex min-h-screen bg-gray-50">
       <SalesSidebar
       />
 

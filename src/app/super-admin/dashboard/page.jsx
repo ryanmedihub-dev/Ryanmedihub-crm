@@ -351,7 +351,7 @@ export default function SuperAdminDashboard() {
                           return (
                             <>
                               <div className="h-full bg-teal-500 transition-all duration-300" style={{ width: `${prpPct}%` }} />
-                              <div className="h-full bg-purple-500 transition-all duration-300" style={{ width: `${100 - prpPct}%` }} />
+                              <div className="h-full bg-indigo-500 transition-all duration-300" style={{ width: `${100 - prpPct}%` }} />
                             </>
                           );
                         })()}
@@ -363,7 +363,7 @@ export default function SuperAdminDashboard() {
                         <span className="w-2 h-2 rounded-full bg-teal-500" /> PRP · {rupee(d.prp?.prpRevenue ?? 0)}
                       </span>
                       <span className="flex items-center gap-1.5 text-xs text-gray-500">
-                        <span className="w-2 h-2 rounded-full bg-purple-500" /> GFC · {rupee(d.prp?.gfcRevenue ?? 0)}
+                        <span className="w-2 h-2 rounded-full bg-indigo-500" /> GFC · {rupee(d.prp?.gfcRevenue ?? 0)}
                       </span>
                     </div>
                   </div>

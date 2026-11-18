@@ -639,7 +639,7 @@ export default function DrillDownTable({
       render: (r) => {
         if (r.sourceKind === "BORROWING") {
           return (
-            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold border bg-violet-50 text-violet-700 border-violet-200">
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold border bg-indigo-50 text-indigo-700 border-indigo-200">
               Borrowing
             </span>
           );

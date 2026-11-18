@@ -676,7 +676,7 @@ const PatientProfile = () => {
               </div>
 
               <div className="mb-8">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4 border-b pb-2">
+                <h2 className="text-[15px] font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200 lowercase first-letter:uppercase">
                   PATIENT INFORMATION
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -785,7 +785,7 @@ const PatientProfile = () => {
               </div>
 
               <div className="mb-8">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4 border-b pb-2">
+                <h2 className="text-[15px] font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200 lowercase first-letter:uppercase">
                   COUNSELLING DETAILS
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-4">
@@ -928,13 +928,13 @@ const PatientProfile = () => {
               </div>
 
               <div className="mb-8">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4 border-b pb-2">
+                <h2 className="text-[15px] font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200 lowercase first-letter:uppercase">
                   MEDICAL INFORMATION
                 </h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                    <h3 className="text-sm font-semibold text-gray-800 mb-3">
                       Vital Signs
                     </h3>
                     <div className="grid grid-cols-2 gap-4">
@@ -974,7 +974,7 @@ const PatientProfile = () => {
                   </div>
 
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                    <h3 className="text-sm font-semibold text-gray-800 mb-3">
                       Medical Background
                     </h3>
                     <div className="space-y-3">
@@ -1016,7 +1016,7 @@ const PatientProfile = () => {
               </div>
 
               <div className="mb-8">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4 border-b pb-2">
+                <h2 className="text-[15px] font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200 lowercase first-letter:uppercase">
                   SURGERY INFORMATION
                 </h2>
 
@@ -1105,7 +1105,7 @@ const PatientProfile = () => {
                         )}
 
                         <div className="mb-4">
-                          <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                          <h3 className="text-sm font-semibold text-gray-800 mb-3">
                             Surgical Team
                           </h3>
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1196,7 +1196,7 @@ const PatientProfile = () => {
               </div>
 
               <div className="mb-8">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4 border-b pb-2">
+                <h2 className="text-[15px] font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200 lowercase first-letter:uppercase">
                   AFTER SURGERY CARE
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
@@ -1261,48 +1261,48 @@ const PatientProfile = () => {
               </div>
 
               <div className="mb-8">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4 border-b pb-2">
+                <h2 className="text-[15px] font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200 lowercase first-letter:uppercase">
                   PAYMENT INFORMATION
                 </h2>
 
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-                  <div className="bg-gray-50 p-4 rounded border text-center">
-                    <label className="block text-sm text-gray-600 mb-1">
+                  <div className="bg-white px-4 py-3 rounded-lg border border-gray-200">
+                    <label className="block text-[13px] text-gray-500 mb-1">
                       Total Amount
                     </label>
                     <p className="text-lg font-semibold text-gray-900">
                       {formatCurrency(patientData.payments?.totalAmount)}
                     </p>
                   </div>
-                  <div className="bg-green-50 p-4 rounded border text-center">
-                    <label className="block text-sm text-gray-600 mb-1">
+                  <div className="bg-white px-4 py-3 rounded-lg border border-gray-200">
+                    <label className="block text-[13px] text-gray-500 mb-1">
                       Amount Received
                     </label>
-                    <p className="text-lg font-semibold text-green-600">
+                    <p className="text-lg font-semibold text-gray-900 tabular-nums">
                       {formatCurrency(patientData.payments?.amountReceived)}
                     </p>
                   </div>
-                  <div className="bg-green-50 p-4 rounded border text-center">
-                    <label className="block text-sm text-gray-600 mb-1">
+                  <div className="bg-white px-4 py-3 rounded-lg border border-gray-200">
+                    <label className="block text-[13px] text-gray-500 mb-1">
                       Total Discount
                     </label>
-                    <p className="text-lg font-semibold text-green-600">
+                    <p className="text-lg font-semibold text-gray-900 tabular-nums">
                       {formatCurrency(patientData.payments?.discount)}
                     </p>
                   </div>
-                  <div className="bg-red-50 p-4 rounded border text-center">
-                    <label className="block text-sm text-gray-600 mb-1">
+                  <div className="bg-white px-4 py-3 rounded-lg border border-gray-200">
+                    <label className="block text-[13px] text-gray-500 mb-1">
                       Pending Amount
                     </label>
-                    <p className="text-lg font-semibold text-red-600">
+                    <p className="text-lg font-semibold text-rose-700 tabular-nums">
                       {formatCurrency(patientData.payments?.pendingAmount)}
                     </p>
                   </div>
-                  <div className="bg-blue-50 p-4 rounded border text-center">
-                    <label className="block text-sm text-gray-600 mb-1">
+                  <div className="bg-white px-4 py-3 rounded-lg border border-gray-200">
+                    <label className="block text-[13px] text-gray-500 mb-1">
                       Medicine Amount
                     </label>
-                    <p className="text-lg font-semibold text-blue-600">
+                    <p className="text-lg font-semibold text-gray-900 tabular-nums">
                       {formatCurrency(patientData.payments?.medicineAmount)}
                     </p>
                   </div>
@@ -1311,7 +1311,7 @@ const PatientProfile = () => {
                 {patientData.payments?.transactions &&
                   patientData.payments.transactions.length > 0 && (
                     <div className="mb-4">
-                      <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                      <h3 className="text-sm font-semibold text-gray-800 mb-3">
                         Transaction History
                       </h3>
                       <div className="overflow-x-auto">
@@ -1359,7 +1359,7 @@ const PatientProfile = () => {
               </div>
 
               <div className="mb-8">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4 border-b pb-2">
+                <h2 className="text-[15px] font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200 lowercase first-letter:uppercase">
                   DOCUMENTS & ATTACHMENTS
                 </h2>
 

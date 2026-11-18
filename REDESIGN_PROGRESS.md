@@ -147,6 +147,20 @@ The user disliked the indigo theme and chose **graphite + emerald**, plus a user
 - **Charts:** inflow `--chart-in` (emerald #047857 / blue #2563eb / violet #7c3aed), outflow `--chart-out` #d97706. Each pair was validated in light and dark. Teal was rejected (chroma too low) and rose too (red as inflow reads negative).
 - **Verified:** light, dark and blue accent on admin pages; a dark sweep of 9 role pages; picker popover in light and dark.
 
+## Session 5d (2026-11-18): popups, dark mode + phone sweep, detail pages
+
+- **Popups (13, opened with real clicks; open-only, nothing submitted) in dark and light:** filter drawers, KPI drill panel, accounts dropdown, Record Borrowing, New Collab Case, Add Session, Add Candidate, Add Incentive, New User, master-data category.
+  - Fixed: drawer scrim built from `slate-900/40` turned light in dark mode (now `gray-950/40`).
+  - Fixed: solid violet/purple fills and financing-module violet tints moved to the accent (purple status badges kept).
+- **Dark mode at 390px across all 132 non-owner routes,** including 23 detail and edit routes with real IDs: no horizontal page scroll.
+  - Fixed: gradient page wrappers on role transaction pages (navy in dark, faint blue in light).
+  - Fixed: bill modal gradient header and buttons.
+  - Fixed: role transaction tables (purple branch chips, blue payment-type chips, coloured row actions, empty pill when no payment type).
+- **Detail and edit pages:**
+  - Update Employee (admin + HR) rebuilt on FormSection.
+  - Patient record for collab, reception, sales and surgery got the admin record pass.
+- **Not changed, on purpose:** consultation forms and invoices are self-styled paper documents and render identically in either mode. `/owner/**` is still its own design.
+
 ## Next session — suggested order
 
 1. Visual QA of the shell and tokens (log in as each role).

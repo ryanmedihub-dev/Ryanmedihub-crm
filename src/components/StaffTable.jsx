@@ -20,7 +20,7 @@ const TECHNIQUES = [
 ];
 
 const CAT_STYLE = {
-  Doctor:     { dot: "bg-violet-500",  active: "bg-violet-50 text-violet-700 ring-violet-200" },
+  Doctor:     { dot: "bg-indigo-500",  active: "bg-violet-50 text-violet-700 ring-violet-200" },
   Agent:      { dot: "bg-blue-500",    active: "bg-blue-50 text-blue-700 ring-blue-200" },
   Counsellor: { dot: "bg-emerald-500", active: "bg-emerald-50 text-emerald-700 ring-emerald-200" },
   Technician: { dot: "bg-orange-500",  active: "bg-orange-50 text-orange-700 ring-orange-200" },
@@ -808,7 +808,7 @@ export default function StaffTable({ config = {} }) {
       {}
       {drawerOpen && (
         <div className="fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-slate-900/40" onClick={() => setDrawer(false)} />
+          <div className="absolute inset-0 bg-gray-950/40" onClick={() => setDrawer(false)} />
           <div className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
               <div>
