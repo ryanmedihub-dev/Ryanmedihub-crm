@@ -189,7 +189,7 @@ export default function SuspenseManager() {
             </div>
             <div>
               <p className="text-xs text-gray-500">Unexplained money still in the accounts</p>
-              <p className="text-xl font-bold text-gray-900">
+              <p className="text-xl font-semibold text-gray-900">
                 {formatCurrency(summary.netAmount)}
                 <span className="text-sm font-medium text-gray-400 ml-2">
                   across {summary.count} open {summary.count === 1 ? "entry" : "entries"}
@@ -230,7 +230,7 @@ export default function SuspenseManager() {
             <select
               value={account}
               onChange={(e) => setAccount(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
             >
               <option value="">All accounts</option>
               {ACCOUNTS.map((a) => <option key={a} value={a}>{a}</option>)}
@@ -241,7 +241,7 @@ export default function SuspenseManager() {
             <select
               value={branch}
               onChange={(e) => setBranch(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
             >
               <option value="">All branches</option>
               {ALL_BRANCHES.map((b) => <option key={b} value={b}>{b}</option>)}
@@ -253,7 +253,7 @@ export default function SuspenseManager() {
               type="date"
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
             />
           </div>
           <div>
@@ -262,7 +262,7 @@ export default function SuspenseManager() {
               type="date"
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
             />
           </div>
         </div>
@@ -432,11 +432,11 @@ function EditModal({ form, setForm, entry, busy, onClose, onSave }) {
   const set = (patch) => setForm((p) => ({ ...p, ...patch }));
   const counting = !entry.isResolved && !entry.isCancelled;
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 overlay-in bg-gray-950/40 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 sticky top-0 bg-white rounded-t-2xl">
-          <h3 className="text-lg font-bold text-gray-900">Edit Suspense Entry</h3>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
+          <h3 className="text-lg font-semibold text-gray-900">Edit Suspense Entry</h3>
+          <button type="button" onClick={onClose} aria-label="Close" className="p-2 hover:bg-gray-100 rounded-lg">
             <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>

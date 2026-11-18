@@ -1217,7 +1217,7 @@ function AdminCreateTransactionPageInner() {
   if (fetchLoading) {
     return (
       <div className="flex min-h-screen bg-gray-50">
-        <main className="flex-1 flex items-center justify-center">
+        <main className="flex-1 min-w-0 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
             <p className="text-gray-600">Loading data...</p>
@@ -1229,12 +1229,12 @@ function AdminCreateTransactionPageInner() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <main className="flex-1 flex flex-col">
+      <main className="flex-1 min-w-0 flex flex-col">
         <div className="flex-1 overflow-auto">
           <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
             <div className="mb-6 flex justify-between">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">
+                <h1 className="text-xl font-semibold tracking-tight text-gray-900">
                   Create Transaction
                 </h1>
                 <p className="text-gray-600 mt-1">
@@ -1250,8 +1250,8 @@ function AdminCreateTransactionPageInner() {
               </button>
             </div>
 
-            <div className="mb-6 border-b border-gray-200">
-              <div className="flex gap-4 flex-wrap">
+            <div className="mb-6 border-b border-gray-200 overflow-x-auto scrollbar-hide">
+              <div role="tablist" className="flex gap-1">
                 {[
                   { id: "transplant", label: "Transplant", icon: Scissors },
                   { id: "service", label: "Service (PRP/GFC)", icon: Heart },
@@ -1263,11 +1263,13 @@ function AdminCreateTransactionPageInner() {
                 ].map(({ id, label, icon: Icon }) => (
                   <button
                     key={id}
+                    role="tab"
+                    aria-selected={activeTab === id}
                     onClick={() => setActiveTab(id)}
-                    className={`px-6 py-3 font-medium border-b-2 transition-colors ${activeTab === id ? "border-indigo-600 text-indigo-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+                    className={`group -mb-px h-10 px-3 text-sm whitespace-nowrap border-b-2 transition-colors duration-150 ${activeTab === id ? "border-indigo-600 text-gray-900 font-medium" : "border-transparent text-gray-500 hover:text-gray-900 hover:border-gray-300"}`}
                   >
                     <div className="flex items-center gap-2">
-                      <Icon className="w-4 h-4" />
+                      <Icon className={`w-4 h-4 ${activeTab === id ? "text-indigo-600" : "text-gray-400 group-hover:text-gray-500"}`} />
                       {label}
                     </div>
                   </button>
@@ -1460,7 +1462,7 @@ function AdminCreateTransactionPageInner() {
                               </div>
                               <div className="flex items-center justify-between text-sm">
                                 <span className="text-gray-600">Pending</span>
-                                <span className="font-bold text-rose-600">
+                                <span className="font-semibold text-rose-600">
                                   {payablesLoading ? "…" : formatCurrency(payableSummary?.totalPending)}
                                 </span>
                               </div>
@@ -1487,7 +1489,7 @@ function AdminCreateTransactionPageInner() {
                               </div>
                               <div className="flex items-center justify-between text-sm">
                                 <span className="text-gray-600">Pending</span>
-                                <span className="font-bold text-rose-600">
+                                <span className="font-semibold text-rose-600">
                                   {payablesLoading
                                     ? "…"
                                     : formatCurrency(secondaryPayableSummary?.totalPending)}
@@ -1520,7 +1522,7 @@ function AdminCreateTransactionPageInner() {
                                     salaryMonth: parseInt(e.target.value),
                                   })
                                 }
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                               >
                                 {Array.from({ length: 12 }, (_, i) => i + 1).map(
                                   (m) => (
@@ -1547,7 +1549,7 @@ function AdminCreateTransactionPageInner() {
                                     salaryYear: parseInt(e.target.value),
                                   })
                                 }
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                               />
                             </div>
                           </div>
@@ -1647,7 +1649,7 @@ function AdminCreateTransactionPageInner() {
                                     expenseType: e.target.value,
                                   })
                                 }
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                               >
                                 <option value="">Select Type</option>
                                 {getExpenseTypes("Commision").map((t) => (
@@ -1733,7 +1735,7 @@ function AdminCreateTransactionPageInner() {
                                       receiverName: e.target.value,
                                     })
                                   }
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                  className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                                   placeholder="Enter payee name"
                                 />
                               )}
@@ -1755,7 +1757,7 @@ function AdminCreateTransactionPageInner() {
                                   expenseType: e.target.value,
                                 })
                               }
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                              className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                             >
                               <option value="">Select Type</option>
                               {PATIENT_EXPENSE_SUBTYPES.map((t) => (
@@ -1784,7 +1786,7 @@ function AdminCreateTransactionPageInner() {
                               </div>
                               <div className="flex items-center justify-between text-sm">
                                 <span className="text-gray-600">Pending</span>
-                                <span className="font-bold text-rose-600">
+                                <span className="font-semibold text-rose-600">
                                   {payablesLoading ? "…" : formatCurrency(payableSummary?.totalPending)}
                                 </span>
                               </div>
@@ -1836,7 +1838,7 @@ function AdminCreateTransactionPageInner() {
                               rentSubType: "",
                             })
                           }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-4"
+                          className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150 mb-4"
                         >
                           {mdPayableDropdown.filter((cat) => cat !== "Incentive").map((cat) => (
                             <option key={cat} value={cat}>
@@ -1856,7 +1858,7 @@ function AdminCreateTransactionPageInner() {
                               rentSubType: e.target.value,
                             })
                           }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                          className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                         >
                           <option value="">Select</option>
                           {getExpenseTypes(expenseData.payableCategory).map((t) => (
@@ -1902,7 +1904,7 @@ function AdminCreateTransactionPageInner() {
                             </div>
                             <div className="flex items-center justify-between text-sm">
                               <span className="text-gray-600">Pending</span>
-                              <span className="font-bold text-rose-600">
+                              <span className="font-semibold text-rose-600">
                                 {payablesLoading ? "…" : formatCurrency(payableSummary?.totalPending)}
                               </span>
                             </div>
@@ -1996,7 +1998,7 @@ function AdminCreateTransactionPageInner() {
                                     expenseGiverName: e.target.value,
                                   })
                                 }
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                                 placeholder="Enter payee name"
                               />
                             </div>
@@ -2022,7 +2024,7 @@ function AdminCreateTransactionPageInner() {
                                     expenseType: "",
                                   })
                                 }
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                               >
                                 <option value="">Select Category</option>
                                 {OTHER_EXPENSE_CATEGORIES_DYN.map((cat) => (
@@ -2046,7 +2048,7 @@ function AdminCreateTransactionPageInner() {
                                   })
                                 }
                                 disabled={!expenseData.expenseCategory}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg disabled:bg-gray-100"
+                                className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150 disabled:bg-gray-100"
                               >
                                 <option value="">Select Type</option>
                                 {getExpenseTypes(
@@ -2073,7 +2075,7 @@ function AdminCreateTransactionPageInner() {
                                   })
                                 }
                                 min="0"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                                 placeholder={
                                   expenseData.includeGST ? "Base amount (excl. GST)" : "Enter amount"
                                 }
@@ -2113,7 +2115,7 @@ function AdminCreateTransactionPageInner() {
                                   </div>
                                   <div className="flex items-center justify-between text-sm">
                                     <span className="text-gray-600">Pending</span>
-                                    <span className="font-bold text-rose-600">
+                                    <span className="font-semibold text-rose-600">
                                       {payablesLoading
                                         ? "…"
                                         : formatCurrency(payableSummary?.totalPending)}
@@ -2144,7 +2146,7 @@ function AdminCreateTransactionPageInner() {
                                 method: e.target.value,
                               })
                             }
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                            className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                           >
                             {withLegacyMethod(
                               getMethodOptions("EXPENSE"),
@@ -2196,7 +2198,7 @@ function AdminCreateTransactionPageInner() {
                                 paymentId: e.target.value,
                               })
                             }
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                            className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                             placeholder={
                               getPaymentIdConfig(expenseData.method)
                                 .placeholder
@@ -2216,7 +2218,7 @@ function AdminCreateTransactionPageInner() {
                                   branch: e.target.value,
                                 })
                               }
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                              className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                             >
                               <option value="Delhi">Delhi</option>
                               <option value="Mumbai">Mumbai</option>
@@ -2258,7 +2260,7 @@ function AdminCreateTransactionPageInner() {
                                 date: e.target.value,
                               })
                             }
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                            className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                           />
                         </div>
                         <div className="md:col-span-2">
@@ -2274,7 +2276,7 @@ function AdminCreateTransactionPageInner() {
                               })
                             }
                             rows="2"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                            className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                             placeholder="Additional notes"
                           />
                         </div>
@@ -2299,10 +2301,10 @@ function AdminCreateTransactionPageInner() {
                       <div className="space-y-3">
                         <div className="border-t border-gray-200 pt-3">
                           <div className="flex justify-between items-center">
-                            <span className="text-lg font-bold text-gray-900">
+                            <span className="text-lg font-semibold text-gray-900">
                               Total Amount:
                             </span>
-                            <span className="text-2xl font-bold text-indigo-600">
+                            <span className="text-xl font-semibold tracking-tight text-indigo-600">
                               {formatCurrency(expenseData.amount)}
                             </span>
                           </div>
@@ -2317,7 +2319,7 @@ function AdminCreateTransactionPageInner() {
                         <button
                           onClick={handleSaveExpense}
                           disabled={loading}
-                          className="w-full mt-6 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 font-medium"
+                          className="w-full mt-6 h-10 px-4 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 active:bg-indigo-800 transition-colors press disabled:opacity-50 font-medium"
                         >
                           {loading ? (
                             "Saving..."

@@ -9,12 +9,12 @@ export default function LedgerScopeBar({ actions = null }) {
   const dirty = scope.branch || scope.dateFrom || scope.dateTo;
 
   return (
-    <div className="sticky top-0 z-10 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-3 bg-gray-50/85 backdrop-blur border-b border-gray-200">
+    <div className="sticky top-0 z-10 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-3 bg-gray-50 border-b border-gray-200">
       <div className="flex flex-wrap items-center gap-2">
         <select
           value={scope.branch}
           onChange={(e) => setScope({ branch: e.target.value })}
-          className="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white shadow-sm"
+          className="h-9 px-3 border border-gray-200 rounded-lg text-sm bg-white hover:border-gray-300 transition-colors"
         >
           <option value="">All branches</option>
           {ALL_BRANCHES.map((b) => (
@@ -24,13 +24,13 @@ export default function LedgerScopeBar({ actions = null }) {
         <DebouncedDateInput
           value={scope.dateFrom}
           onCommit={(v) => setScope({ dateFrom: v })}
-          className="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white shadow-sm"
+          className="h-9 px-3 border border-gray-200 rounded-lg text-sm bg-white hover:border-gray-300 transition-colors"
         />
         <span className="text-xs text-gray-400">to</span>
         <DebouncedDateInput
           value={scope.dateTo}
           onCommit={(v) => setScope({ dateTo: v })}
-          className="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white shadow-sm"
+          className="h-9 px-3 border border-gray-200 rounded-lg text-sm bg-white hover:border-gray-300 transition-colors"
         />
         {dirty ? (
           <button

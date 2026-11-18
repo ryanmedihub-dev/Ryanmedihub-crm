@@ -13,14 +13,15 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import BillGenerator from "@/components/BillGenerator";
+import SharedStatCard from "@/components/dashboard/StatCard";
 
 const DATE_RANGES = ["Today", "Yesterday", "Last 7 Days", "This Month", "Custom"];
 
 const CAT_CFG = {
-  TRANSPLANT: { label: "Transplants", tab: "Transplant", gradient: "from-violet-500 to-purple-600", icon: Scissors },
-  SERVICE:    { label: "Services",    tab: "Services",   gradient: "from-pink-500 to-rose-500",    icon: Heart    },
-  MEDICINE:   { label: "Medicines",   tab: "Medicine",   gradient: "from-emerald-400 to-green-600", icon: Pill    },
-  EXPENSE:    { label: "Expenses",    tab: "Expenses",   gradient: "from-red-500 to-rose-600",      icon: Receipt  },
+  TRANSPLANT: { label: "Transplants", tab: "Transplant", tone: "violet", icon: Scissors },
+  SERVICE:    { label: "Services",    tab: "Services",   tone: "pink",    icon: Heart    },
+  MEDICINE:   { label: "Medicines",   tab: "Medicine",   tone: "emerald", icon: Pill    },
+  EXPENSE:    { label: "Expenses",    tab: "Expenses",   tone: "rose",    icon: Receipt  },
 };
 
 const PROCEDURE_COLORS = {
@@ -120,7 +121,7 @@ function AuditModal({ tx, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-end">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
 
       <div className="relative z-10 w-full max-w-md h-full bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
 
@@ -130,13 +131,13 @@ function AuditModal({ tx, onClose }) {
               <History className="w-4 h-4 text-indigo-600" />
             </div>
             <div>
-              <h2 className="font-bold text-gray-900 text-sm">Audit Trail</h2>
+              <h2 className="font-semibold text-gray-900 text-sm">Audit Trail</h2>
               <p className="text-xs text-gray-500 mt-0.5">
                 {tx.patient?.personal?.name || tx.patientName || "Transaction"} · {timeline.length} event{timeline.length !== 1 ? "s" : ""}
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors">
+          <button type="button" onClick={onClose} aria-label="Close" className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors">
             <X className="w-4 h-4 text-gray-500" />
           </button>
         </div>
@@ -186,7 +187,7 @@ function AuditModal({ tx, onClose }) {
                         <div className="text-right shrink-0">
                           <p className="text-xs text-gray-500">{fmtDateTime(entry.date)}</p>
                           {entry.branch && (
-                            <span className={`inline-block mt-0.5 px-1.5 py-0.5 text-[10px] font-semibold rounded ${
+                            <span className={`inline-block mt-0.5 px-1.5 py-0.5 text-[11px] font-semibold rounded ${
                               BRANCH_COLORS[entry.branch] || "bg-gray-100 text-gray-600"
                             }`}>
                               {entry.branch}
@@ -205,7 +206,7 @@ function AuditModal({ tx, onClose }) {
                         <div className="space-y-1.5 mt-2 pt-2 border-t border-gray-100">
                           {entry.fields.map((f, fi) => (
                             <div key={fi} className="bg-gray-50 rounded-lg px-2.5 py-1.5">
-                              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">{f.name}</p>
+                              <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1">{f.name}</p>
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <span className="text-xs text-red-600 bg-red-50 px-1.5 py-0.5 rounded line-through decoration-red-300">
                                   {f.previousValue || "—"}
@@ -241,15 +242,13 @@ function StatCard({ catKey, total, count }) {
   const cfg = CAT_CFG[catKey];
   const Icon = cfg.icon;
   return (
-    <div className={`relative rounded-2xl p-5 bg-linear-to-br ${cfg.gradient} text-white overflow-hidden shadow-md`}>
-      <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_80%_20%,white,transparent_60%)]" />
-      <p className="text-sm font-medium opacity-90 mb-1">{cfg.label}</p>
-      <p className="text-2xl font-bold mb-3 leading-tight">{fmtCurrency(total)}</p>
-      <p className="text-xs opacity-75">{count} transaction{count !== 1 ? "s" : ""}</p>
-      <div className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-        <Icon className="w-5 h-5 text-white" />
-      </div>
-    </div>
+    <SharedStatCard
+      title={cfg.label}
+      value={fmtCurrency(total)}
+      subtitle={`${count} transaction${count !== 1 ? "s" : ""}`}
+      icon={Icon}
+      tone={cfg.tone}
+    />
   );
 }
 
@@ -429,12 +428,12 @@ export default function TransactionTable({ config = {} }) {
 
       {billTxId && <BillGenerator transactionId={billTxId} onClose={() => setBillTxId(null)} />}
 
-      <main className="flex-1 overflow-auto bg-gray-50">
+      <main className="flex-1 min-w-0 overflow-auto bg-gray-50">
         <div className="p-6 lg:p-8 max-w-screen-2xl mx-auto">
 
           <div className="flex items-start justify-between mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
+              <h1 className="text-xl font-semibold tracking-tight text-gray-900">{title}</h1>
               <p className="text-sm text-gray-500 mt-0.5">{subtitle}</p>
             </div>
             <div className="flex gap-2">
@@ -450,7 +449,7 @@ export default function TransactionTable({ config = {} }) {
               {showCsvExport && (
                 <button
                   onClick={exportCSV}
-                  className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-semibold text-sm shadow-sm transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-sm shadow-sm transition-colors"
                 >
                   <Download className="w-4 h-4" />
                   Excel
@@ -492,19 +491,19 @@ export default function TransactionTable({ config = {} }) {
                 <input
                   type="date" value={customDates.from}
                   onChange={(e) => setCustom((p) => ({ ...p, from: e.target.value }))}
-                  className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-300"
+                  className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/30"
                 />
                 <span className="self-center text-gray-400 text-sm">to</span>
                 <input
                   type="date" value={customDates.to}
                   onChange={(e) => setCustom((p) => ({ ...p, to: e.target.value }))}
-                  className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-300"
+                  className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/30"
                 />
               </>
             )}
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
 
             <div className="flex items-center justify-between gap-4 px-4 py-3 border-b border-gray-100 flex-wrap">
               <div className="flex gap-1.5 flex-wrap">
@@ -516,11 +515,13 @@ export default function TransactionTable({ config = {} }) {
                   return (
                     <button
                       key={cat}
+                      type="button"
                       onClick={() => setActiveTab(cat)}
-                      className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-sm font-semibold transition-all ${
+                      aria-pressed={isActive}
+                      className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-sm font-medium transition-colors ${
                         isActive
-                          ? `bg-linear-to-r ${cfg.gradient} text-white shadow-sm`
-                          : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                          ? "bg-gray-900 text-white"
+                          : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"
                       }`}
                     >
                       <Icon className="w-3.5 h-3.5" />
@@ -538,7 +539,7 @@ export default function TransactionTable({ config = {} }) {
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Search transactions..."
-                    className="pl-9 pr-3 py-1.5 text-sm border border-gray-200 rounded-xl w-52 outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300 bg-gray-50"
+                    className="pl-9 pr-3 py-1.5 text-sm border border-gray-200 rounded-xl w-52 outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-300 bg-gray-50"
                   />
                 </div>
                 <button
@@ -551,7 +552,7 @@ export default function TransactionTable({ config = {} }) {
                 >
                   <Filter className="w-4 h-4" />
                   {activeChips.length > 0 && (
-                    <span className="absolute -top-1 -right-1 w-4 h-4 text-[10px] font-bold bg-indigo-600 text-white rounded-full flex items-center justify-center">
+                    <span className="absolute -top-1 -right-1 w-4 h-4 text-[11px] font-semibold bg-indigo-600 text-white rounded-full flex items-center justify-center">
                       {activeChips.length}
                     </span>
                   )}
@@ -572,9 +573,9 @@ export default function TransactionTable({ config = {} }) {
               <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 flex flex-wrap gap-3 items-end">
                 {filters.showMethod && (
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Method</label>
+                    <label className="text-xs font-semibold text-gray-500">Method</label>
                     <select value={fMethod} onChange={(e) => setFMethod(e.target.value)}
-                      className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white outline-none focus:ring-2 focus:ring-indigo-200">
+                      className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white outline-none focus:ring-2 focus:ring-indigo-500/30">
                       <option value="">All Methods</option>
                       <option value="upi">UPI</option>
                       <option value="cash">Cash</option>
@@ -591,9 +592,9 @@ export default function TransactionTable({ config = {} }) {
                 )}
                 {filters.showPaymentType && (
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Payment Type</label>
+                    <label className="text-xs font-semibold text-gray-500">Payment Type</label>
                     <select value={fPaymentType} onChange={(e) => setFPaymentType(e.target.value)}
-                      className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white outline-none focus:ring-2 focus:ring-indigo-200">
+                      className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white outline-none focus:ring-2 focus:ring-indigo-500/30">
                       <option value="">All Types</option>
                       <option>Booking</option>
                       <option>Pending</option>
@@ -604,9 +605,9 @@ export default function TransactionTable({ config = {} }) {
                 )}
                 {filters.showBranch && (
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Branch</label>
+                    <label className="text-xs font-semibold text-gray-500">Branch</label>
                     <select value={fBranch} onChange={(e) => setFBranch(e.target.value)}
-                      className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white outline-none focus:ring-2 focus:ring-indigo-200">
+                      className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white outline-none focus:ring-2 focus:ring-indigo-500/30">
                       <option value="">All Branches</option>
                       <option>Delhi</option>
                       <option>Mumbai</option>
@@ -617,9 +618,9 @@ export default function TransactionTable({ config = {} }) {
                   </div>
                 )}
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Per page</label>
+                  <label className="text-xs font-semibold text-gray-500">Per page</label>
                   <select value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))}
-                    className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white outline-none focus:ring-2 focus:ring-indigo-200">
+                    className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white outline-none focus:ring-2 focus:ring-indigo-500/30">
                     {pageSizeOptions.map((s) => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
@@ -631,7 +632,7 @@ export default function TransactionTable({ config = {} }) {
                 {activeChips.map((c) => (
                   <span key={c.key} className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-full text-xs font-medium">
                     {c.label}
-                    <button onClick={c.clear}><X className="w-3 h-3" /></button>
+                    <button aria-label="Clear search" onClick={c.clear}><X className="w-3 h-3" /></button>
                   </span>
                 ))}
               </div>
@@ -648,10 +649,10 @@ export default function TransactionTable({ config = {} }) {
                     <thead>
                       <tr className="border-b border-gray-100 bg-gray-50/60">
                         {["Date","Patient","Procedure","Payment Type","Amount","Method","Trans ID","Branch","Audit"].map((h) => (
-                          <th key={h} className="px-5 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
+                          <th key={h} className="px-5 py-3 text-left text-xs font-medium text-gray-500 whitespace-nowrap">{h}</th>
                         ))}
                         {actions.length > 0 && (
-                          <th className="px-5 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
+                          <th className="px-5 py-3 text-left text-xs font-medium text-gray-500">Actions</th>
                         )}
                       </tr>
                     </thead>
@@ -683,7 +684,7 @@ export default function TransactionTable({ config = {} }) {
                             </td>
 
                             <td className="px-5 py-3.5">
-                              <span className="text-sm font-bold text-gray-900">{fmtCurrency(tx.amount)}</span>
+                              <span className="text-sm font-semibold text-gray-900">{fmtCurrency(tx.amount)}</span>
                             </td>
 
                             <td className="px-5 py-3.5">
@@ -709,7 +710,7 @@ export default function TransactionTable({ config = {} }) {
                                   {tx.createdBy?.name || "—"}
                                 </span>
                                 {tx.editors?.length > 0 && (
-                                  <span className="px-1 py-0.5 bg-indigo-100 text-indigo-600 group-hover:bg-indigo-200 rounded text-[10px] font-bold leading-none">
+                                  <span className="px-1 py-0.5 bg-indigo-100 text-indigo-600 group-hover:bg-indigo-200 rounded text-[11px] font-semibold leading-none">
                                     +{tx.editors.length}
                                   </span>
                                 )}
@@ -779,7 +780,7 @@ export default function TransactionTable({ config = {} }) {
                   </p>
                   {totalPages > 1 && (
                     <div className="flex gap-1">
-                      <button disabled={page === 1} onClick={() => setPage((p) => p - 1)}
+                      <button aria-label="Previous page" disabled={page === 1} onClick={() => setPage((p) => p - 1)}
                         className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
                         <ChevronLeft className="w-4 h-4" />
                       </button>
@@ -791,7 +792,7 @@ export default function TransactionTable({ config = {} }) {
                           {pg}
                         </button>
                       ))}
-                      <button disabled={page === totalPages} onClick={() => setPage((p) => p + 1)}
+                      <button aria-label="Next page" disabled={page === totalPages} onClick={() => setPage((p) => p + 1)}
                         className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
                         <ChevronRight className="w-4 h-4" />
                       </button>

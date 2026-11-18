@@ -10,6 +10,7 @@ import {
 import { exportWorkbook, filterProvenanceRows } from "@/lib/exportToExcel";
 import { fetchInterleavedRows } from "@/lib/finance/headedExport";
 import { useToast } from "@/components/Toast";
+import { buttonClass, inputClass } from "@/components/ui";
 
 const CATEGORY_OPTIONS = ["Doctor", "Agent", "Counsellor", "Technician", "Implanter", "Others", "Hr"];
 
@@ -65,13 +66,13 @@ const EMPTY_FILTERS = {
 };
 
 const FINANCE_COLUMNS = [
-  { key: "totalPayable",     label: "Total Payable",   tone: "text-slate-900 font-semibold" },
-  { key: "totalPaid",        label: "Total Paid",      tone: "text-emerald-600 font-semibold" },
-  { key: "salaryPayable",    label: "Salary Payable",  tone: "text-slate-600" },
-  { key: "salaryPaid",       label: "Salary Paid",     tone: "text-emerald-600" },
-  { key: "incentivePayable", label: "Total Incentive", tone: "text-slate-600" },
-  { key: "incentivePaid",    label: "Incentive Paid",  tone: "text-emerald-600" },
-  { key: "advanceOutstanding", label: "Advance O/S",   tone: "text-amber-600 font-semibold" },
+  { key: "totalPayable",     label: "Total Payable",   tone: "text-gray-900 font-medium" },
+  { key: "totalPaid",        label: "Total Paid",      tone: "text-gray-900" },
+  { key: "salaryPayable",    label: "Salary Payable",  tone: "text-gray-600" },
+  { key: "salaryPaid",       label: "Salary Paid",     tone: "text-gray-600" },
+  { key: "incentivePayable", label: "Total Incentive", tone: "text-gray-600" },
+  { key: "incentivePaid",    label: "Incentive Paid",  tone: "text-gray-600" },
+  { key: "advanceOutstanding", label: "Advance O/S",   tone: "text-amber-700" },
 ];
 
 const EMPTY_FINANCE = {
@@ -379,26 +380,23 @@ export default function StaffTable({ config = {} }) {
     1;
 
   return (
-    <div className="flex min-h-screen bg-slate-50 text-slate-900">
+    <div className="flex min-h-screen bg-gray-50 text-gray-900">
       {SidebarComponent && <SidebarComponent />}
 
       <main className="flex-1 min-w-0">
-        <div className="mx-auto max-w-400 px-4 sm:px-6 lg:px-8 py-6 space-y-5">
+        <div className="mx-auto max-w-400 px-4 sm:px-6 lg:px-8 py-6 lg:py-7 space-y-5">
 
           {}
-          <header className="rounded-2xl border border-slate-200/70 bg-white p-5 shadow-sm">
+          <header>
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex items-center gap-3.5 min-w-0">
-                <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-linear-to-br from-indigo-500 to-violet-600 text-white shadow-sm">
-                  <Users className="h-5 w-5" />
-                </div>
                 <div className="min-w-0">
-                  <h1 className="text-xl font-bold tracking-tight text-slate-900">
+                  <h1 className="text-xl font-semibold tracking-tight text-slate-900">
                     {financeColumns ? "Payroll & Staff" : "Staff Performance"}
                   </h1>
-                  <p className="text-sm text-slate-500">
+                  <p className="mt-1 text-sm text-gray-500">
                     {financeColumns
-                      ? "Payable / paid split by salary and incentive, per employee"
+                      ? "Salary and incentive owed and paid, per employee"
                       : "Performance metrics across every staff category"}
                   </p>
                 </div>
@@ -407,12 +405,12 @@ export default function StaffTable({ config = {} }) {
               <div className="flex flex-wrap items-center gap-2.5">
                 <button
                   onClick={() => setDrawer(true)}
-                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                  className={buttonClass("secondary")}
                 >
                   <Filter className="h-4 w-4 text-slate-500" />
                   Filters
                   {activeChips.length > 0 && (
-                    <span className="ml-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-indigo-600 px-1 text-[11px] font-bold text-white">
+                    <span className="ml-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-indigo-600 px-1 text-[11px] font-semibold text-white">
                       {activeChips.length}
                     </span>
                   )}
@@ -422,7 +420,7 @@ export default function StaffTable({ config = {} }) {
                   <button
                     onClick={handleFinanceExport}
                     disabled={exporting}
-                    className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
+                    className={buttonClass("secondary")}
                   >
                     {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4 text-slate-500" />}
                     Export
@@ -432,7 +430,7 @@ export default function StaffTable({ config = {} }) {
                 {addEmployeePath && (
                   <Link
                     href={addEmployeePath}
-                    className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-indigo-600/20 transition hover:bg-indigo-700"
+                    className={buttonClass("primary")}
                   >
                     <Plus className="h-4 w-4" />
                     Add Employee
@@ -442,14 +440,14 @@ export default function StaffTable({ config = {} }) {
             </div>
 
             {activeChips.length > 0 && (
-              <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4">
+              <div className="mt-4 flex flex-wrap items-center gap-2">
                 {activeChips.map((c) => (
                   <span
                     key={c.k}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-200"
+                    className="inline-flex items-center gap-1 h-6 pl-2 pr-1 rounded-md bg-white text-xs font-medium text-gray-700 border border-gray-200"
                   >
                     {c.label}
-                    <button onClick={() => setFilter(c.k, "")} className="rounded-full p-0.5 hover:bg-indigo-100">
+                    <button aria-label={`Remove ${c.label || "filter"}`} onClick={() => setFilter(c.k, "")} className="rounded p-0.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100">
                       <X className="h-3 w-3" />
                     </button>
                   </span>
@@ -462,7 +460,7 @@ export default function StaffTable({ config = {} }) {
           </header>
 
           {}
-          <div className="-mx-1 overflow-x-auto pb-1">
+          <div className="-mx-1 overflow-x-auto scrollbar-hide">
             <div className="flex gap-2 px-1">
               {[{ key: "", label: "All Profiles" }, ...categoryList.map((c) => ({ key: c, label: c }))].map((opt) => {
                 const s = catStyle(opt.key || "Others");
@@ -472,18 +470,16 @@ export default function StaffTable({ config = {} }) {
                   <button
                     key={opt.key || "__all"}
                     onClick={() => setFilter("category", opt.key)}
-                    className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold ring-1 transition ${
+                    aria-pressed={active}
+                    className={`press inline-flex shrink-0 items-center gap-2 h-8 rounded-lg px-3 text-[13px] font-medium border transition-colors duration-150 ${
                       active
-                        ? `${s.active} shadow-sm`
-                        : "bg-white text-slate-500 ring-slate-200 hover:bg-slate-50 hover:text-slate-700"
+                        ? "bg-gray-900 text-white border-gray-900"
+                        : "bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:text-gray-900"
                     }`}
                   >
-                    {opt.key && <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} />}
-                    {opt.label}
+                                        {opt.label}
                     <span
-                      className={`grid h-5 min-w-5 place-items-center rounded-md px-1 text-[11px] font-bold ${
-                        active ? "bg-white/70 text-slate-700" : "bg-slate-100 text-slate-500"
-                      }`}
+                      className={`tabular-nums text-xs ${active ? "text-gray-300" : "text-gray-400"}`}
                     >
                       {count}
                     </span>
@@ -494,7 +490,7 @@ export default function StaffTable({ config = {} }) {
           </div>
 
           {}
-          <div className={`grid grid-cols-2 gap-3 sm:gap-4 ${financeColumns ? "lg:grid-cols-5" : "lg:grid-cols-4"}`}>
+          <div className={`stagger grid grid-cols-2 gap-px bg-gray-100 border border-gray-200 rounded-xl overflow-hidden [&>*:last-child:nth-child(odd)]:col-span-2 lg:[&>*:last-child:nth-child(odd)]:col-span-1 ${financeColumns ? "lg:grid-cols-5" : "lg:grid-cols-4"}`}>
             <SummaryCard title="Total Staff" value={fmtNumber(filtered.length)} icon={<Users className="h-5 w-5" />} color="indigo" />
             {financeColumns ? (
               <>
@@ -520,7 +516,7 @@ export default function StaffTable({ config = {} }) {
           </div>
 
           {}
-          <section className="overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-sm">
+          <section className="overflow-hidden rounded-xl border border-gray-200 bg-white">
             <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-3.5 lg:flex-row lg:items-center lg:justify-between sm:px-5">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <div className="relative w-full sm:w-56">
@@ -530,7 +526,7 @@ export default function StaffTable({ config = {} }) {
                     placeholder="Search by name…"
                     value={filters.search}
                     onChange={(e) => setFilter("search", e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50/60 py-2 pl-9 pr-3 text-sm outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+                    className={inputClass(false, "pl-9")}
                   />
                 </div>
                 <input
@@ -538,12 +534,12 @@ export default function StaffTable({ config = {} }) {
                   placeholder="Employee ID…"
                   value={filters.empId}
                   onChange={(e) => setFilter("empId", e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 text-sm outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 sm:w-40"
+                  className={inputClass(false, "sm:w-40")}
                 />
                 <select
                   value={filters.status}
                   onChange={(e) => setFilter("status", e.target.value)}
-                  className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 outline-none transition focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10"
+                  className={inputClass(false, "sm:w-36 pr-8")}
                 >
                   <option value="">Any status</option>
                   <option value="active">Active</option>
@@ -553,7 +549,7 @@ export default function StaffTable({ config = {} }) {
               <p className="text-xs font-medium text-slate-500">
                 {loading ? "Loading…" : (
                   <>
-                    <span className="font-bold text-slate-700">{total}</span>{" "}
+                    <span className="font-semibold text-slate-700">{total}</span>{" "}
                     {currentProfile ? `${currentProfile}${total === 1 ? "" : "s"}` : `employee${total === 1 ? "" : "s"}`} shown
                   </>
                 )}
@@ -563,11 +559,11 @@ export default function StaffTable({ config = {} }) {
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50/70 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                    <th className="px-5 py-3">Employee</th>
-                    <th className="px-5 py-3">Employee ID</th>
-                    <th className="px-5 py-3">Profile</th>
-                    <th className="px-5 py-3">Status</th>
+                  <tr className="border-b border-gray-200 bg-gray-50/80 text-left text-xs font-medium text-gray-500">
+                    <th className="px-4 h-10 whitespace-nowrap">Employee</th>
+                    <th className="px-4 h-10 whitespace-nowrap">Employee ID</th>
+                    <th className="px-4 h-10 whitespace-nowrap">Profile</th>
+                    <th className="px-4 h-10 whitespace-nowrap">Status</th>
                     {financeColumns ? (
                       FINANCE_COLUMNS.map((c) => (
                         <Th key={c.key} label={c.label} align="right" sortKey={c.key} sort={sort} onSort={toggleSort} />
@@ -589,7 +585,7 @@ export default function StaffTable({ config = {} }) {
                         <Th label="Avg / Patient"  align="right" />
                       </>
                     )}
-                    <th className="px-5 py-3 text-right">Actions</th>
+                    <th className="px-4 h-10 text-right whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
 
@@ -626,18 +622,18 @@ export default function StaffTable({ config = {} }) {
                     rows.map((item, idx) => {
                       const avg = item.totalPatient ? item.amountReceived / item.totalPatient : 0;
                       return (
-                        <tr key={item._id || idx} className="group transition hover:bg-indigo-50/40">
-                          <td className="px-5 py-3.5">
+                        <tr key={item._id || idx} className="group transition-colors duration-150 hover:bg-gray-50/80">
+                          <td className="px-4 py-2.5">
                             <div className="flex items-center gap-3">
-                              <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-full text-xs font-bold ${avatarClass(item.name)}`}>
+                              <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-gray-100 text-[11px] font-semibold text-gray-600">
                                 {initials(item.name)}
                               </div>
                               <div className="min-w-0">
                                 <div className="flex items-center gap-2">
-                                  <span className="truncate font-semibold text-slate-900">{item.name}</span>
+                                  <span className="truncate font-medium text-gray-900">{item.name}</span>
                                   {financeColumns && item.overdueCount > 0 && (
                                     <span
-                                      className="shrink-0 rounded-md bg-rose-50 px-1.5 py-0.5 text-[10px] font-bold text-rose-600 ring-1 ring-rose-200"
+                                      className="shrink-0 rounded px-1.5 h-5 inline-flex items-center bg-rose-50 text-[11px] font-medium text-rose-700"
                                       title={`${item.overdueCount} payable(s) past their due date`}
                                     >
                                       {item.overdueCount} overdue
@@ -647,30 +643,29 @@ export default function StaffTable({ config = {} }) {
                               </div>
                             </div>
                           </td>
-                          <td className="px-5 py-3.5 tabular-nums text-slate-500">{item.employeeId || "—"}</td>
-                          <td className="px-5 py-3.5">
-                            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-2 py-0.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
-                              <span className={`h-1.5 w-1.5 rounded-full ${catStyle(item.profile).dot}`} />
+                          <td className="px-4 py-2.5 tabular-nums text-slate-500">{item.employeeId || "—"}</td>
+                          <td className="px-4 py-2.5">
+                            <span className="inline-flex items-center h-5 rounded-md bg-gray-100 px-2 text-xs font-medium text-gray-700 whitespace-nowrap">
                               {item.profile || "—"}
                             </span>
                           </td>
-                          <td className="px-5 py-3.5"><StatusBadge status={item.status} /></td>
+                          <td className="px-4 py-2.5"><StatusBadge status={item.status} /></td>
 
                           {financeColumns ? (
                             FINANCE_COLUMNS.map((c) => (
-                              <td key={c.key} className={`px-5 py-3.5 text-right tabular-nums ${c.tone}`}>
+                              <td key={c.key} className={`px-4 py-2.5 text-right tabular-nums ${c.tone}`}>
                                 {fmtCurrency(item[c.key])}
                               </td>
                             ))
                           ) : isHr ? (
                             <>
-                              <td className="px-5 py-3.5 text-right tabular-nums text-slate-700">{item.totalCandidates || 0}</td>
-                              <td className="px-5 py-3.5 text-right tabular-nums font-semibold text-emerald-600">{item.selected || 0}</td>
-                              <td className="px-5 py-3.5 text-right tabular-nums font-semibold text-rose-500">{item.rejected || 0}</td>
-                              <td className="px-5 py-3.5 text-right tabular-nums font-semibold text-indigo-600">{item.scheduled || 0}</td>
-                              <td className="px-5 py-3.5 text-right">
+                              <td className="px-4 py-2.5 text-right tabular-nums text-slate-700">{item.totalCandidates || 0}</td>
+                              <td className="px-4 py-2.5 text-right tabular-nums font-semibold text-emerald-600">{item.selected || 0}</td>
+                              <td className="px-4 py-2.5 text-right tabular-nums font-semibold text-rose-500">{item.rejected || 0}</td>
+                              <td className="px-4 py-2.5 text-right tabular-nums font-semibold text-indigo-600">{item.scheduled || 0}</td>
+                              <td className="px-4 py-2.5 text-right">
                                 <span
-                                  className={`inline-block rounded-md px-2 py-0.5 text-xs font-bold ${
+                                  className={`inline-block rounded-md px-2 py-0.5 text-xs font-semibold ${
                                     item.selectionRate >= 50 ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600"
                                   }`}
                                 >
@@ -680,20 +675,20 @@ export default function StaffTable({ config = {} }) {
                             </>
                           ) : (
                             <>
-                              <td className="px-5 py-3.5 text-right tabular-nums text-slate-700">{item.totalPatient}</td>
-                              {hasGrafts          && <td className="px-5 py-3.5 text-right tabular-nums text-slate-700">{fmtNumber(item.graftsImplanted || 0)}</td>}
-                              {hasReadyForSurgery && <td className="px-5 py-3.5 text-right tabular-nums text-slate-700">{item.readyForSurgery || 0}</td>}
-                              <td className="px-5 py-3.5 text-right tabular-nums font-semibold text-slate-900">{fmtCurrency(item.amountReceived)}</td>
-                              <td className="px-5 py-3.5 text-right tabular-nums text-slate-500">{fmtCurrency(avg)}</td>
+                              <td className="px-4 py-2.5 text-right tabular-nums text-slate-700">{item.totalPatient}</td>
+                              {hasGrafts          && <td className="px-4 py-2.5 text-right tabular-nums text-slate-700">{fmtNumber(item.graftsImplanted || 0)}</td>}
+                              {hasReadyForSurgery && <td className="px-4 py-2.5 text-right tabular-nums text-slate-700">{item.readyForSurgery || 0}</td>}
+                              <td className="px-4 py-2.5 text-right tabular-nums font-semibold text-slate-900">{fmtCurrency(item.amountReceived)}</td>
+                              <td className="px-4 py-2.5 text-right tabular-nums text-slate-500">{fmtCurrency(avg)}</td>
                             </>
                           )}
 
-                          <td className="px-5 py-3.5">
-                            <div className="flex items-center justify-end gap-1 opacity-60 transition group-hover:opacity-100">
+                          <td className="px-4 py-2.5">
+                            <div className="flex items-center justify-end gap-0.5">
                               {viewBasePath && (
                                 <Link
                                   href={`${viewBasePath}/${item._id}`}
-                                  className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+                                  className="grid h-8 w-8 place-items-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-800"
                                   title={financeColumns ? "View incentives — which patients they were earned on" : "View employee"}
                                 >
                                   <Eye className="h-4 w-4" />
@@ -701,7 +696,7 @@ export default function StaffTable({ config = {} }) {
                               )}
                               <Link
                                 href={`${editBasePath}/${item._id}`}
-                                className="grid h-8 w-8 place-items-center rounded-lg text-indigo-600 transition hover:bg-indigo-50"
+                                className="grid h-8 w-8 place-items-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-800"
                                 title="Edit employee"
                               >
                                 <Edit className="h-4 w-4" />
@@ -709,7 +704,7 @@ export default function StaffTable({ config = {} }) {
                               {canDelete && (
                                 <Link
                                   href={`/admin/employees/merge?duplicate=${item._id}`}
-                                  className="grid h-8 w-8 place-items-center rounded-lg text-amber-600 transition hover:bg-amber-50"
+                                  className="grid h-8 w-8 place-items-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-800"
                                   title="Merge this record into another (duplicate)"
                                 >
                                   <GitMerge className="h-4 w-4" />
@@ -719,7 +714,7 @@ export default function StaffTable({ config = {} }) {
                                 <button
                                   onClick={() => handleDelete(item._id, item.name)}
                                   disabled={deleting === item._id}
-                                  className="grid h-8 w-8 place-items-center rounded-lg text-rose-500 transition hover:bg-rose-50 disabled:opacity-40"
+                                  className="grid h-8 w-8 place-items-center rounded-md text-gray-400 transition-colors hover:bg-rose-50 hover:text-rose-600 disabled:opacity-40"
                                   title="Delete employee"
                                 >
                                   {deleting === item._id
@@ -736,44 +731,44 @@ export default function StaffTable({ config = {} }) {
                 </tbody>
 
                 {!loading && rows.length > 0 && (
-                  <tfoot className="border-t-2 border-slate-100 bg-slate-50/70 text-sm font-semibold text-slate-900">
+                  <tfoot className="border-t border-gray-200 bg-gray-50/80 text-sm font-semibold text-gray-900">
                     <tr>
-                      <td className="px-5 py-3.5" colSpan={4}>Total</td>
+                      <td className="px-4 py-2.5" colSpan={4}>Total</td>
                       {financeColumns ? (
                         FINANCE_COLUMNS.map((c) => (
-                          <td key={c.key} className="px-5 py-3.5 text-right tabular-nums">
+                          <td key={c.key} className="px-4 py-2.5 text-right tabular-nums">
                             {fmtCurrency(financeTotals[c.key])}
                           </td>
                         ))
                       ) : isHr ? (
                         <>
-                          <td className="px-5 py-3.5 text-right tabular-nums">{totals.totalCandidates}</td>
-                          <td className="px-5 py-3.5 text-right tabular-nums text-emerald-600">{totals.selected}</td>
-                          <td className="px-5 py-3.5 text-right tabular-nums text-rose-500">{totals.rejected}</td>
-                          <td className="px-5 py-3.5 text-right tabular-nums text-indigo-600">{totals.scheduled}</td>
-                          <td className="px-5 py-3.5 text-right tabular-nums text-slate-500">
+                          <td className="px-4 py-2.5 text-right tabular-nums">{totals.totalCandidates}</td>
+                          <td className="px-4 py-2.5 text-right tabular-nums text-emerald-600">{totals.selected}</td>
+                          <td className="px-4 py-2.5 text-right tabular-nums text-rose-500">{totals.rejected}</td>
+                          <td className="px-4 py-2.5 text-right tabular-nums text-indigo-600">{totals.scheduled}</td>
+                          <td className="px-4 py-2.5 text-right tabular-nums text-slate-500">
                             {totals.totalCandidates > 0 ? `${((totals.selected / totals.totalCandidates) * 100).toFixed(1)}%` : "—"}
                           </td>
                         </>
                       ) : (
                         <>
-                          <td className="px-5 py-3.5 text-right tabular-nums">{totals.totalPatient}</td>
-                          {hasGrafts          && <td className="px-5 py-3.5 text-right tabular-nums">{fmtNumber(totals.graftsImplanted)}</td>}
-                          {hasReadyForSurgery && <td className="px-5 py-3.5 text-right tabular-nums">{totals.readyForSurgery}</td>}
-                          <td className="px-5 py-3.5 text-right tabular-nums">{fmtCurrency(totals.amountReceived)}</td>
-                          <td className="px-5 py-3.5 text-right tabular-nums text-slate-500">
+                          <td className="px-4 py-2.5 text-right tabular-nums">{totals.totalPatient}</td>
+                          {hasGrafts          && <td className="px-4 py-2.5 text-right tabular-nums">{fmtNumber(totals.graftsImplanted)}</td>}
+                          {hasReadyForSurgery && <td className="px-4 py-2.5 text-right tabular-nums">{totals.readyForSurgery}</td>}
+                          <td className="px-4 py-2.5 text-right tabular-nums">{fmtCurrency(totals.amountReceived)}</td>
+                          <td className="px-4 py-2.5 text-right tabular-nums text-slate-500">
                             {totals.totalPatient > 0 ? fmtCurrency(totals.amountReceived / totals.totalPatient) : "—"}
                           </td>
                         </>
                       )}
-                      <td className="px-5 py-3.5" />
+                      <td className="px-4 py-2.5" />
                     </tr>
                   </tfoot>
                 )}
               </table>
             </div>
 
-            <div className="flex flex-col items-center justify-between gap-3 border-t border-slate-100 bg-slate-50/50 px-5 py-3 sm:flex-row">
+            <div className="flex flex-col items-center justify-between gap-3 border-t border-gray-200 px-4 py-2.5 sm:flex-row">
               <p className="text-xs text-slate-500">
                 {total === 0 ? "No results" : (
                   <>Showing <b className="text-slate-700">{start + 1}</b>–<b className="text-slate-700">{Math.min(start + perPage, total)}</b> of <b className="text-slate-700">{total}</b></>
@@ -788,7 +783,7 @@ export default function StaffTable({ config = {} }) {
                   {[10, 25, 50].map((n) => <option key={n} value={n}>{n} / page</option>)}
                 </select>
                 <div className="flex items-center gap-1">
-                  <button
+                  <button aria-label="Previous page"
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={current <= 1}
                     className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 disabled:opacity-40"
@@ -796,7 +791,7 @@ export default function StaffTable({ config = {} }) {
                     <ChevronLeft className="h-4 w-4" />
                   </button>
                   <span className="w-14 text-center text-xs font-medium text-slate-600">{current} / {pages}</span>
-                  <button
+                  <button aria-label="Next page"
                     onClick={() => setPage((p) => Math.min(pages, p + 1))}
                     disabled={current >= pages}
                     className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 disabled:opacity-40"
@@ -813,14 +808,14 @@ export default function StaffTable({ config = {} }) {
       {}
       {drawerOpen && (
         <div className="fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setDrawer(false)} />
+          <div className="absolute inset-0 bg-slate-900/40" onClick={() => setDrawer(false)} />
           <div className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
               <div>
-                <h3 className="text-base font-bold text-slate-900">Filters</h3>
+                <h3 className="text-base font-semibold text-slate-900">Filters</h3>
                 <p className="text-xs text-slate-500">Refine the staff view</p>
               </div>
-              <button onClick={() => setDrawer(false)} className="grid h-9 w-9 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+              <button aria-label="Close" onClick={() => setDrawer(false)} className="grid h-9 w-9 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -858,7 +853,7 @@ export default function StaffTable({ config = {} }) {
                         type="checkbox"
                         checked={filters.onlyPending}
                         onChange={(e) => setFilter("onlyPending", e.target.checked)}
-                        className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                        className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500/30"
                       />
                       <span className="text-sm text-slate-700">Only staff with something still owed</span>
                     </label>
@@ -932,8 +927,8 @@ function Th({ label, sortKey, sort, onSort, align = "left" }) {
   const right = align === "right";
   return (
     <th
-      className={`px-5 py-3 font-semibold ${right ? "text-right" : "text-left"} ${
-        sortKey ? "cursor-pointer select-none transition hover:text-slate-800" : ""
+      className={`px-4 h-10 font-medium whitespace-nowrap ${right ? "text-right" : "text-left"} ${
+        sortKey ? "cursor-pointer select-none transition-colors hover:text-gray-900" : ""
       }`}
       onClick={sortKey ? () => onSort(sortKey) : undefined}
     >
@@ -954,7 +949,7 @@ function FilterSection({ title, icon, children }) {
     <div className="overflow-hidden rounded-xl border border-slate-200">
       <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50/70 px-4 py-2.5">
         <span className="text-slate-500">{icon}</span>
-        <span className="text-xs font-bold uppercase tracking-wide text-slate-600">{title}</span>
+        <span className="text-xs font-semibold uppercase tracking-wide text-slate-600">{title}</span>
       </div>
       <div className="p-4">{children}</div>
     </div>
@@ -1012,25 +1007,20 @@ function SummaryCard({ title, value, icon, color }) {
     slate:   "bg-slate-100 text-slate-600",
   }[color] || "bg-slate-100 text-slate-600";
   return (
-    <div className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm transition hover:shadow-md sm:p-5">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="truncate text-[11px] font-bold uppercase tracking-wide text-slate-400">{title}</p>
-          <p className="mt-1.5 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">{value}</p>
-        </div>
-        <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${tint}`}>{icon}</div>
-      </div>
+    <div className="min-w-0 bg-white px-5 py-4">
+      <p className="text-[13px] font-medium text-gray-500 truncate">{title}</p>
+      <p className="mt-1.5 text-xl font-semibold tracking-tight text-gray-900 tabular-nums whitespace-nowrap">{value}</p>
     </div>
   );
 }
 
 function StatusBadge({ status }) {
   const cfg = {
-    active:   { label: "Active",   dot: "bg-emerald-500", cls: "bg-emerald-50 text-emerald-700 ring-emerald-200" },
-    inactive: { label: "Inactive", dot: "bg-slate-400",   cls: "bg-slate-100 text-slate-600 ring-slate-200" },
+    active:   { label: "Active",   dot: "bg-emerald-500", cls: "bg-emerald-50 text-emerald-700" },
+    inactive: { label: "Inactive", dot: "bg-gray-400",   cls: "bg-gray-100 text-gray-600" },
   }[status] || { label: "Unknown", dot: "bg-slate-400", cls: "bg-slate-100 text-slate-600 ring-slate-200" };
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ${cfg.cls}`}>
+    <span className={`inline-flex items-center gap-1.5 h-5 rounded-md px-2 text-xs font-medium ${cfg.cls}`}>
       <span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />
       {cfg.label}
     </span>

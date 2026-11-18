@@ -1,5 +1,6 @@
 "use client";
 
+import StatCard from "@/components/dashboard/StatCard";
 import { useEffect, useState, useCallback } from "react";
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line,
@@ -8,6 +9,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, FunnelChart, Funnel, LabelList,
 } from "recharts";
+import { useChartColors } from "@/lib/theme";
 import {
   TrendingUp, IndianRupee, Users, Activity, Stethoscope,
   HeartPulse, Briefcase, RefreshCw, Calendar, MapPin,
@@ -20,31 +22,29 @@ import { ALL_BRANCHES } from "@/lib/branches";
 const BRANCHES    = ["All", ...ALL_BRANCHES];
 const DATE_RANGES = ["Today", "Yesterday", "Last 7 Days", "Last 30 Days", "Custom"];
 
-const PALETTE = [
-  "#f59e0b","#f97316","#ef4444","#8b5cf6",
-  "#3b82f6","#10b981","#ec4899","#14b8a6","#6366f1","#a78bfa",
-];
+// Validated categorical palette (dataviz skill, light mode), assigned in fixed order.
+const PALETTE = ["#2a78d6","#eb6834","#1baf7a","#eda100","#e87ba4","#008300","#6250d6","#e34948"];
 
 const BRANCH_COLORS = {
-  Delhi:     "#f59e0b",
-  Mumbai:    "#3b82f6",
-  Hyderabad: "#10b981",
-  Noida:     "#ec4899",
-  Gurgaon:   "#8b5cf6",
+  Delhi:     PALETTE[0],
+  Mumbai:    PALETTE[1],
+  Hyderabad: PALETTE[2],
+  Noida:     PALETTE[3],
+  Gurgaon:   PALETTE[4],
   Unknown:   "#9ca3af",
 };
 
 const METHOD_META = {
-  upi:     { label: "UPI",     color: "#6366f1", icon: "📲" },
-  cash:    { label: "Cash",    color: "#10b981", icon: "💵" },
-  card:    { label: "Card",    color: "#3b82f6", icon: "💳" },
-  banking: { label: "Banking", color: "#8b5cf6", icon: "🏦" },
-  bajaj_loan: { label: "Bajaj Loan", color: "#f97316", icon: "📄" },
-  fibe_loan: { label: "Fibe Loan",   color: "#fb923c", icon: "📄" },
-  hdfc_skin_bank_transfer: { label: "HDFC Skin Bank Transfer", color: "#0ea5e9", icon: "🏦" },
-  hdfc_ryan_medihub_bank_transfer: { label: "HDFC Ryan Medihub Bank Transfer", color: "#0d9488", icon: "🏦" },
-  icici_medihub_bank_transfer: { label: "ICICI Medihub Bank Transfer", color: "#e11d48", icon: "🏦" },
-  other:   { label: "Other",   color: "#9ca3af", icon: "💰" },
+  upi:     { label: "UPI",     color: PALETTE[0] },
+  cash:    { label: "Cash",    color: PALETTE[1] },
+  card:    { label: "Card",    color: PALETTE[2] },
+  banking: { label: "Banking", color: PALETTE[3] },
+  bajaj_loan: { label: "Bajaj Loan", color: PALETTE[4] },
+  fibe_loan: { label: "Fibe Loan",   color: PALETTE[5] },
+  hdfc_skin_bank_transfer: { label: "HDFC Skin Bank Transfer", color: PALETTE[6] },
+  hdfc_ryan_medihub_bank_transfer: { label: "HDFC Ryan Medihub Bank Transfer", color: PALETTE[7] },
+  icici_medihub_bank_transfer: { label: "ICICI Medihub Bank Transfer", color: "#9ca3af" },
+  other:   { label: "Other",   color: "#9ca3af" },
 };
 
 const HR_STATUS_COLORS = {
@@ -97,23 +97,8 @@ const COLOR_MAP = {
   teal:   { accent: "bg-teal-500",    soft: "bg-teal-50",    text: "text-teal-600",   border: "border-teal-100"   },
 };
 
-function KpiCard({ title, value, subtitle, icon: Icon, color = "amber" }) {
-  const c = COLOR_MAP[color];
-  return (
-    <div className={`bg-white rounded-2xl border ${c.border} shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden`}>
-      <div className={`h-1 ${c.accent}`} />
-      <div className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className={`w-9 h-9 rounded-xl ${c.soft} flex items-center justify-center`}>
-            <Icon className={`w-4.5 h-4.5 ${c.text}`} />
-          </div>
-          <span className={`text-[10px] font-semibold uppercase tracking-widest ${c.text} opacity-70`}>{subtitle}</span>
-        </div>
-        <p className="text-2xl font-bold text-gray-900 leading-none">{value}</p>
-        <p className="text-xs font-medium text-gray-500 mt-1.5">{title}</p>
-      </div>
-    </div>
-  );
+function KpiCard({ title, value, subtitle, icon, color = "amber" }) {
+  return <StatCard title={title} value={value} subtitle={subtitle} icon={icon} tone={color} />;
 }
 
 function ChartCard({ title, subtitle, children, className = "", action }) {
@@ -137,7 +122,7 @@ function SectionHeader({ icon: Icon, title, color = "text-amber-600", accent = "
       <div className={`w-7 h-7 rounded-lg ${accent} flex items-center justify-center`}>
         <Icon className={`w-3.5 h-3.5 ${color}`} />
       </div>
-      <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wider">{title}</h2>
+      <h2 className="text-sm font-medium text-gray-700">{title}</h2>
       <div className="flex-1 h-px bg-gray-200" />
     </div>
   );
@@ -258,7 +243,7 @@ export default function SuperAdminPerformancePage() {
   };
 
   return (
-    <section className="flex min-h-screen bg-[#f8f9fc]">
+    <section className="flex min-h-screen bg-gray-50">
       <SuperAdminSidebar />
 
       <main className="flex-1 flex flex-col min-w-0 overflow-auto">
@@ -266,11 +251,11 @@ export default function SuperAdminPerformancePage() {
         <div className="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-10 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-amber-400 via-orange-500 to-red-500 flex items-center justify-center shadow-md">
-                <TrendingUp className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-gray-600" />
               </div>
               <div>
-                <h1 className="text-base font-bold text-gray-900 leading-tight">Performance Analytics</h1>
+                <h1 className="text-base font-semibold text-gray-900 leading-tight">Performance Analytics</h1>
                 <p className="text-[11px] text-gray-400 mt-0.5">Charts & KPIs across all modules</p>
               </div>
             </div>
@@ -279,7 +264,7 @@ export default function SuperAdminPerformancePage() {
               <div className="relative">
                 <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
                 <select value={branch} onChange={(e) => setBranch(e.target.value)}
-                  className="pl-7 pr-7 py-2 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-amber-300 appearance-none cursor-pointer shadow-sm">
+                  className="pl-7 pr-7 py-2 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 appearance-none cursor-pointer shadow-sm">
                   {BRANCHES.map((b) => <option key={b}>{b}</option>)}
                 </select>
                 <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
@@ -288,7 +273,7 @@ export default function SuperAdminPerformancePage() {
               <div className="relative">
                 <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
                 <select value={dateRange} onChange={(e) => setDateRange(e.target.value)}
-                  className="pl-7 pr-7 py-2 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-amber-300 appearance-none cursor-pointer shadow-sm">
+                  className="pl-7 pr-7 py-2 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 appearance-none cursor-pointer shadow-sm">
                   {DATE_RANGES.map((r) => <option key={r}>{r}</option>)}
                 </select>
                 <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
@@ -298,14 +283,14 @@ export default function SuperAdminPerformancePage() {
                 <>
                   <input type="date" value={custom.from}
                     onChange={(e) => setCustom((p) => ({ ...p, from: e.target.value }))}
-                    className="border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-300 shadow-sm" />
+                    className="border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/30 shadow-sm" />
                   <input type="date" value={custom.to} min={custom.from}
                     onChange={(e) => setCustom((p) => ({ ...p, to: e.target.value }))}
-                    className="border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-300 shadow-sm" />
+                    className="border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/30 shadow-sm" />
                 </>
               )}
 
-              <button onClick={fetchData} disabled={loading}
+              <button aria-label="Refresh" onClick={fetchData} disabled={loading}
                 className="w-9 h-9 flex items-center justify-center border border-gray-200 rounded-xl bg-white hover:bg-gray-50 shadow-sm transition-colors disabled:opacity-50">
                 <RefreshCw className={`w-4 h-4 text-gray-500 ${loading ? "animate-spin" : ""}`} />
               </button>
@@ -342,6 +327,7 @@ export default function SuperAdminPerformancePage() {
 }
 
 function OverviewTab({ data }) {
+  const chart = useChartColors();
   const { summary = {}, patients = {}, revenue = {}, surgery = {}, hr = {} } = data;
 
   const funnel = patients.funnel || [];
@@ -370,7 +356,7 @@ function OverviewTab({ data }) {
               <Tooltip content={<CustomTooltip />} />
               <Bar dataKey="count" name="Patients" radius={[0, 6, 6, 0]}>
                 {funnel.map((_, i) => (
-                  <Cell key={i} fill={["#f59e0b", "#f97316", "#10b981", "#8b5cf6"][i] || "#6366f1"} />
+                  <Cell key={i} fill={chart.in} />
                 ))}
               </Bar>
             </BarChart>
@@ -382,12 +368,12 @@ function OverviewTab({ data }) {
             <AreaChart data={revenueDaily}>
               <defs>
                 <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor="#10b981" stopOpacity={0.25} />
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                  <stop offset="5%"  stopColor={chart.in} stopOpacity={0.25} />
+                  <stop offset="95%" stopColor={chart.in} stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="expGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor="#ef4444" stopOpacity={0.2} />
-                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                  <stop offset="5%"  stopColor={chart.out} stopOpacity={0.2} />
+                  <stop offset="95%" stopColor={chart.out} stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
@@ -395,8 +381,8 @@ function OverviewTab({ data }) {
               <YAxis tickFormatter={fmtK} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip formatter={(v) => fmtK(v)} />} />
               <Legend iconType="circle" wrapperStyle={{ fontSize: 11 }} />
-              <Area type="monotone" dataKey="revenue"  name="Revenue"  stroke="#10b981" fill="url(#revGrad)" strokeWidth={2} dot={false} />
-              <Area type="monotone" dataKey="expenses" name="Expenses" stroke="#ef4444" fill="url(#expGrad)" strokeWidth={2} dot={false} />
+              <Area type="monotone" dataKey="revenue"  name="Revenue"  stroke={chart.in} fill="url(#revGrad)" strokeWidth={2} dot={false} />
+              <Area type="monotone" dataKey="expenses" name="Expenses" stroke={chart.out} fill="url(#expGrad)" strokeWidth={2} dot={false} />
             </AreaChart>
           </ResponsiveContainer>
         </ChartCard>
@@ -436,8 +422,8 @@ function OverviewTab({ data }) {
               <YAxis tickFormatter={fmtK} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip formatter={(v) => fmtK(v)} />} />
               <Legend iconType="circle" wrapperStyle={{ fontSize: 11 }} />
-              <Bar dataKey="revenue"  name="Revenue"  fill="#10b981" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="expenses" name="Expenses" fill="#ef4444" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="revenue"  name="Revenue"  fill={chart.in} radius={[4, 4, 0, 0]} />
+              <Bar dataKey="expenses" name="Expenses" fill={chart.out} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
@@ -447,6 +433,7 @@ function OverviewTab({ data }) {
 }
 
 function PatientsTab({ data }) {
+  const chart = useChartColors();
   const { patients = {} } = data;
   const funnel    = patients.funnel    || [];
   const statusDist= patients.statusDist|| [];
@@ -479,7 +466,7 @@ function PatientsTab({ data }) {
               <Tooltip content={<CustomTooltip />} />
               <Bar dataKey="count" name="Patients" radius={[0, 6, 6, 0]} label={{ position: "right", fontSize: 11, fontWeight: 600, fill: "#374151" }}>
                 {funnel.map((_, i) => (
-                  <Cell key={i} fill={["#3b82f6", "#10b981", "#8b5cf6", "#f59e0b"][i] || "#6366f1"} />
+                  <Cell key={i} fill={chart.in} />
                 ))}
               </Bar>
             </BarChart>
@@ -506,12 +493,12 @@ function PatientsTab({ data }) {
           <AreaChart data={daily}>
             <defs>
               <linearGradient id="patGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%"  stopColor="#3b82f6" stopOpacity={0.25} />
-                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                <stop offset="5%"  stopColor={chart.in} stopOpacity={0.25} />
+                <stop offset="95%" stopColor={chart.in} stopOpacity={0} />
               </linearGradient>
               <linearGradient id="convGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%"  stopColor="#10b981" stopOpacity={0.2} />
-                <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                <stop offset="5%"  stopColor={chart.out} stopOpacity={0.2} />
+                <stop offset="95%" stopColor={chart.out} stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
@@ -519,8 +506,8 @@ function PatientsTab({ data }) {
             <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
             <Tooltip content={<CustomTooltip />} />
             <Legend iconType="circle" wrapperStyle={{ fontSize: 11 }} />
-            <Area type="monotone" dataKey="patients"  name="Appointments" stroke="#3b82f6" fill="url(#patGrad)"  strokeWidth={2} dot={false} />
-            <Area type="monotone" dataKey="converted" name="Converted"    stroke="#10b981" fill="url(#convGrad)" strokeWidth={2} dot={false} />
+            <Area type="monotone" dataKey="patients"  name="Appointments" stroke={chart.in} fill="url(#patGrad)"  strokeWidth={2} dot={false} />
+            <Area type="monotone" dataKey="converted" name="Converted"    stroke={chart.out} fill="url(#convGrad)" strokeWidth={2} dot={false} />
           </AreaChart>
         </ResponsiveContainer>
       </ChartCard>
@@ -630,11 +617,11 @@ function RevenueTab({ data }) {
               return (
                 <div key={m.method} className="p-3 rounded-xl border border-gray-100 bg-gray-50">
                   <div className="flex items-center gap-2 mb-1.5">
-                    <span className="text-base">{meta.icon}</span>
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ background: meta.color }} aria-hidden />
                     <span className="text-xs font-semibold text-gray-700">{meta.label}</span>
                   </div>
-                  <p className="text-sm font-bold text-gray-900">{fmtK(m.amount)}</p>
-                  <p className="text-[10px] text-gray-400 mt-0.5">{fmt(m.count)} txns · {total > 0 ? ((m.amount/total)*100).toFixed(0) : 0}%</p>
+                  <p className="text-sm font-semibold text-gray-900">{fmtK(m.amount)}</p>
+                  <p className="text-[11px] text-gray-400 mt-0.5">{fmt(m.count)} txns · {total > 0 ? ((m.amount/total)*100).toFixed(0) : 0}%</p>
                   <div className="mt-2 h-1.5 rounded-full bg-gray-200 overflow-hidden">
                     <div className="h-full rounded-full" style={{ width: `${total > 0 ? (m.amount/total)*100 : 0}%`, backgroundColor: meta.color }} />
                   </div>
@@ -919,11 +906,11 @@ function HRTab({ data }) {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {sourceCompare.map((s) => (
-          <div key={s.source} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+          <div key={s.source} className="bg-white rounded-xl border border-gray-200 p-5">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: s.color }} />
               <h3 className="font-semibold text-gray-900 text-sm">{s.label}</h3>
-              <span className="ml-auto text-2xl font-bold text-gray-900">{fmt(s.count)}</span>
+              <span className="ml-auto text-xl font-semibold tracking-tight text-gray-900">{fmt(s.count)}</span>
             </div>
             <div className="grid grid-cols-3 gap-3 text-center">
               {[
@@ -932,14 +919,14 @@ function HRTab({ data }) {
                 { label: "Rejected", value: s.rejected, color: "text-red-500" },
               ].map((item) => (
                 <div key={item.label} className="p-2 rounded-xl bg-gray-50">
-                  <p className={`text-lg font-bold ${item.color}`}>{fmt(item.value)}</p>
-                  <p className="text-[10px] text-gray-500 mt-0.5">{item.label}</p>
+                  <p className={`text-lg font-semibold ${item.color}`}>{fmt(item.value)}</p>
+                  <p className="text-[11px] text-gray-500 mt-0.5">{item.label}</p>
                 </div>
               ))}
             </div>
             {s.count > 0 && (
               <div className="mt-3">
-                <div className="flex justify-between text-[10px] text-gray-500 mb-1">
+                <div className="flex justify-between text-[11px] text-gray-500 mb-1">
                   <span>Selection rate</span>
                   <span className="font-semibold text-emerald-600">
                     {((s.selected / s.count) * 100).toFixed(1)}%

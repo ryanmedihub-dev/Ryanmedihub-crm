@@ -72,7 +72,7 @@ export default function LiabilitiesBorrowingsPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setBorrowModal({ mode: "IN", payable: null })}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-violet-600 text-white rounded-xl text-sm font-semibold shadow-sm hover:bg-violet-700"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 text-white rounded-xl text-sm font-semibold shadow-sm hover:bg-indigo-700"
             >
               Record Borrowing
             </button>
@@ -143,13 +143,13 @@ export default function LiabilitiesBorrowingsPage() {
       )}
 
       {historyDoc && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 overlay-in bg-gray-950/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between p-5 border-b border-gray-100 sticky top-0 bg-white">
-              <h3 className="text-lg font-bold text-gray-900">
+              <h3 className="text-lg font-semibold text-gray-900">
                 History — {historyDoc.payee?.label || "Borrowing"}
               </h3>
-              <button onClick={() => setHistoryDoc(null)} className="p-1.5 hover:bg-gray-100 rounded-lg">
+              <button type="button" onClick={() => setHistoryDoc(null)} aria-label="Close" className="p-1.5 hover:bg-gray-100 rounded-lg">
                 <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>

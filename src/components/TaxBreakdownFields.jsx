@@ -177,14 +177,14 @@ export default function TaxBreakdownFields({
               <dt className="font-semibold text-gray-700">
                 {allowTDS && breakdown.tdsAmount > 0 ? "Payable to vendor" : "Net payable"}
               </dt>
-              <dd className="font-bold text-emerald-700">
+              <dd className="font-semibold text-emerald-700">
                 {formatCurrency(breakdown.vendorPayable)}
               </dd>
             </div>
             {breakdown.tdsAmount > 0 && (
               <div className="flex justify-between">
                 <dt className="font-semibold text-gray-700">Payable to government (TDS)</dt>
-                <dd className="font-bold text-amber-700">
+                <dd className="font-semibold text-amber-700">
                   {formatCurrency(breakdown.tdsPayable)}
                 </dd>
               </div>

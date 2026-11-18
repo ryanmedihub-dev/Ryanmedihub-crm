@@ -29,7 +29,7 @@ const PURPOSES = [
 ];
 
 const inputClass =
-  "w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100";
+  "w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30";
 const labelClass = "mb-1.5 block text-sm font-semibold text-slate-700";
 
 export default function NewPayableModal({ onClose, onSuccess, toast }) {
@@ -202,7 +202,7 @@ export default function NewPayableModal({ onClose, onSuccess, toast }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-3 backdrop-blur-sm sm:p-5">
+    <div className="fixed inset-0 overlay-in z-50 flex items-center justify-center bg-gray-950/40 p-3 sm:p-5">
       <div className="flex max-h-[95vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
 
         {}
@@ -212,7 +212,7 @@ export default function NewPayableModal({ onClose, onSuccess, toast }) {
               <Receipt className="h-5 w-5" />
             </div>
             <div className="min-w-0">
-              <h3 className="truncate text-base font-bold text-slate-900 sm:text-lg">New Payable</h3>
+              <h3 className="truncate text-base font-semibold text-slate-900 sm:text-lg">New Payable</h3>
               <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">Record a new outstanding obligation</p>
             </div>
           </div>
@@ -233,7 +233,7 @@ export default function NewPayableModal({ onClose, onSuccess, toast }) {
             {}
             <section>
               <div className="mb-3">
-                <h4 className="text-sm font-bold text-slate-900">Purpose</h4>
+                <h4 className="text-sm font-semibold text-slate-900">Purpose</h4>
                 <p className="mt-0.5 text-xs text-slate-500">What kind of payable is this?</p>
               </div>
               <label className={labelClass}>
@@ -260,7 +260,7 @@ export default function NewPayableModal({ onClose, onSuccess, toast }) {
             {hasPayeeSection && (
               <section>
                 <div className="mb-3">
-                  <h4 className="text-sm font-bold text-slate-900">Payee Details</h4>
+                  <h4 className="text-sm font-semibold text-slate-900">Payee Details</h4>
                   <p className="mt-0.5 text-xs text-slate-500">Who this payable is owed to</p>
                 </div>
 
@@ -459,7 +459,7 @@ export default function NewPayableModal({ onClose, onSuccess, toast }) {
             {needsPeriod && (
               <section>
                 <div className="mb-3">
-                  <h4 className="text-sm font-bold text-slate-900">Billing Period</h4>
+                  <h4 className="text-sm font-semibold text-slate-900">Billing Period</h4>
                   <p className="mt-0.5 text-xs text-slate-500">Which month this payable is for</p>
                 </div>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -489,7 +489,7 @@ export default function NewPayableModal({ onClose, onSuccess, toast }) {
             {}
             <section>
               <div className="mb-3">
-                <h4 className="text-sm font-bold text-slate-900">Amount &amp; Due Date</h4>
+                <h4 className="text-sm font-semibold text-slate-900">Amount &amp; Due Date</h4>
               </div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
@@ -525,7 +525,7 @@ export default function NewPayableModal({ onClose, onSuccess, toast }) {
             {}
             <section>
               <div className="mb-3">
-                <h4 className="text-sm font-bold text-slate-900">Additional Information</h4>
+                <h4 className="text-sm font-semibold text-slate-900">Additional Information</h4>
               </div>
               <div className="space-y-4">
                 <div>

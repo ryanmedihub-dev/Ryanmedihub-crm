@@ -11,7 +11,7 @@ const LOAN_ACCOUNTS = ["Bajaj Loan", "Fibe Loan"];
 const BANK_OPTIONS = ACCOUNTS.filter((a) => !LOAN_ACCOUNTS.includes(a));
 
 const inputClass =
-  "w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 disabled:bg-slate-50 disabled:text-slate-400";
+  "w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 disabled:bg-slate-50 disabled:text-slate-400";
 const labelClass = "mb-1.5 block text-sm font-semibold text-slate-700";
 
 export default function LoanSettlementModal({
@@ -96,7 +96,7 @@ export default function LoanSettlementModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-3 backdrop-blur-sm sm:p-5">
+    <div className="fixed inset-0 overlay-in z-50 flex items-center justify-center bg-gray-950/40 p-3 sm:p-5">
       <div className="flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
 
         {}
@@ -106,7 +106,7 @@ export default function LoanSettlementModal({
               <Landmark className="h-5 w-5" />
             </div>
             <div className="min-w-0">
-              <h3 className="truncate text-base font-bold text-slate-900 sm:text-lg">Settle {fromAccount}</h3>
+              <h3 className="truncate text-base font-semibold text-slate-900 sm:text-lg">Settle {fromAccount}</h3>
               <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">Record a bank settlement for this loan</p>
             </div>
           </div>
@@ -210,7 +210,7 @@ export default function LoanSettlementModal({
                   checked={noBranch}
                   onChange={(e) => setNoBranch(e.target.checked)}
                   disabled={submitting || done}
-                  className="h-4 w-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500"
+                  className="h-4 w-4 rounded border-slate-300 text-orange-600 focus:ring-indigo-500/30"
                 />
                 Company-level (no branch)
               </label>
@@ -227,7 +227,7 @@ export default function LoanSettlementModal({
                     type="checkbox"
                     checked={allowOverSettlement}
                     onChange={(e) => setAllowOverSettlement(e.target.checked)}
-                    className="h-4 w-4 rounded border-amber-300 text-amber-600 focus:ring-amber-500"
+                    className="h-4 w-4 rounded border-amber-300 text-amber-600 focus:ring-indigo-500/30"
                   />
                   Record it anyway (fee/short settlement)
                 </label>

@@ -147,8 +147,8 @@ export default function TransactionSummaryPanel({
         )}
 
         <div className="flex justify-between border-t-2 border-gray-200 pt-3">
-          <span className="font-bold text-gray-900">{tax ? "Net Payable" : "Total"}</span>
-          <span className="text-xl font-bold text-indigo-700">{formatCurrency(netAmount)}</span>
+          <span className="font-semibold text-gray-900">{tax ? "Net Payable" : "Total"}</span>
+          <span className="text-xl font-semibold text-indigo-700">{formatCurrency(netAmount)}</span>
         </div>
 
         <div className={`rounded-lg border p-3 mt-2 ${toneClasses[consequence.tone]}`}>

@@ -23,7 +23,7 @@ import {
 } from "@/lib/uploads/excelTemplate";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100";
+  "w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30";
 
 const UPLOAD_TYPES = [
   { key: "payables", label: "Payables", sub: "Vendor / Salary / Rent / Expenses", Icon: Receipt, enabled: true },
@@ -227,11 +227,8 @@ export default function UploadsPage() {
     <div className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
         <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
-            <Upload className="h-5 w-5" />
-          </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-900">Uploads</h1>
+            <h1 className="text-xl font-semibold text-slate-900">Uploads</h1>
             <p className="text-sm text-slate-500">Bulk-create records from an Excel sheet</p>
           </div>
           {phase !== "idle" && (
@@ -248,7 +245,7 @@ export default function UploadsPage() {
         {phase === "idle" && (
           <section className="space-y-6">
             <div>
-              <h2 className="mb-3 text-sm font-bold text-slate-900">1. What are you uploading?</h2>
+              <h2 className="mb-3 text-sm font-semibold text-slate-900">1. What are you uploading?</h2>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 {UPLOAD_TYPES.map((t) => (
                   <div
@@ -260,7 +257,7 @@ export default function UploadsPage() {
                     }`}
                   >
                     <t.Icon className={`h-6 w-6 ${t.enabled ? "text-indigo-600" : "text-slate-400"}`} />
-                    <p className="mt-2 text-sm font-bold text-slate-900">{t.label}</p>
+                    <p className="mt-2 text-sm font-semibold text-slate-900">{t.label}</p>
                     <p className="text-xs text-slate-500">{t.sub}</p>
                   </div>
                 ))}
@@ -269,7 +266,7 @@ export default function UploadsPage() {
 
             {}
             <div>
-              <h2 className="mb-3 text-sm font-bold text-slate-900">2. Download the template</h2>
+              <h2 className="mb-3 text-sm font-semibold text-slate-900">2. Download the template</h2>
               {listsError ? (
                 <p className="text-sm text-rose-600">Couldn't load master data — reload the page.</p>
               ) : (
@@ -299,7 +296,7 @@ export default function UploadsPage() {
             </div>
 
             <div>
-              <h2 className="mb-3 text-sm font-bold text-slate-900">3. Upload the filled file</h2>
+              <h2 className="mb-3 text-sm font-semibold text-slate-900">3. Upload the filled file</h2>
               <UploadDropzone onFile={handleFile} fileName={file?.name} disabled={busy} />
             </div>
           </section>
@@ -346,7 +343,7 @@ export default function UploadsPage() {
                 <button
                   onClick={commit}
                   disabled={!canCommit || phase === "committing"}
-                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
                 >
                   {phase === "committing" ? (
                     <>

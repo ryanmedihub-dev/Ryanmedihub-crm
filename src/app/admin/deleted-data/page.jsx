@@ -247,7 +247,7 @@ const DeletedData = () => {
   if (loading) {
     return (
       <div className="flex min-h-screen bg-gray-50">
-        <main className="flex-1 p-4 lg:p-8">
+        <main className="flex-1 min-w-0 px-4 pt-16 pb-6 sm:px-6 lg:p-8">
           <div className="flex items-center justify-center h-screen">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
@@ -262,14 +262,14 @@ const DeletedData = () => {
   if (error) {
     return (
       <div className="flex min-h-screen bg-gray-50">
-        <main className="flex-1 p-4 lg:p-8">
+        <main className="flex-1 min-w-0 px-4 pt-16 pb-6 sm:px-6 lg:p-8">
           <div className="flex items-center justify-center h-screen">
             <div className="text-center max-w-md">
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Error Loading Data</h3>
               <p className="text-gray-600 mb-4">{error}</p>
               <button
                 onClick={() => window.location.reload()}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
               >
                 Retry
               </button>
@@ -285,18 +285,18 @@ const DeletedData = () => {
   return (
     <div className="flex min-h-screen bg-gray-50">
 
-      <main className="flex-1 p-4 lg:p-8">
+      <main className="flex-1 min-w-0 px-4 pt-16 pb-6 sm:px-6 lg:p-8">
         <div className="mb-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Transaction Records</h1>
+              <h1 className="text-xl font-semibold tracking-tight text-gray-900">Transaction Records</h1>
               <p className="text-gray-600 mt-1">
                 Showing {filteredData.length} of {data.length} transactions
               </p>
             </div>
             <button
               onClick={handleExportExcel}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-sm"
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
             >
               <Download className="h-4 w-4" />
               Export to Excel
@@ -346,7 +346,7 @@ const DeletedData = () => {
                 placeholder="Search by patient name, payment ID, branch, procedure, remarks..."
                 value={filters.search}
                 onChange={handleFilterChange}
-                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all"
               />
             </div>
 
@@ -362,7 +362,7 @@ const DeletedData = () => {
                     name="dateFrom"
                     value={filters.dateFrom}
                     onChange={handleFilterChange}
-                    className="w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 transition-all"
+                    className="w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500/30 transition-all"
                   />
                 </div>
               </div>
@@ -378,7 +378,7 @@ const DeletedData = () => {
                     name="dateTo"
                     value={filters.dateTo}
                     onChange={handleFilterChange}
-                    className="w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 transition-all"
+                    className="w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500/30 transition-all"
                   />
                 </div>
               </div>

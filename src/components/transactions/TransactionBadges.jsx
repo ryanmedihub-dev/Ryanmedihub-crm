@@ -1,11 +1,10 @@
 import { X } from "lucide-react";
 import { METHOD_LABELS } from "@/constants/paymentMethods";
 import { ENTRY_TYPES, ENTRY_TYPE_TONE_CLASSES } from "@/constants/entryTypes";
-import { getCategoryStyle, getMethodStyle } from "./transactionsHelpers";
 
 export function SectionLabel({ children }) {
   return (
-    <p className="text-[17px] font-bold uppercase tracking-wider text-slate-400">
+    <p className="text-xs font-medium text-slate-500">
       {children}
     </p>
   );
@@ -16,11 +15,9 @@ export function CategoryBadge({ category }) {
 
   return (
     <span
-      className={`inline-flex items-center px-2 py-1 rounded-md border text-[11px] font-bold ${getCategoryStyle(
-        category
-      )}`}
+      className="inline-flex items-center h-5 px-2 rounded-md bg-gray-100 text-xs font-medium text-gray-700 whitespace-nowrap"
     >
-      {category}
+      {String(category).charAt(0) + String(category).slice(1).toLowerCase()}
     </span>
   );
 }
@@ -30,9 +27,7 @@ export function MethodBadge({ method }) {
 
   return (
     <span
-      className={`inline-flex items-center px-2 py-1 rounded-md text-[11px] font-semibold ${getMethodStyle(
-        method
-      )}`}
+      className="inline-flex items-center h-5 px-2 rounded-md border border-gray-200 text-xs text-gray-600 whitespace-nowrap"
     >
       {METHOD_LABELS[method] || method}
     </span>
@@ -50,7 +45,7 @@ export function EntryBadge({ row }) {
 
   return (
     <span
-      className={`inline-flex items-center px-2 py-1 rounded-md border text-[10px] font-bold ${tone}`}
+      className={`inline-flex items-center h-5 px-2 rounded-md border text-xs font-medium ${tone}`}
     >
       {type.label}
     </span>
@@ -59,13 +54,13 @@ export function EntryBadge({ row }) {
 
 export function FilterChip({ label, onRemove }) {
   return (
-    <span className="inline-flex items-center gap-1.5 bg-white border border-indigo-100 text-indigo-700 rounded-lg px-2.5 py-1.5 text-xs font-medium shadow-sm">
+    <span className="inline-flex items-center gap-1 h-6 pl-2 pr-1 bg-white border border-gray-200 text-gray-700 rounded-md text-xs font-medium">
       {label}
 
-      <button
+      <button aria-label="Close"
         type="button"
         onClick={onRemove}
-        className="text-indigo-400 hover:text-indigo-700"
+        className="p-0.5 rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100"
       >
         <X className="w-3 h-3" />
       </button>

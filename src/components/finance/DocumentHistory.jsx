@@ -11,7 +11,7 @@ export default function DocumentHistory({ doc, kind, transactions = [], loading 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-1">
       <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+        <h4 className="text-xs font-medium text-gray-500 mb-3">
           {listTitle} ({transactions.length})
         </h4>
         {!isPayable && (
@@ -43,7 +43,7 @@ export default function DocumentHistory({ doc, kind, transactions = [], loading 
       </div>
 
       <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+        <h4 className="text-xs font-medium text-gray-500 mb-3">
           Activity Log ({log.length})
         </h4>
         {log.length === 0 ? (
@@ -69,7 +69,7 @@ export default function DocumentHistory({ doc, kind, transactions = [], loading 
         )}
         {doc.remarks && (
           <div className="mt-3 pt-3 border-t border-gray-100">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Remarks</p>
+            <p className="text-xs font-medium text-gray-500 mb-1">Remarks</p>
             <p className="text-sm text-gray-700">{doc.remarks}</p>
           </div>
         )}

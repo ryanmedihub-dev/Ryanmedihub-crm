@@ -32,24 +32,24 @@ export default function LedgerSummaryCard({
   return (
     <Link
       href={qs ? `${href}?${qs}` : href}
-      className="group bg-white rounded-2xl border border-gray-200 shadow-sm p-5 hover:border-indigo-300 hover:shadow-md transition-all"
+      className="group bg-white rounded-xl border border-gray-200 p-5 hover:border-indigo-300 transition-colors"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             {Icon ? (
-              <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg ${toneCls}`}>
+              <span className={`grid h-4 w-4 shrink-0 place-items-center text-gray-400`}>
                 <Icon className="h-4 w-4" />
               </span>
             ) : null}
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide truncate">
+            <p className="text-xs font-medium text-gray-500 truncate">
               {label}
             </p>
           </div>
           {loading ? (
             <div className="h-8 w-32 bg-gray-100 rounded animate-pulse mt-2" />
           ) : (
-            <p className="text-2xl font-bold text-gray-900 mt-2">{formatCurrency(amount)}</p>
+            <p className="text-xl font-semibold tracking-tight text-gray-900 mt-2">{formatCurrency(amount)}</p>
           )}
           {description ? (
             <p className="text-xs text-gray-400 mt-1">{description}</p>

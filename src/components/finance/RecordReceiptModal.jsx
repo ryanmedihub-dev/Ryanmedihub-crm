@@ -69,7 +69,7 @@ export default function RecordReceiptModal({ receivable, onClose, onSuccess, toa
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-3 backdrop-blur-sm sm:p-5">
+    <div className="fixed inset-0 overlay-in z-50 flex items-center justify-center bg-gray-950/40 p-3 sm:p-5">
       <div className="flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
 
         {}
@@ -79,7 +79,7 @@ export default function RecordReceiptModal({ receivable, onClose, onSuccess, toa
               <Wallet2 className="h-5 w-5" />
             </div>
             <div className="min-w-0">
-              <h3 className="truncate text-base font-bold text-slate-900 sm:text-lg">Record Receipt</h3>
+              <h3 className="truncate text-base font-semibold text-slate-900 sm:text-lg">Record Receipt</h3>
               <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">Collect against an outstanding receivable</p>
             </div>
           </div>
@@ -100,16 +100,16 @@ export default function RecordReceiptModal({ receivable, onClose, onSuccess, toa
             <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-emerald-600">
+                  <p className="text-xs font-medium text-gray-500">
                     {PURPOSE_LABELS[receivable.purpose] || receivable.purpose}
                   </p>
-                  <p className="mt-1 truncate text-sm font-bold text-slate-900 sm:text-base">
+                  <p className="mt-1 truncate text-sm font-semibold text-slate-900 sm:text-base">
                     {receivable.payer?.label}
                   </p>
                 </div>
                 <div className="sm:text-right">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-emerald-600">Pending</p>
-                  <p className="mt-1 text-lg font-bold text-amber-600 sm:text-xl">
+                  <p className="text-xs font-medium text-gray-500">Pending</p>
+                  <p className="mt-1 text-lg font-semibold text-amber-600 sm:text-xl">
                     {formatCurrency(receivable.pending)}
                   </p>
                 </div>
@@ -130,7 +130,7 @@ export default function RecordReceiptModal({ receivable, onClose, onSuccess, toa
                   type="checkbox"
                   checked={allowOverpayment}
                   onChange={(e) => setAllowOverpayment(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-amber-300 text-amber-600 focus:ring-amber-500"
+                  className="mt-0.5 h-4 w-4 rounded border-amber-300 text-amber-600 focus:ring-indigo-500/30"
                 />
                 <div>
                   <p className="text-sm font-semibold text-amber-800">Allow overpayment</p>
@@ -158,7 +158,7 @@ export default function RecordReceiptModal({ receivable, onClose, onSuccess, toa
             type="button"
             onClick={handleSubmit}
             disabled={submitting}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
           >
             {submitting ? (
               <>

@@ -16,18 +16,18 @@ import {
   Pie,
   Cell,
 } from "recharts";
+import { useChartColors } from "@/lib/theme";
 import SalesSidebar from "@/components/Sidebars/SalesSidebar";
 
-const COLORS = [
-  "#3B82F6",
-  "#10B981",
-  "#F59E0B",
-  "#EF4444",
-  "#8B5CF6",
-  "#EC4899",
-];
+// Validated categorical palette (dataviz skill), assigned in fixed order.
+const COLORS = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#6250d6", "#e34948"];
+
+// 34000000 → ₹3.4Cr style ticks for money, plain numbers for counts.
+const fmtAxis = (n) =>
+  Math.abs(n) >= 10000000 ? `${(n / 10000000).toFixed(1)}Cr` : Math.abs(n) >= 100000 ? `${(n / 100000).toFixed(0)}L` : Math.abs(n) >= 1000 ? `${+(n / 1000).toFixed(1)}K` : n;
 
 export default function PerformancePage() {
+  const chart = useChartColors();
   const [loading, setLoading] = useState(true);
   const [chartData, setChartData] = useState({
     agentPerformance: [],
@@ -88,127 +88,100 @@ export default function PerformancePage() {
     );
   }
 
+  // ~260 agents cannot be read as bars; show the top 15 for each measure.
+  const topBy = (key) => [...(chartData.agentPerformance || [])].sort((a, b) => (b[key] || 0) - (a[key] || 0)).slice(0, 15);
+  const topRevenue = topBy("revenue");
+  const topPatients = topBy("patients");
+
   return (
     <div className="flex min-h-screen bg-linear-to-br from-gray-50 to-gray-100">
       <SalesSidebar
       />
 
-      <div className="w-full p-8 px-12 mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Performance Dashboard
-          </h1>
-          <p className="text-gray-600 mt-2">
-            Visual analytics and performance metrics
-          </p>
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 lg:py-7">
+        <div className="mb-6 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight text-gray-900">Performance</h1>
+            <p className="mt-1 text-sm text-gray-500">Revenue and patient volume by agent, branch and procedure</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <input type="date" aria-label="Start date" value={filters.startDate} onChange={(e) => handleFilterChange("startDate", e.target.value)} className="h-9 px-3 text-sm text-gray-800 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow]" />
+            <span className="text-xs text-gray-400">to</span>
+            <input type="date" aria-label="End date" value={filters.endDate} onChange={(e) => handleFilterChange("endDate", e.target.value)} className="h-9 px-3 text-sm text-gray-800 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow]" />
+            <select aria-label="Branch" value={filters.branch} onChange={(e) => handleFilterChange("branch", e.target.value)} className="h-9 pl-3 pr-8 text-sm text-gray-800 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow]">
+              <option value="">All branches</option>
+              <option value="Delhi">Delhi</option>
+              <option value="Mumbai">Mumbai</option>
+              <option value="Hyderabad">Hyderabad</option>
+              <option value="Noida">Noida</option>
+              <option value="Gurgaon">Gurgaon</option>
+            </select>
+            <button onClick={resetFilters} className="h-9 px-2.5 rounded-lg text-sm text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors">Reset</button>
+          </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
-            <button
-              onClick={resetFilters}
-              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-            >
-              Reset Filters
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Start Date
-              </label>
-              <input
-                type="date"
-                value={filters.startDate}
-                onChange={(e) =>
-                  handleFilterChange("startDate", e.target.value)
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+        <div className="stagger mb-6 grid grid-cols-2 lg:grid-cols-4 gap-px bg-gray-100 border border-gray-200 rounded-xl overflow-hidden">
+          {[
+            ["Total revenue", `₹${chartData.totalRevenue?.toLocaleString("en-IN", { maximumFractionDigits: 0 }) || 0}`],
+            ["Total patients", (chartData.totalPatients || 0).toLocaleString("en-IN")],
+            ["Conversion rate", `${chartData.conversionRate || 0}%`],
+            ["Avg transaction", `₹${chartData.avgTransaction?.toLocaleString("en-IN", { maximumFractionDigits: 0 }) || 0}`],
+          ].map(([label, value]) => (
+            <div key={label} className="min-w-0 bg-white px-5 py-4">
+              <p className="text-[13px] font-medium text-gray-500 truncate">{label}</p>
+              <p className="mt-1.5 text-xl font-semibold tracking-tight text-gray-900 tabular-nums whitespace-nowrap">{value}</p>
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                End Date
-              </label>
-              <input
-                type="date"
-                value={filters.endDate}
-                onChange={(e) => handleFilterChange("endDate", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Branch
-              </label>
-              <select
-                value={filters.branch}
-                onChange={(e) => handleFilterChange("branch", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">All Branches</option>
-                <option value="Delhi">Delhi</option>
-                <option value="Mumbai">Mumbai</option>
-                <option value="Hyderabad">Hyderabad</option>
-                <option value="Noida">Noida</option>
-                <option value="Gurgaon">Gurgaon</option>
-              </select>
-            </div>
-          </div>
+          ))}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Agent Performance (Revenue)
+          <div className="bg-white rounded-xl border border-gray-200 px-5 pt-4 pb-3">
+            <h3 className="text-[15px] font-semibold text-gray-900 mb-3">
+              Top 15 agents by revenue
             </h3>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={chartData.agentPerformance}>
-                <CartesianGrid strokeDasharray="3 3" />
+              <BarChart data={topRevenue}>
+                <CartesianGrid vertical={false} />
                 <XAxis
                   dataKey="name"
                   angle={-45}
                   textAnchor="end"
                   height={100}
                 />
-                <YAxis />
+                <YAxis tickFormatter={fmtAxis} axisLine={false} tickLine={false} width={56} />
                 <Tooltip
                   formatter={(value) => `₹${value.toLocaleString("en-IN")}`}
                 />
                 <Legend />
-                <Bar dataKey="revenue" fill="#3B82F6" name="Revenue" />
+                <Bar dataKey="revenue" fill={chart.in} name="Revenue" radius={[4, 4, 0, 0]} maxBarSize={28} />
               </BarChart>
             </ResponsiveContainer>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Agent Performance (Patients)
+          <div className="bg-white rounded-xl border border-gray-200 px-5 pt-4 pb-3">
+            <h3 className="text-[15px] font-semibold text-gray-900 mb-3">
+              Top 15 agents by patients
             </h3>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={chartData.agentPerformance}>
-                <CartesianGrid strokeDasharray="3 3" />
+              <BarChart data={topPatients}>
+                <CartesianGrid vertical={false} />
                 <XAxis
                   dataKey="name"
                   angle={-45}
                   textAnchor="end"
                   height={100}
                 />
-                <YAxis />
+                <YAxis tickFormatter={fmtAxis} axisLine={false} tickLine={false} width={56} />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="patients" fill="#10B981" name="Total Patients" />
-                <Bar dataKey="visited" fill="#3B82F6" name="Visited" />
+                <Bar dataKey="patients" fill={chart.in} name="Total Patients" radius={[4, 4, 0, 0]} maxBarSize={28} />
+                <Bar dataKey="visited" fill={chart.out} name="Visited" radius={[4, 4, 0, 0]} maxBarSize={28} />
               </BarChart>
             </ResponsiveContainer>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          <div className="bg-white rounded-xl border border-gray-200 px-5 pt-4 pb-3">
+            <h3 className="text-[15px] font-semibold text-gray-900 mb-3">
               Revenue by Branch
             </h3>
             <ResponsiveContainer width="100%" height={300}>
@@ -239,38 +212,38 @@ export default function PerformancePage() {
             </ResponsiveContainer>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          <div className="bg-white rounded-xl border border-gray-200 px-5 pt-4 pb-3">
+            <h3 className="text-[15px] font-semibold text-gray-900 mb-3">
               Revenue by Procedure
             </h3>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={chartData.revenueByProcedure}>
-                <CartesianGrid strokeDasharray="3 3" />
+                <CartesianGrid vertical={false} />
                 <XAxis
                   dataKey="procedure"
                   angle={-45}
                   textAnchor="end"
                   height={100}
                 />
-                <YAxis />
+                <YAxis tickFormatter={fmtAxis} axisLine={false} tickLine={false} width={56} />
                 <Tooltip
                   formatter={(value) => `₹${value.toLocaleString("en-IN")}`}
                 />
                 <Legend />
-                <Bar dataKey="revenue" fill="#F59E0B" name="Revenue" />
+                <Bar dataKey="revenue" fill={chart.in} name="Revenue" radius={[4, 4, 0, 0]} maxBarSize={28} />
               </BarChart>
             </ResponsiveContainer>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6 lg:col-span-2">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          <div className="bg-white rounded-xl border border-gray-200 px-5 pt-4 pb-3 lg:col-span-2">
+            <h3 className="text-[15px] font-semibold text-gray-900 mb-3">
               Monthly Revenue Trend
             </h3>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={chartData.monthlyRevenue}>
-                <CartesianGrid strokeDasharray="3 3" />
+                <CartesianGrid vertical={false} />
                 <XAxis dataKey="month" />
-                <YAxis />
+                <YAxis tickFormatter={fmtAxis} axisLine={false} tickLine={false} width={56} />
                 <Tooltip
                   formatter={(value) => `₹${value.toLocaleString("en-IN")}`}
                 />
@@ -293,8 +266,8 @@ export default function PerformancePage() {
             </ResponsiveContainer>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          <div className="bg-white rounded-xl border border-gray-200 px-5 pt-4 pb-3">
+            <h3 className="text-[15px] font-semibold text-gray-900 mb-3">
               Patient Status Distribution
             </h3>
             <ResponsiveContainer width="100%" height={300}>
@@ -323,52 +296,23 @@ export default function PerformancePage() {
             </ResponsiveContainer>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          <div className="bg-white rounded-xl border border-gray-200 px-5 pt-4 pb-3">
+            <h3 className="text-[15px] font-semibold text-gray-900 mb-3">
               Conversion Funnel
             </h3>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={chartData.conversionFunnel} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" />
+                <CartesianGrid vertical={false} />
                 <XAxis type="number" />
                 <YAxis dataKey="stage" type="category" width={120} />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="count" fill="#8B5CF6" name="Count" />
+                <Bar dataKey="count" fill={chart.in} name="Count" radius={[0, 4, 4, 0]} maxBarSize={22} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="bg-linear-to-br from-blue-500 to-blue-600 rounded-lg shadow p-6 text-white">
-            <h3 className="text-sm font-medium opacity-90">Total Revenue</h3>
-            <p className="text-3xl font-bold mt-2">
-              ₹{chartData.totalRevenue?.toLocaleString("en-IN") || 0}
-            </p>
-          </div>
-
-          <div className="bg-linear-to-br from-green-500 to-green-600 rounded-lg shadow p-6 text-white">
-            <h3 className="text-sm font-medium opacity-90">Total Patients</h3>
-            <p className="text-3xl font-bold mt-2">
-              {chartData.totalPatients || 0}
-            </p>
-          </div>
-
-          <div className="bg-linear-to-br from-purple-500 to-purple-600 rounded-lg shadow p-6 text-white">
-            <h3 className="text-sm font-medium opacity-90">Conversion Rate</h3>
-            <p className="text-3xl font-bold mt-2">
-              {chartData.conversionRate || 0}%
-            </p>
-          </div>
-
-          <div className="bg-linear-to-br from-orange-500 to-orange-600 rounded-lg shadow p-6 text-white">
-            <h3 className="text-sm font-medium opacity-90">Avg Transaction</h3>
-            <p className="text-3xl font-bold mt-2">
-              ₹{chartData.avgTransaction?.toLocaleString("en-IN") || 0}
-            </p>
-          </div>
-        </div>
       </div>
     </div>
   );

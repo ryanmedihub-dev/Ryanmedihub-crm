@@ -95,7 +95,7 @@ export default function ReverseTransactionModal({ transaction, onClose, onDone }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-3 backdrop-blur-sm sm:p-5">
+    <div className="fixed inset-0 overlay-in z-50 flex items-center justify-center bg-gray-950/40 p-3 sm:p-5">
       <div className="flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
 
         {}
@@ -105,7 +105,7 @@ export default function ReverseTransactionModal({ transaction, onClose, onDone }
               <RotateCcw className="h-5 w-5" />
             </div>
             <div className="min-w-0">
-              <h3 className="truncate text-base font-bold text-slate-900 sm:text-lg">Reverse / Refund</h3>
+              <h3 className="truncate text-base font-semibold text-slate-900 sm:text-lg">Reverse / Refund</h3>
               <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">Undo all or part of this transaction</p>
             </div>
           </div>
@@ -276,7 +276,7 @@ export default function ReverseTransactionModal({ transaction, onClose, onDone }
               {error && (
                 <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-3.5">
                   <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100">
-                    <span className="text-xs font-bold text-red-700">!</span>
+                    <span className="text-xs font-semibold text-red-700">!</span>
                   </div>
                   <p className="text-xs leading-5 text-red-700">{error}</p>
                 </div>

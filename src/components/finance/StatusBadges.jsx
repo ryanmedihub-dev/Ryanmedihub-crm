@@ -13,7 +13,7 @@ import { NON_CASH_METHODS, UNSETTLED_METHODS } from "@/constants/bankRouting";
 import { STATUS_STYLES } from "@/lib/financeUI";
 
 const BASE =
-  "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold border whitespace-nowrap";
+  "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-semibold border whitespace-nowrap";
 
 function Badge({ tone, icon: Icon, children, title }) {
   return (

@@ -90,7 +90,7 @@ export default function AdminCreateVendorPage() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 min-w-0 overflow-auto">
         <div className="max-w-3xl mx-auto p-4 sm:p-6 lg:p-8">
           <Link
             href="/admin/vendors"
@@ -101,7 +101,7 @@ export default function AdminCreateVendorPage() {
           </Link>
 
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">New Vendor</h1>
+            <h1 className="text-xl font-semibold tracking-tight text-gray-900">New Vendor</h1>
             <p className="text-gray-600 mt-1 text-sm">
               Register a supplier. Once saved it can be selected as a payable payee or a
               receivable payer.

@@ -122,7 +122,7 @@ function SearchBox({ value, onChange, placeholder = "Search…" }) {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg w-56 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+        className="pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg w-56 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
       />
     </div>
   );
@@ -157,7 +157,7 @@ function Badge({ children, tone = "gray" }) {
     rose: "bg-rose-100 text-rose-700",
   };
   return (
-    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold ${tones[tone]}`}>
+    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold ${tones[tone]}`}>
       {children}
     </span>
   );
@@ -165,11 +165,11 @@ function Badge({ children, tone = "gray" }) {
 
 function Modal({ title, onClose, children, wide = false }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
+    <div className="fixed inset-0 overlay-in z-50 flex items-center justify-center bg-gray-950/40 p-4">
       <div className={`bg-white rounded-2xl shadow-2xl w-full ${wide ? "max-w-2xl" : "max-w-md"} max-h-[90vh] flex flex-col`}>
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <h3 className="font-semibold text-gray-900">{title}</h3>
-          <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <button aria-label="Close" type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -189,7 +189,7 @@ function Field({ label, children }) {
 }
 
 const inputCls =
-  "w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200";
+  "w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/30";
 
 export default function MasterDataSettingsPage() {
   const { data: session, status } = useSession();
@@ -217,7 +217,7 @@ export default function MasterDataSettingsPage() {
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <header className="mb-5">
-        <h1 className="text-xl font-bold text-gray-900">Master Data</h1>
+        <h1 className="text-xl font-semibold text-gray-900">Master Data</h1>
         <p className="text-sm text-gray-500 mt-0.5">
           Expense heads, payment methods, receipt modes, accounts and bank-routing rules. Changes
           propagate to every server within ~60s. Retire values instead of deleting — a retired
@@ -1403,7 +1403,7 @@ function RoutingCell({ method, rule, receiptModes, accounts, onSave, onDelete })
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         )}
-        {!rule && !dirty && <span className="text-[10px] text-amber-600">no rule</span>}
+        {!rule && !dirty && <span className="text-[11px] text-amber-600">no rule</span>}
       </td>
     </tr>
   );

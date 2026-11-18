@@ -434,13 +434,13 @@ export default function DrillDownTable({
     return (
       <div className="flex items-center justify-end gap-2">
         {viewButton(row)}
-        <button
+        <button aria-label="Edit"
           onClick={() => router.push(`/admin/transactions/edit/${row._id}`)}
           className="p-1.5 rounded-lg hover:bg-indigo-50 text-indigo-600"
         >
           <Pencil className="w-3.5 h-3.5" />
         </button>
-        <button onClick={() => handleDelete(row)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-600">
+        <button aria-label="Delete" onClick={() => handleDelete(row)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-600">
           <Trash2 className="w-3.5 h-3.5" />
         </button>
       </div>
@@ -603,7 +603,7 @@ export default function DrillDownTable({
       render: (r) =>
         r.advanceInHand > 0 ? (
           <span className="text-amber-700 font-semibold" title="Advance in hand — this party has been paid more than they're currently owed">
-            −{formatCurrency(r.advanceInHand)} <span className="text-[10px] font-normal">(advance in hand)</span>
+            −{formatCurrency(r.advanceInHand)} <span className="text-[11px] font-normal">(advance in hand)</span>
           </span>
         ) : (
           formatCurrency(r.pending)
@@ -623,7 +623,7 @@ export default function DrillDownTable({
         return (
           <div>
             <p className="text-xs text-gray-600">{formatDate(r.dueDate)}</p>
-            {!cleared && <p className={`text-[10px] ${AGEING_TONE_CLASSES[info.tone]}`}>{info.text}</p>}
+            {!cleared && <p className={`text-[11px] ${AGEING_TONE_CLASSES[info.tone]}`}>{info.text}</p>}
           </div>
         );
       },
@@ -639,14 +639,14 @@ export default function DrillDownTable({
       render: (r) => {
         if (r.sourceKind === "BORROWING") {
           return (
-            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border bg-violet-50 text-violet-700 border-violet-200">
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold border bg-violet-50 text-violet-700 border-violet-200">
               Borrowing
             </span>
           );
         }
         if (r.sourceKind === "ADVANCE") {
           return (
-            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border bg-teal-50 text-teal-700 border-teal-200">
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold border bg-teal-50 text-teal-700 border-teal-200">
               Advance
             </span>
           );
@@ -656,7 +656,7 @@ export default function DrillDownTable({
         if (!isSale && !isExpense) return "—";
         return (
           <span
-            className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border ${
+            className={`inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold border ${
               isSale
                 ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                 : "bg-rose-50 text-rose-700 border-rose-200"
@@ -676,7 +676,7 @@ export default function DrillDownTable({
   const statusOptions = isPayableSection ? PAYABLE_STATUS_OPTIONS : RECEIVABLE_STATUS_OPTIONS;
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-5 space-y-4">
+    <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 min-w-0">
           {drill.level > 1 && (
@@ -685,7 +685,7 @@ export default function DrillDownTable({
             </button>
           )}
           <div className="min-w-0">
-            <h3 className="text-sm font-bold text-gray-900 truncate">
+            <h3 className="text-sm font-semibold text-gray-900 truncate">
               {sectionConfig.title || key}
               {drill.headLabel && (
                 <span className="text-gray-400 font-normal"> / {drill.headLabel}</span>
@@ -874,13 +874,13 @@ export default function DrillDownTable({
       )}
 
       {historyDoc && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 overlay-in bg-gray-950/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between p-5 border-b border-gray-100 sticky top-0 bg-white">
-              <h3 className="text-lg font-bold text-gray-900">
+              <h3 className="text-lg font-semibold text-gray-900">
                 History — {(isPayableSection ? historyDoc.payee?.label : historyDoc.payer?.label) || "Document"}
               </h3>
-              <button onClick={() => setHistoryDoc(null)} className="p-1.5 hover:bg-gray-100 rounded-lg">
+              <button type="button" onClick={() => setHistoryDoc(null)} aria-label="Close" className="p-1.5 hover:bg-gray-100 rounded-lg">
                 <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>

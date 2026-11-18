@@ -98,15 +98,12 @@ function PaymentsPageInner() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <main className="flex-1 p-4 sm:p-6 lg:p-8">
+      <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto space-y-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="max-w-xl">
               <div className="flex items-center gap-2.5">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-rose-50 text-rose-600">
-                  <Wallet className="h-5 w-5" />
-                </span>
-                <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
+                <h1 className="text-xl font-semibold tracking-tight text-gray-900">Payments</h1>
               </div>
               <p className="text-sm text-gray-500 mt-2">
                 Every rupee that actually left a cash or bank account — pure cash basis, the
@@ -124,7 +121,7 @@ function PaymentsPageInner() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1">Period</span>
+            <span className="text-xs font-medium text-gray-400 px-1">Period</span>
             <DebouncedDateInput
               value={from}
               onCommit={setFrom}
@@ -155,7 +152,7 @@ function PaymentsPageInner() {
           <section className="space-y-3">
             <div className="flex items-center gap-2">
               <Wallet className="w-4 h-4 text-rose-500" />
-              <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide">Payments</h2>
+              <h2 className="text-sm font-medium text-gray-700">Payments</h2>
             </div>
             <DrillDownTable
               levels={3}
@@ -177,7 +174,7 @@ function PaymentsPageInner() {
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide">
+            <h2 className="text-sm font-medium text-gray-700">
               Advance Transactions
             </h2>
             <FinancingTransactions kind="advance" from={from} to={to} branch={branch} />

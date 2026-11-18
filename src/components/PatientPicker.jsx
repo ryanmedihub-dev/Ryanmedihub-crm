@@ -43,7 +43,7 @@ export default function PatientPicker({
               type="text"
               value={value.patientName || ""}
               onChange={(e) => onChange({ ...value, patientName: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
               placeholder="Enter patient name"
             />
           </div>
@@ -55,7 +55,7 @@ export default function PatientPicker({
               type="tel"
               value={value.patientPhone || ""}
               onChange={(e) => onChange({ ...value, patientPhone: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
               placeholder="Enter phone number"
             />
           </div>

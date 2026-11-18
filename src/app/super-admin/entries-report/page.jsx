@@ -129,7 +129,7 @@ function PriorityBar({ counts, priority }) {
     <div className="min-w-[150px]">
       <div className="flex items-center gap-1.5 mb-1.5">
         <Icon className={`w-3.5 h-3.5 ${meta.text}`} />
-        <span className={`text-[11px] font-bold uppercase tracking-wide ${meta.text}`}>
+        <span className={`text-[11px] font-semibold uppercase tracking-wide ${meta.text}`}>
           {meta.label}
         </span>
         <span className="text-[11px] text-slate-400 font-medium">
@@ -152,7 +152,7 @@ function PriorityBar({ counts, priority }) {
           <div className="bg-emerald-500 w-full" />
         )}
       </div>
-      <div className="flex gap-2 mt-1 text-[10px] font-semibold">
+      <div className="flex gap-2 mt-1 text-[11px] font-semibold">
         {counts.high > 0 && <span className="text-red-600">{counts.high} high</span>}
         {counts.medium > 0 && <span className="text-amber-600">{counts.medium} med</span>}
         {counts.low > 0 && <span className="text-slate-500">{counts.low} low</span>}
@@ -176,7 +176,7 @@ function IssueDetails({ row }) {
     <div className="px-5 py-4 bg-slate-50/80 border-t border-slate-200 space-y-4">
       {alerts.length > 0 && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-3.5">
-          <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-red-700 mb-2.5">
+          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-red-700 mb-2.5">
             <FileWarning className="w-4 h-4" />
             Red alert — wrong entry / wrong file format
           </p>
@@ -184,7 +184,7 @@ function IssueDetails({ row }) {
             {alerts.map((i, idx) => (
               <li key={idx} className="flex items-start gap-2.5">
                 <span
-                  className={`mt-0.5 shrink-0 px-1.5 py-0.5 rounded-md border text-[10px] font-bold uppercase ${
+                  className={`mt-0.5 shrink-0 px-1.5 py-0.5 rounded-md border text-[11px] font-semibold uppercase ${
                     PRIORITY_META[i.severity].chip
                   }`}
                 >
@@ -193,7 +193,7 @@ function IssueDetails({ row }) {
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-slate-800">{i.label}</p>
                   {i.detail && <p className="text-xs text-slate-600 mt-0.5">{i.detail}</p>}
-                  <p className="text-[10px] text-slate-400 font-mono mt-0.5">{i.field}</p>
+                  <p className="text-[11px] text-slate-400 font-mono mt-0.5">{i.field}</p>
                 </div>
               </li>
             ))}
@@ -203,14 +203,14 @@ function IssueDetails({ row }) {
 
       {Object.keys(bySection).length > 0 && (
         <div>
-          <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-500 mb-2.5">
+          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2.5">
             <ClipboardList className="w-4 h-4" />
             Missing for status “{row.status.replace(/_/g, " ")}”
           </p>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {Object.entries(bySection).map(([section, items]) => (
               <div key={section} className="rounded-xl border border-slate-200 bg-white p-3">
-                <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400 mb-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-2">
                   {section}
                 </p>
                 <ul className="space-y-1.5">
@@ -236,7 +236,7 @@ function IssueDetails({ row }) {
         </Link>
         <Link
           href={`/admin/patients/edit/${row._id}`}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 text-xs font-semibold text-white hover:bg-amber-600"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 text-xs font-semibold text-white hover:bg-indigo-700"
         >
           <Pencil className="w-3.5 h-3.5" /> Fix entry
         </Link>
@@ -403,9 +403,9 @@ export default function EntriesReportPage() {
         {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2.5">
-              <span className="w-9 h-9 rounded-xl bg-linear-to-br from-amber-500 to-red-500 flex items-center justify-center shadow-md">
-                <FileWarning className="w-5 h-5 text-white" />
+            <h1 className="text-xl font-semibold tracking-tight text-slate-900 flex items-center gap-2.5">
+              <span className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center">
+                <FileWarning className="w-5 h-5 text-gray-600" />
               </span>
               Entries Report
             </h1>
@@ -433,7 +433,7 @@ export default function EntriesReportPage() {
             <button
               onClick={exportExcel}
               disabled={exporting || loading}
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-amber-500 text-sm font-semibold text-white hover:bg-amber-600 disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-indigo-600 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
             >
               {exporting ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -471,12 +471,12 @@ export default function EntriesReportPage() {
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <span className={`text-[11px] font-bold uppercase tracking-wide ${meta.text}`}>
+                  <span className={`text-[11px] font-semibold uppercase tracking-wide ${meta.text}`}>
                     {meta.label} priority
                   </span>
                   <Icon className={`w-4 h-4 ${meta.text}`} />
                 </div>
-                <p className="text-2xl font-bold text-slate-900 mt-2 tabular-nums">{value}</p>
+                <p className="text-xl font-semibold tracking-tight text-slate-900 mt-2 tabular-nums">{value}</p>
                 <p className="text-[11px] text-slate-500 mt-0.5">{caption}</p>
                 <div className="mt-2.5 h-1.5 rounded-full bg-slate-100 overflow-hidden">
                   <div
@@ -521,7 +521,7 @@ export default function EntriesReportPage() {
                 allLabel="All areas"
               />
               <div>
-                <label className="text-[11px] font-bold uppercase tracking-wide text-slate-500 block mb-2">
+                <label className="text-xs font-semibold text-slate-500 block mb-2">
                   Search
                 </label>
                 <div className="relative">
@@ -531,7 +531,7 @@ export default function EntriesReportPage() {
                     onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
                     onKeyDown={(e) => e.key === "Enter" && apply()}
                     placeholder="Name or phone"
-                    className="w-full min-h-[44px] pl-9 pr-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300"
+                    className="w-full min-h-[44px] pl-9 pr-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
                   />
                 </div>
               </div>
@@ -539,7 +539,7 @@ export default function EntriesReportPage() {
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               <div>
-                <label className="text-[11px] font-bold uppercase tracking-wide text-slate-500 block mb-2">
+                <label className="text-xs font-semibold text-slate-500 block mb-2">
                   Date Field
                 </label>
                 <select
@@ -555,7 +555,7 @@ export default function EntriesReportPage() {
                 </select>
               </div>
               <div>
-                <label className="text-[11px] font-bold uppercase tracking-wide text-slate-500 block mb-2">
+                <label className="text-xs font-semibold text-slate-500 block mb-2">
                   From
                 </label>
                 <input
@@ -566,7 +566,7 @@ export default function EntriesReportPage() {
                 />
               </div>
               <div>
-                <label className="text-[11px] font-bold uppercase tracking-wide text-slate-500 block mb-2">
+                <label className="text-xs font-semibold text-slate-500 block mb-2">
                   To
                 </label>
                 <input
@@ -577,7 +577,7 @@ export default function EntriesReportPage() {
                 />
               </div>
               <div>
-                <label className="text-[11px] font-bold uppercase tracking-wide text-slate-500 block mb-2">
+                <label className="text-xs font-semibold text-slate-500 block mb-2">
                   Sort
                 </label>
                 <select
@@ -597,7 +597,7 @@ export default function EntriesReportPage() {
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div className="flex flex-wrap gap-4">
                 <div>
-                  <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500 mb-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 mb-2">
                     Priority
                   </p>
                   <div className="flex gap-1.5">
@@ -617,7 +617,7 @@ export default function EntriesReportPage() {
                   </div>
                 </div>
                 <div>
-                  <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500 mb-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 mb-2">
                     Issue Type
                   </p>
                   <div className="flex gap-1.5">
@@ -658,7 +658,7 @@ export default function EntriesReportPage() {
                 </button>
                 <button
                   onClick={apply}
-                  className="px-5 py-2 rounded-xl bg-slate-900 text-sm font-semibold text-white hover:bg-slate-800"
+                  className="px-5 py-2 rounded-xl bg-indigo-600 text-sm font-semibold text-white hover:bg-indigo-700"
                 >
                   Apply
                 </button>
@@ -670,7 +670,7 @@ export default function EntriesReportPage() {
         {/* Top recurring issues */}
         {data?.topIssues?.length > 0 && (
           <div className="rounded-2xl border border-slate-200 bg-white p-4">
-            <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500 mb-2.5">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 mb-2.5">
               Most common gaps in this selection
             </p>
             <div className="flex flex-wrap gap-2">
@@ -682,7 +682,7 @@ export default function EntriesReportPage() {
                   }`}
                 >
                   {t.label}
-                  <span className="font-bold tabular-nums">{t.count}</span>
+                  <span className="font-semibold tabular-nums">{t.count}</span>
                 </span>
               ))}
             </div>
@@ -732,13 +732,13 @@ export default function EntriesReportPage() {
                 <thead className="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500">
                   <tr>
                     <th className="w-8" />
-                    <th className="text-left px-3 py-2.5 font-bold">Patient</th>
-                    <th className="text-left px-3 py-2.5 font-bold">Branch</th>
-                    <th className="text-left px-3 py-2.5 font-bold">Status</th>
-                    <th className="text-left px-3 py-2.5 font-bold">Priority</th>
-                    <th className="text-left px-3 py-2.5 font-bold">Missing / wrong</th>
-                    <th className="text-left px-3 py-2.5 font-bold">Dates</th>
-                    <th className="text-right px-3 py-2.5 font-bold">Action</th>
+                    <th className="text-left px-3 py-2.5 font-medium">Patient</th>
+                    <th className="text-left px-3 py-2.5 font-medium">Branch</th>
+                    <th className="text-left px-3 py-2.5 font-medium">Status</th>
+                    <th className="text-left px-3 py-2.5 font-medium">Priority</th>
+                    <th className="text-left px-3 py-2.5 font-medium">Missing / wrong</th>
+                    <th className="text-left px-3 py-2.5 font-medium">Dates</th>
+                    <th className="text-right px-3 py-2.5 font-medium">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -788,7 +788,7 @@ export default function EntriesReportPage() {
                               {alerts.slice(0, 2).map((i, idx) => (
                                 <span
                                   key={`a${idx}`}
-                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border border-red-200 bg-red-50 text-[10px] font-bold text-red-700"
+                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border border-red-200 bg-red-50 text-[11px] font-semibold text-red-700"
                                 >
                                   <AlertOctagon className="w-3 h-3" />
                                   {i.label}
@@ -797,7 +797,7 @@ export default function EntriesReportPage() {
                               {missing.slice(0, alerts.length ? 2 : 4).map((i, idx) => (
                                 <span
                                   key={`m${idx}`}
-                                  className={`px-1.5 py-0.5 rounded-md border text-[10px] font-medium ${
+                                  className={`px-1.5 py-0.5 rounded-md border text-[11px] font-medium ${
                                     PRIORITY_META[i.severity].chip
                                   }`}
                                 >
@@ -806,7 +806,7 @@ export default function EntriesReportPage() {
                               ))}
                               {r.issues.length >
                                 alerts.slice(0, 2).length + missing.slice(0, alerts.length ? 2 : 4).length && (
-                                <span className="px-1.5 py-0.5 rounded-md bg-slate-100 text-[10px] font-semibold text-slate-600">
+                                <span className="px-1.5 py-0.5 rounded-md bg-slate-100 text-[11px] font-semibold text-slate-600">
                                   +
                                   {r.issues.length -
                                     alerts.slice(0, 2).length -
@@ -828,7 +828,7 @@ export default function EntriesReportPage() {
                             <Link
                               href={`/admin/patients/edit/${r._id}`}
                               onClick={(e) => e.stopPropagation()}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-900 text-[11px] font-semibold text-white hover:bg-slate-800"
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-indigo-600 text-[11px] font-semibold text-white hover:bg-indigo-700"
                             >
                               <Pencil className="w-3 h-3" /> Fix
                             </Link>

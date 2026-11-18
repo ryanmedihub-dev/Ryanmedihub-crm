@@ -68,11 +68,11 @@ function UserModal({ user, onClose, onSuccess }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 overlay-in bg-gray-950/40 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-gray-900">{isEdit ? "Edit User" : "Create New User"}</h2>
-          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
+          <h2 className="text-lg font-semibold text-gray-900">{isEdit ? "Edit User" : "Create New User"}</h2>
+          <button type="button" onClick={onClose} aria-label="Close" className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
             <X className="w-4 h-4 text-gray-500" />
           </button>
         </div>
@@ -86,7 +86,7 @@ function UserModal({ user, onClose, onSuccess }) {
             <input
               name="name" value={form.name} onChange={handleChange} required
               placeholder="Full name"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
             />
           </div>
 
@@ -95,7 +95,7 @@ function UserModal({ user, onClose, onSuccess }) {
             <input
               name="email" type="email" value={form.email} onChange={handleChange} required
               placeholder="user@example.com"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
             />
           </div>
 
@@ -104,7 +104,7 @@ function UserModal({ user, onClose, onSuccess }) {
               <label className="block text-sm font-medium text-gray-700 mb-1">Role *</label>
               <select
                 name="role" value={form.role} onChange={handleChange} required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
               >
                 {ALL_ROLES.map((r) => (
                   <option key={r} value={r}>{r}</option>
@@ -115,7 +115,7 @@ function UserModal({ user, onClose, onSuccess }) {
               <label className="block text-sm font-medium text-gray-700 mb-1">Branch</label>
               <select
                 name="branch" value={form.branch} onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
               >
                 {BRANCHES.map((b) => (
                   <option key={b} value={b}>{b}</option>
@@ -134,7 +134,7 @@ function UserModal({ user, onClose, onSuccess }) {
                 value={form.password} onChange={handleChange}
                 required={!isEdit}
                 placeholder={isEdit ? "••••••••" : "Min. 6 characters"}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
               />
               <button
                 type="button" onClick={() => setShowPwd((p) => !p)}
@@ -154,7 +154,7 @@ function UserModal({ user, onClose, onSuccess }) {
             </button>
             <button
               type="submit" disabled={loading}
-              className="flex-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg py-2.5 text-sm font-medium transition-colors disabled:opacity-60"
+              className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg py-2.5 text-sm font-medium transition-colors disabled:opacity-60"
             >
               {loading ? "Saving…" : isEdit ? "Save Changes" : "Create User"}
             </button>
@@ -234,7 +234,7 @@ export default function SuperAdminManageUsers() {
     return (
       <section className="flex min-h-screen">
         <SuperAdminSidebar />
-        <main className="flex-1 flex items-center justify-center">
+        <main className="flex-1 min-w-0 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500 mx-auto" />
             <p className="mt-4 text-gray-500 text-sm">Loading users…</p>
@@ -251,17 +251,17 @@ export default function SuperAdminManageUsers() {
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-linear-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow">
-              <Shield className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center">
+              <Shield className="w-5 h-5 text-gray-600" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Manage Users</h1>
+              <h1 className="text-xl font-semibold tracking-tight text-gray-900">Manage Users</h1>
               <p className="text-sm text-gray-500">Full control over all user accounts</p>
             </div>
           </div>
           <button
             onClick={() => setModal({ mode: "create" })}
-            className="flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-medium shadow transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium shadow transition-colors"
           >
             <Plus className="w-4 h-4" />
             New User
@@ -287,7 +287,7 @@ export default function SuperAdminManageUsers() {
                 roleFilter === role ? "ring-2 ring-amber-400 border-amber-300" : "border-gray-200"
               }`}
             >
-              <p className="text-2xl font-bold text-gray-900">{roleCount(role)}</p>
+              <p className="text-xl font-semibold tracking-tight text-gray-900">{roleCount(role)}</p>
               <p className={`text-xs font-medium mt-1 px-2 py-0.5 rounded-full inline-block ${ROLE_COLOR[role]}`}>
                 {role}
               </p>
@@ -295,7 +295,7 @@ export default function SuperAdminManageUsers() {
           ))}
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -304,19 +304,19 @@ export default function SuperAdminManageUsers() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search by name or email…"
-                className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
               />
             </div>
             <select
               value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}
-              className="border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+              className="border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
             >
               <option value="all">All Roles</option>
               {ALL_ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
             </select>
             <select
               value={branchFilter} onChange={(e) => setBranchFilter(e.target.value)}
-              className="border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+              className="border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
             >
               <option value="all">All Branches</option>
               {BRANCHES.map((b) => <option key={b} value={b}>{b}</option>)}
@@ -324,13 +324,13 @@ export default function SuperAdminManageUsers() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-100">
               <thead className="bg-gray-50">
                 <tr>
                   {["User", "Role", "Branch", "Last Login", "Created", "Actions"].map((h) => (
-                    <th key={h} className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
+                    <th key={h} className="px-5 py-3 text-left text-xs font-medium text-gray-500">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -346,7 +346,7 @@ export default function SuperAdminManageUsers() {
                     <tr key={u._id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-linear-to-br from-amber-400 to-orange-400 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-linear-to-br from-amber-400 to-orange-400 flex items-center justify-center text-white text-xs font-semibold shrink-0">
                             {u.name.slice(0, 2).toUpperCase()}
                           </div>
                           <div>

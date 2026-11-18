@@ -50,7 +50,7 @@ const BenefitsManager = ({ benefits, onChange, onAdd, onRemove }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
         {predefinedBenefits.map((benefit) => (
           <label key={benefit} className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors duration-200">
-            <input type="checkbox" checked={benefits.includes(benefit)} onChange={() => handleBenefitToggle(benefit)} className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
+            <input type="checkbox" checked={benefits.includes(benefit)} onChange={() => handleBenefitToggle(benefit)} className="h-4 w-4 text-blue-600 focus:ring-indigo-500/30 border-gray-300 rounded" />
             <span className="text-sm font-medium text-gray-700">{benefit}</span>
           </label>
         ))}
@@ -58,7 +58,7 @@ const BenefitsManager = ({ benefits, onChange, onAdd, onRemove }) => {
       <div className="mb-4">
         <label className="block text-sm font-medium text-gray-700 mb-2">Add Custom Benefit</label>
         <div className="flex space-x-3">
-          <input type="text" className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 shadow-sm" placeholder="Enter custom benefit"
+          <input type="text" className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500/30 focus:border-transparent transition-all duration-200 shadow-sm" placeholder="Enter custom benefit"
             onKeyPress={(e) => { if (e.key === "Enter") { handleCustomBenefitAdd(e.target.value); e.target.value = ""; } }} />
           <button type="button" className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors duration-200 font-medium"
             onClick={(e) => { const input = e.target.previousElementSibling; handleCustomBenefitAdd(input.value); input.value = ""; }}>
@@ -73,7 +73,7 @@ const BenefitsManager = ({ benefits, onChange, onAdd, onRemove }) => {
             {benefits.map((benefit, index) => (
               <div key={index} className="flex items-center space-x-2 bg-blue-100 text-blue-800 px-3 py-2 rounded-lg">
                 <span className="text-sm font-medium">{benefit}</span>
-                <button type="button" className="text-blue-600 hover:text-blue-800 transition-colors duration-200" onClick={() => onRemove(index)}><X size={14} /></button>
+                <button aria-label="Close" type="button" className="text-blue-600 hover:text-blue-800 transition-colors duration-200" onClick={() => onRemove(index)}><X size={14} /></button>
               </div>
             ))}
           </div>
@@ -100,7 +100,7 @@ const MultiSelectEmployee = ({ label, options, selectedIds, onChange }) => {
           <div className="space-y-2">
             {options.map((employee) => (
               <label key={employee._id} className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors">
-                <input type="checkbox" checked={selectedIds.includes(employee._id)} onChange={() => handleToggle(employee._id)} className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" />
+                <input type="checkbox" checked={selectedIds.includes(employee._id)} onChange={() => handleToggle(employee._id)} className="h-4 w-4 text-indigo-600 focus:ring-indigo-500/30 border-gray-300 rounded" />
                 <span className="text-sm text-gray-700">{employee.name}</span>
               </label>
             ))}
@@ -138,9 +138,9 @@ const DocumentUpload = ({ title, icon: Icon, files, onUpload, onRemove, accept, 
                       <span className="text-sm font-medium text-gray-700 block truncate">{getFileName(filePath)}</span>
                     </div>
                     <div className="flex items-center space-x-2 ml-2 shrink-0">
-                      <button type="button" onClick={() => setViewingFile(normalizeFileUrl(filePath))} className="p-2 text-blue-600 hover:bg-blue-100 rounded transition-colors"><Eye size={16} /></button>
-                      <button type="button" onClick={() => { const a = Object.assign(document.createElement("a"), { href: normalizeFileUrl(filePath), download: getFileName(filePath), target: "_blank" }); a.click(); }} className="p-2 text-green-600 hover:bg-green-100 rounded transition-colors"><Download size={16} /></button>
-                      <button type="button" onClick={() => onRemove(index)} className="p-2 text-red-600 hover:bg-red-100 rounded transition-colors"><X size={16} /></button>
+                      <button aria-label="View" type="button" onClick={() => setViewingFile(normalizeFileUrl(filePath))} className="p-2 text-blue-600 hover:bg-blue-100 rounded transition-colors"><Eye size={16} /></button>
+                      <button aria-label="Download" type="button" onClick={() => { const a = Object.assign(document.createElement("a"), { href: normalizeFileUrl(filePath), download: getFileName(filePath), target: "_blank" }); a.click(); }} className="p-2 text-green-600 hover:bg-green-100 rounded transition-colors"><Download size={16} /></button>
+                      <button aria-label="Close" type="button" onClick={() => onRemove(index)} className="p-2 text-red-600 hover:bg-red-100 rounded transition-colors"><X size={16} /></button>
                     </div>
                   </div>
                 ))}
@@ -150,11 +150,11 @@ const DocumentUpload = ({ title, icon: Icon, files, onUpload, onRemove, accept, 
         </div>
       </div>
       {viewingFile && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4" onClick={() => setViewingFile(null)}>
+        <div className="fixed inset-0 overlay-in bg-gray-950/40 flex items-center justify-center z-50 p-4" onClick={() => setViewingFile(null)}>
           <div className="relative bg-white rounded-lg w-full max-w-6xl h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between p-4 border-b bg-gray-50">
               <h3 className="font-semibold text-gray-900">{getFileName(viewingFile)}</h3>
-              <button onClick={() => setViewingFile(null)} className="text-gray-600 hover:text-gray-900 text-2xl font-bold px-3 hover:bg-gray-200 rounded">✕</button>
+              <button onClick={() => setViewingFile(null)} className="text-gray-600 hover:text-gray-900 text-xl font-semibold tracking-tight px-3 hover:bg-gray-200 rounded">✕</button>
             </div>
             <div className="flex-1 overflow-hidden bg-gray-100">
               {isPDF(viewingFile) ? <iframe src={viewingFile} className="w-full h-full border-0" title="PDF Viewer" /> : <div className="w-full h-full flex items-center justify-center p-4"><img src={viewingFile} alt="Document" className="max-w-full max-h-full object-contain" /></div>}
@@ -166,11 +166,10 @@ const DocumentUpload = ({ title, icon: Icon, files, onUpload, onRemove, accept, 
   );
 };
 
-const StepHeader = ({ icon: Icon, title, description, color }) => (
-  <div className="text-center mb-8">
-    <div className={`mx-auto h-16 w-16 text-${color}-500 mb-4 flex items-center justify-center`}><Icon size={64} /></div>
-    <h3 className="text-2xl font-bold text-gray-900">{title}</h3>
-    <p className="text-gray-600">{description}</p>
+const StepHeader = ({ title, description }) => (
+  <div className="pb-4 border-b border-gray-100">
+    <h3 className="text-base font-semibold text-gray-900">{title}</h3>
+    {description && <p className="mt-0.5 text-sm text-gray-500">{description}</p>}
   </div>
 );
 
@@ -277,36 +276,34 @@ export default function SurgeryAddPatient() {
   return (
     <section className="flex min-h-screen">
       <SurgerySidebar />
-      <main className="flex-1 px-12 py-4">
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <div className="px-8 py-6 bg-linear-to-r from-blue-600 to-indigo-600 text-white">
+      <main className="flex-1 min-w-0 px-4 sm:px-6 lg:px-12 py-4">
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-6 py-5 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-bold flex items-center space-x-2"><UserPlus size={28} /><span>Patient Registration</span></h1>
-                <p className="text-blue-100 mt-1">Complete all steps to register a new patient</p>
+                <h1 className="text-xl font-semibold tracking-tight text-gray-900">Patient Registration</h1>
+                <p className="text-sm text-gray-500 mt-1">Complete all steps to register a new patient</p>
               </div>
-              <div className="text-right"><p className="text-sm text-blue-100">Current Status</p><p className="font-medium">New Registration</p></div>
             </div>
           </div>
 
-          <div className="px-8 py-6 border-b border-gray-200">
-            <div className="flex justify-between items-center">
-              <div className="flex space-x-2">
+          <div className="px-4 py-4 sm:px-8 sm:py-5 border-b border-gray-200">
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between sm:items-center">
+              <div className="flex flex-wrap gap-2">
                 {stepConfig.map((s) => {
                   const Icon = s.icon;
                   return (
-                    <button key={s.number} onClick={() => setStep(s.number)}
-                      className={`flex items-center justify-center w-12 h-12 rounded-full transition-all duration-300 ${s.number === step ? `bg-${s.color}-600 text-white shadow-lg scale-110` : s.number < step ? "bg-red-950 text-white shadow-md hover:scale-105" : "bg-gray-200 text-gray-500 hover:bg-gray-300"}`}>
-                      <Icon size={20} />
+                    <button type="button" key={s.number} onClick={() => setStep(s.number)} aria-label={`Step ${s.number}: ${s.title}`} aria-current={s.number === step ? "step" : undefined} className={`flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full transition-colors ${s.number === step ? "bg-indigo-600 text-white ring-4 ring-indigo-100" : s.number < step ? "bg-indigo-50 text-indigo-700 hover:bg-indigo-100" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`} >
+                      <Icon size={18} aria-hidden />
                     </button>
                   );
                 })}
               </div>
-              <div className="text-sm text-gray-600 font-medium">Step {step} of {stepConfig.length}: {stepConfig[step - 1].title}</div>
+              <div className="text-sm text-gray-500">Step {step} of {stepConfig.length}: {stepConfig[step - 1].title}</div>
             </div>
           </div>
 
-          <div className="px-8 py-8">
+          <div className="px-4 py-6 sm:px-8 sm:py-8">
             {step === 1 && (
               <div className="space-y-8">
                 <StepHeader icon={User} title="Personal Information" description="Let's start with basic details" color="blue" />
@@ -337,44 +334,44 @@ export default function SurgeryAddPatient() {
                   <InputField label="Final Package Amount (₹)" type="number" value={formData.counselling.finlpackage} onChange={createChangeHandler("counselling","finlpackage")} placeholder="Final package amount" />
                   <InputField label="Grafts Suggested" type="number" value={formData.counselling.graftsSuggested} onChange={createChangeHandler("counselling","graftsSuggested")} placeholder="Number of grafts" />
                   <div className="space-y-3 my-3">
-                    <label className="block mb-4 text-md underline font-bold text-gray-700">Hair Loss Type *</label>
+                    <label className="block mb-4 text-md underline font-semibold text-gray-700">Hair Loss Type *</label>
                     <div className="space-y-2 flex flex-wrap space-x-7">
                       {[{value:"male_pattern",label:"Male Pattern Baldness"},{value:"female_pattern",label:"Female Pattern Baldness"},{value:"receding_hairline",label:"Receding Hairline"},{value:"crown_thinning",label:"Crown Thinning"},{value:"diffuse_thinning",label:"Diffuse Thinning"},{value:"frontal_loss",label:"Frontal Hair Loss"},{value:"traction_alopecia",label:"Traction Alopecia"},{value:"other",label:"Other"}].map((o) => (
                         <label key={o.value} className="flex items-center align-middle space-x-1">
-                          <input type="radio" name="hairlossType" value={o.value} checked={formData.counselling.hairlossType===o.value} onChange={createChangeHandler("counselling","hairlossType")} className="text-blue-600 focus:ring-blue-500" />
+                          <input type="radio" name="hairlossType" value={o.value} checked={formData.counselling.hairlossType===o.value} onChange={createChangeHandler("counselling","hairlossType")} className="text-blue-600 focus:ring-indigo-500/30" />
                           <span className="text-md text-gray-700">{o.label}</span>
                         </label>
                       ))}
                     </div>
                   </div>
                   <div className="space-y-3 my-3">
-                    <label className="block mb-4 text-md underline font-bold text-gray-700">Area of Concern *</label>
+                    <label className="block mb-4 text-md underline font-semibold text-gray-700">Area of Concern *</label>
                     <div className="space-y-2 flex flex-wrap space-x-7">
                       {[{value:"frontal",label:"Frontal Area"},{value:"mid_scalp",label:"Mid Scalp"},{value:"crown",label:"Crown/Vortex"},{value:"hairline",label:"Hairline Correction"},{value:"temples",label:"Temples"},{value:"beard",label:"Beard/Moustache"},{value:"multiple_areas",label:"Multiple Areas"}].map((o) => (
                         <label key={o.value} className="flex items-center align-baseline space-x-1">
-                          <input type="radio" name="areaofConcern" value={o.value} checked={formData.counselling.areaofConcern===o.value} onChange={createChangeHandler("counselling","areaofConcern")} className="text-blue-600 focus:ring-blue-500" />
+                          <input type="radio" name="areaofConcern" value={o.value} checked={formData.counselling.areaofConcern===o.value} onChange={createChangeHandler("counselling","areaofConcern")} className="text-blue-600 focus:ring-indigo-500/30" />
                           <span className="text-md text-gray-700">{o.label}</span>
                         </label>
                       ))}
                     </div>
                   </div>
                   <div className="space-y-3">
-                    <label className="block mb-4 text-lg underline font-bold text-gray-700">Hair Loss Reason *</label>
+                    <label className="block mb-4 text-lg underline font-semibold text-gray-700">Hair Loss Reason *</label>
                     <div className="flex flex-wrap space-x-7 space-y-2">
                       {[{value:"genetic",label:"Genetic/Hereditary"},{value:"hormonal",label:"Hormonal Changes"},{value:"stress",label:"Stress Related"},{value:"nutritional",label:"Nutritional Deficiency"},{value:"medical",label:"Medical Condition"},{value:"medication",label:"Medication Side Effects"},{value:"lifestyle",label:"Lifestyle Factors"},{value:"ageing",label:"Ageing Process"},{value:"unknown",label:"Unknown/Idiopathic"}].map((o) => (
                         <label key={o.value} className="flex items-center align-middle space-x-1">
-                          <input type="radio" name="hairlossreason" value={o.value} checked={formData.counselling.hairlossreason===o.value} onChange={createChangeHandler("counselling","hairlossreason")} className="text-blue-600 focus:ring-blue-500" />
+                          <input type="radio" name="hairlossreason" value={o.value} checked={formData.counselling.hairlossreason===o.value} onChange={createChangeHandler("counselling","hairlossreason")} className="text-blue-600 focus:ring-indigo-500/30" />
                           <span className="text-md text-gray-700">{o.label}</span>
                         </label>
                       ))}
                     </div>
                   </div>
                   <div className="space-y-3">
-                    <label className="block mb-4 text-md underline font-bold text-gray-700">Hair Loss Duration *</label>
+                    <label className="block mb-4 text-md underline font-semibold text-gray-700">Hair Loss Duration *</label>
                     <div className="space-y-2 flex flex-wrap space-x-5">
                       {[{value:"less_than_1_year",label:"Less than 1 year"},{value:"1_2_years",label:"1-2 years"},{value:"2_5_years",label:"2-5 years"},{value:"5_10_years",label:"5-10 years"},{value:"more_than_10_years",label:"More than 10 years"},{value:"progressive",label:"Progressive (ongoing)"},{value:"recent_accelerated",label:"Recent accelerated loss"}].map((o) => (
                         <label key={o.value} className="flex items-center space-x-1">
-                          <input type="radio" name="hairlossduration" value={o.value} checked={formData.counselling.hairlossduration===o.value} onChange={createChangeHandler("counselling","hairlossduration")} className="text-blue-600 focus:ring-blue-500" />
+                          <input type="radio" name="hairlossduration" value={o.value} checked={formData.counselling.hairlossduration===o.value} onChange={createChangeHandler("counselling","hairlossduration")} className="text-blue-600 focus:ring-indigo-500/30" />
                           <span className="text-md text-gray-700">{o.label}</span>
                         </label>
                       ))}
@@ -446,7 +443,7 @@ export default function SurgeryAddPatient() {
               <div className="flex space-x-4">
                 {step < 5 && <button type="button" className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 transition-colors duration-200" onClick={() => setStep((s) => s + 1)}>Next →</button>}
                 {step === 5 && (
-                  <button type="button" onClick={handleSubmit} disabled={isSubmitting} className="inline-flex items-center px-8 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200">
+                  <button type="button" onClick={handleSubmit} disabled={isSubmitting} className="inline-flex items-center px-8 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200">
                     {isSubmitting ? (<><div className="animate-spin mr-2 h-5 w-5 border-2 border-white border-t-transparent rounded-full" />Submitting...</>) : (<><CheckCircle className="mr-2" size={20} />Complete Registration</>)}
                   </button>
                 )}

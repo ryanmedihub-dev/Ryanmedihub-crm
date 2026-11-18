@@ -36,7 +36,7 @@ export default function DirectExpenseSection({
                 type="checkbox"
                 checked={!data.isVendor}
                 onChange={(e) => set({ isVendor: !e.target.checked })}
-                className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500/30"
               />
               <span className="text-sm font-medium text-gray-700">Enter Manually</span>
             </label>
@@ -65,7 +65,7 @@ export default function DirectExpenseSection({
                 type="text"
                 value={data.expenseGiverName}
                 onChange={(e) => set({ expenseGiverName: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200"
+                className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                 placeholder="Enter payee name"
               />
             </div>
@@ -81,7 +81,7 @@ export default function DirectExpenseSection({
               <select
                 value={data.expenseCategory}
                 onChange={(e) => set({ expenseCategory: e.target.value, expenseType: "" })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
               >
                 <option value="">Select Category</option>
                 {data.expenseCategory && !DIRECT_EXPENSE_CATEGORY_OPTIONS.includes(data.expenseCategory) && (
@@ -100,7 +100,7 @@ export default function DirectExpenseSection({
                 value={data.expenseType}
                 onChange={(e) => set({ expenseType: e.target.value })}
                 disabled={!data.expenseCategory}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg disabled:bg-gray-100"
+                className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150 disabled:bg-gray-100"
               >
                 <option value="">Select Type</option>
                 {data.expenseType && !getExpenseTypes(data.expenseCategory).includes(data.expenseType) && (
@@ -121,7 +121,7 @@ export default function DirectExpenseSection({
                 value={data.amount}
                 onChange={(e) => set({ amount: e.target.value })}
                 min="0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                 placeholder="Enter amount"
               />
             </div>
@@ -168,7 +168,7 @@ export default function DirectExpenseSection({
             <button
               onClick={onSave}
               disabled={saving}
-              className="w-full mt-4 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 font-medium flex items-center justify-center gap-2"
+              className="w-full mt-4 h-10 px-4 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 active:bg-indigo-800 transition-colors press disabled:opacity-50 font-medium flex items-center justify-center gap-2"
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               {saving ? "Saving..." : saveLabel}

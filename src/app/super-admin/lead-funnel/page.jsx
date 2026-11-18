@@ -141,13 +141,13 @@ function NodeBox({ node, parentCount, onSelectLeads }) {
         {node.label}
       </p>
       <div className="mt-0.5 flex items-center justify-between">
-        <span className={`rounded-full px-1.5 py-0.5 text-[11px] font-bold ${style.chip}`}>
+        <span className={`rounded-full px-1.5 py-0.5 text-[11px] font-semibold ${style.chip}`}>
           <CountUp value={node.count} />
         </span>
         {parentCount ? <span className="text-[9px] text-gray-400">{pct}%</span> : null}
       </div>
       {typeof node.amount === "number" && (
-        <div className="mt-0.5 flex items-center gap-0.5 text-[10px] font-semibold text-emerald-600">
+        <div className="mt-0.5 flex items-center gap-0.5 text-[11px] font-semibold text-emerald-600">
           <IndianRupee className="h-2.5 w-2.5" />
           {formatINR(node.amount).replace("₹", "")}
         </div>
@@ -278,7 +278,7 @@ function LeadsDrawer({ node, onClose }) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex justify-end bg-black/30"
+        className="fixed inset-0 overlay-in z-50 flex justify-end bg-gray-950/40"
         onClick={onClose}
       >
         <motion.div
@@ -294,7 +294,7 @@ function LeadsDrawer({ node, onClose }) {
               <h3 className="text-base font-semibold text-gray-800">{node.label}</h3>
               <p className="text-xs text-gray-400">{node.count} lead{node.count === 1 ? "" : "s"}</p>
             </div>
-            <button onClick={onClose} className="rounded-full p-1.5 hover:bg-gray-100">
+            <button aria-label="Close" onClick={onClose} className="rounded-full p-1.5 hover:bg-gray-100">
               <X className="h-4 w-4 text-gray-400" />
             </button>
           </div>
@@ -402,7 +402,7 @@ export default function LeadFunnelPage() {
         <div className="p-6 w-full">
           <div className="flex items-center justify-between mb-5 max-w-5xl">
             <div>
-              <h1 className="text-xl font-bold text-gray-800">Lead Funnel</h1>
+              <h1 className="text-xl font-semibold text-gray-800">Lead Funnel</h1>
               <p className="text-sm text-gray-400">Lead → Call → Visit → Conversion, live from Callby + patient records.</p>
             </div>
             <button
@@ -415,7 +415,7 @@ export default function LeadFunnelPage() {
             </button>
           </div>
 
-          <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm mb-6 max-w-5xl">
+          <div className="rounded-xl border border-gray-100 bg-white p-4 mb-6 max-w-5xl">
             <div className="flex flex-wrap items-center gap-2.5">
               <MultiSelect
                 label="Agents"
@@ -452,7 +452,7 @@ export default function LeadFunnelPage() {
 
               <button
                 onClick={fetchTree}
-                className="rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm font-medium"
+                className="rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 text-sm font-medium"
               >
                 Apply
               </button>

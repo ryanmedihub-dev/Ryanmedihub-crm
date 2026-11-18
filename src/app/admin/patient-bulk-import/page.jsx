@@ -408,13 +408,13 @@ export default function PatientBulkImportPage() {
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-100 text-rose-600">
             <ShieldAlert className="h-7 w-7" />
           </div>
-          <h2 className="mt-4 text-xl font-bold text-slate-900">Super Admin Access Required</h2>
+          <h2 className="mt-4 text-xl font-semibold text-slate-900">Super Admin Access Required</h2>
           <p className="mt-2 text-sm text-slate-600">
             The Patient Bulk Import utility is restricted to Super Admin and Owner accounts only.
           </p>
           <Link
             href="/admin/patients"
-            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"
+            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700"
           >
             Return to Patients
           </Link>
@@ -430,17 +430,17 @@ export default function PatientBulkImportPage() {
         <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <div className="flex items-center gap-1.5 text-xs text-slate-500">
                 <Link href="/admin/patients" className="hover:text-indigo-600">
                   Admin
                 </Link>
                 <span>/</span>
                 <span>Bulk Tools</span>
                 <span>/</span>
-                <span className="text-indigo-600">Patient Bulk Import</span>
+                <span className="text-slate-700" aria-current="page">Patient Bulk Import</span>
               </div>
               <div className="mt-1 flex items-center gap-3">
-                <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+                <h1 className="text-xl font-semibold tracking-tight text-slate-900">
                   Historical Completed Surgery Patients Import
                 </h1>
                 <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700 border border-indigo-200">
@@ -449,7 +449,7 @@ export default function PatientBulkImportPage() {
               </div>
               <p className="mt-1 text-sm text-slate-500">
                 Import historical surgery patients with{" "}
-                <code className="rounded bg-slate-100 px-1 py-0.5 text-xs font-mono font-bold text-slate-800">
+                <code className="rounded bg-slate-100 px-1 py-0.5 text-xs font-mono font-semibold text-slate-800">
                   ops.status = &quot;CLOSED&quot;
                 </code>
                 . Non-destructive: updates status only for existing records and preserves all other fields.
@@ -484,7 +484,7 @@ export default function PatientBulkImportPage() {
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <History className="h-4 w-4 text-indigo-600" />
-                <h3 className="text-sm font-bold text-slate-900">Recent Import Audit History</h3>
+                <h3 className="text-sm font-semibold text-slate-900">Recent Import Audit History</h3>
               </div>
               <button
                 onClick={fetchPastLogs}
@@ -501,7 +501,7 @@ export default function PatientBulkImportPage() {
               <div className="mt-3 overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="border-b border-slate-100 text-slate-400 font-semibold uppercase tracking-wider">
+                    <tr className="border-b border-slate-100 text-slate-400 font-medium">
                       <th className="py-2 px-3">Import ID</th>
                       <th className="py-2 px-3">Mode</th>
                       <th className="py-2 px-3">Imported By</th>
@@ -518,7 +518,7 @@ export default function PatientBulkImportPage() {
                         <td className="py-2 px-3 font-mono text-slate-900 font-medium">{log.importId}</td>
                         <td className="py-2 px-3">
                           <span
-                            className={`rounded px-1.5 py-0.5 font-semibold text-[10px] ${
+                            className={`rounded px-1.5 py-0.5 font-semibold text-[11px] ${
                               log.mode === "committed"
                                 ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                                 : "bg-amber-50 text-amber-700 border border-amber-200"
@@ -550,14 +550,14 @@ export default function PatientBulkImportPage() {
         {phase === "idle" && (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             <div className="lg:col-span-2 space-y-6">
-              <div className="rounded-2xl border-2 border-indigo-200 bg-linear-to-br from-indigo-50/60 via-white to-purple-50/40 p-6 shadow-sm">
+              <div className="rounded-xl border border-gray-200 bg-white p-6">
                 <div className="flex items-start gap-4">
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-md shadow-indigo-200">
                     <Database className="h-6 w-6" />
                   </div>
                   <div className="space-y-1 grow">
                     <div className="flex items-center gap-2">
-                      <h2 className="text-base font-bold text-slate-900">
+                      <h2 className="text-base font-semibold text-slate-900">
                         Bundled Historical Surgery Dataset
                       </h2>
                       <span className="rounded bg-indigo-100 px-2 py-0.5 text-[11px] font-semibold text-indigo-700">
@@ -586,7 +586,7 @@ export default function PatientBulkImportPage() {
               </div>
 
               <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
-                <h3 className="text-sm font-bold text-slate-900 mb-2">Or Upload a Custom CSV / TSV File</h3>
+                <h3 className="text-sm font-semibold text-slate-900 mb-2">Or Upload a Custom CSV / TSV File</h3>
                 <p className="text-xs text-slate-500 mb-4">
                   Upload any valid tab-separated or comma-separated historical dataset.
                 </p>
@@ -610,7 +610,7 @@ export default function PatientBulkImportPage() {
 
             <div className="space-y-4">
               <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
-                <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
+                <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
                   <ShieldCheck className="h-4 w-4 text-emerald-600" />
                   Pre-Commit Safety Rules
                 </div>
@@ -619,7 +619,7 @@ export default function PatientBulkImportPage() {
                     <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500 mt-0.5" />
                     <span>
                       <strong>Status-Only Updates:</strong> For existing patients not in CLOSED status, only{" "}
-                      <code className="text-slate-800 font-mono font-bold">ops.status</code> is updated. Surgery,
+                      <code className="text-slate-800 font-mono font-semibold">ops.status</code> is updated. Surgery,
                       payments, medical, personal, and financial data are completely untouched.
                     </span>
                   </li>
@@ -647,7 +647,7 @@ export default function PatientBulkImportPage() {
         {phase === "analyzing" && (
           <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white py-20 text-center shadow-xs">
             <Loader2 className="h-10 w-10 animate-spin text-indigo-600 mb-3" />
-            <h3 className="text-base font-bold text-slate-900">Querying Live RyanCRM Database...</h3>
+            <h3 className="text-base font-semibold text-slate-900">Querying Live RyanCRM Database...</h3>
             <p className="text-xs text-slate-500 mt-1 max-w-sm">
               Checking all 1,447 normalized phones against existing patient records to calculate exact mutually exclusive categories.
             </p>
@@ -660,48 +660,48 @@ export default function PatientBulkImportPage() {
             {/* KPI Cards: Mutually Exclusive Reconciliation */}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
               <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Rows</p>
-                <p className="mt-1 text-2xl font-black text-slate-900">{counts.total}</p>
+                <p className="text-xs font-medium text-slate-400">Total Rows</p>
+                <p className="mt-1 text-2xl font-semibold text-slate-900">{counts.total}</p>
                 <p className="text-[11px] text-slate-500 truncate mt-0.5">100% Reconciled</p>
               </div>
 
               <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4 shadow-xs">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">New Patients</p>
-                <p className="mt-1 text-2xl font-black text-emerald-700">{counts.new_patient_creations}</p>
+                <p className="text-xs font-medium text-emerald-700">New Patients</p>
+                <p className="mt-1 text-2xl font-semibold text-emerald-700">{counts.new_patient_creations}</p>
                 <p className="text-[11px] text-emerald-600 mt-0.5">Create with CLOSED</p>
               </div>
 
-              <div className="rounded-2xl border border-indigo-200 bg-indigo-50/50 p-4 shadow-xs">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-indigo-700">Status Updates</p>
-                <p className="mt-1 text-2xl font-black text-indigo-700">{counts.total_status_updates}</p>
+              <div className="rounded-xl border border-gray-200 bg-white p-4">
+                <p className="text-xs font-medium text-indigo-700">Status Updates</p>
+                <p className="mt-1 text-2xl font-semibold text-gray-900 tabular-nums">{counts.total_status_updates}</p>
                 <p className="text-[11px] text-indigo-600 mt-0.5">Update ops.status only</p>
               </div>
 
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-xs">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Already CLOSED</p>
-                <p className="mt-1 text-2xl font-black text-slate-700">{counts.existing_already_closed}</p>
+                <p className="text-xs font-medium text-slate-500">Already CLOSED</p>
+                <p className="mt-1 text-2xl font-semibold text-slate-700">{counts.existing_already_closed}</p>
                 <p className="text-[11px] text-slate-500 mt-0.5">Skip (No action needed)</p>
               </div>
 
               <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-4 shadow-xs">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-amber-700">Ambiguous Matches</p>
-                <p className="mt-1 text-2xl font-black text-amber-700">{counts.ambiguous_matches}</p>
+                <p className="text-xs font-medium text-amber-700">Ambiguous Matches</p>
+                <p className="mt-1 text-2xl font-semibold text-amber-700">{counts.ambiguous_matches}</p>
                 <p className="text-[11px] text-amber-600 mt-0.5">Flagged for manual review</p>
               </div>
 
               <div className="rounded-2xl border border-rose-200 bg-rose-50/50 p-4 shadow-xs">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-rose-700">Missing Name</p>
-                <p className="mt-1 text-2xl font-black text-rose-700">{counts.missing_name_skipped}</p>
+                <p className="text-xs font-medium text-rose-700">Missing Name</p>
+                <p className="mt-1 text-2xl font-semibold text-rose-700">{counts.missing_name_skipped}</p>
                 <p className="text-[11px] text-rose-600 mt-0.5">Skipped (Cannot create)</p>
               </div>
             </div>
 
             {/* Execution Controls Card */}
             {phase === "preview" && (
-              <div className="rounded-2xl border border-indigo-200 bg-white p-5 shadow-sm space-y-4">
+              <div className="rounded-xl border border-indigo-200 bg-white p-5 space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-100">
                   <div>
-                    <h3 className="text-sm font-bold text-slate-900">Execution Configuration</h3>
+                    <h3 className="text-sm font-semibold text-slate-900">Execution Configuration</h3>
                     <p className="text-xs text-slate-500">
                       Select fallback branch for new patients missing location and choose operation mode.
                     </p>
@@ -775,7 +775,7 @@ export default function PatientBulkImportPage() {
                         type="checkbox"
                         checked={updateExistingStatus}
                         onChange={(e) => setUpdateExistingStatus(e.target.checked)}
-                        className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                        className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500/30"
                       />
                       <span>
                         Update <strong className="text-indigo-700">ops.status = &quot;CLOSED&quot;</strong> for existing
@@ -790,7 +790,7 @@ export default function PatientBulkImportPage() {
                           type="checkbox"
                           checked={confirmed}
                           onChange={(e) => setConfirmed(e.target.checked)}
-                          className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                          className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-indigo-500/30"
                         />
                         <span>
                           <strong>I confirm:</strong> Commit live import of {counts.new_patient_creations} new patients and{" "}
@@ -831,10 +831,10 @@ export default function PatientBulkImportPage() {
 
             {/* Importing Progress Card */}
             {phase === "importing" && (
-              <div className="rounded-2xl border border-indigo-200 bg-white p-6 shadow-sm space-y-5">
+              <div className="rounded-xl border border-indigo-200 bg-white p-6 space-y-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">
                       <Loader2 className="h-5 w-5 animate-spin text-indigo-600" />
                       {mode === "dry_run" ? "Simulating Batch Operations..." : "Executing Live Batch Operations..."}
                     </h3>
@@ -843,32 +843,32 @@ export default function PatientBulkImportPage() {
                       {progress.totalToProcess} records processed
                     </p>
                   </div>
-                  <span className="text-lg font-black text-indigo-600">{progress.percentage}%</span>
+                  <span className="text-lg font-semibold text-indigo-600">{progress.percentage}%</span>
                 </div>
 
                 <div className="h-3 w-full overflow-hidden rounded-full bg-slate-100">
                   <div
-                    className="h-full bg-linear-to-r from-indigo-500 to-purple-600 transition-all duration-300"
+                    className="h-full bg-indigo-600 transition-all duration-300"
                     style={{ width: `${progress.percentage}%` }}
                   />
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
                   <div className="rounded-xl bg-emerald-50 p-2.5 border border-emerald-100">
-                    <p className="text-[11px] font-bold text-emerald-700">Created</p>
-                    <p className="text-xl font-black text-emerald-800">{progress.created}</p>
+                    <p className="text-[11px] font-semibold text-emerald-700">Created</p>
+                    <p className="text-xl font-semibold text-emerald-800">{progress.created}</p>
                   </div>
                   <div className="rounded-xl bg-indigo-50 p-2.5 border border-indigo-100">
-                    <p className="text-[11px] font-bold text-indigo-700">Status Updated</p>
-                    <p className="text-xl font-black text-indigo-800">{progress.statusUpdated}</p>
+                    <p className="text-[11px] font-semibold text-indigo-700">Status Updated</p>
+                    <p className="text-xl font-semibold text-indigo-800">{progress.statusUpdated}</p>
                   </div>
                   <div className="rounded-xl bg-slate-50 p-2.5 border border-slate-200">
-                    <p className="text-[11px] font-bold text-slate-700">Already Closed</p>
-                    <p className="text-xl font-black text-slate-800">{progress.alreadyClosed}</p>
+                    <p className="text-[11px] font-semibold text-slate-700">Already Closed</p>
+                    <p className="text-xl font-semibold text-slate-800">{progress.alreadyClosed}</p>
                   </div>
                   <div className="rounded-xl bg-rose-50 p-2.5 border border-rose-100">
-                    <p className="text-[11px] font-bold text-rose-700">Errors</p>
-                    <p className="text-xl font-black text-rose-800">{progress.errors}</p>
+                    <p className="text-[11px] font-semibold text-rose-700">Errors</p>
+                    <p className="text-xl font-semibold text-rose-800">{progress.errors}</p>
                   </div>
                 </div>
 
@@ -884,14 +884,14 @@ export default function PatientBulkImportPage() {
 
             {/* Final Completion Report */}
             {phase === "done" && finalReport && (
-              <div className="rounded-2xl border-2 border-emerald-200 bg-linear-to-br from-emerald-50/50 via-white to-slate-50 p-6 shadow-md space-y-5">
+              <div className="rounded-xl border border-emerald-200 bg-white p-6 space-y-5">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-md shadow-emerald-200">
                       <CheckCircle2 className="h-6 w-6" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold text-slate-900">
+                      <h3 className="text-lg font-semibold text-slate-900">
                         {finalReport.mode === "dry_run" ? "Dry Run Completed (Zero Live Changes)" : "Live Import & Updates Completed!"}
                       </h3>
                       <p className="text-xs text-slate-500">
@@ -927,24 +927,24 @@ export default function PatientBulkImportPage() {
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
                   <div className="rounded-xl border border-emerald-200 bg-white p-3 shadow-2xs">
-                    <p className="text-[11px] font-bold uppercase text-emerald-700">
+                    <p className="text-[11px] font-semibold uppercase text-emerald-700">
                       {finalReport.mode === "dry_run" ? "Simulated Creations" : "Created with CLOSED"}
                     </p>
-                    <p className="mt-1 text-2xl font-black text-emerald-700">{finalReport.created}</p>
+                    <p className="mt-1 text-2xl font-semibold text-emerald-700">{finalReport.created}</p>
                   </div>
                   <div className="rounded-xl border border-indigo-200 bg-white p-3 shadow-2xs">
-                    <p className="text-[11px] font-bold uppercase text-indigo-700">
+                    <p className="text-[11px] font-semibold uppercase text-indigo-700">
                       {finalReport.mode === "dry_run" ? "Simulated Status Updates" : "Status Updated to CLOSED"}
                     </p>
-                    <p className="mt-1 text-2xl font-black text-indigo-700">{finalReport.statusUpdated}</p>
+                    <p className="mt-1 text-2xl font-semibold text-gray-900 tabular-nums">{finalReport.statusUpdated}</p>
                   </div>
                   <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-2xs">
-                    <p className="text-[11px] font-bold uppercase text-slate-500">Already Closed</p>
-                    <p className="mt-1 text-2xl font-black text-slate-700">{finalReport.alreadyClosed}</p>
+                    <p className="text-[11px] font-semibold uppercase text-slate-500">Already Closed</p>
+                    <p className="mt-1 text-2xl font-semibold text-slate-700">{finalReport.alreadyClosed}</p>
                   </div>
                   <div className="rounded-xl border border-rose-200 bg-white p-3 shadow-2xs">
-                    <p className="text-[11px] font-bold uppercase text-rose-700">Failed / Errors</p>
-                    <p className="mt-1 text-2xl font-black text-rose-700">{finalReport.errors || 0}</p>
+                    <p className="text-[11px] font-semibold uppercase text-rose-700">Failed / Errors</p>
+                    <p className="mt-1 text-2xl font-semibold text-rose-700">{finalReport.errors || 0}</p>
                   </div>
                 </div>
               </div>
@@ -1064,7 +1064,7 @@ export default function PatientBulkImportPage() {
 
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50/75 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider">
+                  <thead className="bg-slate-50/75 border-b border-slate-200 text-slate-500 font-medium">
                     <tr>
                       <th className="py-2.5 px-3 w-14">#</th>
                       <th className="py-2.5 px-3">Patient Name</th>
@@ -1202,7 +1202,7 @@ export default function PatientBulkImportPage() {
                     </select>
                   </div>
 
-                  <button
+                  <button aria-label="Previous page"
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
                     className="rounded border border-slate-200 bg-white p-1 hover:bg-slate-50 disabled:opacity-40"
@@ -1212,7 +1212,7 @@ export default function PatientBulkImportPage() {
                   <span className="font-semibold text-slate-700">
                     {currentPage} / {totalPages}
                   </span>
-                  <button
+                  <button aria-label="Next page"
                     onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                     disabled={currentPage >= totalPages}
                     className="rounded border border-slate-200 bg-white p-1 hover:bg-slate-50 disabled:opacity-40"

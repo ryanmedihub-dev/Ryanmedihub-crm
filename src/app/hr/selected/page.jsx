@@ -27,7 +27,7 @@ function RatingBar({ value }) {
       <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
         <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-xs font-bold text-gray-700 tabular-nums">{n}</span>
+      <span className="text-xs font-semibold text-gray-700 tabular-nums">{n}</span>
     </div>
   );
 }
@@ -43,15 +43,15 @@ function ViewModal({ candidate: c, onClose }) {
     { label: "Stability",           val: c.stability },
   ];
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+    <div className="fixed inset-0 overlay-in z-50 flex items-center justify-center p-4 bg-gray-950/40">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
-              <span className="text-emerald-700 font-bold text-sm">{c.name?.slice(0,2).toUpperCase()}</span>
+              <span className="text-emerald-700 font-semibold text-sm">{c.name?.slice(0,2).toUpperCase()}</span>
             </div>
             <div>
-              <h2 className="font-bold text-gray-900">{c.name}</h2>
+              <h2 className="font-semibold text-gray-900">{c.name}</h2>
               <p className="text-xs text-gray-500">{c.position}</p>
             </div>
           </div>
@@ -59,7 +59,7 @@ function ViewModal({ candidate: c, onClose }) {
             <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Selected
             </span>
-            <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
+            <button type="button" onClick={onClose} aria-label="Close" className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
               <X className="w-4 h-4 text-gray-500" />
             </button>
           </div>
@@ -67,7 +67,7 @@ function ViewModal({ candidate: c, onClose }) {
 
         <div className="p-6 space-y-5">
           <section>
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Contact</h3>
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Contact</h3>
             <div className="grid grid-cols-2 gap-3">
               <InfoRow icon={Phone}       label="Phone"    value={c.phone} />
               <InfoRow icon={Mail}        label="Email"    value={c.email} />
@@ -76,7 +76,7 @@ function ViewModal({ candidate: c, onClose }) {
           </section>
 
           <section>
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Work History</h3>
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Work History</h3>
             <div className="grid grid-cols-2 gap-3">
               <InfoRow icon={Building2}   label="Experience"    value={c.experienceType === "Experienced" ? `${c.experienceType} · ${c.yearsOfExperience || 0}y` : c.experienceType} />
               <InfoRow icon={Building2}   label="Prev Company"  value={c.previousCompany} />
@@ -88,7 +88,7 @@ function ViewModal({ candidate: c, onClose }) {
           </section>
 
           <section>
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Interview</h3>
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Interview</h3>
             <div className="grid grid-cols-2 gap-3">
               <InfoRow icon={CalendarDays} label="Interview Date" value={fmtDate(c.interviewDate)} />
               <InfoRow icon={User}         label="Assigned HR"    value={c.assignedHr?.name || "—"} />
@@ -98,7 +98,7 @@ function ViewModal({ candidate: c, onClose }) {
           </section>
 
           <section>
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
               Evaluation {avg && <span className="text-emerald-600 normal-case font-semibold">· Avg {avg}/10</span>}
             </h3>
             <div className="space-y-2">
@@ -112,7 +112,7 @@ function ViewModal({ candidate: c, onClose }) {
                         style={{ width: val ? `${(Number(val) / 10) * 100}%` : "0%" }}
                       />
                     </div>
-                    <span className="text-xs font-bold text-gray-700 w-10 text-right">{val || "—"}/10</span>
+                    <span className="text-xs font-semibold text-gray-700 w-10 text-right">{val || "—"}/10</span>
                   </div>
                 </div>
               ))}
@@ -141,7 +141,7 @@ function InfoRow({ icon: Icon, label, value }) {
     <div className="flex items-start gap-2">
       <Icon className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
       <div>
-        <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">{label}</p>
+        <p className="text-xs text-gray-400 font-medium">{label}</p>
         <p className="text-sm text-gray-700">{value || "—"}</p>
       </div>
     </div>
@@ -201,15 +201,12 @@ export default function SelectedPage() {
     <div className="flex min-h-screen bg-gray-50">
       <HRSidebar />
 
-      <main className="flex-1 p-6 lg:p-8 overflow-auto">
+      <main className="flex-1 min-w-0 px-4 pt-16 pb-6 sm:px-6 lg:p-8 overflow-auto">
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-1">
-            <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center">
-              <UserCheck className="w-5 h-5 text-emerald-600" />
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900">Selected Candidates</h1>
+            <h1 className="text-xl font-semibold tracking-tight text-gray-900">Selected Candidates</h1>
           </div>
-          <p className="text-sm text-gray-500 ml-12">Candidates who cleared the interview process</p>
+          <p className="text-sm text-gray-500">Candidates who cleared the interview process</p>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
@@ -219,7 +216,7 @@ export default function SelectedPage() {
           <KpiTile label="Avg Rating"    value={`${avgAll}/10`} accent="amber" />
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           <div className="p-4 border-b border-gray-100 flex items-center gap-3">
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -227,7 +224,7 @@ export default function SelectedPage() {
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                 placeholder="Search by name, position, HR…"
-                className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent"
+                className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-transparent"
               />
             </div>
             <span className="text-xs text-gray-500 font-medium">{filtered.length} candidates</span>
@@ -235,7 +232,7 @@ export default function SelectedPage() {
 
           {loading ? (
             <div className="flex items-center justify-center h-48">
-              <div className="w-7 h-7 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+              <div className="w-7 h-7 border-4 border-gray-200 border-t-indigo-600 rounded-full animate-spin" />
             </div>
           ) : paged.length === 0 ? (
             <div className="text-center py-16 text-gray-400">
@@ -247,17 +244,17 @@ export default function SelectedPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-gray-50 text-left">
-                    <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">#</th>
-                    <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Candidate</th>
-                    <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Position</th>
-                    <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Source</th>
-                    <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Phone</th>
-                    <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Experience</th>
-                    <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Exp. Salary</th>
-                    <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Interview</th>
-                    <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Assigned HR</th>
-                    <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Rating</th>
-                    <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Action</th>
+                    <th className="px-4 py-3 text-xs font-medium text-gray-500">#</th>
+                    <th className="px-4 py-3 text-xs font-medium text-gray-500">Candidate</th>
+                    <th className="px-4 py-3 text-xs font-medium text-gray-500">Position</th>
+                    <th className="px-4 py-3 text-xs font-medium text-gray-500">Source</th>
+                    <th className="px-4 py-3 text-xs font-medium text-gray-500">Phone</th>
+                    <th className="px-4 py-3 text-xs font-medium text-gray-500">Experience</th>
+                    <th className="px-4 py-3 text-xs font-medium text-gray-500">Exp. Salary</th>
+                    <th className="px-4 py-3 text-xs font-medium text-gray-500">Interview</th>
+                    <th className="px-4 py-3 text-xs font-medium text-gray-500">Assigned HR</th>
+                    <th className="px-4 py-3 text-xs font-medium text-gray-500">Rating</th>
+                    <th className="px-4 py-3 text-xs font-medium text-gray-500">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
@@ -269,7 +266,7 @@ export default function SelectedPage() {
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2.5">
                             <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-                              <span className="text-emerald-700 font-bold text-xs">{c.name?.slice(0,2).toUpperCase()}</span>
+                              <span className="text-emerald-700 font-semibold text-xs">{c.name?.slice(0,2).toUpperCase()}</span>
                             </div>
                             <div>
                               <p className="font-semibold text-gray-800 text-sm leading-none">{c.name}</p>
@@ -282,11 +279,11 @@ export default function SelectedPage() {
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           {c.source === "qr" ? (
-                            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-semibold">
+                            <span className="inline-flex items-center gap-1 text-xs h-5 px-2 rounded-md bg-gray-100 text-gray-700 font-medium">
                               <QrCode className="w-3 h-3" />Visited
                             </span>
                           ) : c.source === "direct" ? (
-                            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 font-semibold">
+                            <span className="inline-flex items-center gap-1 text-xs h-5 px-2 rounded-md bg-gray-100 text-gray-700 font-medium">
                               <Globe className="w-3 h-3" />Applied
                             </span>
                           ) : <span className="text-gray-400 text-xs">—</span>}
@@ -294,7 +291,7 @@ export default function SelectedPage() {
                         <td className="px-4 py-3 text-gray-600 text-sm">{c.phone || "—"}</td>
                         <td className="px-4 py-3">
                           {c.experienceType === "Experienced"
-                            ? <span className="text-xs bg-violet-50 text-violet-700 px-2 py-0.5 rounded-full font-medium">{c.yearsOfExperience || 0}y exp</span>
+                            ? <span className="text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-medium">{c.yearsOfExperience || 0}y exp</span>
                             : <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-medium">Fresher</span>
                           }
                         </td>
@@ -339,7 +336,7 @@ export default function SelectedPage() {
                 Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}
               </span>
               <div className="flex items-center gap-1">
-                <button
+                <button aria-label="Previous page"
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}
                   className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-40 transition-colors"
@@ -347,7 +344,7 @@ export default function SelectedPage() {
                   <ChevronLeft className="w-4 h-4" />
                 </button>
                 <span className="text-xs text-gray-700 px-2 font-medium">{page} / {totalPages}</span>
-                <button
+                <button aria-label="Next page"
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page === totalPages}
                   className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-40 transition-colors"
@@ -367,16 +364,17 @@ export default function SelectedPage() {
 }
 
 function KpiTile({ label, value, accent }) {
-  const styles = {
-    emerald: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    blue:    "bg-blue-50 text-blue-700 border-blue-200",
-    violet:  "bg-violet-50 text-violet-700 border-violet-200",
-    amber:   "bg-amber-50 text-amber-700 border-amber-200",
+  const dots = {
+    indigo: "bg-indigo-500", emerald: "bg-emerald-500", red: "bg-rose-500",
+    blue: "bg-blue-500", violet: "bg-indigo-500", amber: "bg-amber-500",
   };
   return (
-    <div className={`rounded-xl border px-4 py-3 ${styles[accent]}`}>
-      <p className="text-xs font-medium opacity-70">{label}</p>
-      <p className="text-xl font-bold mt-0.5">{value}</p>
+    <div className="rounded-xl border border-gray-200 bg-white p-4">
+      <p className="flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-1">
+        <span className={`w-1.5 h-1.5 rounded-full ${dots[accent] || dots.indigo}`} aria-hidden />
+        {label}
+      </p>
+      <p className="text-xl font-semibold tracking-tight text-gray-900 tabular-nums">{value}</p>
     </div>
   );
 }

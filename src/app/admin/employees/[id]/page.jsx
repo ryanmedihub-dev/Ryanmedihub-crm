@@ -95,7 +95,7 @@ export default function EmployeeDetailPage() {
 
   if (loading) {
     return (
-      <main className="flex-1 flex items-center justify-center min-h-screen">
+      <main className="flex-1 min-w-0 flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600 mx-auto mb-3" />
           <p className="text-gray-500 text-sm">Loading employee...</p>
@@ -107,7 +107,7 @@ export default function EmployeeDetailPage() {
   if (!employee) return null;
 
   return (
-    <main className="flex-1 p-4 sm:p-6 lg:p-8">
+    <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8">
       <div className="max-w-6xl mx-auto space-y-6">
         <button
           onClick={() => router.back()}
@@ -116,8 +116,8 @@ export default function EmployeeDetailPage() {
           <ArrowLeft className="w-4 h-4" /> Back
         </button>
 
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-          <h1 className="text-xl font-bold text-gray-900">
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <h1 className="text-xl font-semibold text-gray-900">
             {employee.name}
             {employee.employeeId ? (
               <span className="ml-2 text-sm font-medium text-gray-400">#{employee.employeeId}</span>
@@ -130,29 +130,29 @@ export default function EmployeeDetailPage() {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
-            <p className="text-xs text-gray-500 uppercase tracking-wide">Total Earned (active)</p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <p className="text-xs text-gray-500">Total Earned (active)</p>
+            <p className="text-xl font-semibold tracking-tight text-gray-900 mt-1">
               {formatCurrency(data.byPurpose.reduce((s, p) => s + p.total, 0))}
             </p>
           </div>
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
-            <p className="text-xs text-gray-500 uppercase tracking-wide">Paid</p>
-            <p className="text-2xl font-bold text-emerald-700 mt-1">{formatCurrency(data.paid)}</p>
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <p className="text-xs text-gray-500">Paid</p>
+            <p className="text-xl font-semibold tracking-tight text-emerald-700 mt-1">{formatCurrency(data.paid)}</p>
           </div>
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
-            <p className="text-xs text-gray-500 uppercase tracking-wide">Outstanding (unpaid)</p>
-            <p className="text-2xl font-bold text-amber-700 mt-1">{formatCurrency(data.outstanding)}</p>
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <p className="text-xs text-gray-500">Outstanding (unpaid)</p>
+            <p className="text-xl font-semibold tracking-tight text-amber-700 mt-1">{formatCurrency(data.outstanding)}</p>
           </div>
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
-            <p className="text-xs text-gray-500 uppercase tracking-wide">Entries</p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">{data.total}</p>
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <p className="text-xs text-gray-500">Entries</p>
+            <p className="text-xl font-semibold tracking-tight text-gray-900 mt-1">{data.total}</p>
           </div>
         </div>
 
         {finance && (
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-            <h2 className="text-lg font-bold text-gray-900 mb-1">Payables</h2>
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <h2 className="text-lg font-semibold text-gray-900 mb-1">Payables</h2>
             <p className="text-xs text-gray-400 mb-4">
               Everything raised against this employee — {finance.payableCount}{" "}
               document{finance.payableCount === 1 ? "" : "s"}
@@ -166,10 +166,10 @@ export default function EmployeeDetailPage() {
               <table className="w-full text-sm">
                 <thead className="text-gray-500 border-b border-gray-100">
                   <tr>
-                    <th className="text-left py-2 font-semibold" />
-                    <th className="text-right py-2 font-semibold">Payable</th>
-                    <th className="text-right py-2 font-semibold">Paid</th>
-                    <th className="text-right py-2 font-semibold">Pending</th>
+                    <th className="text-left py-2 font-medium" />
+                    <th className="text-right py-2 font-medium">Payable</th>
+                    <th className="text-right py-2 font-medium">Paid</th>
+                    <th className="text-right py-2 font-medium">Pending</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
@@ -184,7 +184,7 @@ export default function EmployeeDetailPage() {
                       <td className="py-2 text-right tabular-nums text-amber-700">{formatCurrency(finance[c])}</td>
                     </tr>
                   ))}
-                  <tr className="border-t-2 border-gray-200 font-bold">
+                  <tr className="border-t-2 border-gray-200 font-semibold">
                     <td className="py-2 text-gray-900">Total</td>
                     <td className="py-2 text-right tabular-nums">{formatCurrency(finance.totalPayable)}</td>
                     <td className="py-2 text-right tabular-nums text-emerald-700">{formatCurrency(finance.totalPaid)}</td>
@@ -197,8 +197,8 @@ export default function EmployeeDetailPage() {
         )}
 
         {finance && (finance.advanceGiven > 0 || advances.length > 0) && (
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-            <h2 className="text-lg font-bold text-gray-900 mb-1 flex items-center gap-2">
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <h2 className="text-lg font-semibold text-gray-900 mb-1 flex items-center gap-2">
               <Wallet className="w-5 h-5 text-amber-600" /> Advances / Receivable
             </h2>
             <p className="text-xs text-gray-400 mb-4">
@@ -208,20 +208,20 @@ export default function EmployeeDetailPage() {
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
               <div className="rounded-xl bg-gray-50 p-3">
-                <p className="text-xs text-gray-500 uppercase tracking-wide">Given</p>
-                <p className="text-lg font-bold text-gray-900 mt-0.5">{formatCurrency(finance.advanceGiven)}</p>
+                <p className="text-xs text-gray-500">Given</p>
+                <p className="text-lg font-semibold text-gray-900 mt-0.5">{formatCurrency(finance.advanceGiven)}</p>
               </div>
               <div className="rounded-xl bg-gray-50 p-3">
-                <p className="text-xs text-gray-500 uppercase tracking-wide">Settled vs payables</p>
-                <p className="text-lg font-bold text-indigo-700 mt-0.5">{formatCurrency(finance.advanceSettled)}</p>
+                <p className="text-xs text-gray-500">Settled vs payables</p>
+                <p className="text-lg font-semibold text-indigo-700 mt-0.5">{formatCurrency(finance.advanceSettled)}</p>
               </div>
               <div className="rounded-xl bg-gray-50 p-3">
-                <p className="text-xs text-gray-500 uppercase tracking-wide">Recovered (cash)</p>
-                <p className="text-lg font-bold text-emerald-700 mt-0.5">{formatCurrency(finance.advanceRecovered)}</p>
+                <p className="text-xs text-gray-500">Recovered (cash)</p>
+                <p className="text-lg font-semibold text-emerald-700 mt-0.5">{formatCurrency(finance.advanceRecovered)}</p>
               </div>
               <div className="rounded-xl bg-amber-50 p-3">
-                <p className="text-xs text-amber-600 uppercase tracking-wide">Outstanding</p>
-                <p className="text-lg font-bold text-amber-700 mt-0.5">{formatCurrency(finance.advanceOutstanding)}</p>
+                <p className="text-xs text-amber-600">Outstanding</p>
+                <p className="text-lg font-semibold text-amber-700 mt-0.5">{formatCurrency(finance.advanceOutstanding)}</p>
               </div>
             </div>
             {advances.length > 0 && (
@@ -229,12 +229,12 @@ export default function EmployeeDetailPage() {
                 <table className="w-full text-sm">
                   <thead className="text-gray-500 border-b border-gray-100">
                     <tr>
-                      <th className="text-left py-2 font-semibold">Date</th>
-                      <th className="text-left py-2 font-semibold">Account</th>
-                      <th className="text-left py-2 font-semibold">Reference</th>
-                      <th className="text-right py-2 font-semibold">Amount</th>
-                      <th className="text-right py-2 font-semibold">Applied</th>
-                      <th className="text-right py-2 font-semibold">Remaining</th>
+                      <th className="text-left py-2 font-medium">Date</th>
+                      <th className="text-left py-2 font-medium">Account</th>
+                      <th className="text-left py-2 font-medium">Reference</th>
+                      <th className="text-right py-2 font-medium">Amount</th>
+                      <th className="text-right py-2 font-medium">Applied</th>
+                      <th className="text-right py-2 font-medium">Remaining</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
@@ -257,9 +257,9 @@ export default function EmployeeDetailPage() {
           </div>
         )}
 
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
               <Gift className="w-5 h-5 text-indigo-600" /> Incentives Earned
             </h2>
           </div>
@@ -304,11 +304,11 @@ export default function EmployeeDetailPage() {
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
-                      <th className="text-left px-3 py-2 font-semibold text-gray-600">Patient</th>
-                      <th className="text-left px-3 py-2 font-semibold text-gray-600">Purpose</th>
-                      <th className="text-left px-3 py-2 font-semibold text-gray-600">Date</th>
-                      <th className="text-right px-3 py-2 font-semibold text-gray-600">Amount</th>
-                      <th className="text-left px-3 py-2 font-semibold text-gray-600">Status</th>
+                      <th className="text-left px-3 py-2 font-medium text-gray-600">Patient</th>
+                      <th className="text-left px-3 py-2 font-medium text-gray-600">Purpose</th>
+                      <th className="text-left px-3 py-2 font-medium text-gray-600">Date</th>
+                      <th className="text-right px-3 py-2 font-medium text-gray-600">Amount</th>
+                      <th className="text-left px-3 py-2 font-medium text-gray-600">Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -351,7 +351,7 @@ export default function EmployeeDetailPage() {
           )}
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
           <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
             <Gift className="w-4 h-4 text-gray-500" /> By Patient
           </h3>
@@ -364,9 +364,9 @@ export default function EmployeeDetailPage() {
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th className="text-left px-3 py-2 font-semibold text-gray-600">Patient</th>
-                    <th className="text-right px-3 py-2 font-semibold text-gray-600">Entries</th>
-                    <th className="text-right px-3 py-2 font-semibold text-gray-600">Total Earned</th>
+                    <th className="text-left px-3 py-2 font-medium text-gray-600">Patient</th>
+                    <th className="text-right px-3 py-2 font-medium text-gray-600">Entries</th>
+                    <th className="text-right px-3 py-2 font-medium text-gray-600">Total Earned</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -394,7 +394,7 @@ export default function EmployeeDetailPage() {
         </div>
 
         {data.byMonth.length > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
             <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
               <Wallet className="w-4 h-4 text-gray-500" /> By Month (active only)
             </h3>
@@ -402,7 +402,7 @@ export default function EmployeeDetailPage() {
               {data.byMonth.map((m) => (
                 <div key={`${m.year}-${m.month}`} className="bg-gray-50 rounded-lg p-3">
                   <p className="text-xs text-gray-500">{MONTH_NAMES[m.month - 1]} {m.year}</p>
-                  <p className="font-bold text-gray-900">{formatCurrency(m.total)}</p>
+                  <p className="font-semibold text-gray-900">{formatCurrency(m.total)}</p>
                   <p className="text-[11px] text-gray-400">{m.count} entr{m.count === 1 ? "y" : "ies"}</p>
                 </div>
               ))}

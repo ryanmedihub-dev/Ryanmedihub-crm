@@ -44,7 +44,7 @@ const BenefitsManager = ({ benefits, onChange, onAdd, onRemove }) => {
 
   return (
     <div className="md:col-span-2">
-      <label className="block text-md mb-3 font-bold text-gray-700">
+      <label className="block text-md mb-3 font-semibold text-gray-700">
         Additional Benefits
       </label>
 
@@ -58,7 +58,7 @@ const BenefitsManager = ({ benefits, onChange, onAdd, onRemove }) => {
               type="checkbox"
               checked={benefits.includes(benefit)}
               onChange={() => handleBenefitToggle(benefit)}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              className="h-4 w-4 text-blue-600 focus:ring-indigo-500/30 border-gray-300 rounded"
             />
             <span className="text-sm text-gray-700">{benefit}</span>
           </label>
@@ -72,7 +72,7 @@ const BenefitsManager = ({ benefits, onChange, onAdd, onRemove }) => {
         <div className="flex space-x-2">
           <input
             type="text"
-            className="flex-1 px-3 py-2 text-sm rounded-md border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="flex-1 px-3 py-2 text-sm rounded-md border border-gray-300 focus:ring-2 focus:ring-indigo-500/30 focus:border-transparent"
             placeholder="Enter custom benefit"
             onKeyPress={(e) => {
               if (e.key === "Enter") {
@@ -107,7 +107,7 @@ const BenefitsManager = ({ benefits, onChange, onAdd, onRemove }) => {
                 className="flex items-center space-x-1 bg-blue-50 text-blue-700 px-2 py-1 rounded-md text-sm"
               >
                 <span>{benefit}</span>
-                <button
+                <button aria-label="Close"
                   type="button"
                   className="text-blue-600 hover:text-blue-800"
                   onClick={() => onRemove(index)}
@@ -322,18 +322,11 @@ export default function BookAppointment() {
     <section className="flex min-h-screen bg-gray-50">
       <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
-      <main className="flex-1 px-4 py-6 lg:px-8 lg:py-8">
+      <main className="flex-1 min-w-0 px-4 py-6 lg:px-8 lg:py-8">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
-              <Calendar className="h-8 w-8 text-blue-600" />
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Register Your Counsult
-            </h1>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Fill in your details below to register your consultation.
-            </p>
+          <div className="mb-6">
+            <h1 className="text-xl font-semibold tracking-tight text-gray-900">Book a consultation</h1>
+            <p className="mt-1 text-sm text-gray-500">Fill in your details below to register your consultation.</p>
           </div>
 
           <div className="bg-white rounded-xl shadow-lg overflow-hidden">
@@ -502,7 +495,7 @@ export default function BookAppointment() {
                     />
 
                     <div className="space-y-2">
-                      <label className="block text-md mb-3 font-bold text-gray-700">
+                      <label className="block text-md mb-3 font-semibold text-gray-700">
                         Hair Loss Type
                       </label>
                       <div className="grid grid-cols-3 gap-2">
@@ -523,7 +516,7 @@ export default function BookAppointment() {
                               value={option.value}
                               checked={formData.counselling.hairlossType === option.value}
                               onChange={createChangeHandler("counselling", "hairlossType")}
-                              className="text-blue-600 focus:ring-blue-500"
+                              className="text-blue-600 focus:ring-indigo-500/30"
                             />
                             <span className="text-sm text-gray-700">{option.label}</span>
                           </label>
@@ -532,7 +525,7 @@ export default function BookAppointment() {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="block text-md mb-3 font-bold text-gray-700">
+                      <label className="block text-md mb-3 font-semibold text-gray-700">
                         Area of Concern
                       </label>
                       <div className="grid grid-cols-3 gap-2">
@@ -552,7 +545,7 @@ export default function BookAppointment() {
                               value={option.value}
                               checked={formData.counselling.areaofConcern === option.value}
                               onChange={createChangeHandler("counselling", "areaofConcern")}
-                              className="text-blue-600 focus:ring-blue-500"
+                              className="text-blue-600 focus:ring-indigo-500/30"
                             />
                             <span className="text-sm text-gray-700">{option.label}</span>
                           </label>
@@ -561,7 +554,7 @@ export default function BookAppointment() {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="block text-md mb-3 font-bold text-gray-700">
+                      <label className="block text-md mb-3 font-semibold text-gray-700">
                         Hair Loss Reason
                       </label>
                       <div className="grid grid-cols-3 gap-2">
@@ -583,7 +576,7 @@ export default function BookAppointment() {
                               value={option.value}
                               checked={formData.counselling.hairlossreason === option.value}
                               onChange={createChangeHandler("counselling", "hairlossreason")}
-                              className="text-blue-600 focus:ring-blue-500"
+                              className="text-blue-600 focus:ring-indigo-500/30"
                             />
                             <span className="text-sm text-gray-700">{option.label}</span>
                           </label>
@@ -592,7 +585,7 @@ export default function BookAppointment() {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="block text-md mb-3 font-bold text-gray-700">
+                      <label className="block text-md mb-3 font-semibold text-gray-700">
                         Hair Loss Duration
                       </label>
                       <div className="grid grid-cols-3 gap-2">
@@ -612,7 +605,7 @@ export default function BookAppointment() {
                               value={option.value}
                               checked={formData.counselling.hairlossduration === option.value}
                               onChange={createChangeHandler("counselling", "hairlossduration")}
-                              className="text-blue-600 focus:ring-blue-500"
+                              className="text-blue-600 focus:ring-indigo-500/30"
                             />
                             <span className="text-sm text-gray-700">{option.label}</span>
                           </label>
@@ -665,7 +658,7 @@ export default function BookAppointment() {
                   </div>
                   <button
                     type="submit"
-                    className="inline-flex items-center px-8 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200 min-w-50 justify-center"
+                    className="inline-flex items-center px-8 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200 min-w-50 justify-center"
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? (

@@ -107,10 +107,10 @@ export default function UserFormModal({ isOpen, onClose, user = null, onSuccess 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 overlay-in bg-gray-950/40 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-900">
+          <h2 className="text-xl font-semibold tracking-tight text-gray-900">
             {isEditMode ? 'Edit User' : 'Create New User'}
           </h2>
           <button
@@ -150,7 +150,7 @@ export default function UserFormModal({ isOpen, onClose, user = null, onSuccess 
               required
               value={formData.name}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
               placeholder="Enter full name"
               disabled={loading}
             />
@@ -167,7 +167,7 @@ export default function UserFormModal({ isOpen, onClose, user = null, onSuccess 
               required
               value={formData.email}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
               placeholder="user@example.com"
               disabled={loading}
             />
@@ -185,7 +185,7 @@ export default function UserFormModal({ isOpen, onClose, user = null, onSuccess 
               minLength={6}
               value={formData.password}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
               placeholder={isEditMode ? "Leave empty to keep current password" : "Minimum 6 characters"}
               disabled={loading}
             />
@@ -202,7 +202,7 @@ export default function UserFormModal({ isOpen, onClose, user = null, onSuccess 
               required
               value={formData.role}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
               disabled={loading}
             >
               {ROLES.map((role) => (
@@ -223,7 +223,7 @@ export default function UserFormModal({ isOpen, onClose, user = null, onSuccess 
               required
               value={formData.branch}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
               disabled={loading}
             >
               {BRANCHES.map((branch) => (
@@ -246,7 +246,7 @@ export default function UserFormModal({ isOpen, onClose, user = null, onSuccess 
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? 'Saving...' : isEditMode ? 'Update User' : 'Create User'}
             </button>

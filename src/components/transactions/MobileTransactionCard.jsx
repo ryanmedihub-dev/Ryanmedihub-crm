@@ -66,13 +66,13 @@ export default function MobileTransactionCard({
               <EntryBadge row={row} />
 
               {row.approvalStatus === "PENDING" && (
-                <span className="px-2 py-1 rounded-md bg-amber-50 text-amber-700 text-[10px] font-bold">
+                <span className="px-2 py-1 rounded-md bg-amber-50 text-amber-700 text-[11px] font-semibold">
                   Pending
                 </span>
               )}
             </div>
 
-            <h3 className="font-bold text-slate-900 truncate">
+            <h3 className="font-semibold text-slate-900 truncate">
               {title}
             </h3>
 
@@ -89,7 +89,7 @@ export default function MobileTransactionCard({
 
           <div className="text-right shrink-0">
             <p
-              className={`text-lg font-bold ${
+              className={`text-lg font-semibold ${
                 isExpense
                   ? "text-rose-600"
                   : "text-emerald-600"

@@ -73,7 +73,7 @@ export default function RevenueSection({
                 <select
                   value={data.procedure}
                   onChange={(e) => set({ procedure: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                 >
                   <option value="Sapphire FUE">Sapphire FUE</option>
                   <option value="DHI">DHI</option>
@@ -88,7 +88,7 @@ export default function RevenueSection({
                 <select
                   value={data.paymentType}
                   onChange={(e) => set({ paymentType: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                 >
                   <option value="Booking">Booking</option>
                   <option value="Pending">Pending</option>
@@ -119,7 +119,7 @@ export default function RevenueSection({
                   <select
                     value={data.procedure}
                     onChange={(e) => set({ procedure: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                   >
                     {SERVICE_PROCEDURES.map((p) => (
                       <option key={p} value={p}>{p.toUpperCase()}</option>
@@ -143,7 +143,7 @@ export default function RevenueSection({
                   value={data.quantity}
                   onChange={(e) => set({ quantity: Number(e.target.value) })}
                   min="1"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                 />
               </div>
               <div>
@@ -155,7 +155,7 @@ export default function RevenueSection({
                   value={data[rateField]}
                   onChange={(e) => set({ [rateField]: e.target.value })}
                   min="0"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                 />
               </div>
             </div>
@@ -174,7 +174,7 @@ export default function RevenueSection({
                   value={data.amount}
                   onChange={(e) => set({ amount: e.target.value })}
                   min="0"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                   placeholder="Enter amount"
                 />
               </div>
@@ -186,7 +186,7 @@ export default function RevenueSection({
                 value={data.discount}
                 onChange={(e) => set({ discount: Number(e.target.value) })}
                 min="0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
               />
             </div>
 
@@ -245,7 +245,7 @@ export default function RevenueSection({
             <button
               onClick={onSave}
               disabled={saving}
-              className="w-full mt-4 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 font-medium flex items-center justify-center gap-2"
+              className="w-full mt-4 h-10 px-4 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 active:bg-indigo-800 transition-colors press disabled:opacity-50 font-medium flex items-center justify-center gap-2"
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               {saving ? "Saving..." : saveLabel}
@@ -269,7 +269,7 @@ export function BranchDateRemarks({ data, onChange, branches }) {
         <select
           value={data.branch}
           onChange={(e) => onChange({ branch: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+          className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
         >
           {list.map((b) => (
             <option key={b} value={b}>{b}</option>
@@ -283,7 +283,7 @@ export function BranchDateRemarks({ data, onChange, branches }) {
           value={data.date}
           onChange={(e) => onChange({ date: e.target.value })}
           min={canBackDate ? undefined : todayIST}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+          className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
         />
         {!canBackDate && (
           <p className="text-xs text-gray-400 mt-1">
@@ -297,7 +297,7 @@ export function BranchDateRemarks({ data, onChange, branches }) {
           type="text"
           value={data.remarks}
           onChange={(e) => onChange({ remarks: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+          className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
         />
       </div>
     </div>

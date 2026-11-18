@@ -244,7 +244,7 @@ export default function AccountingTable({
             >
               {columns.map((c) => (
                 <div key={c.key} className="flex items-center justify-between gap-3 text-sm">
-                  <span className="text-gray-400 text-xs uppercase tracking-wide">{c.label}</span>
+                  <span className="text-gray-400 text-xs">{c.label}</span>
                   <span className={c.numeric ? "font-semibold text-gray-900" : "text-gray-700 text-right"}>
                     {c.render ? c.render(row) : c.numeric ? money(row[c.key]) : (row[c.key] ?? "—")}
                   </span>

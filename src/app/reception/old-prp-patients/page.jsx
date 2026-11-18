@@ -47,7 +47,7 @@ const INITIAL_FORM = {
 
 function Label({ children, required }) {
   return (
-    <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
+    <label className="block text-xs font-semibold text-gray-600 mb-1.5">
       {children}{required && <span className="text-red-500 ml-0.5">*</span>}
     </label>
   );
@@ -56,7 +56,7 @@ function Label({ children, required }) {
 function Input({ className = "", ...props }) {
   return (
     <input
-      className={`w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition-all bg-white ${className}`}
+      className={`w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all bg-white ${className}`}
       {...props}
     />
   );
@@ -65,7 +65,7 @@ function Input({ className = "", ...props }) {
 function Select({ children, className = "", ...props }) {
   return (
     <select
-      className={`w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition-all bg-white ${className}`}
+      className={`w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all bg-white ${className}`}
       {...props}
     >
       {children}
@@ -75,12 +75,12 @@ function Select({ children, className = "", ...props }) {
 
 function SectionCard({ title, icon, children }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
       <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-gray-100 bg-gray-50">
         <div className="w-7 h-7 rounded-lg bg-indigo-100 flex items-center justify-center">
           <span className="text-indigo-600">{icon}</span>
         </div>
-        <h3 className="text-sm font-bold text-gray-800">{title}</h3>
+        <h3 className="text-sm font-semibold text-gray-800">{title}</h3>
       </div>
       <div className="p-5">{children}</div>
     </div>
@@ -105,7 +105,7 @@ function Toast({ toast, onDismiss }) {
         <p className="text-sm font-semibold">{toast.title}</p>
         {toast.message && <p className="text-xs mt-0.5 opacity-80">{toast.message}</p>}
       </div>
-      <button onClick={onDismiss} className="p-1 rounded-lg hover:bg-black/10">
+      <button aria-label="Close" onClick={onDismiss} className="p-1 rounded-lg hover:bg-black/10">
         <X className="w-4 h-4" />
       </button>
     </div>
@@ -223,11 +223,11 @@ export default function OldPRPPatientsPage() {
           <div className="max-w-3xl mx-auto space-y-6">
 
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md">
-                <Droplets className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center">
+                <Droplets className="w-5 h-5 text-gray-600" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Add Old PRP Patient</h1>
+                <h1 className="text-xl font-semibold tracking-tight text-gray-900">Add Old PRP Patient</h1>
                 <p className="text-sm text-gray-500">
                   Register patients from before the CRM was set up — status will be set to <span className="font-semibold text-indigo-600">CLOSED</span>
                 </p>
@@ -304,7 +304,7 @@ export default function OldPRPPatientsPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label>Surgery Date</Label>
-                    <p className="text-[10px] text-gray-400 mb-1.5">
+                    <p className="text-[11px] text-gray-400 mb-1.5">
                       Sets the patient's record date. If blank, defaults to 01 Jan 2025.
                     </p>
                     <div className="relative">
@@ -364,7 +364,7 @@ export default function OldPRPPatientsPage() {
                           min={1}
                           value={session.prpNumber}
                           onChange={(e) => setSession(idx, "prpNumber", Number(e.target.value) || 1)}
-                          className="w-full px-3 py-2.5 text-sm border border-indigo-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white text-center font-bold text-indigo-700"
+                          className="w-full px-3 py-2.5 text-sm border border-indigo-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/30 bg-white text-center font-semibold text-indigo-700"
                         />
                       </div>
 
@@ -385,7 +385,7 @@ export default function OldPRPPatientsPage() {
                               key={t}
                               type="button"
                               onClick={() => setSession(idx, "type", t)}
-                              className={`py-2 rounded-xl text-xs font-bold transition-all ${
+                              className={`py-2 rounded-xl text-xs font-semibold transition-all ${
                                 session.type === t
                                   ? "bg-indigo-500 text-white shadow-sm"
                                   : "bg-white text-gray-600 border border-gray-200 hover:border-indigo-300"
@@ -399,7 +399,7 @@ export default function OldPRPPatientsPage() {
 
                       <div className="col-span-12 sm:col-span-3 flex justify-end">
                         {form.sessions.length > 1 && (
-                          <button
+                          <button aria-label="Delete"
                             type="button"
                             onClick={() => removeSession(idx)}
                             className="p-2 rounded-xl text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors"
@@ -474,10 +474,10 @@ export default function OldPRPPatientsPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className={`w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-bold transition-all shadow-md ${
+                className={`w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-semibold transition-all shadow-md ${
                   loading
                     ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                    : "bg-linear-to-r from-indigo-500 to-purple-600 text-white hover:opacity-90 hover:shadow-lg active:scale-[0.98]"
+                    : "bg-indigo-600 text-white hover:bg-indigo-700 active:scale-[0.98]"
                 }`}
               >
                 {loading ? (

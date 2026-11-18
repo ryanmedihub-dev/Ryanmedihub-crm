@@ -1,5 +1,6 @@
 "use client";
 
+import CounsellorSidebar from "@/components/Sidebars/CounsellorSidebar";
 import { useEffect, useRef, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -209,15 +210,6 @@ function PatientDashboardContent() {
     else applyFilter(k, []);
   };
 
-  const handleLogout = async () => {
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-      router.push("/login");
-    } catch (err) {
-      console.error("Logout error:", err);
-    }
-  };
-
   if (error)
     return (
       <div className="flex h-screen items-center justify-center text-red-600">
@@ -226,23 +218,22 @@ function PatientDashboardContent() {
     );
 
   return (
-    <div className="">
-      <main className="flex-1 flex flex-col px-24">
-        <header className="bg-white sticky top-0 z-10">
-          <div className="py-3 mt-4">
-            <h1 className="text-3xl underline pl-6 font-semibold">
-              All Patients Data
-            </h1>
+    <div className="flex min-h-screen bg-gray-50">
+      <CounsellorSidebar />
+      <main className="flex-1 min-w-0 flex flex-col px-4 sm:px-6 lg:px-8">
+        <header className="bg-gray-50 sticky top-0 z-10">
+          <div className="pt-6 pb-1">
+            <h1 className="text-xl font-semibold tracking-tight text-gray-900">All Patients</h1>
           </div>
 
-          <div className="px-6 py-4 flex items-center justify-between">
-            <div>
-              <div className="relative w-100">
+          <div className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="w-full sm:w-auto">
+              <div className="relative w-full sm:w-80">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <input
                   type="text"
                   placeholder="Search patients by name, phone, or email…"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 shadow-sm focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition-colors"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 shadow-sm focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-colors"
                   value={searchInput}
                   onChange={(e) => handleSearchInput(e.target.value)}
                 />
@@ -262,25 +253,18 @@ function PatientDashboardContent() {
                 )}
               </button>
 
-              <button
-                onClick={handleLogout}
-                className="w-full px-4 py-2.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors flex items-center justify-center gap-2 font-medium"
-              >
-                <LogOut className="w-4 h-4" />
-                Logout
-              </button>
             </div>
           </div>
 
           {activeFilterChips.length > 0 && (
-            <div className="px-6 pb-3 flex flex-wrap gap-2">
+            <div className="pb-3 flex flex-wrap gap-2">
               {activeFilterChips.map((c) => (
                 <span
                   key={c.k}
                   className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-50 text-indigo-700 text-sm font-medium border border-indigo-200"
                 >
                   {c.label}
-                  <button
+                  <button aria-label="Close"
                     onClick={() => removeChip(c.k)}
                     className="hover:text-indigo-900 transition-colors"
                   >
@@ -401,7 +385,7 @@ function PatientDashboardContent() {
               </p>
               <div className="flex items-center gap-3">
                 <select
-                  className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition-colors"
+                  className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-colors"
                   value={perPage}
                   onChange={(e) => { setPerPage(Number(e.target.value)); setPage(1); }}
                 >
@@ -412,7 +396,7 @@ function PatientDashboardContent() {
                   ))}
                 </select>
                 <div className="flex items-center gap-1">
-                  <button
+                  <button aria-label="Previous page"
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page <= 1}
                     className="p-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
@@ -422,7 +406,7 @@ function PatientDashboardContent() {
                   <span className="text-sm text-gray-600 w-16 text-center">
                     {page} / {pages}
                   </span>
-                  <button
+                  <button aria-label="Next page"
                     onClick={() => setPage((p) => Math.min(pages, p + 1))}
                     disabled={page >= pages}
                     className="p-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
@@ -438,7 +422,7 @@ function PatientDashboardContent() {
         {drawerOpen && (
           <div className="fixed inset-0 z-50">
             <div
-              className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/30"
               onClick={() => setDrawerOpen(false)}
             />
             <div className="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-xl flex flex-col">
@@ -451,7 +435,7 @@ function PatientDashboardContent() {
                     Refine your patient search
                   </p>
                 </div>
-                <button
+                <button aria-label="Close"
                   onClick={() => setDrawerOpen(false)}
                   className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
                 >
@@ -564,7 +548,7 @@ function PatientDashboardContent() {
                             onChange={(e) =>
                               applyFilter("visited", e.target.checked)
                             }
-                            className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                            className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500/30"
                           />
                           <span className="text-sm font-medium text-gray-700">
                             Visited Patients
@@ -579,7 +563,7 @@ function PatientDashboardContent() {
                             onChange={(e) =>
                               applyFilter("readyForSurgery", e.target.checked)
                             }
-                            className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                            className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500/30"
                           />
                           <span className="text-sm font-medium text-gray-700">
                             Ready for Surgery
@@ -618,7 +602,7 @@ export default function PatientDashboard() {
     <Suspense
       fallback={
         <div className="flex min-h-screen bg-gray-50">
-          <main className="flex-1 flex items-center justify-center">
+          <main className="flex-1 min-w-0 flex items-center justify-center">
             <div className="animate-spin h-10 w-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full" />
           </main>
         </div>
@@ -642,7 +626,7 @@ function Th({ label, sortKey, sort, onSort }) {
       <div className="inline-flex items-center gap-1">
         {label}
         {active && (
-          <span className="text-[10px] text-gray-500">
+          <span className="text-[11px] text-gray-500">
             {sort.dir === "asc" ? "▲" : "▼"}
           </span>
         )}
@@ -683,7 +667,7 @@ function Input({ type = "text", value, onChange, placeholder, className = "" }) 
       value={value}
       placeholder={placeholder}
       onChange={(e) => onChange(e.target.value)}
-      className={`w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition-colors ${className}`}
+      className={`w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-colors ${className}`}
     />
   );
 }
@@ -693,7 +677,7 @@ function Select({ value, onChange, options }) {
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition-colors bg-white"
+      className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-colors bg-white"
     >
       {options.map((o) => (
         <option key={`${o.label}-${o.value}`} value={o.value}>

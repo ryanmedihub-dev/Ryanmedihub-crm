@@ -111,12 +111,12 @@ export default function SearchableMultiSelect({
     >
       {}
       <div className="flex items-center justify-between mb-2">
-        <label className="text-[11px] font-bold uppercase tracking-wide text-slate-500">
+        <label className="text-xs font-semibold text-slate-500">
           {label}
         </label>
 
         {value.length > 0 && (
-          <span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-slate-900 text-[10px] font-bold text-white">
+          <span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-slate-900 text-[11px] font-semibold text-white">
             {value.length}
           </span>
         )}
@@ -275,11 +275,11 @@ export default function SearchableMultiSelect({
             <div className="px-3 pt-3 pb-2">
               <div className="flex items-center justify-between mb-2">
                 <div>
-                  <p className="text-xs font-bold text-slate-800">
+                  <p className="text-xs font-semibold text-slate-800">
                     Select {label}
                   </p>
 
-                  <p className="text-[10px] text-slate-400 mt-0.5">
+                  <p className="text-[11px] text-slate-400 mt-0.5">
                     {value.length > 0
                       ? `${value.length} selected`
                       : "Choose one or more options"}
@@ -293,7 +293,7 @@ export default function SearchableMultiSelect({
                       onChange([])
                     }
                     className="
-                      text-[10px]
+                      text-[11px]
                       font-semibold
                       text-slate-500
                       hover:text-slate-900
@@ -411,7 +411,7 @@ export default function SearchableMultiSelect({
                       : "Select all"}
                   </span>
 
-                  <span className="block text-[10px] text-slate-400 mt-0.5">
+                  <span className="block text-[11px] text-slate-400 mt-0.5">
                     {filtered.length} option
                     {filtered.length !== 1
                       ? "s"
@@ -433,7 +433,7 @@ export default function SearchableMultiSelect({
                     No results found
                   </p>
 
-                  <p className="text-[10px] text-slate-400 mt-1">
+                  <p className="text-[11px] text-slate-400 mt-1">
                     Try a different search term
                   </p>
                 </div>
@@ -513,7 +513,7 @@ export default function SearchableMultiSelect({
 
                       {}
                       {checked && (
-                        <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">
+                        <span className="text-[9px] font-semibold uppercase tracking-wide text-slate-400">
                           Selected
                         </span>
                       )}
@@ -526,14 +526,14 @@ export default function SearchableMultiSelect({
             {}
             {filtered.length > 0 && (
               <div className="flex items-center justify-between px-3 py-2 border-t border-slate-100 bg-slate-50/60">
-                <span className="text-[10px] text-slate-400">
+                <span className="text-[11px] text-slate-400">
                   {filtered.length} result
                   {filtered.length !== 1
                     ? "s"
                     : ""}
                 </span>
 
-                <span className="text-[10px] font-medium text-slate-500">
+                <span className="text-[11px] font-medium text-slate-500">
                   {value.length} selected
                 </span>
               </div>

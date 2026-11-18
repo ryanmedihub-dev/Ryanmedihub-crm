@@ -623,12 +623,12 @@ function AllTransactionsPageInner({ Sidebar }) {
       <div className={`min-h-screen bg-slate-50 ${Sidebar ? "lg:flex" : ""}`}>
         {Sidebar && <Sidebar />}
         <div className="flex-1 min-w-0 flex items-center justify-center min-h-screen p-6">
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm max-w-md w-full p-7 text-center">
+        <div className="bg-white border border-slate-200 rounded-xl max-w-md w-full p-7 text-center">
           <div className="w-12 h-12 bg-rose-50 rounded-xl flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="w-6 h-6 text-rose-500" />
           </div>
 
-          <h2 className="font-bold text-slate-900">
+          <h2 className="font-semibold text-slate-900">
             Unable to load transactions
           </h2>
 
@@ -638,7 +638,7 @@ function AllTransactionsPageInner({ Sidebar }) {
 
           <button
             onClick={() => fetchData(true)}
-            className="mt-5 h-10 px-4 rounded-lg bg-slate-950 text-white text-sm font-semibold"
+            className="mt-5 h-9 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition-colors"
           >
             Try again
           </button>
@@ -650,7 +650,7 @@ function AllTransactionsPageInner({ Sidebar }) {
 
   return (
     <div
-      className={`min-h-screen bg-[#f6f7f9] ${
+      className={`min-h-screen bg-gray-50 ${
         Sidebar ? "lg:flex" : ""
       }`}
     >
@@ -688,8 +688,8 @@ function AllTransactionsPageInner({ Sidebar }) {
 
           <KPIBar stats={stats} />
 
-          <section className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-            <div className="px-4 sm:px-5 pt-4 pb-3 border-b border-slate-200">
+          <section className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+            <div className="px-2 sm:px-3 border-b border-gray-200">
               <CategoryNavigation
                 activeCategory={activeCategory}
                 stats={stats}
@@ -817,13 +817,13 @@ function AllTransactionsPageInner({ Sidebar }) {
 
       {}
       {deleteTarget && (
-        <div className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 overlay-in z-50 bg-gray-950/40 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
             <div className="w-11 h-11 rounded-xl bg-rose-50 flex items-center justify-center mb-4">
               <Trash2 className="w-5 h-5 text-rose-600" />
             </div>
 
-            <h2 className="text-lg font-bold text-slate-950">
+            <h2 className="text-lg font-semibold text-gray-900">
               Delete transaction?
             </h2>
 
@@ -837,7 +837,7 @@ function AllTransactionsPageInner({ Sidebar }) {
                   Amount
                 </span>
 
-                <span className="font-bold text-rose-600">
+                <span className="font-semibold text-rose-600">
                   {formatCurrency(
                     deleteTarget.amount
                   )}

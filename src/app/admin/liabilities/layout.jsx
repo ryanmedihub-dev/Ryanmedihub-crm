@@ -20,7 +20,7 @@ export default function LiabilitiesLayout({ children }) {
       <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto space-y-4">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">Liabilities</h1>
+            <h1 className="text-xl font-semibold text-gray-900">Liabilities</h1>
             <p className="text-sm text-gray-500 mt-0.5">
               Everything the business owes — payables, suspense entries and borrowings.
             </p>

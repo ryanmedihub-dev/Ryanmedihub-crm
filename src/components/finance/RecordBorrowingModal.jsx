@@ -163,7 +163,7 @@ export default function RecordBorrowingModal({ open, onClose, onSuccess, mode, p
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-3 backdrop-blur-sm sm:p-5">
+    <div className="fixed inset-0 overlay-in z-50 flex items-center justify-center bg-gray-950/40 p-3 sm:p-5">
 
       {}
       <div className="flex max-h-[95vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
@@ -198,7 +198,7 @@ export default function RecordBorrowingModal({ open, onClose, onSuccess, mode, p
             </div>
 
             <div className="min-w-0">
-              <h3 className="truncate text-base font-bold text-slate-900 sm:text-lg">{title}</h3>
+              <h3 className="truncate text-base font-semibold text-slate-900 sm:text-lg">{title}</h3>
 
               <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">
                 {isRepayment
@@ -235,18 +235,18 @@ export default function RecordBorrowingModal({ open, onClose, onSuccess, mode, p
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 
                   <div className="min-w-0">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-violet-500">
+                    <p className="text-xs font-medium text-gray-500">
                       Outstanding Borrowing
                     </p>
-                    <p className="mt-1 truncate text-sm font-bold text-slate-900 sm:text-base">
+                    <p className="mt-1 truncate text-sm font-semibold text-slate-900 sm:text-base">
                       {payable.payee?.label}
                     </p>
                     <p className="mt-1 text-xs text-slate-500">{payable.expenseSubType}</p>
                   </div>
 
                   <div className="sm:text-right">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-violet-500">Remaining</p>
-                    <p className="mt-1 text-lg font-bold text-violet-600 sm:text-xl">{formatCurrency(pending)}</p>
+                    <p className="text-xs font-medium text-gray-500">Remaining</p>
+                    <p className="mt-1 text-lg font-semibold text-violet-600 sm:text-xl">{formatCurrency(pending)}</p>
                   </div>
 
                 </div>
@@ -259,7 +259,7 @@ export default function RecordBorrowingModal({ open, onClose, onSuccess, mode, p
             {!partyLocked && (
               <section>
                 <div className="mb-3">
-                  <h4 className="text-sm font-bold text-slate-900">Party Details</h4>
+                  <h4 className="text-sm font-semibold text-slate-900">Party Details</h4>
                   <p className="mt-0.5 text-xs text-slate-500">Select who this borrowing is associated with</p>
                 </div>
 
@@ -309,7 +309,7 @@ export default function RecordBorrowingModal({ open, onClose, onSuccess, mode, p
                       value={partyLabel}
                       onChange={(e) => setPartyLabel(e.target.value)}
                       placeholder="Enter the person or organization name"
-                      className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+                      className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
                     />
                   </div>
                 ) : (
@@ -341,7 +341,7 @@ export default function RecordBorrowingModal({ open, onClose, onSuccess, mode, p
             {isNewLoan && (
               <section>
                 <div className="mb-3">
-                  <h4 className="text-sm font-bold text-slate-900">Borrowing Information</h4>
+                  <h4 className="text-sm font-semibold text-slate-900">Borrowing Information</h4>
                   <p className="mt-0.5 text-xs text-slate-500">Specify what this borrowing is for</p>
                 </div>
 
@@ -352,7 +352,7 @@ export default function RecordBorrowingModal({ open, onClose, onSuccess, mode, p
                 <select
                   value={subType}
                   onChange={(e) => setSubType(e.target.value)}
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
                 >
                   <option value="">Select borrowing type...</option>
                   {SUBTYPES.map((type) => (
@@ -369,7 +369,7 @@ export default function RecordBorrowingModal({ open, onClose, onSuccess, mode, p
 }
             <section>
               <div className="mb-3">
-                <h4 className="text-sm font-bold text-slate-900">
+                <h4 className="text-sm font-semibold text-slate-900">
                   {isRepayment ? "Repayment Details" : "Borrowing Details"}
                 </h4>
                 <p className="mt-0.5 text-xs text-slate-500">Enter the account and amount involved</p>
@@ -385,7 +385,7 @@ export default function RecordBorrowingModal({ open, onClose, onSuccess, mode, p
                   <select
                     value={account}
                     onChange={(e) => setAccount(e.target.value)}
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
                   >
                     <option value="">Select account...</option>
                     {accounts.map((acc) => (
@@ -411,7 +411,7 @@ export default function RecordBorrowingModal({ open, onClose, onSuccess, mode, p
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
                       placeholder="0"
-                      className="w-full rounded-xl border border-slate-300 py-2.5 pl-8 pr-3 text-sm outline-none transition placeholder:text-slate-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+                      className="w-full rounded-xl border border-slate-300 py-2.5 pl-8 pr-3 text-sm outline-none transition placeholder:text-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
                     />
                   </div>
 
@@ -430,7 +430,7 @@ export default function RecordBorrowingModal({ open, onClose, onSuccess, mode, p
                     type="checkbox"
                     checked={allowOverpayment}
                     onChange={(e) => setAllowOverpayment(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 rounded border-amber-300 text-amber-600 focus:ring-amber-500"
+                    className="mt-0.5 h-4 w-4 rounded border-amber-300 text-amber-600 focus:ring-indigo-500/30"
                   />
                   <div>
                     <p className="text-sm font-semibold text-amber-800">Allow overpayment</p>
@@ -448,7 +448,7 @@ export default function RecordBorrowingModal({ open, onClose, onSuccess, mode, p
 }
             <section>
               <div className="mb-3">
-                <h4 className="text-sm font-bold text-slate-900">Transaction Details</h4>
+                <h4 className="text-sm font-semibold text-slate-900">Transaction Details</h4>
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -459,7 +459,7 @@ export default function RecordBorrowingModal({ open, onClose, onSuccess, mode, p
                   <DebouncedDateInput
                     value={date}
                     onCommit={setDate}
-                    className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+                    className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
                   />
                 </div>
 
@@ -470,7 +470,7 @@ export default function RecordBorrowingModal({ open, onClose, onSuccess, mode, p
                     <select
                       value={branch}
                       onChange={(e) => setBranch(e.target.value)}
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
                     >
                       <option value="">Company-level</option>
                       {ALL_BRANCHES.map((b) => (
@@ -493,7 +493,7 @@ export default function RecordBorrowingModal({ open, onClose, onSuccess, mode, p
 }
             <section>
               <div className="mb-3">
-                <h4 className="text-sm font-bold text-slate-900">Additional Information</h4>
+                <h4 className="text-sm font-semibold text-slate-900">Additional Information</h4>
                 <p className="mt-0.5 text-xs text-slate-500">Optional transaction references and notes</p>
               </div>
 
@@ -509,7 +509,7 @@ export default function RecordBorrowingModal({ open, onClose, onSuccess, mode, p
                     value={reference}
                     onChange={(e) => setReference(e.target.value)}
                     placeholder="UTR / cheque number / transaction ID"
-                    className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+                    className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
                   />
                 </div>
 
@@ -521,7 +521,7 @@ export default function RecordBorrowingModal({ open, onClose, onSuccess, mode, p
                     onChange={(e) => setRemarks(e.target.value)}
                     rows={3}
                     placeholder="Add any additional information..."
-                    className="w-full resize-none rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+                    className="w-full resize-none rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
                   />
                 </div>
 
@@ -542,7 +542,7 @@ export default function RecordBorrowingModal({ open, onClose, onSuccess, mode, p
                     periodLocked ? "bg-amber-100" : "bg-red-100"
                   }`}
                 >
-                  <span className={`text-xs font-bold ${periodLocked ? "text-amber-700" : "text-red-700"}`}>!</span>
+                  <span className={`text-xs font-semibold ${periodLocked ? "text-amber-700" : "text-red-700"}`}>!</span>
                 </div>
                 <div>
                   <p className={`text-sm font-semibold ${periodLocked ? "text-amber-800" : "text-red-800"}`}>
@@ -579,7 +579,7 @@ export default function RecordBorrowingModal({ open, onClose, onSuccess, mode, p
             className={`flex w-full items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto ${
               isRepayment
                 ? "bg-rose-600 hover:bg-rose-700 focus:ring-rose-500"
-                : "bg-violet-600 hover:bg-violet-700 focus:ring-violet-500"
+                : "bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500/30"
             }`}
           >
             {submitting ? (

@@ -5,7 +5,7 @@ import { X, Loader2, Ban, Trash2, PenSquare } from "lucide-react";
 import { formatCurrency } from "@/lib/financeUI";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100";
+  "w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30";
 const labelClass = "mb-1.5 block text-sm font-semibold text-slate-700";
 
 export default function ReviseReceivableModal({ receivable, onClose, onSuccess, toast }) {
@@ -65,7 +65,7 @@ export default function ReviseReceivableModal({ receivable, onClose, onSuccess, 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-3 backdrop-blur-sm sm:p-5">
+    <div className="fixed inset-0 overlay-in z-50 flex items-center justify-center bg-gray-950/40 p-3 sm:p-5">
       <div className="flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
 
         {}
@@ -75,7 +75,7 @@ export default function ReviseReceivableModal({ receivable, onClose, onSuccess, 
               <PenSquare className="h-5 w-5" />
             </div>
             <div className="min-w-0">
-              <h3 className="truncate text-base font-bold text-slate-900 sm:text-lg">Revise Receivable</h3>
+              <h3 className="truncate text-base font-semibold text-slate-900 sm:text-lg">Revise Receivable</h3>
               <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">Adjust amount, due date, or lifecycle</p>
             </div>
           </div>
@@ -94,7 +94,7 @@ export default function ReviseReceivableModal({ receivable, onClose, onSuccess, 
           <div className="space-y-5 p-4 sm:p-6">
 
             <div className="rounded-xl border border-slate-200 bg-white p-4">
-              <p className="truncate text-sm font-bold text-slate-900">{receivable.payer?.label}</p>
+              <p className="truncate text-sm font-semibold text-slate-900">{receivable.payer?.label}</p>
               <p className="mt-1 text-xs text-slate-500">
                 Already received:{" "}
                 <span className="font-semibold text-emerald-700">{formatCurrency(receivable.received)}</span>
@@ -149,7 +149,7 @@ export default function ReviseReceivableModal({ receivable, onClose, onSuccess, 
               type="button"
               onClick={() => save()}
               disabled={submitting}
-              className="flex w-full flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+              className="flex w-full flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
             >
               {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Changes"}
             </button>

@@ -288,11 +288,11 @@ export default function SuperAdminLeadsPage() {
         <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between gap-4 flex-wrap">
           <div>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-amber-400 via-orange-500 to-red-500 flex items-center justify-center shadow-md">
-                <ScrollText className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center">
+                <ScrollText className="w-5 h-5 text-gray-600" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">ALL Leads</h1>
+                <h1 className="text-xl font-semibold text-gray-900">ALL Leads</h1>
                 <p className="text-xs text-gray-500 mt-0.5">
                   {total.toLocaleString()} total leads
                 </p>
@@ -307,7 +307,7 @@ export default function SuperAdminLeadsPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search name, phone, email…"
-                className="pl-9 pr-3 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 w-56"
+                className="pl-9 pr-3 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 w-56"
               />
             </div>
 
@@ -325,7 +325,7 @@ export default function SuperAdminLeadsPage() {
               <Filter className="w-4 h-4" />
               Filters
               {activeFilterCount > 0 && (
-                <span className="bg-white text-amber-600 rounded-full text-xs font-bold w-5 h-5 flex items-center justify-center">
+                <span className="bg-white text-amber-600 rounded-full text-xs font-semibold w-5 h-5 flex items-center justify-center">
                   {activeFilterCount}
                 </span>
               )}
@@ -334,7 +334,7 @@ export default function SuperAdminLeadsPage() {
             <button
               onClick={handleDownload}
               disabled={downloading}
-              className="flex items-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-medium transition-colors disabled:opacity-60"
+              className="flex items-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium transition-colors disabled:opacity-60"
             >
               {downloading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -352,10 +352,10 @@ export default function SuperAdminLeadsPage() {
             className="bg-white border-b border-gray-100 px-6 py-4"
           >
             <div className="flex items-center justify-between mb-4">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
                 Filters
               </p>
-              <button
+              <button aria-label="Close"
                 onClick={() => setShowFilter(false)}
                 className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
               >
@@ -365,7 +365,7 @@ export default function SuperAdminLeadsPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               <div className="bg-gray-50 rounded-xl px-3.5 py-3 border border-gray-100">
-                <label className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 mb-2">
                   <Tag className="w-3 h-3" /> Source
                 </label>
                 <select
@@ -373,7 +373,7 @@ export default function SuperAdminLeadsPage() {
                   onChange={(e) =>
                     setPendingFilters((p) => ({ ...p, tag: e.target.value }))
                   }
-                  className="w-full bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all"
+                  className="w-full bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-transparent transition-all"
                 >
                   <option value="">All Tags</option>
                   {TAG_OPTIONS.map((t) => (
@@ -381,7 +381,7 @@ export default function SuperAdminLeadsPage() {
                   ))}
                 </select>
 
-                <label className="flex items-center gap-1.5 mt-4 text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                <label className="flex items-center gap-1.5 mt-4 text-xs font-semibold text-gray-600 mb-2">
                   <Users className="w-3 h-3" /> City
                 </label>
                 <select
@@ -389,7 +389,7 @@ export default function SuperAdminLeadsPage() {
                   onChange={(e) =>
                     setPendingFilters((p) => ({ ...p, city: e.target.value }))
                   }
-                  className="w-full bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all"
+                  className="w-full bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-transparent transition-all"
                 >
                   <option value="">All Cities</option>
                   {LOCATION_OPTIONS.map((c) => (
@@ -399,12 +399,12 @@ export default function SuperAdminLeadsPage() {
               </div>
 
               <div className="bg-gray-50 rounded-xl px-3.5 py-3 border border-gray-100">
-                <label className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 mb-2">
                   <Calendar className="w-3 h-3" /> Created Range
                 </label>
                 <div className="space-y-1.5 mt-4">
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-medium text-gray-400 pointer-events-none z-10">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] font-medium text-gray-400 pointer-events-none z-10">
                       FROM
                     </span>
                     <input
@@ -416,11 +416,11 @@ export default function SuperAdminLeadsPage() {
                           createdFrom: e.target.value,
                         }))
                       }
-                      className="w-full bg-white border border-gray-200 rounded-lg pl-12 pr-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all"
+                      className="w-full bg-white border border-gray-200 rounded-lg pl-12 pr-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-transparent transition-all"
                     />
                   </div>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-medium text-gray-400 pointer-events-none z-10">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] font-medium text-gray-400 pointer-events-none z-10">
                       TO
                     </span>
                     <input
@@ -432,19 +432,19 @@ export default function SuperAdminLeadsPage() {
                           createdTo: e.target.value,
                         }))
                       }
-                      className="w-full bg-white border border-gray-200 rounded-lg pl-12 pr-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all"
+                      className="w-full bg-white border border-gray-200 rounded-lg pl-12 pr-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-transparent transition-all"
                     />
                   </div>
                 </div>
               </div>
 
               <div className="bg-gray-50 rounded-xl px-3.5 py-3 border border-gray-100">
-                <label className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 mb-2">
                   <Calendar className="w-3 h-3" /> Visit Range
                 </label>
                 <div className="space-y-1.5 mt-4">
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-medium text-gray-400 pointer-events-none z-10">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] font-medium text-gray-400 pointer-events-none z-10">
                       FROM
                     </span>
                     <input
@@ -456,11 +456,11 @@ export default function SuperAdminLeadsPage() {
                           visitFrom: e.target.value,
                         }))
                       }
-                      className="w-full bg-white border border-gray-200 rounded-lg pl-12 pr-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all"
+                      className="w-full bg-white border border-gray-200 rounded-lg pl-12 pr-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-transparent transition-all"
                     />
                   </div>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-medium text-gray-400 pointer-events-none z-10">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] font-medium text-gray-400 pointer-events-none z-10">
                       TO
                     </span>
                     <input
@@ -472,14 +472,14 @@ export default function SuperAdminLeadsPage() {
                           visitTo: e.target.value,
                         }))
                       }
-                      className="w-full bg-white border border-gray-200 rounded-lg pl-12 pr-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all"
+                      className="w-full bg-white border border-gray-200 rounded-lg pl-12 pr-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-transparent transition-all"
                     />
                   </div>
                 </div>
               </div>
 
               <div className="bg-gray-50 rounded-xl px-3.5 py-3 border border-gray-100">
-                <label className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 mb-2">
                   <Mail className="w-3 h-3" /> Email
                 </label>
                 <button
@@ -539,7 +539,7 @@ export default function SuperAdminLeadsPage() {
                     className="flex items-center gap-1 bg-amber-100 text-amber-700 border border-amber-200 rounded-full px-2.5 py-0.5 text-xs font-medium"
                   >
                     {k === "hasEmail" ? "Has Email" : "Has Remarks"}
-                    <button
+                    <button aria-label="Close"
                       onClick={() => setFilters((p) => ({ ...p, [k]: null }))}
                       className="hover:text-red-500"
                     >
@@ -555,7 +555,7 @@ export default function SuperAdminLeadsPage() {
                   className="flex items-center gap-1 bg-amber-100 text-amber-700 border border-amber-200 rounded-full px-2.5 py-0.5 text-xs font-medium"
                 >
                   {k}: {fmtFilterLabel(k, v)}
-                  <button
+                  <button aria-label="Close"
                     onClick={() => setFilters((p) => ({ ...p, [k]: "" }))}
                     className="hover:text-red-500"
                   >
@@ -574,7 +574,7 @@ export default function SuperAdminLeadsPage() {
         )}
 
         <div className="flex-1 overflow-auto p-6">
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-100">
                 <thead className="bg-gray-50">
@@ -592,7 +592,7 @@ export default function SuperAdminLeadsPage() {
                     ].map((h) => (
                       <th
                         key={h}
-                        className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                        className="px-4 py-3 text-left text-xs font-medium text-gray-500 whitespace-nowrap"
                       >
                         {h}
                       </th>
@@ -677,7 +677,7 @@ export default function SuperAdminLeadsPage() {
               </p>
 
               <div className="flex items-center gap-1">
-                <button
+                <button aria-label="Previous page"
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}
                   className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 transition-colors"
@@ -700,7 +700,7 @@ export default function SuperAdminLeadsPage() {
                     </button>
                   );
                 })}
-                <button
+                <button aria-label="Next page"
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page >= totalPages}
                   className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 transition-colors"
@@ -715,7 +715,7 @@ export default function SuperAdminLeadsPage() {
                   setPerPage(Number(e.target.value));
                   setPage(1);
                 }}
-                className="border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                className="border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
               >
                 {PER_PAGE_OPTIONS.map((n) => (
                   <option key={n} value={n}>

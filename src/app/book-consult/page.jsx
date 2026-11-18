@@ -132,10 +132,7 @@ export default function BookAppointment() {
     <section className="min-h-screen md:bg-gray-50 flex items-center justify-center px-3 sm:px-6">
       <main className="w-full max-w-6xl bg-white rounded-xl md:shadow-sm">
         <div className="text-center p-6 sm:p-8 border-b">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-blue-100">
-            <Calendar className="text-blue-600" />
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+          <h1 className="text-xl font-semibold tracking-tight text-gray-900">
             Book an Appointment
           </h1>
           <p className="mt-2 text-gray-600 text-sm sm:text-base">
@@ -271,7 +268,7 @@ export default function BookAppointment() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full sm:w-auto rounded-md bg-blue-600 px-8 py-3 text-white font-medium hover:bg-blue-700 disabled:bg-gray-400"
+              className="w-full sm:w-auto rounded-md bg-indigo-600 px-8 py-3 text-white font-medium hover:bg-indigo-700 disabled:bg-gray-400"
             >
               {isSubmitting ? "Booking..." : "Book Appointment"}
             </button>

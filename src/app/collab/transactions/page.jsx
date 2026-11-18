@@ -1,5 +1,6 @@
 "use client";
 
+import SharedStatCard from "@/components/dashboard/StatCard";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { maskPhone } from "@/utils/phoneUtils";
@@ -81,54 +82,13 @@ const TRANSACTION_CATEGORIES = [
 ];
 
 const getCategoryGradientClass = (categoryValue, isActive) => {
-  if (!isActive) return "bg-gray-50 text-gray-600 hover:bg-gray-100";
+  if (!isActive) return "text-gray-500 hover:bg-gray-100 hover:text-gray-900";
 
-  const gradients = {
-    TRANSPLANT:
-      "bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-md",
-    SERVICE: "bg-gradient-to-r from-pink-500 to-pink-600 text-white shadow-md",
-    MEDICINE:
-      "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-md",
-    EXPENSE: "bg-gradient-to-r from-rose-500 to-rose-600 text-white shadow-md",
-  };
-
-  return gradients[categoryValue] || "bg-gray-50 text-gray-600";
+  return "bg-gray-900 text-white";
 };
 
-function StatCard({
-  title,
-  value,
-  icon: Icon,
-  gradient,
-  count,
-  iconBg,
-  iconColor,
-}) {
-  return (
-    <div
-      className={`bg-linear-to-br ${gradient} p-4 sm:p-6 rounded-2xl shadow-lg text-white relative overflow-hidden transform hover:scale-105 transition-transform duration-300`}
-    >
-      <div className="absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 bg-white/10 rounded-full -mr-12 -mt-12 sm:-mr-16 sm:-mt-16" />
-      <div className="relative">
-        <div className="flex justify-between items-start mb-3 sm:mb-4">
-          <div className="flex-1 min-w-0">
-            <p className="text-white/90 text-xs sm:text-sm font-medium mb-1 truncate">
-              {title}
-            </p>
-            <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold truncate">
-              {value}
-            </h3>
-          </div>
-          <div className={`${iconBg} p-2 sm:p-3 rounded-xl shrink-0 ml-2`}>
-            <Icon className={`w-4 h-4 sm:w-6 sm:h-6 ${iconColor}`} />
-          </div>
-        </div>
-        <p className="text-white/80 text-xs sm:text-sm font-medium truncate">
-          {count}
-        </p>
-      </div>
-    </div>
-  );
+function StatCard({ title, value, icon, gradient, count }) {
+  return <SharedStatCard title={title} value={value} subtitle={count} icon={icon} tone={gradient} />;
 }
 
 function DeleteConfirmModal({ transaction, onClose, onConfirm }) {
@@ -144,13 +104,13 @@ function DeleteConfirmModal({ transaction, onClose, onConfirm }) {
   const hasDiscount = parseFloat(transaction?.discount || 0) > 0;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 overlay-in bg-gray-950/40 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full mx-4">
         <div className="p-6 sm:p-8">
           <div className="w-12 h-12 sm:w-16 sm:h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="w-6 h-6 sm:w-8 sm:h-8 text-red-600" />
           </div>
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 text-center mb-2">
+          <h2 className="text-xl sm:text-xl font-semibold tracking-tight text-gray-900 text-center mb-2">
             Delete Transaction?
           </h2>
           <p className="text-gray-600 text-center mb-4 sm:mb-6 text-sm sm:text-base">
@@ -160,20 +120,20 @@ function DeleteConfirmModal({ transaction, onClose, onConfirm }) {
           <div className="bg-gray-50 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6 space-y-2">
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">Category:</span>
-              <span className="font-bold text-gray-900 text-sm sm:text-base">
+              <span className="font-semibold text-gray-900 text-sm sm:text-base">
                 {transaction?.transactionCategory || "Uncategorized"}
               </span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">Amount:</span>
-              <span className="font-bold text-emerald-600 text-sm sm:text-base">
+              <span className="font-semibold text-emerald-600 text-sm sm:text-base">
                 {formatCurrency(netAmount)}
               </span>
             </div>
             {hasDiscount && (
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Discount:</span>
-                <span className="font-bold text-amber-600 text-sm sm:text-base">
+                <span className="font-semibold text-amber-600 text-sm sm:text-base">
                   -{formatCurrency(transaction?.discount || 0)}
                 </span>
               </div>
@@ -245,7 +205,7 @@ function Input({
           placeholder={placeholder}
           min={min}
           max={max}
-          className={`w-full border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 transition-all text-sm sm:text-base ${
+          className={`w-full border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-300 transition-all text-sm sm:text-base ${
             Icon ? "pl-9 sm:pl-11 pr-4" : "px-4"
           } py-2.5 sm:py-3`}
         />
@@ -268,7 +228,7 @@ function Select({ label, value, onChange, options, required, icon: Icon }) {
           value={value}
           onChange={(e) => onChange(e.target.value)}
           required={required}
-          className={`w-full border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 bg-white transition-all appearance-none text-sm sm:text-base ${
+          className={`w-full border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-300 bg-white transition-all appearance-none text-sm sm:text-base ${
             Icon ? "pl-9 sm:pl-11 pr-8 sm:pr-10" : "px-4 pr-8 sm:pr-10"
           } py-2.5 sm:py-3`}
         >
@@ -454,42 +414,11 @@ function DataTable({
 
   const columns = getColumns();
 
-  const getProcedureColor = (proc) => {
-    const colors = {
-      "sapphire fue": "bg-indigo-100 text-indigo-700 border-indigo-200",
-      dhi: "bg-purple-100 text-purple-700 border-purple-200",
-      "turkish dhi": "bg-pink-100 text-pink-700 border-pink-200",
-      "beard transplant": "bg-amber-100 text-amber-700 border-amber-200",
-      prp: "bg-emerald-100 text-emerald-700 border-emerald-200",
-      gfc: "bg-cyan-100 text-cyan-700 border-cyan-200",
+  // Categories, not states: one neutral badge so colour stays reserved for meaning.
+  const getProcedureColor = () => "bg-gray-100 text-gray-700 border-transparent";
 
-      alopecia: "bg-rose-100 text-rose-700 border-rose-200",
-      headwash: "bg-sky-100 text-sky-700 border-sky-200",
-      canacot: "bg-lime-100 text-lime-700 border-lime-200",
-    };
-
-    return (
-      colors[proc?.toLowerCase()] || "bg-gray-100 text-gray-700 border-gray-200"
-    );
-  };
-
-  const getMethodColor = (method) => {
-    const colors = {
-      cash: "bg-emerald-100 text-emerald-700 border-emerald-200",
-      upi: "bg-blue-100 text-blue-700 border-blue-200",
-      card: "bg-purple-100 text-purple-700 border-purple-200",
-      banking: "bg-indigo-100 text-indigo-700 border-indigo-200",
-      bajaj_loan: "bg-orange-100 text-orange-700 border-orange-200",
-      fibe_loan: "bg-amber-100 text-amber-700 border-amber-200",
-      hdfc_skin_bank_transfer: "bg-sky-100 text-sky-700 border-sky-200",
-      hdfc_ryan_medihub_bank_transfer: "bg-teal-100 text-teal-700 border-teal-200",
-      icici_medihub_bank_transfer: "bg-rose-100 text-rose-700 border-rose-200",
-    };
-    return (
-      colors[method?.toLowerCase()] ||
-      "bg-gray-100 text-gray-700 border-gray-200"
-    );
-  };
+  // Categories, not states: one neutral badge so colour stays reserved for meaning.
+  const getMethodColor = () => "bg-gray-100 text-gray-700 border-transparent";
 
   const SortIcon = ({ columnKey }) => {
     if (sortConfig.key !== columnKey) {
@@ -538,15 +467,15 @@ function DataTable({
   };
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+    <div className="flex flex-col h-full bg-white overflow-hidden">
       <div
-        className="hidden md:grid items-center bg-linear-to-r from-slate-50 to-slate-100 border-b border-slate-200 min-h-13 px-2"
+        className="hidden md:grid items-center bg-gray-50/80 border-b border-gray-200 min-h-10 px-2"
         style={{ gridTemplateColumns }}
       >
         {columns.map((col) => (
           <div
             key={col.key}
-            className={`px-2 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wide truncate ${
+            className={`px-2 py-2.5 text-left text-xs font-medium text-gray-500 truncate ${
               col.sortable
                 ? "cursor-pointer hover:bg-slate-200/50 transition-colors duration-150 group"
                 : ""
@@ -561,10 +490,10 @@ function DataTable({
         ))}
       </div>
 
-      <div className="md:hidden bg-linear-to-r from-slate-50 to-slate-100 border-b border-slate-200 px-4 py-3">
+      <div className="md:hidden bg-slate-50 border-b border-slate-200 px-4 py-3">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-bold text-slate-900">
+            <h3 className="text-sm font-semibold text-slate-900">
               {category} Records
             </h3>
             <p className="text-xs text-slate-600">
@@ -573,7 +502,7 @@ function DataTable({
           </div>
           <div className="text-right">
             <p className="text-xs font-medium text-slate-700">Sorted by</p>
-            <p className="text-sm font-bold text-indigo-700">
+            <p className="text-sm font-semibold text-indigo-700">
               {sortConfig.key.replace(/([A-Z])/g, " $1").trim()}
             </p>
           </div>
@@ -630,7 +559,7 @@ function DataTable({
                           </div>
                           <div className="px-2 py-3">
                             <span
-                              className={`inline-flex px-2 py-1 rounded-lg text-xs font-semibold border ${getProcedureColor(row.procedure)}`}
+                              className={`inline-flex items-center h-5 px-2 rounded-md text-xs font-medium border ${getProcedureColor(row.procedure)}`}
                             >
                               {row.procedure}
                             </span>
@@ -642,7 +571,7 @@ function DataTable({
                           </div>
                           <div className="px-2 py-3">
                             <div className="text-center">
-                              <div className="text-sm font-bold text-emerald-700">
+                              <div className="text-sm font-semibold text-emerald-700">
                                 {formatCurrency(netAmount)}
                               </div>
                               {hasDiscount && (
@@ -657,7 +586,7 @@ function DataTable({
                           </div>
                           <div className="px-2 py-3">
                             <span
-                              className={`inline-flex px-2 py-1 rounded-lg text-xs font-semibold border ${getMethodColor(row.method)}`}
+                              className={`inline-flex items-center h-5 px-2 rounded-md text-xs font-medium border ${getMethodColor(row.method)}`}
                             >
                               {row.method?.replace(/_/g, " ").toUpperCase()}
                             </span>
@@ -693,13 +622,13 @@ function DataTable({
                           </div>
                           <div className="px-2 py-3">
                             <span
-                              className={`inline-flex px-2 py-1 rounded-lg text-xs font-semibold border ${getProcedureColor(row.procedure)}`}
+                              className={`inline-flex items-center h-5 px-2 rounded-md text-xs font-medium border ${getProcedureColor(row.procedure)}`}
                             >
                               {row.procedure}
                             </span>
                           </div>
                           <div className="px-2 py-3 text-center">
-                            <div className="text-sm font-bold text-indigo-700">
+                            <div className="text-sm font-semibold text-indigo-700">
                               {row.quantity || 1}
                             </div>
                           </div>
@@ -710,7 +639,7 @@ function DataTable({
                           </div>
                           <div className="px-2 py-3">
                             <div className="text-center">
-                              <div className="text-sm font-bold text-emerald-700">
+                              <div className="text-sm font-semibold text-emerald-700">
                                 {formatCurrency(netAmount)}
                               </div>
                               {hasDiscount && (
@@ -725,7 +654,7 @@ function DataTable({
                           </div>
                           <div className="px-2 py-3">
                             <span
-                              className={`inline-flex px-2 py-1 rounded-lg text-xs font-semibold border ${getMethodColor(row.method)}`}
+                              className={`inline-flex items-center h-5 px-2 rounded-md text-xs font-medium border ${getMethodColor(row.method)}`}
                             >
                               {row.method?.replace(/_/g, " ").toUpperCase()}
                             </span>
@@ -777,7 +706,7 @@ function DataTable({
                             </div>
                           </div>
                           <div className="px-2 py-3 text-center">
-                            <div className="text-sm font-bold text-indigo-700">
+                            <div className="text-sm font-semibold text-indigo-700">
                               {row.quantity || 1}
                             </div>
                           </div>
@@ -788,7 +717,7 @@ function DataTable({
                           </div>
                           <div className="px-2 py-3">
                             <div className="text-center">
-                              <div className="text-sm font-bold text-emerald-700">
+                              <div className="text-sm font-semibold text-emerald-700">
                                 {formatCurrency(netAmount)}
                               </div>
                               {hasDiscount && (
@@ -803,7 +732,7 @@ function DataTable({
                           </div>
                           <div className="px-2 py-3">
                             <span
-                              className={`inline-flex px-2 py-1 rounded-lg text-xs font-semibold border ${getMethodColor(row.method)}`}
+                              className={`inline-flex items-center h-5 px-2 rounded-md text-xs font-medium border ${getMethodColor(row.method)}`}
                             >
                               {row.method?.replace(/_/g, " ").toUpperCase()}
                             </span>
@@ -855,13 +784,13 @@ function DataTable({
                             </div>
                           </div>
                           <div className="px-2 py-3 text-right">
-                            <div className="text-sm font-bold text-rose-600">
+                            <div className="text-sm font-semibold text-rose-600">
                               {formatCurrency(row.amount)}
                             </div>
                           </div>
                           <div className="px-2 py-3">
                             <span
-                              className={`inline-flex px-2 py-1 rounded-lg text-xs font-semibold border ${getMethodColor(row.method)}`}
+                              className={`inline-flex items-center h-5 px-2 rounded-md text-xs font-medium border ${getMethodColor(row.method)}`}
                             >
                               {row.method?.replace(/_/g, " ").toUpperCase()}
                             </span>
@@ -946,7 +875,7 @@ function DataTable({
                                 <ApprovalBadge status={row.approvalStatus} />
                               )}
                             </div>
-                            <h4 className="text-base font-bold text-slate-900">
+                            <h4 className="text-base font-semibold text-slate-900">
                               {rowCategory !== "EXPENSE"
                                 ? getPatientName(row)
                                 : getExpenseGiverName(row)}
@@ -971,7 +900,7 @@ function DataTable({
                           </div>
                           <div className="text-right">
                             <div
-                              className={`text-lg font-bold ${
+                              className={`text-lg font-semibold ${
                                 rowCategory === "EXPENSE"
                                   ? "text-rose-600"
                                   : "text-emerald-700"
@@ -1153,7 +1082,7 @@ function DataTable({
             </div>
 
             <div className="flex items-center gap-1">
-              <button
+              <button aria-label="Previous page"
                 onClick={() => pagination.setPage((p) => Math.max(1, p - 1))}
                 disabled={pagination.page <= 1}
                 className="p-2 rounded-lg border border-slate-300 bg-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 hover:border-slate-400 transition-all"
@@ -1205,7 +1134,7 @@ function DataTable({
                   );
                 })()}
               </div>
-              <button
+              <button aria-label="Next page"
                 onClick={() =>
                   pagination.setPage((p) => Math.min(pagination.pages, p + 1))
                 }
@@ -1445,17 +1374,11 @@ export default function AllTransactionsPage() {
         <div className="mb-4 sm:mb-6">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
             <div className="flex items-center gap-3">
-              <button
-                onClick={() => setSidebarOpen(true)}
-                className="lg:hidden p-2 rounded-xl bg-white border-2 border-gray-200 shadow-sm"
-              >
-                <Menu className="w-5 h-5 text-gray-600" />
-              </button>
               <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">
+                <h1 className="text-xl font-semibold tracking-tight text-gray-900">
                   All Transactions
                 </h1>
-                <p className="text-gray-600 text-sm sm:text-base">
+                <p className="mt-1 text-sm text-gray-500">
                   View and manage all transaction categories
                 </p>
               </div>
@@ -1465,11 +1388,12 @@ export default function AllTransactionsPage() {
               <button
                 onClick={handleRefresh}
                 disabled={refreshing}
-                className="p-2 sm:p-3 bg-white border-2 border-gray-200 rounded-xl hover:bg-gray-50 transition-all shadow-sm disabled:opacity-50 shrink-0"
+                aria-label="Refresh data"
+                className="press grid h-9 w-9 place-items-center bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-colors disabled:opacity-50 shrink-0"
                 title="Refresh data"
               >
                 <RefreshCw
-                  className={`w-4 h-4 sm:w-5 sm:h-5 text-gray-600 ${
+                  className={`w-4 h-4 text-gray-500 ${
                     refreshing ? "animate-spin" : ""
                   }`}
                 />
@@ -1477,7 +1401,7 @@ export default function AllTransactionsPage() {
 
               <button
                 onClick={() => router.push("/collab/transactions/create")}
-                className="bg-linear-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white px-3 sm:px-5 py-2 sm:py-3 rounded-xl flex items-center gap-1 sm:gap-2 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-sm sm:text-base shrink-0"
+                className="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white h-9 px-3.5 rounded-lg flex items-center gap-1.5 transition-colors text-sm shrink-0"
               >
                 <Plus size={18} strokeWidth={2.5} />
                 <span className="font-semibold hidden sm:inline">Add Transaction</span>
@@ -1488,13 +1412,13 @@ export default function AllTransactionsPage() {
         </div>
 
         <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5 mb-4 sm:mb-6">
-          <StatCard title="Transplants" value={formatCurrency(stats.TRANSPLANT.total)} icon={User} gradient="from-indigo-400 to-purple-500" count={`${stats.TRANSPLANT.count} transactions`} iconBg="bg-indigo-100" iconColor="text-indigo-600" />
-          <StatCard title="Services"    value={formatCurrency(stats.SERVICE.total)}    icon={User} gradient="from-pink-400 to-rose-500"    count={`${stats.SERVICE.count} transactions`}    iconBg="bg-pink-100"    iconColor="text-pink-600"    />
-          <StatCard title="Medicines"   value={formatCurrency(stats.MEDICINE.total)}   icon={User} gradient="from-emerald-400 to-green-500" count={`${stats.MEDICINE.count} transactions`}   iconBg="bg-emerald-100" iconColor="text-emerald-600" />
-          <StatCard title="Expenses"    value={formatCurrency(stats.EXPENSE.total)}    icon={User} gradient="from-rose-400 to-red-500"      count={`${stats.EXPENSE.count} transactions`}    iconBg="bg-rose-100"    iconColor="text-rose-600"    />
+          <StatCard title="Transplants" value={formatCurrency(stats.TRANSPLANT.total)} icon={User} gradient="indigo" count={`${stats.TRANSPLANT.count} transactions`} iconBg="bg-indigo-100" iconColor="text-indigo-600" />
+          <StatCard title="Services"    value={formatCurrency(stats.SERVICE.total)}    icon={User} gradient="pink"    count={`${stats.SERVICE.count} transactions`}    iconBg="bg-pink-100"    iconColor="text-pink-600"    />
+          <StatCard title="Medicines"   value={formatCurrency(stats.MEDICINE.total)}   icon={User} gradient="emerald" count={`${stats.MEDICINE.count} transactions`}   iconBg="bg-emerald-100" iconColor="text-emerald-600" />
+          <StatCard title="Expenses"    value={formatCurrency(stats.EXPENSE.total)}    icon={User} gradient="rose"      count={`${stats.EXPENSE.count} transactions`}    iconBg="bg-rose-100"    iconColor="text-rose-600"    />
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           <div className="border-b border-gray-200">
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3 sm:gap-4 p-4 sm:px-6 sm:py-4">
               <div className="flex gap-1 sm:gap-2 w-full lg:w-auto overflow-x-auto pb-2 lg:pb-0">
@@ -1503,11 +1427,12 @@ export default function AllTransactionsPage() {
                   return (
                     <button
                       key={cat.value}
-                      className={`px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl font-semibold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${getCategoryGradientClass(cat.value, activeCategory === cat.value)}`}
+                      aria-pressed={activeCategory === cat.value}
+                      className={`press h-8 px-3 rounded-lg text-[13px] font-medium transition-colors duration-150 whitespace-nowrap shrink-0 flex items-center gap-1.5 ${getCategoryGradientClass(cat.value, activeCategory === cat.value)}`}
                       onClick={() => setActiveCategory(cat.value)}
                     >
-                      <Icon size={18} />
-                      {cat.label} ({stats[cat.value].count})
+                      {cat.label}
+                      <span className={`tabular-nums ${activeCategory === cat.value ? "text-gray-300" : "text-gray-400"}`}>{stats[cat.value].count}</span>
                     </button>
                   );
                 })}
@@ -1521,11 +1446,14 @@ export default function AllTransactionsPage() {
                     placeholder="Search all transactions..."
                     value={tableSearch}
                     onChange={(e) => handleSearchChange(e.target.value)}
-                    className="pl-9 sm:pl-11 pr-4 py-2 sm:py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 text-sm w-full lg:w-64 transition-all"
+                    className="pl-9 sm:pl-11 pr-4 py-2 sm:py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-300 text-sm w-full lg:w-64 transition-all"
                   />
                 </div>
 
                 <button
+                  type="button"
+                  aria-label="Filters"
+                  aria-expanded={showFilters}
                   onClick={() => setShowFilters(!showFilters)}
                   className={`p-2 sm:p-2.5 rounded-xl transition-all shrink-0 flex items-center gap-2 ${
                     showFilters

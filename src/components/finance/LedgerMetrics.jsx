@@ -9,12 +9,12 @@ export default function LedgerMetrics({ items, loading = false }) {
     <div>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
         {items.map((it) => (
-          <div key={it.label} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
-            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{it.label}</p>
+          <div key={it.label} className="bg-white rounded-xl border border-gray-200 p-4">
+            <p className="text-[11px] font-medium text-gray-400">{it.label}</p>
             {loading ? (
               <div className="h-6 w-20 bg-gray-100 rounded animate-pulse mt-1.5" />
             ) : (
-              <p className={`text-lg font-bold mt-1 ${it.tone || "text-gray-900"}`}>
+              <p className={`text-lg font-semibold mt-1 ${it.tone || "text-gray-900"}`}>
                 {typeof it.value === "number" ? formatCurrency(it.value) : it.value}
               </p>
             )}

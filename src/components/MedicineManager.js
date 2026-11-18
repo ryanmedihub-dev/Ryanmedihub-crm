@@ -13,12 +13,12 @@ const MedicineManager = ({ medicines, onChange, onAdd, onRemove }) => (
       <div key={index} className="flex items-center space-x-3 mb-3">
         <input
           type="text"
-          className="flex-1 px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 shadow-sm"
+          className="flex-1 px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500/30 focus:border-transparent transition-all duration-200 shadow-sm"
           value={medicine}
           onChange={(e) => onChange(e.target.value, index)}
           placeholder="Medicine name"
         />
-        <button
+        <button aria-label="Close"
           type="button"
           className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200"
           onClick={() => onRemove(index)}

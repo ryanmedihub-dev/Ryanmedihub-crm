@@ -1,5 +1,6 @@
 "use client";
 
+import SharedStatCard from "@/components/dashboard/StatCard";
 import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import HRSidebar from "@/components/Sidebars/HRSidebar";
@@ -74,39 +75,18 @@ function RatingBar({ value }) {
       <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
         <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-xs font-bold text-gray-700 tabular-nums">{n}</span>
+      <span className="text-xs font-semibold text-gray-700 tabular-nums">{n}</span>
     </div>
   );
 }
 
-function KPICard({ label, value, total, icon: Icon, accent }) {
-  const accents = {
-    violet:  { bg: "bg-violet-50",  text: "text-violet-600",  border: "border-violet-200", iconBg: "bg-violet-100" },
-    emerald: { bg: "bg-emerald-50", text: "text-emerald-600", border: "border-emerald-200",iconBg: "bg-emerald-100" },
-    red:     { bg: "bg-red-50",     text: "text-red-500",     border: "border-red-200",    iconBg: "bg-red-100" },
-    blue:    { bg: "bg-blue-50",    text: "text-blue-600",    border: "border-blue-200",   iconBg: "bg-blue-100" },
-  };
-  const a = accents[accent];
+function KPICard({ label, value, total, icon, accent }) {
   const pct = total > 0 ? Math.round((value / total) * 100) : 0;
-
-  return (
-    <div className={`bg-white rounded-xl border ${a.border} p-4 flex items-center gap-4 shadow-xs hover:shadow-sm transition-shadow`}>
-      <div className={`w-11 h-11 rounded-xl ${a.iconBg} flex items-center justify-center shrink-0`}>
-        <Icon className={`w-5 h-5 ${a.text}`} />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-xs text-gray-500 font-medium truncate">{label}</p>
-        <p className="text-2xl font-bold text-gray-900 leading-tight">{value}</p>
-        {total !== undefined && (
-          <p className="text-xs text-gray-400 mt-0.5">{pct}% of {total} shown</p>
-        )}
-      </div>
-    </div>
-  );
+  return <SharedStatCard title={label} value={value} icon={icon} tone={accent === "violet" ? "indigo" : accent} subtitle={`${pct}% of ${total}`} />;
 }
 
 function Field({ label, name, value, onChange, type = "text", required, textarea, options, placeholder }) {
-  const cls = "w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/50 focus:border-violet-400 transition-all bg-white placeholder:text-gray-400";
+  const cls = "w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30/50 focus:border-indigo-500 transition-all bg-white placeholder:text-gray-400";
   return (
     <div>
       <label className="block text-xs font-semibold text-gray-600 mb-1.5">
@@ -134,7 +114,7 @@ function RatingBoxes({ label, name, value, onChange }) {
     <div className="bg-gray-50 rounded-xl p-3.5 border border-gray-100">
       <div className="flex items-center justify-between mb-2.5">
         <label className="text-xs font-semibold text-gray-600">{label}</label>
-        <span className={`text-xs font-bold tabular-nums px-2 py-0.5 rounded-lg ${n > 0 ? (n >= 7 ? "bg-emerald-100 text-emerald-700" : n >= 5 ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-600") : "bg-gray-200 text-gray-400"}`}>
+        <span className={`text-xs font-semibold tabular-nums px-2 py-0.5 rounded-lg ${n > 0 ? (n >= 7 ? "bg-emerald-100 text-emerald-700" : n >= 5 ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-600") : "bg-gray-200 text-gray-400"}`}>
           {n > 0 ? `${n}/10` : "—"}
         </span>
       </div>
@@ -145,7 +125,7 @@ function RatingBoxes({ label, name, value, onChange }) {
           return (
             <button key={v} type="button"
               onClick={() => onChange({ target: { name, value: v === n ? 0 : v } })}
-              className={`flex-1 h-7 rounded-lg text-xs font-bold border transition-all ${active ? activeColor : "border-gray-200 bg-white text-gray-400 hover:border-violet-300 hover:text-violet-500"}`}>
+              className={`flex-1 h-7 rounded-lg text-xs font-semibold border transition-all ${active ? activeColor : "border-gray-200 bg-white text-gray-400 hover:border-indigo-300 hover:text-indigo-500"}`}>
               {v}
             </button>
           );
@@ -158,10 +138,10 @@ function RatingBoxes({ label, name, value, onChange }) {
 function StatusSelector({ value, onChange }) {
   const opts = [
     { val: "Applied",             idle: "bg-blue-50 text-blue-600 border-blue-200",    active: "bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-200" },
-    { val: "Interview Scheduled", idle: "bg-indigo-50 text-indigo-600 border-indigo-200", active: "bg-indigo-600 text-white border-indigo-600 shadow-sm shadow-indigo-200" },
-    { val: "Selected",            idle: "bg-emerald-50 text-emerald-700 border-emerald-200", active: "bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-200" },
-    { val: "Rejected",            idle: "bg-red-50 text-red-600 border-red-200",       active: "bg-red-600 text-white border-red-600 shadow-sm shadow-red-200" },
-    { val: "On Hold",             idle: "bg-amber-50 text-amber-600 border-amber-200", active: "bg-amber-500 text-white border-amber-500 shadow-sm shadow-amber-200" },
+    { val: "Interview Scheduled", idle: "bg-indigo-50 text-indigo-600 border-indigo-200", active: "bg-indigo-600 text-white border-indigo-600 " },
+    { val: "Selected",            idle: "bg-emerald-50 text-emerald-700 border-emerald-200", active: "bg-emerald-600 text-white border-emerald-600 " },
+    { val: "Rejected",            idle: "bg-red-50 text-red-600 border-red-200",       active: "bg-red-600 text-white border-red-600 " },
+    { val: "On Hold",             idle: "bg-amber-50 text-amber-600 border-amber-200", active: "bg-amber-500 text-white border-amber-500 " },
   ];
   return (
     <div>
@@ -182,10 +162,10 @@ function StatusSelector({ value, onChange }) {
 function SectionHeading({ title, icon: Icon }) {
   return (
     <div className="flex items-center gap-2">
-      <div className="w-6 h-6 rounded-lg bg-violet-100 flex items-center justify-center shrink-0">
-        <Icon className="w-3.5 h-3.5 text-violet-600" />
+      <div className="w-6 h-6 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0">
+        <Icon className="w-3.5 h-3.5 text-indigo-600" />
       </div>
-      <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">{title}</span>
+      <span className="text-xs font-medium text-gray-700">{title}</span>
       <div className="flex-1 h-px bg-gray-100" />
     </div>
   );
@@ -255,26 +235,26 @@ function CandidateModal({ mode, initial, onClose, onSaved, hrEmployees }) {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 overlay-in z-50 flex items-center justify-center bg-gray-950/40 p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[94vh] flex flex-col">
 
-        <div className="bg-linear-to-r from-violet-600 to-purple-600 rounded-t-2xl px-6 py-5 shrink-0">
+        <div className="bg-white border-b border-gray-200 rounded-t-2xl px-6 py-4 shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                {isEdit ? <Pencil className="w-5 h-5 text-white" /> : <Plus className="w-5 h-5 text-white" />}
+              <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center">
+                {isEdit ? <Pencil className="w-4 h-4 text-gray-600" /> : <Plus className="w-4 h-4 text-gray-600" />}
               </div>
               <div>
-                <h2 className="text-base font-bold text-white leading-tight">
+                <h2 className="text-base font-semibold text-gray-900 leading-tight">
                   {isEdit ? "Edit Candidate" : "Add New Candidate"}
                 </h2>
-                <p className="text-violet-200 text-xs mt-0.5">
+                <p className="text-gray-500 text-xs mt-0.5">
                   {isEdit ? initial?.name : "Fill in the candidate details below"}
                 </p>
               </div>
             </div>
-            <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-xl transition-colors">
-              <X className="w-5 h-5 text-white" />
+            <button type="button" onClick={onClose} aria-label="Close" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+              <X className="w-5 h-5 text-gray-500" />
             </button>
           </div>
         </div>
@@ -343,7 +323,7 @@ function CandidateModal({ mode, initial, onClose, onSaved, hrEmployees }) {
             Cancel
           </button>
           <button onClick={handleSubmit} disabled={saving}
-            className="px-6 py-2.5 text-sm rounded-xl bg-violet-600 text-white font-semibold hover:bg-violet-700 transition-colors disabled:opacity-60 flex items-center gap-2 shadow-sm shadow-violet-200">
+            className="px-6 py-2.5 text-sm rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-60 flex items-center gap-2 shadow-sm ">
             {saving
               ? <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Saving…</>
               : <><CheckCircle className="w-4 h-4" />{isEdit ? "Save Changes" : "Add Candidate"}</>
@@ -368,37 +348,37 @@ function ViewModal({ candidate: c, onClose, onEdit, hrEmployees }) {
     ) : null;
 
   const Section = ({ title }) => (
-    <h4 className="text-xs font-bold text-violet-600 uppercase tracking-widest mt-5 mb-2 first:mt-0">{title}</h4>
+    <h4 className="text-xs font-medium text-gray-500 mt-5 mb-2 first:mt-0">{title}</h4>
   );
 
   const RBar = ({ label, value }) => {
     if (!value) return null;
     const n = Number(value);
     const pct = (n / 10) * 100;
-    const color = n >= 7 ? "from-emerald-400 to-emerald-500" : n >= 5 ? "from-amber-400 to-amber-500" : "from-red-400 to-red-500";
+    const color = n >= 7 ? "bg-emerald-500" : n >= 5 ? "bg-amber-400" : "bg-rose-500";
     return (
       <div className="flex items-center gap-3">
         <span className="text-xs text-gray-500 w-36 shrink-0">{label}</span>
         <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-          <div className={`h-full bg-linear-to-r ${color} rounded-full transition-all`} style={{ width: `${pct}%` }} />
+          <div className={`h-full ${color} rounded-full transition-all`} style={{ width: `${pct}%` }} />
         </div>
-        <span className="text-xs font-bold text-gray-700 w-8 text-right tabular-nums">{n}/10</span>
+        <span className="text-xs font-semibold text-gray-700 w-8 text-right tabular-nums">{n}/10</span>
       </div>
     );
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 overlay-in z-50 flex items-center justify-center bg-gray-950/40 p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[92vh] flex flex-col animate-scale-in">
 
         <div className="px-6 py-4 border-b border-gray-100 shrink-0">
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center shrink-0">
-                <span className="text-sm font-bold text-violet-600">{(c.name || "?")[0].toUpperCase()}</span>
+              <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center shrink-0">
+                <span className="text-sm font-semibold text-indigo-600">{(c.name || "?")[0].toUpperCase()}</span>
               </div>
               <div>
-                <h2 className="text-base font-bold text-gray-900 leading-tight">{c.name}</h2>
+                <h2 className="text-base font-semibold text-gray-900 leading-tight">{c.name}</h2>
                 <p className="text-xs text-gray-500">{c.position}</p>
                 {avg && (
                   <div className="flex items-center gap-1 mt-1">
@@ -411,10 +391,10 @@ function ViewModal({ candidate: c, onClose, onEdit, hrEmployees }) {
             <div className="flex items-center gap-1.5 ml-3">
               <StatusBadge status={c.status} />
               <button onClick={() => { onClose(); onEdit(c); }}
-                className="p-1.5 hover:bg-amber-50 text-amber-500 rounded-lg transition-colors" title="Edit">
+                className="p-1.5 hover:bg-gray-100 text-gray-400 hover:text-gray-800 rounded-md transition-colors" title="Edit">
                 <Pencil className="w-3.5 h-3.5" />
               </button>
-              <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
+              <button type="button" onClick={onClose} aria-label="Close" className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
                 <X className="w-4 h-4 text-gray-500" />
               </button>
             </div>
@@ -473,12 +453,12 @@ function ViewModal({ candidate: c, onClose, onEdit, hrEmployees }) {
 }
 
 function FilterDrawer({ filters, setFilters, positions, sources, hrEmployees, onClose }) {
-  const sel = "w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/50 focus:border-violet-400 bg-white transition-all";
-  const inp = "w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/50 focus:border-violet-400 transition-all";
+  const sel = "w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30/50 focus:border-indigo-500 bg-white transition-all";
+  const inp = "w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30/50 focus:border-indigo-500 transition-all";
 
   const F = ({ label, children }) => (
     <div>
-      <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">{label}</label>
+      <label className="block text-xs font-semibold text-gray-500 mb-2">{label}</label>
       {children}
     </div>
   );
@@ -493,14 +473,14 @@ function FilterDrawer({ filters, setFilters, positions, sources, hrEmployees, on
 
   return (
     <div className="fixed inset-0 z-50 flex">
-      <div className="flex-1 bg-black/30 backdrop-blur-sm" onClick={onClose} />
+      <div className="flex-1 bg-black/30" onClick={onClose} />
       <div className="w-full max-w-sm bg-white h-full shadow-2xl flex flex-col animate-tab-in">
         <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
-            <SlidersHorizontal className="w-4 h-4 text-violet-600" />
-            <span className="font-bold text-gray-900 text-sm">Filters</span>
+            <SlidersHorizontal className="w-4 h-4 text-indigo-600" />
+            <span className="font-semibold text-gray-900 text-sm">Filters</span>
           </div>
-          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
+          <button type="button" onClick={onClose} aria-label="Close" className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
             <X className="w-4 h-4 text-gray-500" />
           </button>
         </div>
@@ -580,7 +560,7 @@ function FilterDrawer({ filters, setFilters, positions, sources, hrEmployees, on
             Reset All
           </button>
           <button onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl bg-violet-600 text-white text-sm font-semibold hover:bg-violet-700 transition-colors btn-animate">
+            className="flex-1 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors btn-animate">
             Apply Filters
           </button>
         </div>
@@ -743,14 +723,14 @@ function CandidatesContent() {
         <header className="bg-white border-b border-gray-100 px-6 py-4 sticky top-0 z-10 shadow-xs">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <h1 className="text-xl font-bold text-gray-900 tracking-tight">Candidates</h1>
+              <h1 className="text-xl font-semibold text-gray-900 tracking-tight">Candidates</h1>
               <p className="text-xs text-gray-500 mt-0.5">
                 {loading ? "Loading…" : `${filtered.length} of ${candidates.length} candidates`}
               </p>
             </div>
             <button
               onClick={() => setModal({ mode: "add" })}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-violet-600 text-white text-sm font-semibold rounded-xl hover:bg-violet-700 active:scale-95 transition-all shadow-sm shadow-violet-200 btn-animate">
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 transition-colors press">
               <Plus className="w-4 h-4" /> Add Candidate
             </button>
           </div>
@@ -774,15 +754,15 @@ function CandidatesContent() {
                 <button
                   key={s || "all"}
                   onClick={() => setActiveStatus(s)}
-                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 shrink-0 btn-animate ${
+                  className={`press flex items-center gap-1.5 h-8 px-3 rounded-lg text-[13px] font-medium whitespace-nowrap transition-colors duration-150 shrink-0 ${
                     isActive
-                      ? "bg-violet-600 text-white shadow-md shadow-violet-200"
-                      : "bg-white text-gray-600 border border-gray-200 hover:border-violet-300 hover:text-violet-700"
+                      ? "bg-gray-900 text-white border border-gray-900"
+                      : "bg-white text-gray-600 border border-gray-200 hover:border-gray-300 hover:text-gray-900"
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
                   {label}
-                  <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold min-w-5 text-center ${isActive ? "bg-white/25 text-white" : "bg-gray-100 text-gray-600"}`}>
+                  <span className={`text-xs tabular-nums ${isActive ? "text-gray-300" : "text-gray-400"}`}>
                     {count}
                   </span>
                 </button>
@@ -798,10 +778,10 @@ function CandidatesContent() {
                 placeholder="Search by name, email, phone, position, company…"
                 value={searchInput}
                 onChange={(e) => handleSearch(e.target.value)}
-                className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/40 focus:border-violet-400 bg-white transition-all"
+                className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30/40 focus:border-indigo-500 bg-white transition-all"
               />
               {searchInput && (
-                <button onClick={() => { setSearchInput(""); setSearch(""); }}
+                <button aria-label="Clear search" onClick={() => { setSearchInput(""); setSearch(""); }}
                   className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded-lg transition-colors">
                   <X className="w-3.5 h-3.5 text-gray-400" />
                 </button>
@@ -811,14 +791,14 @@ function CandidatesContent() {
               onClick={() => setDrawerOpen(true)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-semibold transition-all btn-animate shrink-0 ${
                 activeFilterCount > 0
-                  ? "border-violet-400 bg-violet-50 text-violet-700"
-                  : "border-gray-200 bg-white text-gray-600 hover:border-violet-300 hover:text-violet-700"
+                  ? "border-indigo-400 bg-indigo-50 text-indigo-700"
+                  : "border-gray-200 bg-white text-gray-600 hover:border-indigo-300 hover:text-indigo-700"
               }`}
             >
               <Filter className="w-4 h-4" />
               Filters
               {activeFilterCount > 0 && (
-                <span className="bg-violet-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">
+                <span className="bg-indigo-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-semibold">
                   {activeFilterCount}
                 </span>
               )}
@@ -831,7 +811,7 @@ function CandidatesContent() {
           >
             {loading ? (
               <div className="flex items-center justify-center h-52 gap-3">
-                <div className="w-6 h-6 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+                <div className="w-6 h-6 border-2 border-gray-200 border-t-indigo-600 rounded-full animate-spin" />
                 <span className="text-sm text-gray-500 font-medium">Loading candidates…</span>
               </div>
             ) : rows.length === 0 ? (
@@ -863,7 +843,7 @@ function CandidatesContent() {
                         { label: "Status",           cls: "min-w-36" },
                         { label: "Options",          cls: "w-24" },
                       ].map(({ label, cls }) => (
-                        <th key={label} className={`px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap ${cls}`}>
+                        <th key={label} className={`px-4 h-10 text-left text-xs font-medium text-gray-500 whitespace-nowrap ${cls}`}>
                           {label}
                         </th>
                       ))}
@@ -873,14 +853,14 @@ function CandidatesContent() {
                     {rows.map((c, idx) => {
                       const assignedHrName = c.assignedHr?.name || hrEmployees.find((e) => String(e._id) === String(c.assignedHr))?.name || null;
                       return (
-                        <tr key={c._id} className="hover:bg-violet-50/40 transition-colors group">
+                        <tr key={c._id} className="hover:bg-gray-50/70 transition-colors group">
                           <td className="px-4 py-3 text-xs text-gray-400 font-semibold tabular-nums">
                             {pageStart + idx + 1}
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2.5">
-                              <div className="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center shrink-0">
-                                <span className="text-xs font-bold text-violet-600">{(c.name || "?")[0].toUpperCase()}</span>
+                              <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
+                                <span className="text-[11px] font-semibold text-gray-600">{(c.name || "?")[0].toUpperCase()}</span>
                               </div>
                               <div className="min-w-0">
                                 <div className="font-semibold text-gray-900 leading-tight truncate max-w-36">{c.name}</div>
@@ -891,11 +871,11 @@ function CandidatesContent() {
                           <td className="px-4 py-3 text-gray-700 whitespace-nowrap font-medium">{c.position || "—"}</td>
                           <td className="px-4 py-3 whitespace-nowrap">
                             {c.source === "qr" ? (
-                              <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-semibold">
+                              <span className="inline-flex items-center gap-1 text-xs h-5 px-2 rounded-md bg-gray-100 text-gray-700 font-medium">
                                 <QrCode className="w-3 h-3" />Visited
                               </span>
                             ) : c.source === "direct" ? (
-                              <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 font-semibold">
+                              <span className="inline-flex items-center gap-1 text-xs h-5 px-2 rounded-md bg-gray-100 text-gray-700 font-medium">
                                 <Globe className="w-3 h-3" />Applied
                               </span>
                             ) : (
@@ -905,7 +885,7 @@ function CandidatesContent() {
                           <td className="px-4 py-3 text-gray-600 whitespace-nowrap text-xs">{c.phone || "—"}</td>
                           <td className="px-4 py-3 whitespace-nowrap">
                             {assignedHrName ? (
-                              <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-pink-100 text-pink-700 font-semibold">
+                              <span className="inline-flex items-center gap-1 text-xs h-5 px-2 rounded-md bg-gray-100 text-gray-700 font-medium">
                                 <UserCog className="w-3 h-3" />{assignedHrName}
                               </span>
                             ) : (
@@ -913,7 +893,7 @@ function CandidatesContent() {
                             )}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
-                            <span className={`inline-block text-xs px-2 py-0.5 rounded-full font-semibold ${c.experienceType === "Fresher" ? "bg-sky-100 text-sky-700" : "bg-purple-100 text-purple-700"}`}>
+                            <span className={`inline-flex items-center text-xs h-5 px-2 rounded-md font-medium bg-gray-100 text-gray-700`}>
                               {c.experienceType}
                             </span>
                             {c.yearsOfExperience ? <span className="ml-1 text-xs text-gray-400">{c.yearsOfExperience}y</span> : null}
@@ -931,17 +911,17 @@ function CandidatesContent() {
                             <StatusBadge status={c.status} />
                           </td>
                           <td className="px-4 py-3">
-                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex items-center justify-end gap-0.5">
                               <button onClick={() => setModal({ mode: "view", data: c })}
-                                className="p-1.5 hover:bg-indigo-50 text-indigo-500 rounded-lg transition-colors" title="View">
+                                className="p-1.5 hover:bg-gray-100 text-gray-400 hover:text-gray-800 rounded-md transition-colors" title="View">
                                 <Eye className="w-3.5 h-3.5" />
                               </button>
                               <button onClick={() => setModal({ mode: "edit", data: c })}
-                                className="p-1.5 hover:bg-amber-50 text-amber-500 rounded-lg transition-colors" title="Edit">
+                                className="p-1.5 hover:bg-gray-100 text-gray-400 hover:text-gray-800 rounded-md transition-colors" title="Edit">
                                 <Pencil className="w-3.5 h-3.5" />
                               </button>
                               <button onClick={() => handleDelete(c._id)} disabled={deleting === c._id}
-                                className="p-1.5 hover:bg-red-50 text-red-400 rounded-lg transition-colors disabled:opacity-40" title="Delete">
+                                className="p-1.5 hover:bg-rose-50 text-gray-400 hover:text-rose-600 rounded-md transition-colors disabled:opacity-40" title="Delete">
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </div>
@@ -958,21 +938,21 @@ function CandidatesContent() {
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-5 py-3 border-t border-gray-100 bg-gray-50/60">
                 <p className="text-xs text-gray-500">
                   Showing{" "}
-                  <span className="font-bold text-gray-700">{pageStart + 1}</span>–
-                  <span className="font-bold text-gray-700">{Math.min(pageStart + perPage, filtered.length)}</span>
+                  <span className="font-semibold text-gray-700">{pageStart + 1}</span>–
+                  <span className="font-semibold text-gray-700">{Math.min(pageStart + perPage, filtered.length)}</span>
                   {" "}of{" "}
-                  <span className="font-bold text-gray-700">{filtered.length}</span> candidates
+                  <span className="font-semibold text-gray-700">{filtered.length}</span> candidates
                 </p>
                 <div className="flex items-center gap-2.5">
                   <select
                     value={perPage}
                     onChange={(e) => { setPerPage(Number(e.target.value)); setPage(1); }}
-                    className="text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-violet-300 transition-all"
+                    className="text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-all"
                   >
                     {[10, 25, 50, 100].map((n) => <option key={n} value={n}>{n} / page</option>)}
                   </select>
                   <div className="flex items-center gap-1">
-                    <button
+                    <button aria-label="Previous page"
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
                       disabled={currentPage <= 1}
                       className="p-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors btn-animate">
@@ -984,14 +964,14 @@ function CandidatesContent() {
                         <button key={p} onClick={() => setPage(p)}
                           className={`w-7 h-7 rounded-lg text-xs font-semibold transition-all btn-animate ${
                             p === currentPage
-                              ? "bg-violet-600 text-white shadow-sm"
+                              ? "bg-indigo-600 text-white shadow-sm"
                               : "border border-gray-200 bg-white hover:bg-gray-50 text-gray-600"
                           }`}>
                           {p}
                         </button>
                       );
                     })}
-                    <button
+                    <button aria-label="Next page"
                       onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                       disabled={currentPage >= totalPages}
                       className="p-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors btn-animate">

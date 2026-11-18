@@ -138,7 +138,7 @@ export default function SuspenseEntryForm({ onSaved }) {
               <select
                 value={data.account}
                 onChange={(e) => set({ account: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
               >
                 <option value="">Which account did it move through?</option>
                 {ACCOUNTS.map((a) => <option key={a} value={a}>{a}</option>)}
@@ -150,7 +150,7 @@ export default function SuspenseEntryForm({ onSaved }) {
               <select
                 value={data.direction}
                 onChange={(e) => set({ direction: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
               >
                 <option value="IN">Money in — unexplained credit</option>
                 <option value="OUT">Money out — unexplained debit</option>
@@ -166,7 +166,7 @@ export default function SuspenseEntryForm({ onSaved }) {
                 value={data.amount}
                 onChange={(e) => set({ amount: e.target.value })}
                 min="0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                 placeholder="0"
               />
             </div>
@@ -177,7 +177,7 @@ export default function SuspenseEntryForm({ onSaved }) {
                 type="date"
                 value={data.date}
                 onChange={(e) => set({ date: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
               />
             </div>
 
@@ -188,7 +188,7 @@ export default function SuspenseEntryForm({ onSaved }) {
               <select
                 value={data.branch}
                 onChange={(e) => set({ branch: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
               >
                 <option value="">Company-level (no branch)</option>
                 {ALL_BRANCHES.map((b) => <option key={b} value={b}>{b}</option>)}
@@ -203,7 +203,7 @@ export default function SuspenseEntryForm({ onSaved }) {
                 type="text"
                 value={data.reference}
                 onChange={(e) => set({ reference: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                 placeholder="UTR / narration from the statement"
               />
               <p className="text-[11px] text-gray-400 mt-1">
@@ -217,7 +217,7 @@ export default function SuspenseEntryForm({ onSaved }) {
                 type="text"
                 value={data.remarks}
                 onChange={(e) => set({ remarks: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                 placeholder="Anything known about it so far"
               />
             </div>
@@ -291,7 +291,7 @@ export default function SuspenseEntryForm({ onSaved }) {
                         type="button"
                         onClick={() => resolve(e)}
                         disabled={resolving === e._id}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-semibold hover:bg-emerald-700 disabled:opacity-50"
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-semibold hover:bg-indigo-700 disabled:opacity-50"
                       >
                         {resolving === e._id
                           ? <Loader2 className="w-3 h-3 animate-spin" />
@@ -334,7 +334,7 @@ export default function SuspenseEntryForm({ onSaved }) {
               </div>
               <div className="flex justify-between border-t border-gray-100 pt-2">
                 <dt className="text-gray-500">Amount</dt>
-                <dd className="font-bold text-gray-900">
+                <dd className="font-semibold text-gray-900">
                   {formatCurrency(parseFloat(data.amount) || 0)}
                 </dd>
               </div>

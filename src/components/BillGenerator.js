@@ -569,7 +569,7 @@ export default function BillGenerator({ transactionId, onClose }) {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="fixed inset-0 overlay-in bg-gray-950/40 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-2xl shadow-2xl p-8">
           <Loader2 className="w-12 h-12 animate-spin text-indigo-600 mx-auto mb-4" />
           <p className="text-gray-600 font-medium">Loading invoice data...</p>
@@ -580,7 +580,7 @@ export default function BillGenerator({ transactionId, onClose }) {
 
   if (error || !invoiceData) {
     return (
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="fixed inset-0 overlay-in bg-gray-950/40 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md">
           <div className="text-center">
             <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -600,7 +600,7 @@ export default function BillGenerator({ transactionId, onClose }) {
   const { category, branch, transactions, patient, consultant, isBatch, packageAmount, packageDiscount } = invoiceData;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+    <div className="fixed inset-0 overlay-in bg-gray-950/40 flex items-center justify-center z-50 p-4 overflow-y-auto">
       <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full my-8">
         <div className="bg-linear-to-r from-indigo-600 to-purple-600 px-6 py-4 rounded-t-2xl flex items-center justify-between no-print">
           <div className="flex items-center gap-3">

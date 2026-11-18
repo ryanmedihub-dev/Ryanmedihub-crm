@@ -55,7 +55,7 @@ export default function BankRoutingFields({
               : { receiptMode, furtherMode: e.target.value },
           )
         }
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+        className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
       >
         <option value="">Select account</option>
         {accounts.map((account) => (
@@ -79,7 +79,7 @@ export default function BankRoutingFields({
         <select
           value={receiptMode || ""}
           onChange={(e) => onChange({ receiptMode: e.target.value, furtherMode })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+          className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
         >
           <option value="">Select receipt mode</option>
           {receiptModes.map((mode) => (
@@ -106,7 +106,7 @@ export default function BankRoutingFields({
             type="checkbox"
             checked={showRouting}
             onChange={(e) => setShowRouting(e.target.checked)}
-            className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+            className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500/30"
           />
           {isExpense
             ? "Set paid-from account manually"

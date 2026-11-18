@@ -68,16 +68,16 @@ export default function LineItemsEditor({ kind, items, onChange, medicines = [] 
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-200">
-              <th className="text-left py-3 px-2 text-sm font-semibold text-gray-700">#</th>
-              <th className="text-left py-3 px-2 text-sm font-semibold text-gray-700">
+              <th className="text-left py-3 px-2 text-sm font-medium text-gray-700">#</th>
+              <th className="text-left py-3 px-2 text-sm font-medium text-gray-700">
                 {kind === "service" ? "Service Type" : "Medicine"}
               </th>
-              <th className="text-left py-3 px-2 text-sm font-semibold text-gray-700">Quantity</th>
-              <th className="text-left py-3 px-2 text-sm font-semibold text-gray-700">
+              <th className="text-left py-3 px-2 text-sm font-medium text-gray-700">Quantity</th>
+              <th className="text-left py-3 px-2 text-sm font-medium text-gray-700">
                 {kind === "service" ? "Per Session Cost" : "Per Unit Cost"}
               </th>
-              <th className="text-left py-3 px-2 text-sm font-semibold text-gray-700">Total</th>
-              <th className="text-center py-3 px-2 text-sm font-semibold text-gray-700">Action</th>
+              <th className="text-left py-3 px-2 text-sm font-medium text-gray-700">Total</th>
+              <th className="text-center py-3 px-2 text-sm font-medium text-gray-700">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -89,7 +89,7 @@ export default function LineItemsEditor({ kind, items, onChange, medicines = [] 
                     <select
                       value={item.procedure}
                       onChange={(e) => updateItem(item.id, "procedure", e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                     >
                       {SERVICE_PROCEDURES.map((p) => (
                         <option key={p} value={p}>{SERVICE_LABELS[p]}</option>
@@ -113,7 +113,7 @@ export default function LineItemsEditor({ kind, items, onChange, medicines = [] 
                     value={item.quantity}
                     onChange={(e) => updateItem(item.id, "quantity", e.target.value)}
                     min="1"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                   />
                 </td>
                 <td className="py-3 px-2">
@@ -123,14 +123,14 @@ export default function LineItemsEditor({ kind, items, onChange, medicines = [] 
                     onChange={(e) => updateItem(item.id, rf, e.target.value)}
                     min="0"
                     placeholder="₹"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                   />
                 </td>
                 <td className="py-3 px-2">
                   <div className="font-semibold text-indigo-600">{formatCurrency(item.totalAmount)}</div>
                 </td>
                 <td className="py-3 px-2 text-center">
-                  <button
+                  <button aria-label="Delete"
                     type="button"
                     onClick={() => removeItem(item.id)}
                     disabled={items.length === 1}

@@ -257,7 +257,7 @@ export default function TransactionDetails({
 function DetailBox({ title, children }) {
   return (
     <div className="bg-white border border-slate-200 rounded-xl p-3.5">
-      <p className="text-xs font-bold text-slate-700 mb-3">
+      <p className="text-xs font-semibold text-slate-700 mb-3">
         {title}
       </p>
 

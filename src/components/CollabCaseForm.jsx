@@ -209,7 +209,7 @@ export default function CollabCaseForm({
           <select
             value={clinic}
             onChange={(e) => setClinic(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+            className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
           >
             <option value="">Select clinic</option>
             {COLLAB_BRANCHES.map((c) => (
@@ -233,11 +233,11 @@ export default function CollabCaseForm({
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
             <div>
               <p className="text-xs text-gray-500 uppercase tracking-wide">Total Package</p>
-              <p className="text-lg font-bold text-gray-900">{formatCurrency(grossPackage)}</p>
+              <p className="text-lg font-semibold text-gray-900">{formatCurrency(grossPackage)}</p>
             </div>
             <div>
               <p className="text-xs text-gray-500 uppercase tracking-wide">Discount</p>
-              <p className="text-lg font-bold text-amber-600">
+              <p className="text-lg font-semibold text-amber-600">
                 {discountNum > 0 ? `−${formatCurrency(discountNum)}` : formatCurrency(0)}
                 <span className="block text-[11px] font-medium text-gray-500">
                   patient pays {formatCurrency(totalPackage)}
@@ -246,11 +246,11 @@ export default function CollabCaseForm({
             </div>
             <div>
               <p className="text-xs text-gray-500 uppercase tracking-wide">Our Share</p>
-              <p className="text-lg font-bold text-emerald-600">{formatCurrency(ourShare)}</p>
+              <p className="text-lg font-semibold text-emerald-600">{formatCurrency(ourShare)}</p>
             </div>
             <div>
               <p className="text-xs text-gray-500 uppercase tracking-wide">Clinic Share</p>
-              <p className="text-lg font-bold text-amber-600">{formatCurrency(clinicShare)}</p>
+              <p className="text-lg font-semibold text-amber-600">{formatCurrency(clinicShare)}</p>
             </div>
           </div>
           <p className="text-[11px] text-gray-500 mt-3 text-center">
@@ -268,7 +268,7 @@ export default function CollabCaseForm({
             min="0"
             value={clinicShare}
             onChange={(e) => setClinicShare(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+            className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
           />
           {shareMismatch && (
             <p className="text-xs text-red-600 mt-1">
@@ -283,7 +283,7 @@ export default function CollabCaseForm({
             min="0"
             value={discount}
             onChange={(e) => setDiscount(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+            className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
           />
           {discountInvalid && (
             <p className="text-xs text-red-600 mt-1">
@@ -296,7 +296,7 @@ export default function CollabCaseForm({
           <select
             value={procedure}
             onChange={(e) => setProcedure(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+            className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
           >
             {PROCEDURE_OPTIONS.map((p) => (
               <option key={p} value={p}>
@@ -342,7 +342,7 @@ export default function CollabCaseForm({
             setAmount(e.target.value);
             setAmountsTouched(true);
           }}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg disabled:bg-gray-50 disabled:text-gray-500"
+          className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150 disabled:bg-gray-50 disabled:text-gray-500"
         />
         <label className="flex items-center gap-2 mt-2.5 text-sm text-gray-700">
           <input
@@ -435,7 +435,7 @@ export default function CollabCaseForm({
           <select
             value={method}
             onChange={(e) => setMethod(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+            className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
           >
             {METHOD_OPTIONS.map((m) => (
               <option key={m.value} value={m.value}>
@@ -453,7 +453,7 @@ export default function CollabCaseForm({
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+            className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
           />
         </div>
         <div>
@@ -470,7 +470,7 @@ export default function CollabCaseForm({
             value={paymentId}
             onChange={(e) => setPaymentId(e.target.value)}
             placeholder="UTR / reference / cheque no."
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+            className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
           />
           {paymentIdMissing && (
             <p className="mt-1.5 text-xs text-red-600">Required for any method other than cash.</p>
@@ -503,7 +503,7 @@ export default function CollabCaseForm({
           value={remarks}
           onChange={(e) => setRemarks(e.target.value)}
           rows={2}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+          className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
         />
       </div>
 

@@ -125,7 +125,7 @@ export default function CollabSettlementPanel({ onSaved }) {
                   setClinic(e.target.value);
                   setSelectedPayableId("");
                 }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
               >
                 <option value="">Select clinic</option>
                 {COLLAB_BRANCHES.map((c) => (
@@ -139,7 +139,7 @@ export default function CollabSettlementPanel({ onSaved }) {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Outstanding to this clinic
               </label>
-              <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg font-bold text-rose-600">
+              <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg font-semibold text-rose-600">
                 {loadingPayables ? "…" : formatCurrency(totalOutstanding)}
               </div>
             </div>
@@ -161,7 +161,7 @@ export default function CollabSettlementPanel({ onSaved }) {
                 <select
                   value={selectedPayableId}
                   onChange={(e) => setSelectedPayableId(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                 >
                   <option value="">Select an open payable…</option>
                   {open.map((p) => (
@@ -190,7 +190,7 @@ export default function CollabSettlementPanel({ onSaved }) {
                   min="0"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                   placeholder="0"
                 />
               </div>
@@ -199,7 +199,7 @@ export default function CollabSettlementPanel({ onSaved }) {
                 <select
                   value={method}
                   onChange={(e) => setMethod(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                 >
                   {METHOD_OPTIONS.map((m) => (
                     <option key={m.value} value={m.value}>
@@ -216,7 +216,7 @@ export default function CollabSettlementPanel({ onSaved }) {
                   type="text"
                   value={paymentId}
                   onChange={(e) => setPaymentId(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                 />
               </div>
               <div>
@@ -225,7 +225,7 @@ export default function CollabSettlementPanel({ onSaved }) {
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                 />
               </div>
             </div>
@@ -236,7 +236,7 @@ export default function CollabSettlementPanel({ onSaved }) {
                 value={remarks}
                 onChange={(e) => setRemarks(e.target.value)}
                 rows={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
               />
             </div>
 
@@ -269,8 +269,8 @@ export default function CollabSettlementPanel({ onSaved }) {
             <span className="font-semibold text-rose-600">{formatCurrency(totalOutstanding)}</span>
           </div>
           <div className="border-t border-gray-200 pt-3 flex justify-between items-center">
-            <span className="text-lg font-bold text-gray-900">Paying now</span>
-            <span className="text-2xl font-bold text-indigo-600">{formatCurrency(amount)}</span>
+            <span className="text-lg font-semibold text-gray-900">Paying now</span>
+            <span className="text-xl font-semibold tracking-tight text-indigo-600">{formatCurrency(amount)}</span>
           </div>
 
           {error && (
@@ -287,7 +287,7 @@ export default function CollabSettlementPanel({ onSaved }) {
           <button
             onClick={handleSave}
             disabled={!canSave}
-            className="w-full mt-6 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 font-medium flex items-center justify-center gap-2"
+            className="w-full mt-6 h-10 px-4 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 active:bg-indigo-800 transition-colors press disabled:opacity-50 font-medium flex items-center justify-center gap-2"
           >
             {saving ? (
               <>

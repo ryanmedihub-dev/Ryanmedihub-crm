@@ -110,7 +110,7 @@ export default function DocumentDetailModal({ documentId, kind, onClose, onChang
   const Field = ({ label, value }) =>
     value === undefined || value === null || value === "" ? null : (
       <div>
-        <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{label}</p>
+        <p className="text-[11px] font-medium text-gray-400">{label}</p>
         <p className="text-sm font-medium text-gray-800 mt-0.5">{value}</p>
       </div>
     );
@@ -121,13 +121,13 @@ export default function DocumentDetailModal({ documentId, kind, onClose, onChang
   const ageing = doc ? formatAgeing(doc.daysOverdue) : null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+    <div className="fixed inset-0 overlay-in bg-gray-950/40 flex items-center justify-center z-50 p-4 overflow-y-auto">
       <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full my-8">
         <div className="flex items-center justify-between p-5 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl">
-          <h3 className="text-lg font-bold text-gray-900">
+          <h3 className="text-lg font-semibold text-gray-900">
             {isPayable ? "Payable" : "Receivable"} Details
           </h3>
-          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg">
+          <button type="button" onClick={onClose} aria-label="Close" className="p-1.5 hover:bg-gray-100 rounded-lg">
             <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
@@ -143,14 +143,14 @@ export default function DocumentDetailModal({ documentId, kind, onClose, onChang
             <div className="space-y-4">
               <div className="rounded-xl border border-gray-200 bg-gray-50 p-5 flex items-center justify-between">
                 <div>
-                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">
+                  <p className="text-[11px] font-medium text-gray-400">
                     {isPayable ? "Payee" : "Payer"}
                   </p>
                   <p className="text-base font-semibold text-gray-900 mt-0.5">{party?.label || "—"}</p>
                   <p className="text-xs text-gray-500 mt-1">{doc.purpose}{isPayable && doc.expenseSubType ? ` · ${doc.expenseSubType}` : ""}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(doc.totalAmount)}</p>
+                  <p className="text-xl font-semibold tracking-tight text-gray-900">{formatCurrency(doc.totalAmount)}</p>
                   <div className="flex justify-end mt-1">
                     <StatusBadge status={doc.isCancelled ? "Cancelled" : doc.status} />
                   </div>
@@ -173,7 +173,7 @@ export default function DocumentDetailModal({ documentId, kind, onClose, onChang
 
                 {doc.tdsLink?.role && (
                   <div className="mt-4 pt-4 border-t border-gray-100 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
-                    <span className="text-[11px] font-semibold text-amber-600 uppercase tracking-wide bg-amber-50 px-2 py-0.5 rounded">
+                    <span className="text-[11px] font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded">
                       TDS {doc.tdsLink.role}
                     </span>
                     {doc.tdsLink.grossAmount != null && <span className="text-gray-600">Gross {formatCurrency(doc.tdsLink.grossAmount)}</span>}
@@ -186,7 +186,7 @@ export default function DocumentDetailModal({ documentId, kind, onClose, onChang
               {doc.incentiveEntries?.length > 0 && (
                 <div className="rounded-xl border border-gray-200 overflow-hidden">
                   <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200">
-                    <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                    <p className="text-xs font-medium text-gray-600">
                       Incentive Entries ({doc.incentiveEntries.length})
                     </p>
                     <p className="text-xs text-gray-400">Click a row to edit or cancel</p>
@@ -202,10 +202,10 @@ export default function DocumentDetailModal({ documentId, kind, onClose, onChang
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b border-gray-100">
-                          <th className="px-4 py-2 text-left font-semibold text-gray-500 text-[11px] uppercase tracking-wide">Date</th>
-                          <th className="px-4 py-2 text-left font-semibold text-gray-500 text-[11px] uppercase tracking-wide">Patient</th>
-                          <th className="px-4 py-2 text-left font-semibold text-gray-500 text-[11px] uppercase tracking-wide">Purpose</th>
-                          <th className="px-4 py-2 text-right font-semibold text-gray-500 text-[11px] uppercase tracking-wide">Amount</th>
+                          <th className="px-4 py-2 text-left font-medium text-gray-500 text-xs">Date</th>
+                          <th className="px-4 py-2 text-left font-medium text-gray-500 text-xs">Patient</th>
+                          <th className="px-4 py-2 text-left font-medium text-gray-500 text-xs">Purpose</th>
+                          <th className="px-4 py-2 text-right font-medium text-gray-500 text-xs">Amount</th>
                           <th className="px-4 py-2 w-20" />
                         </tr>
                       </thead>
@@ -315,14 +315,14 @@ export default function DocumentDetailModal({ documentId, kind, onClose, onChang
 
               {doc.remarks && (
                 <div className="rounded-lg border border-gray-200 p-4">
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Remarks</p>
+                  <p className="text-xs font-medium text-gray-500 mb-1">Remarks</p>
                   <p className="text-sm text-gray-700 whitespace-pre-wrap">{doc.remarks}</p>
                 </div>
               )}
 
               {doc.receipts?.length > 0 && (
                 <div className="rounded-lg border border-gray-200 p-4">
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                  <p className="text-xs font-medium text-gray-500 mb-2">
                     Receipts ({doc.receipts.length})
                   </p>
                   <div className="flex flex-wrap gap-2">

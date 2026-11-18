@@ -485,7 +485,7 @@ export default function AllTransactionsPage() {
     return (
       <div className="flex min-h-screen bg-gray-50">
         <Sidebar />
-        <main className="flex-1 flex items-center justify-center">
+        <main className="flex-1 min-w-0 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
             <p className="text-gray-600">Loading data...</p>
@@ -499,12 +499,12 @@ export default function AllTransactionsPage() {
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
 
-      <main className="flex-1 flex flex-col">
+      <main className="flex-1 min-w-0 flex flex-col">
         <div className="flex-1 overflow-auto">
           <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
             <div className="mb-6 flex justify-between">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">
+                <h1 className="text-xl font-semibold tracking-tight text-gray-900">
                   Create Transaction
                 </h1>
                 <p className="text-gray-600 mt-1">

@@ -1,9 +1,9 @@
 export const LOAN_ACCOUNTS = ["Bajaj Loan", "Fibe Loan"];
 
 export const CASH_TONES = {
-  emerald: { box: "border-emerald-100 bg-emerald-50/40", label: "text-emerald-700", icon: "text-emerald-300" },
-  rose: { box: "border-rose-100 bg-rose-50/40", label: "text-rose-700", icon: "text-rose-300" },
-  indigo: { box: "border-indigo-100 bg-indigo-50/40", label: "text-indigo-700", icon: "text-indigo-300" },
+  emerald: { box: "border-gray-200", label: "text-emerald-700", icon: "text-emerald-300" },
+  rose: { box: "border-gray-200", label: "text-rose-700", icon: "text-rose-300" },
+  indigo: { box: "border-gray-200", label: "text-gray-500", icon: "text-indigo-300" },
 };
 
 export const AGEING_BUCKET_ORDER = ["current", "1-30", "31-60", "61-90", "90+"];

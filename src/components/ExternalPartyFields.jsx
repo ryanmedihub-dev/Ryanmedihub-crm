@@ -107,7 +107,7 @@ export default function ExternalPartyFields({ direction, value, onChange }) {
               value={value?.name || ""}
               onChange={(e) => onChange({ ...value, name: e.target.value })}
               placeholder={`${who} name`}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
             />
           ) : (
             <SearchableSelect
@@ -131,7 +131,7 @@ export default function ExternalPartyFields({ direction, value, onChange }) {
           <select
             value={value?.method || ""}
             onChange={(e) => onChange({ ...value, method: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+            className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
           >
             <option value="">Select method</option>
             {METHOD_OPTIONS.map((m) => (

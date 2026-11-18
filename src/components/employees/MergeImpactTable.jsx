@@ -8,8 +8,8 @@ export default function MergeImpactTable({ references = [], totalReferences = 0,
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-        <p className="text-2xl font-bold text-gray-900">
+      <div className="rounded-xl border border-gray-200 bg-white p-5">
+        <p className="text-xl font-semibold tracking-tight text-gray-900">
           {totalReferences} reference{totalReferences === 1 ? "" : "s"} will be repointed
         </p>
         <p className="text-xs text-gray-400 mt-0.5">
@@ -57,8 +57,8 @@ export default function MergeImpactTable({ references = [], totalReferences = 0,
       </div>
 
       {finance && (
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-bold text-gray-700 uppercase tracking-wide mb-3">Finance impact</p>
+        <div className="rounded-xl border border-gray-200 bg-white p-5">
+          <p className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Finance impact</p>
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead className="text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500 border-b border-gray-100">

@@ -1,6 +1,10 @@
 
 
-export const formatCurrency = (amount) => `₹${Number(amount || 0).toLocaleString("en-IN")}`;
+// Sign before the symbol: -₹1,41,864, never ₹-1,41,864.
+export const formatCurrency = (amount) => {
+  const n = Number(amount || 0);
+  return `${n < 0 ? "-" : ""}₹${Math.abs(n).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
+};
 
 export const formatDate = (date) => {
   if (!date) return "—";

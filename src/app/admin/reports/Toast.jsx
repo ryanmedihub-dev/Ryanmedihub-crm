@@ -22,7 +22,7 @@ export default function Toast({ toast, onDismiss }) {
           <p className="text-xs mt-0.5 opacity-80">{toast.message}</p>
         )}
       </div>
-      <button
+      <button aria-label="Close"
         onClick={onDismiss}
         className="p-1 rounded-lg hover:bg-black/10 transition-colors"
       >

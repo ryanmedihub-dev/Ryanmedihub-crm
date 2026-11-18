@@ -85,15 +85,12 @@ function ReceiptsPageInner() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <main className="flex-1 p-4 sm:p-6 lg:p-8">
+      <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto space-y-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="max-w-xl">
               <div className="flex items-center gap-2.5">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-emerald-50 text-emerald-600">
-                  <HandCoins className="h-5 w-5" />
-                </span>
-                <h1 className="text-2xl font-bold text-gray-900">Receipts</h1>
+                <h1 className="text-xl font-semibold tracking-tight text-gray-900">Receipts</h1>
               </div>
               <p className="text-sm text-gray-500 mt-2">
                 Every rupee that actually entered a cash or bank account — pure cash basis, the
@@ -111,7 +108,7 @@ function ReceiptsPageInner() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1">Period</span>
+            <span className="text-xs font-medium text-gray-400 px-1">Period</span>
             <DebouncedDateInput
               value={from}
               onCommit={setFrom}
@@ -143,7 +140,7 @@ function ReceiptsPageInner() {
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <HandCoins className="w-4 h-4 text-emerald-500" />
-                <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide">Receipts</h2>
+                <h2 className="text-sm font-medium text-gray-700">Receipts</h2>
               </div>
               <div className="inline-flex rounded-lg border border-gray-200 p-1 bg-gray-50">
                 {[
@@ -183,7 +180,7 @@ function ReceiptsPageInner() {
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide">
+            <h2 className="text-sm font-medium text-gray-700">
               Borrowing Transactions
             </h2>
             <FinancingTransactions kind="borrowing" from={from} to={to} branch={branch} />

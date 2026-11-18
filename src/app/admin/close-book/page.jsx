@@ -99,11 +99,11 @@ export default function CloseBookPage() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 min-w-0 overflow-auto">
         <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
           <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Close Book</h1>
+              <h1 className="text-xl font-semibold tracking-tight text-gray-900">Close Book</h1>
               <p className="text-gray-600 mt-1 text-sm">
                 Every rupee attributed to one of the {ACCOUNTS.length} accounts. Closing a period
                 freezes its figures and locks edits to transactions dated inside it.
@@ -392,7 +392,7 @@ function AccountLedger({ toast }) {
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
+            <thead className="bg-gray-50 text-left text-xs text-gray-500">
               <tr>
                 <th className="px-4 py-3">Date</th>
                 <th className="px-4 py-3">Description</th>
@@ -429,7 +429,7 @@ function AccountLedger({ toast }) {
                       <td className="px-4 py-2 text-gray-800">
                         {r.isSuspense ? (
                           <span className="inline-flex items-center gap-1.5 flex-wrap">
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-700 border border-amber-200">
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold bg-amber-100 text-amber-700 border border-amber-200">
                               Suspense
                             </span>
                             <span>
@@ -440,7 +440,7 @@ function AccountLedger({ toast }) {
                           </span>
                         ) : r.isContra ? (
                           <span className="inline-flex items-center gap-1.5 flex-wrap">
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-violet-100 text-violet-700 border border-violet-200">
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold bg-violet-100 text-violet-700 border border-violet-200">
                               Contra
                             </span>
                             <span>
@@ -493,8 +493,8 @@ function AccountLedger({ toast }) {
                   ))}
                   <tr className="bg-gray-50 border-t-2 border-gray-200">
                     <td className="px-4 py-2.5 text-gray-500">{formatDate(to)}</td>
-                    <td className="px-4 py-2.5 font-bold text-gray-900" colSpan={6}>Closing balance</td>
-                    <td className="px-4 py-2.5 text-right font-bold text-indigo-700">
+                    <td className="px-4 py-2.5 font-semibold text-gray-900" colSpan={6}>Closing balance</td>
+                    <td className="px-4 py-2.5 text-right font-semibold text-indigo-700">
                       {formatCurrency(data.closingBalance)}
                     </td>
                   </tr>
@@ -708,7 +708,7 @@ function BalanceSheet({ toast }) {
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
+            <thead className="bg-gray-50 text-left text-xs text-gray-500">
               <tr>
                 <th className="px-4 py-3">Account</th>
                 <th className="px-4 py-3 text-right">Opening</th>
@@ -731,7 +731,7 @@ function BalanceSheet({ toast }) {
                       <td className="px-4 py-3 font-medium text-gray-900">
                         {a.account}
                         {!a.openingBalanceSeeded && (
-                          <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 border border-amber-200">
+                          <span className="ml-2 text-[11px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 border border-amber-200">
                             no opening set
                           </span>
                         )}
@@ -739,7 +739,7 @@ function BalanceSheet({ toast }) {
                       <td className="px-4 py-3 text-right text-gray-700">{formatCurrency(a.openingBalance)}</td>
                       <td className="px-4 py-3 text-right text-emerald-700">{formatCurrency(a.totalIn)}</td>
                       <td className="px-4 py-3 text-right text-rose-600">{formatCurrency(a.totalOut)}</td>
-                      <td className="px-4 py-3 text-right font-bold text-gray-900">{formatCurrency(a.closingBalance)}</td>
+                      <td className="px-4 py-3 text-right font-semibold text-gray-900">{formatCurrency(a.closingBalance)}</td>
                       <td className="px-4 py-3 text-right text-gray-500">{a.transactionCount}</td>
                       <td className="px-4 py-3 text-right">
                         {closedFor(closedPeriods, a.account, from, to) ? (
@@ -758,7 +758,7 @@ function BalanceSheet({ toast }) {
                     </tr>
                   ))}
                   {data?.grandTotal && (
-                    <tr className="bg-gray-50 border-t-2 border-gray-200 font-bold">
+                    <tr className="bg-gray-50 border-t-2 border-gray-200 font-semibold">
                       <td className="px-4 py-3 text-gray-900">Grand Total</td>
                       <td className="px-4 py-3 text-right text-gray-900">{formatCurrency(data.grandTotal.openingBalance)}</td>
                       <td className="px-4 py-3 text-right text-emerald-700">{formatCurrency(data.grandTotal.totalIn)}</td>
@@ -894,7 +894,7 @@ function ClosePeriodModal({ toast, from, to, accounts, onClose, onDone }) {
         ) : (
           <div className="border border-gray-200 rounded-lg overflow-hidden">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-xs uppercase text-gray-500 text-left">
+              <thead className="bg-gray-50 text-xs text-gray-500 text-left">
                 <tr>
                   <th className="px-3 py-2">Account</th>
                   <th className="px-3 py-2 text-right">Opening</th>
@@ -908,16 +908,16 @@ function ClosePeriodModal({ toast, from, to, accounts, onClose, onDone }) {
                   <tr key={a.account} className={a.alreadyClosed ? "opacity-50" : ""}>
                     <td className="px-3 py-2 font-medium text-gray-900">
                       {a.account}
-                      {a.alreadyClosed && <span className="ml-2 text-[10px] text-rose-600">already closed</span>}
+                      {a.alreadyClosed && <span className="ml-2 text-[11px] text-rose-600">already closed</span>}
                     </td>
                     <td className="px-3 py-2 text-right text-gray-700">{formatCurrency(a.openingBalance)}</td>
                     <td className="px-3 py-2 text-right text-emerald-700">{formatCurrency(a.totalIn)}</td>
                     <td className="px-3 py-2 text-right text-rose-600">{formatCurrency(a.totalOut)}</td>
-                    <td className="px-3 py-2 text-right font-bold text-indigo-700">{formatCurrency(a.closingBalance)}</td>
+                    <td className="px-3 py-2 text-right font-semibold text-indigo-700">{formatCurrency(a.closingBalance)}</td>
                   </tr>
                 ))}
                 {preview?.grandTotal && preview.accounts.length > 1 && (
-                  <tr className="bg-gray-50 font-bold">
+                  <tr className="bg-gray-50 font-semibold">
                     <td className="px-3 py-2 text-gray-900">Total</td>
                     <td className="px-3 py-2 text-right">{formatCurrency(preview.grandTotal.openingBalance)}</td>
                     <td className="px-3 py-2 text-right text-emerald-700">{formatCurrency(preview.grandTotal.totalIn)}</td>
@@ -1061,11 +1061,11 @@ function ReopenModal({ toast, period, onClose, onDone }) {
 
 function Modal({ title, onClose, children }) {
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 overlay-in bg-gray-950/40 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 sticky top-0 bg-white rounded-t-2xl">
-          <h3 className="text-lg font-bold text-gray-900">{title}</h3>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
+          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+          <button type="button" onClick={onClose} aria-label="Close" className="p-2 hover:bg-gray-100 rounded-lg">
             <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
@@ -1129,17 +1129,17 @@ function OpeningBalancesModal({ toast, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 overlay-in bg-gray-950/40 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 sticky top-0 bg-white rounded-t-2xl">
           <div>
-            <h3 className="text-lg font-bold text-gray-900">Opening Balances</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Opening Balances</h3>
             <p className="text-xs text-gray-500 mt-0.5">
               Entered by hand — historical transactions carry no account, so per-account
               history before this feature can&apos;t be derived.
             </p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
+          <button type="button" onClick={onClose} aria-label="Close" className="p-2 hover:bg-gray-100 rounded-lg">
             <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
@@ -1278,9 +1278,9 @@ function Stat({ label, value, tone, strong, icon: Icon, hint }) {
       <p className="text-xs text-gray-500 flex items-center gap-1.5">
         {Icon && <Icon className="w-3.5 h-3.5" />}
         {label}
-        {hint && <span className="text-[10px] text-amber-600">({hint})</span>}
+        {hint && <span className="text-[11px] text-amber-600">({hint})</span>}
       </p>
-      <p className={`mt-1 ${strong ? "text-2xl font-bold text-indigo-700" : `text-xl font-semibold ${color}`}`}>
+      <p className={`mt-1 ${strong ? "text-xl font-semibold tracking-tight text-indigo-700" : `text-xl font-semibold ${color}`}`}>
         {formatCurrency(value)}
       </p>
     </div>

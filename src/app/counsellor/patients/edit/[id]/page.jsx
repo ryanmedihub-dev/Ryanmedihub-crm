@@ -1,5 +1,6 @@
 "use client";
 
+import CounsellorSidebar from "@/components/Sidebars/CounsellorSidebar";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/Toast";
@@ -8,11 +9,10 @@ import { useParams } from "next/navigation";
 import { X, FileText, User, Save, ArrowLeft, Edit3 } from "lucide-react";
 import InputField from "@/components/InputField";
 
-const StepHeader = ({ icon: Icon, title, description, color }) => (
-  <div className="text-center mb-8">
-    <Icon className={`mx-auto h-16 w-16 text-${color}-500 mb-4`} />
-    <h3 className="text-2xl font-bold text-gray-900">{title}</h3>
-    <p className="text-gray-600">{description}</p>
+const StepHeader = ({ title, description }) => (
+  <div className="pb-4 border-b border-gray-100">
+    <h3 className="text-base font-semibold text-gray-900">{title}</h3>
+    {description && <p className="mt-0.5 text-sm text-gray-500">{description}</p>}
   </div>
 );
 
@@ -59,7 +59,7 @@ const BenefitsManager = ({ benefits, onChange, onAdd, onRemove }) => {
               type="checkbox"
               checked={benefits.includes(benefit)}
               onChange={() => handleBenefitToggle(benefit)}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              className="h-4 w-4 text-blue-600 focus:ring-indigo-500/30 border-gray-300 rounded"
             />
             <span className="text-sm font-medium text-gray-700">{benefit}</span>
           </label>
@@ -73,7 +73,7 @@ const BenefitsManager = ({ benefits, onChange, onAdd, onRemove }) => {
         <div className="flex space-x-3">
           <input
             type="text"
-            className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 shadow-sm"
+            className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500/30 focus:border-transparent transition-all duration-200 shadow-sm"
             placeholder="Enter custom benefit"
             onKeyPress={(e) => {
               if (e.key === "Enter") {
@@ -108,7 +108,7 @@ const BenefitsManager = ({ benefits, onChange, onAdd, onRemove }) => {
                 className="flex items-center space-x-2 bg-blue-100 text-blue-800 px-3 py-2 rounded-lg"
               >
                 <span className="text-sm font-medium">{benefit}</span>
-                <button
+                <button aria-label="Close"
                   type="button"
                   className="text-blue-600 hover:text-blue-800 transition-colors duration-200"
                   onClick={() => onRemove(index)}
@@ -419,32 +419,31 @@ export default function PatientEditDetails() {
   const prevStep = () => setStep(Math.max(step - 1, 1));
 
   return (
-    <section className="flex min-h-screen px-24">
-      <main className="flex-1 px-12 py-4">
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <div className="px-8 py-6 bg-linear-to-r from-blue-600 to-indigo-600 text-white">
-            <div className="flex items-center justify-between">
+    <section className="flex min-h-screen bg-gray-50">
+      <CounsellorSidebar />
+      <main className="flex-1 min-w-0 px-4 sm:px-6 lg:px-12 py-4">
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-6 py-5 border-b border-gray-200">
+            <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
               <div className="flex items-center space-x-4">
                 <button
-                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                  className="p-2 -ml-2 text-gray-500 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-colors"
+                  aria-label="Back"
                   onClick={() => router.back()}
                 >
-                  <ArrowLeft size={24} />
+                  <ArrowLeft size={20} />
                 </button>
                 <div>
-                  <h1 className="text-2xl font-bold flex items-center space-x-2">
-                    <Edit3 size={28} />
-                    <span>Edit Patient Details</span>
-                  </h1>
-                  <p className="text-blue-100 mt-1">
+                  <h1 className="text-xl font-semibold tracking-tight text-gray-900">Edit Patient Details</h1>
+                  <p className="text-sm text-gray-500 mt-1">
                     Patient ID: {formData.ops.patientId} | Status:{" "}
                     {formData.ops.status}
                   </p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-sm text-blue-100">Last Updated</p>
-                <p className="font-medium">
+                <p className="text-xs text-gray-500">Last Updated</p>
+                <p className="text-sm font-medium text-gray-900">
                   {formData.ops.lastUpdated
                     ? new Date(formData.ops.lastUpdated).toLocaleDateString()
                     : "Not available"}
@@ -457,8 +456,8 @@ export default function PatientEditDetails() {
             <div
               className={`px-8 py-4 ${
                 updateStatus.type === "success"
-                  ? "bg-green-50 text-green-800 border-l-4 border-green-400"
-                  : "bg-red-50 text-red-800 border-l-4 border-red-400"
+                  ? "bg-green-50 text-green-800 border border-green-200 rounded-lg"
+                  : "bg-red-50 text-red-800 border border-red-200 rounded-lg"
               }`}
             >
               <div className="flex">
@@ -472,35 +471,32 @@ export default function PatientEditDetails() {
             </div>
           )}
 
-          <div className="px-8 py-6 border-b border-gray-200">
-            <div className="flex justify-between items-center">
-              <div className="flex space-x-2">
+          <div className="px-4 py-4 sm:px-8 sm:py-5 border-b border-gray-200">
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between sm:items-center">
+              <div className="flex flex-wrap gap-2">
                 {stepConfig.map((stepInfo) => {
                   const Icon = stepInfo.icon;
                   return (
                     <button
+                      type="button"
                       key={stepInfo.number}
                       onClick={() => setStep(stepInfo.number)}
-                      className={`flex items-center justify-center w-12 h-12 rounded-full transition-all duration-300 ${
-                        stepInfo.number === step
-                          ? `bg-${stepInfo.color}-600 text-white shadow-lg scale-110`
-                          : stepInfo.number < step
-                          ? "bg-green-500 text-white shadow-md hover:scale-105"
-                          : "bg-gray-200 text-gray-500 hover:bg-gray-300"
-                      }`}
-                    >
-                      <Icon size={20} />
+                      aria-label={`Step ${stepInfo.number}: ${stepInfo.title}`}
+                      aria-current={stepInfo.number === step ? "step" : undefined}
+                      className={`flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full transition-colors ${stepInfo.number === step ? "bg-indigo-600 text-white ring-4 ring-indigo-100" : stepInfo.number < step ? "bg-indigo-50 text-indigo-700 hover:bg-indigo-100" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}
+                      >
+                      <Icon size={18} aria-hidden />
                     </button>
                   );
                 })}
               </div>
-              <div className="text-sm text-gray-600 font-medium">
+              <div className="text-sm text-gray-500">
                 Step {step} of {stepConfig.length}: {stepConfig[step - 1].title}
               </div>
             </div>
           </div>
 
-          <div className="px-8 py-8">
+          <div className="px-4 py-6 sm:px-8 sm:py-8">
             {step === 1 && (
               <div className="space-y-8">
                 <StepHeader
@@ -693,7 +689,7 @@ export default function PatientEditDetails() {
                   />
 
                   <div className="space-y-3 my-3">
-                    <label className="block mb-4 text-md underline font-bold text-gray-700">
+                    <label className="block mb-4 text-md underline font-semibold text-gray-700">
                       Hair Loss Type *
                     </label>
                     <div className="space-y-2 flex flex-wrap space-x-7">
@@ -737,7 +733,7 @@ export default function PatientEditDetails() {
                               "counselling",
                               "hairlossType"
                             )}
-                            className="text-blue-600 focus:ring-blue-500"
+                            className="text-blue-600 focus:ring-indigo-500/30"
                           />
                           <span className="text-md text-gray-700">
                             {option.label}
@@ -748,7 +744,7 @@ export default function PatientEditDetails() {
                   </div>
 
                   <div className="space-y-3 my-3">
-                    <label className="block mb-4 text-md underline font-bold text-gray-700">
+                    <label className="block mb-4 text-md underline font-semibold text-gray-700">
                       Area of Concern *
                     </label>
                     <div className="space-y-2 flex flex-wrap space-x-7">
@@ -777,7 +773,7 @@ export default function PatientEditDetails() {
                               "counselling",
                               "areaofConcern"
                             )}
-                            className="text-blue-600 focus:ring-blue-500"
+                            className="text-blue-600 focus:ring-indigo-500/30"
                           />
                           <span className="text-md text-gray-700">
                             {option.label}
@@ -788,7 +784,7 @@ export default function PatientEditDetails() {
                   </div>
 
                   <div className="space-y-3">
-                    <label className="block mb-4 text-lg underline font-bold text-gray-700">
+                    <label className="block mb-4 text-lg underline font-semibold text-gray-700">
                       Hair Loss Reason *
                     </label>
                     <div className="flex flex-wrap space-x-7 space-y-2">
@@ -825,7 +821,7 @@ export default function PatientEditDetails() {
                               "counselling",
                               "hairlossreason"
                             )}
-                            className="text-blue-600 focus:ring-blue-500"
+                            className="text-blue-600 focus:ring-indigo-500/30"
                           />
                           <span className="text-md text-gray-700">
                             {option.label}
@@ -836,7 +832,7 @@ export default function PatientEditDetails() {
                   </div>
 
                   <div className="space-y-3">
-                    <label className="block mb-4 text-md underline font-bold text-gray-700">
+                    <label className="block mb-4 text-md underline font-semibold text-gray-700">
                       Hair Loss Duration *
                     </label>
                     <div className="space-y-2 flex flex-wrap space-x-5">
@@ -877,7 +873,7 @@ export default function PatientEditDetails() {
                               "counselling",
                               "hairlossduration"
                             )}
-                            className="text-blue-600 focus:ring-blue-500"
+                            className="text-blue-600 focus:ring-indigo-500/30"
                           />
                           <span className="text-md text-gray-700">
                             {option.label}
@@ -962,7 +958,7 @@ export default function PatientEditDetails() {
                 <button
                   type="button"
                   onClick={handleUpdate}
-                  className="inline-flex items-center px-8 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200"
+                  className="inline-flex items-center px-8 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200"
                   disabled={isUpdating}
                 >
                   {isUpdating ? (

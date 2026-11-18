@@ -6,15 +6,12 @@ import {
   Users,
   UserPlus,
   TrendingUp,
-  Phone,
   CheckCircle,
   XCircle,
   IndianRupee,
-  Calendar,
-  ArrowUpRight,
-  ArrowDownRight,
 } from "lucide-react";
 import Topbar from "@/components/Topbar";
+import MetricCard from "@/components/MetricCard";
 import SalesSidebar from "../../../components/Sidebars/SalesSidebar";
 
 
@@ -137,52 +134,6 @@ export default function SalesDashboard() {
     }).format(amount || 0);
   };
 
-  const getTrendIcon = (trend) => {
-    if (trend === undefined || trend === null || trend === 0) return null;
-    const isPositive = trend >= 0;
-    return isPositive ? (
-      <ArrowUpRight className="h-4 w-4 text-green-600" />
-    ) : (
-      <ArrowDownRight className="h-4 w-4 text-red-600" />
-    );
-  };
-
-  const getTrendColor = (trend) => {
-    if (trend === undefined || trend === null || trend === 0) return "text-gray-600";
-    return trend >= 0 ? "text-green-600" : "text-red-600";
-  };
-
-  const formatTrendDisplay = (trend) => {
-    if (trend === undefined || trend === null) return "0%";
-    const sign = trend >= 0 ? "+" : "";
-    return `${sign}${trend}%`;
-  };
-
-  const MetricCard = ({ title, value, icon: Icon, color, trend, onClick }) => (
-    <div
-      onClick={onClick}
-      className={`bg-white rounded-xl shadow-sm p-6 border border-gray-100 transition-all hover:shadow-md ${
-        onClick ? "cursor-pointer hover:scale-105" : ""
-      }`}
-    >
-      <div className="flex items-center justify-between mb-4">
-        <div className={`p-3 rounded-lg bg-linear-to-br ${color}`}>
-          <Icon className="h-6 w-6 text-white" />
-        </div>
-        {trend !== undefined && trend !== null && (
-          <div className="flex items-center gap-1">
-            {getTrendIcon(trend)}
-            <span className={`text-sm font-semibold ${getTrendColor(trend)}`}>
-              {formatTrendDisplay(trend)}
-            </span>
-          </div>
-        )}
-      </div>
-      <h3 className="text-gray-600 text-sm font-medium mb-1">{title}</h3>
-      <p className="text-2xl font-bold text-gray-900">{value}</p>
-    </div>
-  );
-
   const handleMetricClick = (metricType) => {
     const payload = buildPayload();
     const params = new URLSearchParams({
@@ -227,7 +178,7 @@ export default function SalesDashboard() {
         setActivePage={setActivePage}
       />
 
-      <main className="flex-1 p-4 lg:p-8">
+      <main className="flex-1 min-w-0 px-4 pt-16 pb-6 sm:px-6 lg:p-8">
         <Topbar
           title={"Sales Dashboard"}
           setSidebarOpen={setSidebarOpen}
@@ -242,21 +193,16 @@ export default function SalesDashboard() {
 
           {loading ? (
             <div className="flex justify-center items-center h-64">
-              <div className="relative">
-                <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-indigo-600"></div>
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                  <IndianRupee className="h-6 w-6 text-indigo-600" />
-                </div>
-              </div>
+              <div className="w-8 h-8 rounded-full border-2 border-gray-200 border-t-indigo-600 animate-spin" />
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
                 <MetricCard
                   title="Total Appointment"
                   value={dashboardData?.totalLeads || 0}
                   icon={Users}
-                  color="from-blue-500 to-blue-600"
+                  color="blue"
                   trend={dashboardData?.trends?.totalLeads}
                   onClick={() => handleMetricClick("totalLeads")}
                 />
@@ -264,7 +210,7 @@ export default function SalesDashboard() {
                   title="Not Visited"
                   value={dashboardData?.newPatients || 0}
                   icon={UserPlus}
-                  color="from-green-500 to-green-600"
+                  color="green"
                   trend={dashboardData?.trends?.newPatients}
                   onClick={() => handleMetricClick("newPatients")}
                 />
@@ -272,18 +218,18 @@ export default function SalesDashboard() {
                   title="Active Agents"
                   value={dashboardData?.activeAgents || 0}
                   icon={TrendingUp}
-                  color="from-orange-500 to-orange-600"
+                  color="orange"
                   trend={0}
                   onClick={() => handleMetricClick("agents")}
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
                 <MetricCard
                   title="Converted Patients"
                   value={dashboardData?.converted || 0}
                   icon={CheckCircle}
-                  color="from-teal-500 to-teal-600"
+                  color="teal"
                   trend={dashboardData?.trends?.converted}
                   onClick={() => handleMetricClick("converted")}
                 />
@@ -291,7 +237,7 @@ export default function SalesDashboard() {
                   title="Not Converted"
                   value={dashboardData?.notConverted || 0}
                   icon={XCircle}
-                  color="from-red-500 to-red-600"
+                  color="red"
                   trend={0}
                   onClick={() => handleMetricClick("notConverted")}
                 />
@@ -299,26 +245,27 @@ export default function SalesDashboard() {
                   title="Total Revenue"
                   value={formatCurrency(dashboardData?.revenue)}
                   icon={IndianRupee}
-                  color="from-emerald-500 to-emerald-600"
+                  color="emerald"
                   trend={dashboardData?.trends?.revenue}
                   onClick={() => handleMetricClick("revenue")}
                 />
               </div>
 
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="px-6 py-5 border-b border-gray-100 bg-linear-to-r from-indigo-50 to-purple-50">
+              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-200">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h2 className="text-xl font-bold text-gray-900">
+                      <h2 className="text-base font-semibold text-gray-900">
                         Agent Performance
                       </h2>
-                      <p className="text-sm text-gray-600 mt-1">
+                      <p className="text-xs text-gray-500 mt-0.5">
                         Top performing sales agents
                       </p>
                     </div>
                     <button
                       onClick={() => router.push("/sales/agents")}
-                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                      type="button"
+                      className="px-3 py-1.5 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-300 active:bg-gray-100 transition-colors text-sm font-medium"
                     >
                       View All
                     </button>
@@ -330,19 +277,19 @@ export default function SalesDashboard() {
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
                         <tr>
-                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
                             Agent
                           </th>
-                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
                             Branch
                           </th>
-                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
                             Total Leads
                           </th>
-                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
                             Converted
                           </th>
-                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
                             Conversion Rate
                           </th>
                         </tr>
@@ -356,8 +303,8 @@ export default function SalesDashboard() {
                           >
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex items-center">
-                                <div className="shrink-0 h-10 w-10 bg-linear-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center">
-                                  <span className="text-white font-semibold text-sm">
+                                <div className="shrink-0 h-9 w-9 bg-gray-100 rounded-full flex items-center justify-center">
+                                  <span className="text-gray-600 font-semibold text-xs">
                                     {agent.name?.charAt(0)?.toUpperCase() || "A"}
                                   </span>
                                 </div>
@@ -372,7 +319,7 @@ export default function SalesDashboard() {
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                              <span className="px-2 py-0.5 inline-flex text-xs font-medium rounded-md bg-gray-100 text-gray-700">
                                 {agent.branch || "N/A"}
                               </span>
                             </td>
@@ -382,15 +329,15 @@ export default function SalesDashboard() {
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm font-semibold text-green-600">
+                              <div className="text-sm font-semibold text-gray-900">
                                 {agent.converted || 0}
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex items-center gap-3">
-                                <div className="flex-1 bg-gray-200 rounded-full h-2.5 max-w-25">
+                                <div className="flex-1 bg-gray-100 rounded-full h-1.5 max-w-25">
                                   <div
-                                    className="bg-linear-to-r from-green-500 to-emerald-600 h-2.5 rounded-full transition-all"
+                                    className="bg-emerald-500 h-1.5 rounded-full transition-all"
                                     style={{ width: `${agent.conversionRate || 0}%` }}
                                   ></div>
                                 </div>

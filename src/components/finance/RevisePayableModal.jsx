@@ -5,7 +5,7 @@ import { X, Loader2, Ban, Trash2, PenSquare } from "lucide-react";
 import { formatCurrency } from "@/lib/financeUI";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100";
+  "w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30";
 const labelClass = "mb-1.5 block text-sm font-semibold text-slate-700";
 
 export default function RevisePayableModal({ payable, onClose, onSuccess, toast }) {
@@ -76,7 +76,7 @@ export default function RevisePayableModal({ payable, onClose, onSuccess, toast 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-3 backdrop-blur-sm sm:p-5">
+    <div className="fixed inset-0 overlay-in z-50 flex items-center justify-center bg-gray-950/40 p-3 sm:p-5">
       <div className="flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
 
         {}
@@ -86,7 +86,7 @@ export default function RevisePayableModal({ payable, onClose, onSuccess, toast 
               <PenSquare className="h-5 w-5" />
             </div>
             <div className="min-w-0">
-              <h3 className="truncate text-base font-bold text-slate-900 sm:text-lg">Revise Payable</h3>
+              <h3 className="truncate text-base font-semibold text-slate-900 sm:text-lg">Revise Payable</h3>
               <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">Adjust amount, due date, or lifecycle</p>
             </div>
           </div>
@@ -105,7 +105,7 @@ export default function RevisePayableModal({ payable, onClose, onSuccess, toast 
           <div className="space-y-5 p-4 sm:p-6">
 
             <div className="rounded-xl border border-slate-200 bg-white p-4">
-              <p className="truncate text-sm font-bold text-slate-900">{payable.payee?.label}</p>
+              <p className="truncate text-sm font-semibold text-slate-900">{payable.payee?.label}</p>
               <p className="mt-1 text-xs text-slate-500">
                 Already paid:{" "}
                 <span className="font-semibold text-emerald-700">{formatCurrency(payable.paid)}</span>

@@ -13,19 +13,21 @@ import {
   Filter, X, ChevronRight, ChevronLeft,
   Eye, SquarePen, Search, Calendar,
   Download, Plus, Phone, MapPin, Users, Scissors,
+  ChevronUp, ChevronDown, ChevronsUpDown, Loader2,
 } from "lucide-react";
+import { Button, EmptyState, ErrorState, Skeleton, buttonClass, inputClass } from "@/components/ui";
 import { formatDate as fmtDate } from "@/lib/financeUI";
 
 const STATUS_OPTIONS =["NEW","NOT_VISITED","CONSULTED","NOT_CONVERTED","BOOKING_DONE","SURGERY_BOOKED","CLOSED"];
 
 const STATUS_COLORS = {
-  NEW:            "bg-blue-50 text-blue-700 border-blue-200",
-  NOT_VISITED:    "bg-amber-50 text-amber-700 border-amber-200",
-  CONSULTED:      "bg-purple-50 text-purple-700 border-purple-200",
-  NOT_CONVERTED:  "bg-red-50 text-red-700 border-red-200",
-  BOOKING_DONE:   "bg-teal-50 text-teal-700 border-teal-200",
-  SURGERY_BOOKED: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  CLOSED:         "bg-gray-50 text-gray-600 border-gray-200",
+  NEW:            "bg-blue-50 text-blue-700",
+  NOT_VISITED:    "bg-amber-50 text-amber-800",
+  CONSULTED:      "bg-purple-50 text-purple-700",
+  NOT_CONVERTED:  "bg-rose-50 text-rose-700",
+  BOOKING_DONE:   "bg-teal-50 text-teal-700",
+  SURGERY_BOOKED: "bg-emerald-50 text-emerald-700",
+  CLOSED:         "bg-gray-100 text-gray-700",
 };
 
 const LOCATION_OPTIONS = ["Delhi", "Mumbai", "Hyderabad", "Noida", "Gurgaon"];
@@ -36,9 +38,9 @@ const COL_DEFS = {
   phone:       { label: "Phone" },
   branch:      { label: "Branch" },
   technique:   { label: "Technique" },
-  package:     { label: "Package" },
-  received:    { label: "Received" },
-  pending:     { label: "Pending" },
+  package:     { label: "Package", align: "right" },
+  received:    { label: "Received", align: "right" },
+  pending:     { label: "Pending", align: "right" },
   counsellor:  { label: "Counsellor" },
   surgeryDate: { label: "Surgery Date",  sortKey: "surgery.surgeryDate" },
   reference:   { label: "Reference" },
@@ -51,9 +53,9 @@ const fmtRupee = (n) =>
 function DrawerSection({ title, icon, children }) {
   return (
     <div className="rounded-xl border border-gray-200 overflow-hidden">
-      <div className="px-4 py-2.5 border-b bg-gray-50 flex items-center gap-2">
-        <span className="text-gray-500">{icon}</span>
-        <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">{title}</span>
+      <div className="px-4 py-2.5 border-b border-gray-100 flex items-center gap-2">
+        <span className="text-gray-400" aria-hidden>{icon}</span>
+        <span className="text-sm font-medium text-gray-900">{title}</span>
       </div>
       <div className="p-4 space-y-3">{children}</div>
     </div>
@@ -63,7 +65,7 @@ function DrawerSection({ title, icon, children }) {
 function DrawerField({ label, children }) {
   return (
     <div>
-      {label && <p className="text-xs font-semibold text-gray-600 mb-1.5">{label}</p>}
+      {label && <p className="text-xs font-medium text-gray-600 mb-1.5">{label}</p>}
       {children}
     </div>
   );
@@ -74,7 +76,7 @@ function DSelect({ value, onChange, options }) {
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition-colors"
+      className={inputClass(false)}
     >
       {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
     </select>
@@ -89,7 +91,7 @@ function DDateInput({ value, onChange }) {
         type="date"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition-colors"
+        className={inputClass(false, "pl-9")}
       />
     </div>
   );
@@ -123,6 +125,12 @@ export default function PatientTable({ config = {} }) {
     surgeryLocations: [],
   });
 const [drawerOpen, setDrawerOpen] = useState(false);
+useEffect(() => {
+  if (!drawerOpen) return;
+  const onKey = (e) => e.key === "Escape" && setDrawerOpen(false);
+  window.addEventListener("keydown", onKey);
+  return () => window.removeEventListener("keydown", onKey);
+}, [drawerOpen]);
 
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch]           = useState("");
@@ -298,50 +306,51 @@ const [drawerOpen, setDrawerOpen] = useState(false);
 
   const showDefaultWindowNotice = dateWindow?.isDefault && !filters.allTime;
 
+  // 120000 → 1,20,000; leaves non-numeric values as they are.
+  const fmtGrouped = (v) => (!v ? "—" : Number.isFinite(Number(v)) ? Number(v).toLocaleString("en-IN") : v);
+
   const cellContent = (col, pt) => {
     switch (col) {
       case "visitDate":
         return <span className="text-sm text-gray-500 whitespace-nowrap">{fmtDate(pt.personal?.visitDate)}</span>;
       case "name":
-        return <span className="text-sm font-semibold text-gray-900">{pt.personal?.name || "Unknown"}</span>;
+        return <span className="text-sm font-medium text-gray-900 whitespace-nowrap">{pt.personal?.name || "Unknown"}</span>;
       case "phone":
         return (
-          <span className="flex items-center gap-1.5 text-sm text-gray-600">
-            <Phone className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+          <span className="text-sm text-gray-600 whitespace-nowrap tabular-nums">
             {maskPhone(pt.personal?.phone, userRole)}
           </span>
         );
       case "branch":
         return (
-          <span className="flex items-center gap-1.5 text-sm text-gray-600">
-            <MapPin className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-            {pt.personal?.branch}
+          <span className="text-sm text-gray-600 whitespace-nowrap">
+            {pt.personal?.branch || "—"}
           </span>
         );
       case "technique":
-        return <span className="text-xs text-gray-500">{pt.counselling?.techniqueSuggested || pt.personal?.techniqueQuoted || "—"}</span>;
+        return <span className="text-sm text-gray-600 whitespace-nowrap">{pt.counselling?.techniqueSuggested || pt.personal?.techniqueQuoted || "—"}</span>;
       case "package": {
         const val = pt.counselling?.finlpackage || pt.personal?.packageQuoted;
-        return <span className="text-sm text-gray-700 whitespace-nowrap">{useCurrency ? fmtRupee(val) : (val || "—")}</span>;
+        return <span className="block text-right text-sm text-gray-900 whitespace-nowrap tabular-nums">{useCurrency ? fmtRupee(val) : fmtGrouped(val)}</span>;
       }
       case "received": {
         const val = pt.payments?.amountReceived;
-        return <span className={`text-sm font-medium whitespace-nowrap ${useCurrency ? "text-emerald-600" : "text-gray-600"}`}>{useCurrency ? fmtRupee(val) : (val || "—")}</span>;
+        return <span className={`block text-right text-sm whitespace-nowrap tabular-nums ${useCurrency ? "text-emerald-700" : "text-gray-700"}`}>{useCurrency ? fmtRupee(val) : fmtGrouped(val)}</span>;
       }
       case "pending": {
         const val = pt.payments?.pendingAmount;
-        return <span className={`text-sm font-medium whitespace-nowrap ${useCurrency ? "text-orange-500" : "text-gray-600"}`}>{useCurrency ? fmtRupee(val) : (val || "—")}</span>;
+        return <span className={`block text-right text-sm whitespace-nowrap tabular-nums ${useCurrency ? "text-amber-700" : "text-gray-700"}`}>{useCurrency ? fmtRupee(val) : fmtGrouped(val)}</span>;
       }
       case "counsellor":
-        return <span className="text-sm text-gray-600">{pt.counselling?.counsellor?.name || "—"}</span>;
+        return <span className="text-sm text-gray-600 whitespace-nowrap">{pt.counselling?.counsellor?.name || "—"}</span>;
       case "surgeryDate":
         return <span className="text-sm text-gray-500 whitespace-nowrap">{fmtDate(pt.surgery?.surgeryDate)}</span>;
       case "reference":
-        return <span className="text-sm text-gray-600">{pt.personal?.reference?.name || "—"}</span>;
+        return <span className="text-sm text-gray-600 whitespace-nowrap">{pt.personal?.reference?.name || "—"}</span>;
       case "status":
         return (
-          <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border ${STATUS_COLORS[pt?.ops?.status] || "bg-gray-50 text-gray-600 border-gray-200"}`}>
-            {(pt?.ops?.status || "NEW").replace(/_/g, " ")}
+          <span className={`inline-flex items-center h-5 px-2 rounded-md text-xs font-medium whitespace-nowrap ${STATUS_COLORS[pt?.ops?.status] || "bg-gray-100 text-gray-700"}`}>
+            {(() => { const t = (pt?.ops?.status || "NEW").replace(/_/g, " ").toLowerCase(); return t.charAt(0).toUpperCase() + t.slice(1); })()}
           </span>
         );
       default:
@@ -350,54 +359,53 @@ const [drawerOpen, setDrawerOpen] = useState(false);
   };
 
   if (error) return (
-    <main className="flex-1 flex items-center justify-center bg-gray-50">
-      <div className="text-center space-y-1">
-        <p className="text-base font-semibold text-gray-800">Something went wrong</p>
-        <p className="text-sm text-red-500">{error.message || "Error"}</p>
-      </div>
+    <main className="flex-1 min-w-0 flex items-center justify-center bg-gray-50">
+      <ErrorState title="Couldn't load patients" description={error.message || "Please refresh and try again."} />
     </main>
   );
 
   return (
     <main className="flex-1 flex flex-col overflow-hidden min-w-0">
 
-      <div className="bg-white border-b border-gray-200 px-5 py-4 flex items-center justify-between gap-4 shrink-0">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900 leading-tight">{title}</h1>
-          {subtitle && <p className="text-sm text-gray-500 mt-0.5">{subtitle}</p>}
+      <div className="px-4 sm:px-6 lg:px-8 pt-6 lg:pt-7 pb-4 flex items-end justify-between gap-4 shrink-0">
+        <div className="min-w-0">
+          <h1 className="text-xl font-semibold tracking-tight text-gray-900 leading-tight">{title}</h1>
+          {subtitle && <p className="text-sm text-gray-500 mt-1">{subtitle}</p>}
         </div>
         {showAddButton && addButtonHref && (
           <Link
             href={addButtonHref}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition-colors text-sm font-semibold shrink-0 shadow-sm"
+            className={buttonClass("primary", "md", "shrink-0")}
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4" aria-hidden />
             New Patient
           </Link>
         )}
       </div>
 
-      <div className="bg-white border-b border-gray-200 px-5 py-2.5 flex flex-wrap items-center gap-2 shrink-0">
+      <div className="px-4 sm:px-6 lg:px-8 pb-3 flex flex-wrap items-center gap-2 shrink-0">
         <button
+          type="button"
           onClick={() => setDrawerOpen(true)}
-          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+          aria-expanded={drawerOpen}
+          className={buttonClass("secondary", "sm")}
         >
-          <Filter className="w-4 h-4" />
+          <Filter className="w-4 h-4" aria-hidden />
           Filters
           {chips.length > 0 && (
-            <span className="min-w-5 h-5 px-1.5 flex items-center justify-center rounded-full bg-indigo-600 text-white text-[10px] font-bold">
+            <span className="min-w-5 h-5 px-1.5 flex items-center justify-center rounded-full bg-indigo-600 text-white text-[11px] font-semibold tabular-nums">
               {chips.length}
             </span>
           )}
         </button>
 
         {showDefaultWindowNotice && (
-          <span className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 text-xs font-medium border border-amber-200">
-            <Calendar className="w-3.5 h-3.5" />
-            Showing: This Month
+          <span className="inline-flex items-center gap-2 h-8 px-2.5 rounded-lg bg-white text-gray-600 text-xs font-medium border border-gray-200">
+            <Calendar className="w-3.5 h-3.5 text-gray-400" aria-hidden />
+            This month
             <button
               onClick={() => applyFilter("allTime", true)}
-              className="font-semibold text-amber-900 underline underline-offset-2 hover:text-amber-950 transition-colors"
+              className="font-medium text-indigo-600 hover:text-indigo-800 transition-colors"
             >
               Show all time
             </button>
@@ -407,31 +415,35 @@ const [drawerOpen, setDrawerOpen] = useState(false);
         {chips.map((chip) => (
           <button
             key={chip.k}
+            type="button"
             onClick={() => removeChip(chip.k)}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 text-xs font-medium border border-indigo-200 hover:bg-indigo-100 transition-colors"
+            aria-label={`Remove filter ${chip.label}`}
+            className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-white border border-gray-200 text-gray-700 text-xs font-medium hover:border-gray-300 transition-colors"
           >
-            {chip.label} <X className="w-3 h-3" />
+            {chip.label} <X className="w-3 h-3 text-gray-500" aria-hidden />
           </button>
         ))}
         {chips.length > 0 && (
           <button
+            type="button"
             onClick={clearFilters}
-            className="inline-flex items-center gap-1 text-xs font-semibold text-red-500 hover:text-red-600 transition-colors"
+            className="inline-flex items-center h-7 px-2 rounded-md text-xs font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
           >
-            <X className="w-3 h-3" /> Clear all
+            Clear all
           </button>
         )}
 
         <div className="flex-1" />
 
-        <div className="relative w-56">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
+        <div className="relative w-full sm:w-64">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" aria-hidden />
           <input
-            type="text"
+            type="search"
+            aria-label="Search patients"
             placeholder="Search name, phone…"
             value={searchInput}
             onChange={(e) => handleSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition-colors"
+            className={inputClass(false, "h-8 pl-9")}
           />
         </div>
 
@@ -439,31 +451,40 @@ const [drawerOpen, setDrawerOpen] = useState(false);
           <button
             onClick={exportCSV}
             disabled={exporting}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-sm font-medium text-gray-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            type="button"
+            className={buttonClass("secondary", "sm")}
             title="Export CSV"
           >
-            <Download className={`w-4 h-4 ${exporting ? "animate-bounce" : ""}`} />
+            {exporting ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden /> : <Download className="w-4 h-4" aria-hidden />}
             <span className="hidden sm:inline">{exporting ? "Exporting…" : "Export"}</span>
           </button>
         )}
       </div>
 
-      <div className="flex-1 overflow-auto px-5 py-4">
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="flex-1 overflow-auto px-4 sm:px-6 lg:px-8 pb-6">
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
 
           {loading ? (
-            <div className="flex items-center justify-center py-24">
-              <div className="animate-spin h-10 w-10 border-4 border-indigo-100 border-t-indigo-500 rounded-full" />
+            <div className="divide-y divide-gray-100" aria-busy="true" aria-label="Loading patients">
+              <div className="h-9 bg-gray-50" />
+              {Array.from({ length: 8 }, (_, i) => (
+                <div key={i} className="flex items-center gap-6 px-4 h-11">
+                  <Skeleton className="h-3.5 w-20" />
+                  <Skeleton className="h-3.5 w-36" />
+                  <Skeleton className="h-3.5 w-28" />
+                  <Skeleton className="h-3.5 w-16 ml-auto" />
+                </div>
+              ))}
             </div>
           ) : (
             <div
-              className={`overflow-x-auto transition-opacity duration-150 ${
+              className={`relative overflow-x-auto transition-opacity duration-150 ${
                 isValidating ? "opacity-60" : "opacity-100"
               }`}
             >
               <table className="min-w-full text-sm">
                 <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200">
+                  <tr className="bg-gray-50/80 border-b border-gray-200">
                     {columns.map((col) => {
                       const def     = COL_DEFS[col] || { label: col };
                       const sortable = enableSorting && !!def.sortKey;
@@ -471,18 +492,31 @@ const [drawerOpen, setDrawerOpen] = useState(false);
                       return (
                         <th
                           key={col}
-                          onClick={sortable ? () => toggleSort(def.sortKey) : undefined}
-                          className={`px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap ${sortable ? "cursor-pointer select-none hover:bg-gray-100" : ""}`}
+                          scope="col"
+                          aria-sort={active ? (sort.dir === "asc" ? "ascending" : "descending") : undefined}
+                          className={`px-4 h-9 text-xs font-medium text-gray-500 whitespace-nowrap ${def.align === "right" ? "text-right" : "text-left"}`}
                         >
-                          <span className="inline-flex items-center gap-1">
-                            {def.label}
-                            {active && <span className="text-[10px] text-gray-400">{sort.dir === "asc" ? "▲" : "▼"}</span>}
-                          </span>
+                          {sortable ? (
+                            <button
+                              type="button"
+                              onClick={() => toggleSort(def.sortKey)}
+                              className={`group inline-flex items-center gap-1 -mx-1 px-1 rounded hover:text-gray-900 ${active ? "text-gray-900" : ""}`}
+                            >
+                              {def.label}
+                              {active ? (
+                                sort.dir === "asc" ? <ChevronUp className="w-3.5 h-3.5" aria-hidden /> : <ChevronDown className="w-3.5 h-3.5" aria-hidden />
+                              ) : (
+                                <ChevronsUpDown className="w-3.5 h-3.5 text-gray-300 group-hover:text-gray-400" aria-hidden />
+                              )}
+                            </button>
+                          ) : (
+                            def.label
+                          )}
                         </th>
                       );
                     })}
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      Actions
+                    <th scope="col" className="px-4 h-9 text-right text-xs font-medium text-gray-500">
+                      <span className="sr-only">Actions</span>
                     </th>
                   </tr>
                 </thead>
@@ -490,37 +524,41 @@ const [drawerOpen, setDrawerOpen] = useState(false);
                 <tbody className="divide-y divide-gray-100">
                   {patients.length === 0 ? (
                     <tr>
-                      <td colSpan={columns.length + 1} className="py-20 text-center">
-                        <div className="flex flex-col items-center gap-2">
-                          <Search className="w-10 h-10 text-gray-300" />
-                          <p className="text-sm font-semibold text-gray-600">No patients found</p>
-                          <p className="text-xs text-gray-400">Try adjusting your search or filters</p>
-                        </div>
+                      <td colSpan={columns.length + 1}>
+                        <EmptyState
+                          icon={Search}
+                          title="No patients found"
+                          description={chips.length || searchInput ? "Try a different search or clear some filters." : "Patients will appear here once they're added."}
+                          action={chips.length > 0 ? <Button size="sm" onClick={clearFilters}>Clear filters</Button> : null}
+                        />
                       </td>
                     </tr>
                   ) : patients.map((pt) => (
                     <tr key={pt._id} className="hover:bg-gray-50/70 transition-colors">
                       {columns.map((col) => (
-                        <td key={col} className="px-4 py-3.5">
+                        <td key={col} className="px-4 py-2">
                           {cellContent(col, pt)}
                         </td>
                       ))}
-                      <td className="px-4 py-3.5">
-                        <div className="flex items-center gap-1.5">
+                      <td className="px-4 py-2">
+                        <div className="flex items-center justify-end gap-1">
                           {actions.includes("view") && (
                             <button
+                              type="button"
                               onClick={() => window.open(`${basePath}/${pt._id}`, "_blank", "noopener,noreferrer")}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition-colors"
+                              aria-label={`View ${pt.personal?.name || "patient"} (opens in new tab)`}
+                              className={buttonClass("ghost", "sm", "h-7 px-2")}
                             >
-                              <Eye className="w-3.5 h-3.5" /> View
+                              <Eye className="w-3.5 h-3.5" aria-hidden /> View
                             </button>
                           )}
                           {actions.includes("edit") && (
                             <Link
                               href={`${basePath}/edit/${pt._id}`}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 transition-colors"
+                              aria-label={`Edit ${pt.personal?.name || "patient"}`}
+                              className={buttonClass("ghost", "sm", "h-7 px-2")}
                             >
-                              <SquarePen className="w-3.5 h-3.5" /> Edit
+                              <SquarePen className="w-3.5 h-3.5" aria-hidden /> Edit
                             </Link>
                           )}
                         </div>
@@ -532,35 +570,41 @@ const [drawerOpen, setDrawerOpen] = useState(false);
             </div>
           )}
 
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 bg-gray-50 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-2.5 border-t border-gray-200">
             <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500">Rows per page:</span>
+              <label htmlFor="pt-per-page" className="hidden sm:inline text-xs text-gray-500 whitespace-nowrap">Rows per page</label>
               <select
+                id="pt-per-page"
+                aria-label="Rows per page"
                 value={perPage}
                 onChange={(e) => { setPerPage(Number(e.target.value)); setPage(1); }}
-                className="text-sm border border-gray-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition-colors"
+                className={inputClass(false, "h-8 w-auto pr-7")}
               >
                 {pageSizeOptions.map((n) => <option key={n} value={n}>{n}</option>)}
               </select>
             </div>
             <div className="flex items-center gap-3">
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-gray-500 tabular-nums">
                 {total === 0 ? 0 : startIdx + 1}–{endIdx} of{" "}
                 <span className="font-semibold text-gray-700">{total}</span>
               </p>
               <div className="flex items-center gap-1">
                 <button
+                  type="button"
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page <= 1}
-                  className="p-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  aria-label="Previous page"
+                  className={buttonClass("secondary", "icon-sm")}
                 >
                   <ChevronLeft className="w-4 h-4 text-gray-600" />
                 </button>
-                <span className="text-xs text-gray-600 min-w-14 text-center font-medium">{page} / {totalPages}</span>
+                <span className="text-xs text-gray-600 min-w-14 text-center font-medium tabular-nums">{page} / {totalPages}</span>
                 <button
+                  type="button"
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page >= totalPages}
-                  className="p-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  aria-label="Next page"
+                  className={buttonClass("secondary", "icon-sm")}
                 >
                   <ChevronRight className="w-4 h-4 text-gray-600" />
                 </button>
@@ -571,16 +615,16 @@ const [drawerOpen, setDrawerOpen] = useState(false);
       </div>
 
       {drawerOpen && (
-        <div className="fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setDrawerOpen(false)} />
-          <div className="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl flex flex-col">
+        <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-labelledby="pt-filters-title">
+          <div className="absolute inset-0 bg-gray-950/40 overlay-in" onClick={() => setDrawerOpen(false)} />
+          <div className="drawer-in absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl flex flex-col">
 
-            <div className="px-6 py-4 border-b flex items-center justify-between shrink-0">
+            <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between shrink-0">
               <div>
-                <h3 className="text-base font-bold text-gray-900">Advanced Filters</h3>
+                <h3 id="pt-filters-title" className="text-base font-semibold text-gray-900">Filters</h3>
                 <p className="text-xs text-gray-500 mt-0.5">Refine your patient list</p>
               </div>
-              <button onClick={() => setDrawerOpen(false)} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+              <button type="button" onClick={() => setDrawerOpen(false)} aria-label="Close filters" className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
                 <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>
@@ -695,7 +739,7 @@ const [drawerOpen, setDrawerOpen] = useState(false);
                                 : filters.surgeryLocations.filter((l) => l !== loc);
                               applyFilter("surgeryLocations", next);
                             }}
-                            className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                            className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500/30"
                           />
                           <span className="text-sm text-gray-700">{loc}</span>
                         </label>
@@ -716,7 +760,7 @@ const [drawerOpen, setDrawerOpen] = useState(false);
                           type="checkbox"
                           checked={filters.visited}
                           onChange={(e) => applyFilter("visited", e.target.checked)}
-                          className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                          className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500/30"
                         />
                         <span className="text-sm font-medium text-gray-700">Visited Patients Only</span>
                       </label>
@@ -727,7 +771,7 @@ const [drawerOpen, setDrawerOpen] = useState(false);
                           type="checkbox"
                           checked={filters.readyForSurgery}
                           onChange={(e) => applyFilter("readyForSurgery", e.target.checked)}
-                          className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                          className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500/30"
                         />
                         <span className="text-sm font-medium text-gray-700">Ready for Surgery Only</span>
                       </label>
@@ -737,16 +781,16 @@ const [drawerOpen, setDrawerOpen] = useState(false);
               </DrawerSection>
             </div>
 
-            <div className="px-5 py-4 border-t bg-gray-50 flex gap-3 shrink-0">
+            <div className="px-5 py-3.5 border-t border-gray-200 flex gap-2 shrink-0">
               <button
                 onClick={() => { clearFilters(); setDrawerOpen(false); }}
-                className="flex-1 py-2.5 rounded-xl border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 text-sm font-semibold transition-colors"
+                className={buttonClass("secondary", "lg", "flex-1 justify-center")}
               >
                 Reset All
               </button>
               <button
                 onClick={() => setDrawerOpen(false)}
-                className="flex-1 py-2.5 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 text-sm font-semibold transition-colors"
+                className={buttonClass("primary", "lg", "flex-1 justify-center")}
               >
                 Done
               </button>

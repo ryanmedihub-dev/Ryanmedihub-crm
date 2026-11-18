@@ -8,7 +8,7 @@ import {
 const EXP_TYPES = ["Fresher", "Experienced"];
 
 function Field({ label, name, value, onChange, type = "text", required, textarea, options, placeholder }) {
-  const cls = "w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/50 focus:border-violet-400 transition-all bg-white placeholder:text-gray-400";
+  const cls = "w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30/50 focus:border-indigo-500 transition-all bg-white placeholder:text-gray-400";
   return (
     <div>
       <label className="block text-xs font-semibold text-gray-600 mb-1.5">
@@ -39,7 +39,7 @@ function RatingBoxes({ label, name, value, onChange }) {
     <div className="bg-gray-50 rounded-xl p-3.5 border border-gray-100">
       <div className="flex items-center justify-between mb-2.5">
         <label className="text-xs font-semibold text-gray-600">{label}</label>
-        <span className={`text-xs font-bold tabular-nums px-2 py-0.5 rounded-lg ${n > 0 ? (n >= 7 ? "bg-emerald-100 text-emerald-700" : n >= 5 ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-600") : "bg-gray-200 text-gray-400"}`}>
+        <span className={`text-xs font-semibold tabular-nums px-2 py-0.5 rounded-lg ${n > 0 ? (n >= 7 ? "bg-emerald-100 text-emerald-700" : n >= 5 ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-600") : "bg-gray-200 text-gray-400"}`}>
           {n > 0 ? `${n}/10` : "—"}
         </span>
       </div>
@@ -50,7 +50,7 @@ function RatingBoxes({ label, name, value, onChange }) {
           return (
             <button key={v} type="button"
               onClick={() => onChange({ target: { name, value: v === n ? 0 : v } })}
-              className={`flex-1 h-7 rounded-lg text-xs font-bold border transition-all ${active ? activeColor : "border-gray-200 bg-white text-gray-400 hover:border-violet-300 hover:text-violet-500"}`}>
+              className={`flex-1 h-7 rounded-lg text-xs font-semibold border transition-all ${active ? activeColor : "border-gray-200 bg-white text-gray-400 hover:border-indigo-300 hover:text-indigo-500"}`}>
               {v}
             </button>
           );
@@ -63,10 +63,10 @@ function RatingBoxes({ label, name, value, onChange }) {
 function SectionHeading({ title, icon: Icon }) {
   return (
     <div className="flex items-center gap-2">
-      <div className="w-6 h-6 rounded-lg bg-violet-100 flex items-center justify-center shrink-0">
-        <Icon className="w-3.5 h-3.5 text-violet-600" />
+      <div className="w-6 h-6 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0">
+        <Icon className="w-3.5 h-3.5 text-indigo-600" />
       </div>
-      <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">{title}</span>
+      <span className="text-xs font-medium text-gray-700">{title}</span>
       <div className="flex-1 h-px bg-gray-100" />
     </div>
   );
@@ -75,10 +75,10 @@ function SectionHeading({ title, icon: Icon }) {
 function StatusSelector({ value, onChange }) {
   const opts = [
     { val: "Applied",             idle: "bg-blue-50 text-blue-600 border-blue-200",    active: "bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-200" },
-    { val: "Interview Scheduled", idle: "bg-indigo-50 text-indigo-600 border-indigo-200", active: "bg-indigo-600 text-white border-indigo-600 shadow-sm shadow-indigo-200" },
-    { val: "Selected",            idle: "bg-emerald-50 text-emerald-700 border-emerald-200", active: "bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-200" },
-    { val: "Rejected",            idle: "bg-red-50 text-red-600 border-red-200",       active: "bg-red-600 text-white border-red-600 shadow-sm shadow-red-200" },
-    { val: "On Hold",             idle: "bg-amber-50 text-amber-600 border-amber-200", active: "bg-amber-500 text-white border-amber-500 shadow-sm shadow-amber-200" },
+    { val: "Interview Scheduled", idle: "bg-indigo-50 text-indigo-600 border-indigo-200", active: "bg-indigo-600 text-white border-indigo-600 " },
+    { val: "Selected",            idle: "bg-emerald-50 text-emerald-700 border-emerald-200", active: "bg-emerald-600 text-white border-emerald-600 " },
+    { val: "Rejected",            idle: "bg-red-50 text-red-600 border-red-200",       active: "bg-red-600 text-white border-red-600 " },
+    { val: "On Hold",             idle: "bg-amber-50 text-amber-600 border-amber-200", active: "bg-amber-500 text-white border-amber-500 " },
   ];
   return (
     <div>
@@ -155,22 +155,22 @@ export default function CandidateEditModal({ candidate: initial, onClose, onSave
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 overlay-in z-50 flex items-center justify-center bg-gray-950/40 p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[94vh] flex flex-col">
 
-        <div className="bg-linear-to-r from-violet-600 to-purple-600 rounded-t-2xl px-6 py-5 shrink-0">
+        <div className="bg-white border-b border-gray-200 rounded-t-2xl px-6 py-4 shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                <Pencil className="w-5 h-5 text-white" />
+              <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center">
+                <Pencil className="w-4 h-4 text-gray-600" />
               </div>
               <div>
-                <h2 className="text-base font-bold text-white leading-tight">Edit Candidate</h2>
-                <p className="text-violet-200 text-xs mt-0.5">{initial?.name}</p>
+                <h2 className="text-base font-semibold text-gray-900 leading-tight">Edit Candidate</h2>
+                <p className="text-gray-500 text-xs mt-0.5">{initial?.name}</p>
               </div>
             </div>
-            <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-xl transition-colors">
-              <X className="w-5 h-5 text-white" />
+            <button type="button" onClick={onClose} aria-label="Close" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+              <X className="w-5 h-5 text-gray-500" />
             </button>
           </div>
         </div>
@@ -239,7 +239,7 @@ export default function CandidateEditModal({ candidate: initial, onClose, onSave
             Cancel
           </button>
           <button onClick={handleSubmit} disabled={saving}
-            className="px-6 py-2.5 text-sm rounded-xl bg-violet-600 text-white font-semibold hover:bg-violet-700 transition-colors disabled:opacity-60 flex items-center gap-2 shadow-sm shadow-violet-200">
+            className="px-6 py-2.5 text-sm rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-60 flex items-center gap-2 shadow-sm ">
             {saving
               ? <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Saving…</>
               : <><CheckCircle className="w-4 h-4" />Save Changes</>

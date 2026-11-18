@@ -68,7 +68,7 @@ export default function AssetsAdvancesPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setAdvanceModal({ mode: "OUT", receivable: null })}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-teal-600 text-white rounded-xl text-sm font-semibold shadow-sm hover:bg-teal-700"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 text-white rounded-xl text-sm font-semibold shadow-sm hover:bg-indigo-700"
             >
               <HandCoins className="w-3.5 h-3.5" /> Record Advance
             </button>
@@ -118,10 +118,10 @@ export default function AssetsAdvancesPage() {
         </select>
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
-            <thead className="bg-gray-50 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+            <thead className="bg-gray-50 text-left text-[11px] font-medium text-gray-500">
               <tr>
                 <th className="px-4 py-2.5">Date</th>
                 <th className="px-4 py-2.5">Party</th>
@@ -185,7 +185,7 @@ export default function AssetsAdvancesPage() {
                       {open && lines.length > 0 && (
                         <tr className="bg-gray-50/60">
                           <td colSpan={8} className="px-6 py-2">
-                            <p className="text-[11px] font-semibold text-gray-400 uppercase mb-1">
+                            <p className="text-[11px] font-medium text-gray-400 mb-1">
                               Settled against {lines.length} payable{lines.length === 1 ? "" : "s"}
                             </p>
                             <ul className="space-y-1">

@@ -6,6 +6,7 @@ import { useToast } from "@/components/Toast";
 import { ModalShell, RecordCollectionModal, SettleModal } from "@/components/collab/CollabModals";
 import { formatCurrency, formatDate } from "@/lib/financeUI";
 import { COLLAB_BRANCHES } from "@/lib/branches";
+import { buttonClass, inputClass } from "@/components/ui";
 import {
   Plus,
   Search,
@@ -227,26 +228,26 @@ export default function CollabSettlementView({ sidebar = null }) {
   return (
     <div className="flex min-h-screen bg-gray-50">
       {sidebar}
-      <main className="flex-1 p-4 sm:p-6 lg:p-8">
+      <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto">
           {}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Collab Settlement</h1>
+              <h1 className="text-xl font-semibold tracking-tight text-gray-900">Collab Settlement</h1>
               <p className="text-sm text-gray-500 mt-1">Patient-wise settlement overview across all partner clinics</p>
             </div>
             <button
               onClick={() => setShowCreate(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold text-sm hover:bg-indigo-700 transition-colors shadow-sm"
+              className={buttonClass("primary")}
             >
               <Plus className="w-4 h-4" />
-              New Collab Case
+              New collab case
             </button>
           </div>
 
           {}
-          <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden mb-5">
-            <div className="flex flex-wrap divide-y sm:divide-y-0 sm:divide-x divide-gray-100">
+          <div className="mb-6">
+            <div className="stagger grid grid-cols-2 lg:grid-cols-4 gap-px bg-gray-100 border border-gray-200 rounded-xl overflow-hidden">
               <KPIItem label="Total Pending" value={formatCurrency(stats.pending.total)} count={stats.pending.count} icon={Clock} color="bg-amber-50 text-amber-600" />
               <KPIItem label="Standing Payables" value={formatCurrency(stats.payable.total)} count={stats.payable.count} icon={TrendingDown} color="bg-rose-50 text-rose-600" />
               <KPIItem label="Standing Receivables" value={formatCurrency(stats.receivable.total)} count={stats.receivable.count} icon={TrendingUp} color="bg-emerald-50 text-emerald-600" />
@@ -255,21 +256,23 @@ export default function CollabSettlementView({ sidebar = null }) {
           </div>
 
           {}
-          <div className="flex gap-1 p-1 bg-gray-100 rounded-xl overflow-x-auto mb-5">
+          <div role="tablist" className="flex gap-1 overflow-x-auto scrollbar-hide border-b border-gray-200 mb-4">
             {TABS.map((tab) => {
               const Icon = tab.icon;
               const active = activeTab === tab.key;
               return (
                 <button
                   key={tab.key}
+                  role="tab"
+                  aria-selected={active}
                   onClick={() => switchTab(tab.key)}
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition ${
-                    active ? "bg-white text-gray-950 shadow-sm" : "text-gray-500 hover:text-gray-800 hover:bg-white/60"
+                  className={`group -mb-px flex items-center gap-2 h-10 px-3 border-b-2 text-sm whitespace-nowrap transition-colors duration-150 ${
+                    active ? "border-indigo-600 text-gray-900 font-medium" : "border-transparent text-gray-500 hover:text-gray-900 hover:border-gray-300"
                   }`}
                 >
-                  <Icon className="w-4 h-4" />
+                  <Icon className={`w-4 h-4 ${active ? "text-indigo-600" : "text-gray-400 group-hover:text-gray-500"}`} />
                   {tab.label}
-                  <span className={`text-[11px] ${active ? "text-gray-500" : "text-gray-400"}`}>
+                  <span className={`text-xs tabular-nums ${active ? "text-gray-500" : "text-gray-400"}`}>
                     {filtered[tab.key]?.length || 0}
                   </span>
                 </button>
@@ -278,7 +281,7 @@ export default function CollabSettlementView({ sidebar = null }) {
           </div>
 
           {}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-5">
+          <div className="mb-4">
             <div className="flex flex-col lg:flex-row gap-3">
               <div className="relative flex-1 lg:max-w-md">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -289,10 +292,10 @@ export default function CollabSettlementView({ sidebar = null }) {
                     setPage(1);
                   }}
                   placeholder="Search patient name, phone or clinic…"
-                  className="w-full h-10 pl-9 pr-9 rounded-lg border border-gray-200 bg-gray-50/60 text-sm outline-none focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition"
+                  className={inputClass(false, "pl-9 pr-9")}
                 />
                 {search && (
-                  <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700">
+                  <button aria-label="Clear search" onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700">
                     <X className="w-4 h-4" />
                   </button>
                 )}
@@ -335,7 +338,7 @@ export default function CollabSettlementView({ sidebar = null }) {
               {clinicFilter && (
                 <button
                   onClick={() => setSettleClinic(clinicFilter)}
-                  className="inline-flex h-10 items-center gap-2 px-3.5 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-colors"
+                  className="inline-flex h-10 items-center gap-2 px-3.5 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors"
                 >
                   <Wallet className="w-4 h-4" />
                   Settle {clinicFilter}
@@ -382,17 +385,17 @@ export default function CollabSettlementView({ sidebar = null }) {
                   <table className="w-full text-sm">
                     <thead className="bg-gray-50 border-b border-gray-200">
                       <tr>
-                        <th className="text-left px-4 py-3 font-semibold text-gray-600">Patient</th>
-                        <th className="text-left px-3 py-3 font-semibold text-gray-600">Clinic</th>
-                        <th className="text-left px-3 py-3 font-semibold text-gray-600">Procedure</th>
-                        <th className="text-right px-3 py-3 font-semibold text-gray-600">Package</th>
-                        <th className="text-right px-3 py-3 font-semibold text-gray-600">Clinic Share</th>
-                        <th className="text-right px-3 py-3 font-semibold text-emerald-600">Paid (Us)</th>
-                        <th className="text-right px-3 py-3 font-semibold text-indigo-600">Paid (Clinic)</th>
-                        <th className="text-right px-3 py-3 font-semibold text-amber-700">Outstanding</th>
-                        <th className="text-right px-3 py-3 font-semibold text-emerald-700">Receivable</th>
-                        <th className="text-right px-3 py-3 font-semibold text-rose-700">Payable</th>
-                        <th className="text-right px-3 py-3 font-semibold text-gray-600">Actions</th>
+                        <th className="text-left px-4 py-3 font-medium text-gray-600">Patient</th>
+                        <th className="text-left px-3 py-3 font-medium text-gray-600">Clinic</th>
+                        <th className="text-left px-3 py-3 font-medium text-gray-600">Procedure</th>
+                        <th className="text-right px-3 py-3 font-medium text-gray-600">Package</th>
+                        <th className="text-right px-3 py-3 font-medium text-gray-600 whitespace-nowrap">Clinic share</th>
+                        <th className="text-right px-3 py-3 font-medium text-gray-600 whitespace-nowrap">Paid (us)</th>
+                        <th className="text-right px-3 py-3 font-medium text-gray-600 whitespace-nowrap">Paid (clinic)</th>
+                        <th className="text-right px-3 py-3 font-medium text-gray-600">Outstanding</th>
+                        <th className="text-right px-3 py-3 font-medium text-gray-600">Receivable</th>
+                        <th className="text-right px-3 py-3 font-medium text-gray-600">Payable</th>
+                        <th className="text-right px-3 py-3 font-medium text-gray-600">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
@@ -414,12 +417,12 @@ export default function CollabSettlementView({ sidebar = null }) {
                               {c.patientPhone && <p className="text-xs text-gray-400 ml-5">{c.patientPhone}</p>}
                             </td>
                             <td className="px-3 py-3 text-gray-700">{c.clinic}</td>
-                            <td className="px-3 py-3 text-gray-700">{c.procedure}</td>
+                            <td className="px-3 py-3 text-gray-700 whitespace-nowrap">{c.procedure}</td>
                             <td className="px-3 py-3 text-right tabular-nums">{formatCurrency(c.packageAmount)}</td>
                             <td className="px-3 py-3 text-right tabular-nums">{formatCurrency(c.clinicShare)}</td>
-                            <td className="px-3 py-3 text-right tabular-nums text-emerald-600">{formatCurrency(c.collectedByUs)}</td>
-                            <td className="px-3 py-3 text-right tabular-nums text-indigo-600">{formatCurrency(c.collectedByClinic)}</td>
-                            <td className="px-3 py-3 text-right tabular-nums font-semibold text-amber-700">{formatCurrency(c.patientOutstanding)}</td>
+                            <td className="px-3 py-3 text-right tabular-nums text-gray-700">{formatCurrency(c.collectedByUs)}</td>
+                            <td className="px-3 py-3 text-right tabular-nums text-gray-700">{formatCurrency(c.collectedByClinic)}</td>
+                            <td className={`px-3 py-3 text-right tabular-nums font-medium ${c.patientOutstanding > 0 ? "text-amber-700" : "text-gray-400"}`}>{formatCurrency(c.patientOutstanding)}</td>
                             <SettlementCell value={c.receivableValue} total={c.receivableTotal} tone="text-emerald-700" />
                             <SettlementCell value={c.payableValue} total={c.payableTotal} tone="text-rose-700" />
                             <td className="px-3 py-3">
@@ -427,7 +430,7 @@ export default function CollabSettlementView({ sidebar = null }) {
                                 {activeTab !== "settled" && ((c.payableValue || 0) > 0 || (c.receivableValue || 0) > 0) && (
                                   <button
                                     onClick={() => setSettleClinic(c.clinic)}
-                                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-semibold hover:bg-emerald-100 transition"
+                                    className="press inline-flex items-center gap-1.5 h-7 px-2.5 border border-gray-200 bg-white text-gray-700 rounded-md text-xs font-medium hover:border-gray-300 hover:bg-gray-50 transition-colors"
                                   >
                                     <Wallet className="w-3.5 h-3.5" /> Settle
                                   </button>
@@ -494,7 +497,7 @@ export default function CollabSettlementView({ sidebar = null }) {
           {}
           {clinicFilter && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5 mt-5">
-              <h4 className="text-sm font-bold text-gray-900 mb-3">
+              <h4 className="text-sm font-semibold text-gray-900 mb-3">
                 Settlement History — {clinicFilter} ({settlements.length})
               </h4>
               {settlementsLoading ? (
@@ -584,17 +587,10 @@ export default function CollabSettlementView({ sidebar = null }) {
 
 function KPIItem({ label, value, count, icon: Icon, color }) {
   return (
-    <div className="flex-1 min-w-42.5 px-5 py-4">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-xs font-medium text-gray-500">{label}</p>
-          <p className="mt-1 text-xl font-bold tracking-tight text-gray-950">{value}</p>
-          <p className="mt-1 text-xs text-gray-400">{count} cases</p>
-        </div>
-        <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${color}`}>
-          <Icon className="w-4 h-4" />
-        </div>
-      </div>
+    <div className="min-w-0 bg-white px-5 py-4">
+      <p className="text-[13px] font-medium text-gray-500 truncate">{label}</p>
+      <p className="mt-1.5 text-xl font-semibold tracking-tight text-gray-900 tabular-nums whitespace-nowrap">{value}</p>
+      <p className="mt-0.5 text-xs text-gray-500 tabular-nums">{count} {count === 1 ? "case" : "cases"}</p>
     </div>
   );
 }
@@ -611,7 +607,7 @@ function SettlementCell({ value, total, tone }) {
     <td className={`px-3 py-3 text-right tabular-nums ${cleared ? "text-gray-400" : tone}`}>
       <span className={cleared ? "" : "font-semibold"}>{formatCurrency(value)}</span>
       {cleared && (total || 0) > 0 && (
-        <span className="block text-[10px] text-gray-400">settled</span>
+        <span className="block text-[11px] text-gray-400">settled</span>
       )}
     </td>
   );
@@ -731,13 +727,13 @@ function PatientTransactions({ patientId, patientName }) {
           <table className="w-full text-xs">
             <thead className="text-gray-500 border-b border-gray-100">
               <tr>
-                <th className="text-left px-1 py-1.5 font-semibold">Date</th>
-                <th className="text-left px-1 py-1.5 font-semibold">Category</th>
-                <th className="text-left px-1 py-1.5 font-semibold">Procedure / Head</th>
-                <th className="text-left px-1 py-1.5 font-semibold">Method</th>
-                <th className="text-left px-1 py-1.5 font-semibold">Account</th>
-                <th className="text-left px-1 py-1.5 font-semibold">Branch</th>
-                <th className="text-right px-1 py-1.5 font-semibold">Amount</th>
+                <th className="text-left px-1 py-1.5 font-medium">Date</th>
+                <th className="text-left px-1 py-1.5 font-medium">Category</th>
+                <th className="text-left px-1 py-1.5 font-medium">Procedure / Head</th>
+                <th className="text-left px-1 py-1.5 font-medium">Method</th>
+                <th className="text-left px-1 py-1.5 font-medium">Account</th>
+                <th className="text-left px-1 py-1.5 font-medium">Branch</th>
+                <th className="text-right px-1 py-1.5 font-medium">Amount</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -775,20 +771,20 @@ function CaseHistory({ collabCase }) {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
         <div>
           <p className="text-[11px] font-semibold text-gray-400 uppercase">Collected by Us</p>
-          <p className="font-bold text-emerald-700 tabular-nums">{formatCurrency(collabCase.collectedByUs)}</p>
+          <p className="font-semibold text-emerald-700 tabular-nums">{formatCurrency(collabCase.collectedByUs)}</p>
         </div>
         <div>
           <p className="text-[11px] font-semibold text-gray-400 uppercase">Collected by Clinic</p>
-          <p className="font-bold text-indigo-700 tabular-nums">{formatCurrency(collabCase.collectedByClinic)}</p>
+          <p className="font-semibold text-indigo-700 tabular-nums">{formatCurrency(collabCase.collectedByClinic)}</p>
         </div>
         <div>
           <p className="text-[11px] font-semibold text-gray-400 uppercase">Patient Outstanding</p>
-          <p className="font-bold text-amber-700 tabular-nums">{formatCurrency(collabCase.patientOutstanding)}</p>
+          <p className="font-semibold text-amber-700 tabular-nums">{formatCurrency(collabCase.patientOutstanding)}</p>
         </div>
         <div>
           <p className="text-[11px] font-semibold text-gray-400 uppercase">Case Net</p>
           <p
-            className={`font-bold tabular-nums ${
+            className={`font-semibold tabular-nums ${
               collabCase.clinicShareSettledAt
                 ? collabCase.caseNet > 0
                   ? "text-emerald-700"
@@ -882,7 +878,7 @@ function NewCollabCaseModal({ onClose, onSuccess, toast }) {
       }}
     >
       <div className="p-4 sm:p-6">
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white">
           <div className="p-4 sm:p-6">
             <CollabCaseForm
               onCancel={onClose}

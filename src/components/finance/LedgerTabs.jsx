@@ -9,8 +9,8 @@ export default function LedgerTabs({ tabs }) {
   const qs = searchParams.toString();
 
   return (
-    <div className="-mx-1 overflow-x-auto">
-      <div className="flex gap-1.5 px-1 pb-1">
+    <nav aria-label="Sections" className="overflow-x-auto scrollbar-hide border-b border-gray-200">
+      <div className="flex gap-1">
         {tabs.map((tab) => {
           const active = tab.exact
             ? pathname === tab.href
@@ -20,18 +20,19 @@ export default function LedgerTabs({ tabs }) {
             <Link
               key={tab.href}
               href={qs ? `${tab.href}?${qs}` : tab.href}
-              className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold transition-colors ${
+              aria-current={active ? "page" : undefined}
+              className={`group -mb-px inline-flex shrink-0 items-center gap-2 h-10 px-3 border-b-2 text-sm transition-colors duration-150 ${
                 active
-                  ? "bg-indigo-600 text-white shadow-sm"
-                  : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+                  ? "border-indigo-600 text-gray-900 font-medium"
+                  : "border-transparent text-gray-500 hover:text-gray-900 hover:border-gray-300"
               }`}
             >
-              {Icon && <Icon className="w-4 h-4" />}
+              {Icon && <Icon className={`w-4 h-4 ${active ? "text-indigo-600" : "text-gray-400 group-hover:text-gray-500"}`} />}
               {tab.label}
             </Link>
           );
         })}
       </div>
-    </div>
+    </nav>
   );
 }

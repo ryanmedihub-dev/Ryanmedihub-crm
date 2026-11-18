@@ -4,14 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { maskPhone } from "@/utils/phoneUtils";
-import {
-  UserX,
-  Phone,
-  Calendar,
-  MapPin,
-  Search,
-  Filter,
-} from "lucide-react";
+import { UserX, Search, Filter, ChevronRight } from "lucide-react";
+import { Button, EmptyState, Input, Page, PageHeader, Panel, Select, Skeleton } from "@/components/ui";
 import CollabSidebar from "@/components/Sidebars/CollabSidebar";
 import { useToast } from "@/components/Toast";
 
@@ -79,49 +73,53 @@ export default function NotVisited() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen">
+      <div className="flex min-h-screen bg-gray-50">
         <CollabSidebar />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
-        </div>
+        <Page>
+          <PageHeader title="Not Visited Patients" description="Patients who haven't been counselled yet" />
+          <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100" aria-busy="true">
+            {Array.from({ length: 8 }, (_, i) => (
+              <div key={i} className="flex items-center gap-6 px-4 h-12">
+                <Skeleton className="h-3.5 w-40" />
+                <Skeleton className="h-3.5 w-28" />
+                <Skeleton className="h-3.5 w-20 ml-auto" />
+              </div>
+            ))}
+          </div>
+        </Page>
       </div>
     );
   }
+
+  const filtersActive = searchQuery || branchFilter !== "all";
 
   return (
     <div className="flex min-h-screen bg-gray-50">
       <CollabSidebar />
 
-      <main className="flex-1 p-4 lg:p-8">
-        <div className="mb-6">
-          <div className=" mb-2">
-            <h1 className="text-2xl font-bold text-gray-900">Not Visited Patients</h1>
-          </div>
-          <p className="text-gray-600">
-            Patients who haven't been counselled yet
-          </p>
-        </div>
+      <Page>
+        <PageHeader title="Not Visited Patients" description="Patients who haven't been counselled yet" />
 
-        <div className="rounded-xl mb-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
+        <Panel flush>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 px-4 py-3 border-b border-gray-100">
+            <div className="relative flex-1 sm:max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" aria-hidden />
+              <Input
+                type="search"
+                aria-label="Search by name or phone"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by name or phone..."
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                placeholder="Search by name or phone…"
+                className="pl-9"
               />
             </div>
-
-            <div className="w-full md:w-64">
-              <select
-                value={branchFilter}
-                onChange={(e) => setBranchFilter(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
-              >
-                <option value="all">All Branches</option>
+            <Select
+              aria-label="Branch"
+              value={branchFilter}
+              onChange={(e) => setBranchFilter(e.target.value)}
+              className="sm:w-48"
+            >
+              <option value="all">All branches</option>
                 <option value="Patna">Patna</option>
                 <option value="Gujarat">Gujarat</option>
                 <option value="Kolkata">Kolkata</option>
@@ -141,95 +139,83 @@ export default function NotVisited() {
                 <option value="Bhopal">Bhopal</option>
                 <option value="Nagpur">Nagpur</option>
                 <option value="Dehradun">Dehradun</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="mt-4 flex items-center justify-between">
-            <p className="text-sm text-gray-600">
-              Showing <span className="font-semibold">{filteredPatients.length}</span>{" "}
-              of <span className="font-semibold">{patients.length}</span> patients
+            </Select>
+            <p className="sm:ml-auto text-xs text-gray-500 tabular-nums">
+              {filteredPatients.length} of {patients.length} patients
             </p>
-            <button
-              onClick={() => {
-                setSearchQuery("");
-                setBranchFilter("all");
-              }}
-              className="text-sm text-amber-600 hover:text-amber-700 font-medium"
-            >
-              Reset Filters
-            </button>
-          </div>
-        </div>
-
-        {filteredPatients.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredPatients.map((patient) => (
-              <div
-                key={patient._id}
-                onClick={() => handlePatientClick(patient._id)}
-                className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md hover:border-amber-200 transition-all cursor-pointer group"
+            {filtersActive && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setSearchQuery("");
+                  setBranchFilter("all");
+                }}
               >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-12 h-12 rounded-full bg-linear-to-br from-amber-500 to-orange-500 flex items-center justify-center">
-                    <span className="text-white font-bold text-lg">
-                      {patient.personal?.name?.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
-                    Not Visited
-                  </span>
-                </div>
-
-                <h3 className="text-lg font-bold text-gray-900 mb-3 group-hover:text-amber-600 transition-colors">
-                  {patient.personal?.name}
-                </h3>
-
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Phone className="w-4 h-4" />
-                    <span>{maskPhone(patient.personal?.phone, userRole) || "N/A"}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <MapPin className="w-4 h-4" />
-                    <span>{patient.personal?.branch || "N/A"}</span>
-                  </div>
-                  {patient.personal?.visitDate && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Calendar className="w-4 h-4" />
-                      <span>
-                        Visit: {new Date(patient.personal.visitDate).toLocaleDateString()}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                  <p className="text-xs text-gray-500">
-                    Added {new Date(patient.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-            ))}
+                Reset
+              </Button>
+            )}
           </div>
-        ) : (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
-            <div className="w-16 h-16 rounded-full bg-linear-to-br from-amber-100 to-orange-100 flex items-center justify-center mx-auto mb-4">
-              <UserX className="w-8 h-8 text-amber-600" />
+
+          {filteredPatients.length > 0 ? (
+            <div className="relative overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead className="bg-gray-50/80 border-b border-gray-200">
+                  <tr>
+                    <th scope="col" className="px-4 h-9 text-left text-xs font-medium text-gray-500">Patient</th>
+                    <th scope="col" className="px-4 h-9 text-left text-xs font-medium text-gray-500">Phone</th>
+                    <th scope="col" className="px-4 h-9 text-left text-xs font-medium text-gray-500">Branch</th>
+                    <th scope="col" className="px-4 h-9 text-left text-xs font-medium text-gray-500">Visit date</th>
+                    <th scope="col" className="px-4 h-9 text-left text-xs font-medium text-gray-500">Added</th>
+                    <th scope="col" className="px-4 h-9"><span className="sr-only">Open</span></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filteredPatients.map((patient) => (
+                    <tr
+                      key={patient._id}
+                      onClick={() => handlePatientClick(patient._id)}
+                      className="group cursor-pointer hover:bg-gray-50/70 transition-colors"
+                    >
+                      <td className="px-4 py-2.5">
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); handlePatientClick(patient._id); }}
+                          className="flex items-center gap-2.5 text-left rounded"
+                        >
+                          <span className="w-7 h-7 shrink-0 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-xs font-semibold">
+                            {patient.personal?.name?.charAt(0).toUpperCase() || "?"}
+                          </span>
+                          <span className="font-medium text-gray-900">{patient.personal?.name || "Unknown"}</span>
+                        </button>
+                      </td>
+                      <td className="px-4 py-2.5 text-gray-600 whitespace-nowrap tabular-nums">
+                        {maskPhone(patient.personal?.phone, userRole) || "—"}
+                      </td>
+                      <td className="px-4 py-2.5 text-gray-600">{patient.personal?.branch || "—"}</td>
+                      <td className="px-4 py-2.5 text-gray-600 whitespace-nowrap tabular-nums">
+                        {patient.personal?.visitDate ? new Date(patient.personal.visitDate).toLocaleDateString() : "—"}
+                      </td>
+                      <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap tabular-nums">
+                        {patient.createdAt ? new Date(patient.createdAt).toLocaleDateString() : "—"}
+                      </td>
+                      <td className="px-4 py-2.5 text-right">
+                        <ChevronRight className="inline w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors" aria-hidden />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              {searchQuery || branchFilter !== "all"
-                ? "No Matching Patients"
-                : "All Patients Visited!"}
-            </h3>
-            <p className="text-gray-600">
-              {searchQuery || branchFilter !== "all"
-                ? "Try adjusting your search filters"
-                : "Great job! All scheduled patients have been counselled"}
-            </p>
-          </div>
-        )}
-      </main>
+          ) : (
+            <EmptyState
+              icon={UserX}
+              title={filtersActive ? "No matching patients" : "Everyone has been seen"}
+              description={filtersActive ? "Try a different search or branch." : "All scheduled patients have been counselled."}
+            />
+          )}
+        </Panel>
+      </Page>
     </div>
   );
 }

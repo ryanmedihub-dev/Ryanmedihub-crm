@@ -120,7 +120,7 @@ export default function SearchableSelect({
         </div>
         <div className="flex items-center gap-1 shrink-0">
           {value && !disabled && (
-            <button
+            <button aria-label="Clear search"
               onClick={handleClear}
               className="p-1 hover:bg-gray-100 rounded"
             >
@@ -143,7 +143,7 @@ export default function SearchableSelect({
               value={searchTerm}
               onChange={(e) => handleSearchChange(e.target.value)}
               placeholder="Type to search..."
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-indigo-200 focus:outline-none"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500/30 focus:outline-none"
               onClick={(e) => e.stopPropagation()}
               autoFocus
             />

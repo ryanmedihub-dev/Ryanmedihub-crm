@@ -20,8 +20,8 @@ const TILE_TONES = {
 function Tile({ label, value, tone = "gray" }) {
   return (
     <div className="flex-1 min-w-[126px] bg-gray-50 rounded-xl border border-gray-100 px-3.5 py-2.5">
-      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide truncate">{label}</p>
-      <p className={`text-sm font-bold mt-0.5 ${TILE_TONES[tone] || TILE_TONES.gray}`}>{formatCurrency(value)}</p>
+      <p className="text-[11px] font-medium text-gray-400 truncate">{label}</p>
+      <p className={`text-sm font-semibold mt-0.5 ${TILE_TONES[tone] || TILE_TONES.gray}`}>{formatCurrency(value)}</p>
     </div>
   );
 }
@@ -70,9 +70,9 @@ export default function CashReconciliation({ from, to, branch }) {
   const matches = recon && Math.abs(delta) < 0.01;
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-4">
+    <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Cash Reconciliation</span>
+        <span className="text-xs font-medium text-gray-400">Cash Reconciliation</span>
         {!loading && recon && (
           matches ? (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold">

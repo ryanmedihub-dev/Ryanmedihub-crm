@@ -27,6 +27,7 @@ import {
   Leaf,
 } from "lucide-react";
 import * as XLSX from "xlsx";
+import StatCard from "@/components/dashboard/StatCard";
 
 const METHODS = ["cash", "upi", "card", "banking", "bajaj_loan", "fibe_loan", "other"];
 
@@ -35,7 +36,7 @@ const PROCEDURES = ["PRP", "GFC", "Canacot", "Biotin"];
 const PROC_CONFIG = {
   PRP: {
     label: "PRP",
-    gradient: "from-indigo-500 to-indigo-600",
+    gradient: "indigo",
     badgeBg: "bg-indigo-100 text-indigo-700",
     dotBg: "bg-indigo-500",
     activeBorder: "border-indigo-500 bg-indigo-50 text-indigo-700",
@@ -44,7 +45,7 @@ const PROC_CONFIG = {
   },
   GFC: {
     label: "GFC",
-    gradient: "from-violet-500 to-violet-600",
+    gradient: "violet",
     badgeBg: "bg-violet-100 text-violet-700",
     dotBg: "bg-violet-500",
     activeBorder: "border-violet-500 bg-violet-50 text-violet-700",
@@ -53,7 +54,7 @@ const PROC_CONFIG = {
   },
   Canacot: {
     label: "Canacot",
-    gradient: "from-teal-500 to-teal-600",
+    gradient: "teal",
     badgeBg: "bg-teal-100 text-teal-700",
     dotBg: "bg-teal-500",
     activeBorder: "border-teal-500 bg-teal-50 text-teal-700",
@@ -62,7 +63,7 @@ const PROC_CONFIG = {
   },
   Biotin: {
     label: "Biotin",
-    gradient: "from-amber-500 to-amber-600",
+    gradient: "amber",
     badgeBg: "bg-amber-100 text-amber-700",
     dotBg: "bg-amber-500",
     activeBorder: "border-amber-500 bg-amber-50 text-amber-700",
@@ -89,8 +90,8 @@ function TypeBadge({ type }) {
   const cfg = PROC_CONFIG[type] || PROC_CONFIG.PRP;
   const Icon = cfg.icon;
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${cfg.badgeBg}`}>
-      <Icon className="w-3 h-3" />
+    <span className="inline-flex items-center gap-1 h-5 px-2 rounded-md bg-gray-100 text-gray-700 text-xs font-medium">
+      <Icon className="w-3 h-3 text-gray-400" />
       {cfg.label}
     </span>
   );
@@ -387,14 +388,14 @@ export default function PRPGFCPage() {
       label: "Paid",
       value: summary.paid || 0,
       sub:   `${fmt(summary.revenue || 0)} total`,
-      bg:    "from-emerald-500 to-emerald-600",
+      bg:    "emerald",
       icon:  CheckCircle2,
     },
     {
       label: "Unpaid",
       value: summary.unpaid || 0,
       sub:   "pending payment",
-      bg:    "from-rose-500 to-rose-600",
+      bg:    "rose",
       icon:  Clock,
     },
   ];
@@ -418,10 +419,7 @@ export default function PRPGFCPage() {
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <Droplets className="w-6 h-6 text-indigo-500" />
-              <FlaskConical className="w-6 h-6 text-violet-500 -ml-1" />
-              PRP & GFC Sessions
+            <h1 className="text-xl font-semibold tracking-tight text-gray-900">PRP & GFC Sessions
             </h1>
             <p className="text-sm text-gray-500 mt-0.5">Track daily PRP and GFC treatments</p>
           </div>
@@ -433,7 +431,7 @@ export default function PRPGFCPage() {
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="pl-9 pr-3 py-2 border border-gray-200 rounded-xl text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                className="pl-9 pr-3 py-2 border border-gray-200 rounded-xl text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
               />
             </div>
 
@@ -448,7 +446,7 @@ export default function PRPGFCPage() {
 
             <button
               onClick={() => { setExportFrom(todayISO()); setExportTo(todayISO()); setShowExportModal(true); }}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl text-sm font-semibold shadow-sm hover:bg-emerald-700 transition"
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-semibold shadow-sm hover:bg-indigo-700 transition"
             >
               <Download className="w-4 h-4" />
               Export Excel
@@ -466,17 +464,7 @@ export default function PRPGFCPage() {
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           {stats.map((s) => (
-            <div
-              key={s.label}
-              className={`bg-linear-to-br ${s.bg} rounded-2xl p-5 text-white shadow-sm`}
-            >
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-semibold uppercase tracking-wide opacity-90">{s.label}</p>
-                <s.icon className="w-5 h-5 opacity-80" />
-              </div>
-              <p className="text-3xl font-bold">{s.value}</p>
-              <p className="text-xs opacity-75 mt-1">{s.sub}</p>
-            </div>
+            <StatCard key={s.label} title={s.label} value={s.value} subtitle={s.sub} icon={s.icon} tone={s.bg} />
           ))}
         </div>
 
@@ -522,7 +510,7 @@ export default function PRPGFCPage() {
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
                   activeStatus === key
                     ? key === "unpaid"
-                      ? "bg-amber-500 text-white shadow-sm"
+                      ? "bg-gray-900 text-white"
                       : key === "paid"
                         ? "bg-emerald-600 text-white shadow-sm"
                         : "bg-gray-700 text-white shadow-sm"
@@ -541,12 +529,12 @@ export default function PRPGFCPage() {
               placeholder="Search patient…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-xl text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-xl text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
             />
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           {filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-gray-400">
               <div className="flex gap-1 mb-3 opacity-30">
@@ -560,16 +548,16 @@ export default function PRPGFCPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-100 text-left">
-                    <th className="px-5 py-3.5 font-semibold text-gray-600 w-10">#</th>
-                    <th className="px-5 py-3.5 font-semibold text-gray-600">Patient</th>
-                    <th className="px-5 py-3.5 font-semibold text-gray-600">Phone</th>
-                    <th className="px-5 py-3.5 font-semibold text-gray-600">Type</th>
-                    <th className="px-5 py-3.5 font-semibold text-gray-600">Branch</th>
-                    <th className="px-5 py-3.5 font-semibold text-gray-600">Amount</th>
-                    <th className="px-5 py-3.5 font-semibold text-gray-600">Method</th>
-                    <th className="px-5 py-3.5 font-semibold text-gray-600">Time</th>
-                    <th className="px-5 py-3.5 font-semibold text-gray-600">Status</th>
-                    <th className="px-5 py-3.5 w-28"></th>
+                    <th className="px-4 py-2.5 font-medium text-gray-600 w-10">#</th>
+                    <th className="px-4 py-2.5 font-medium text-gray-600">Patient</th>
+                    <th className="px-4 py-2.5 font-medium text-gray-600">Phone</th>
+                    <th className="px-4 py-2.5 font-medium text-gray-600">Type</th>
+                    <th className="px-4 py-2.5 font-medium text-gray-600">Branch</th>
+                    <th className="px-4 py-2.5 font-medium text-gray-600">Amount</th>
+                    <th className="px-4 py-2.5 font-medium text-gray-600">Method</th>
+                    <th className="px-4 py-2.5 font-medium text-gray-600">Time</th>
+                    <th className="px-4 py-2.5 font-medium text-gray-600">Status</th>
+                    <th className="px-4 py-2.5 w-28"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
@@ -578,11 +566,11 @@ export default function PRPGFCPage() {
                     const cfg  = PROC_CONFIG[proc] || PROC_CONFIG.PRP;
                     return (
                       <tr key={row.transactionId || `${row.patientId}-${i}`} className="hover:bg-gray-50 transition">
-                        <td className="px-5 py-3.5 text-gray-400 font-mono text-xs">{i + 1}</td>
+                        <td className="px-4 py-2.5 text-gray-400 font-mono text-xs">{i + 1}</td>
 
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 py-2.5">
                           <div className="flex items-center gap-2">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs uppercase shrink-0 ${cfg.dotBg}`}>
+                            <div className="w-7 h-7 rounded-full flex items-center justify-center bg-gray-100 text-gray-600 font-semibold text-[11px] uppercase shrink-0">
                               {row.patientName?.[0] || "?"}
                             </div>
                             <span className="font-medium text-gray-900 truncate max-w-30">
@@ -591,56 +579,53 @@ export default function PRPGFCPage() {
                           </div>
                         </td>
 
-                        <td className="px-5 py-3.5 text-gray-500 font-mono text-xs whitespace-nowrap">
+                        <td className="px-4 py-2.5 text-gray-500 font-mono text-xs whitespace-nowrap">
                           {maskPhone(row.patientPhone) || "—"}
                         </td>
 
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 py-2.5">
                           <TypeBadge type={proc} />
                         </td>
 
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 py-2.5">
                           {row.branch ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-medium whitespace-nowrap">
-                              <Building2 className="w-3 h-3" />
-                              {row.branch}
-                            </span>
+                            <span className="text-gray-600 whitespace-nowrap">{row.branch}</span>
                           ) : "—"}
                         </td>
 
-                        <td className="px-5 py-3.5 font-semibold text-gray-900 whitespace-nowrap">
+                        <td className="px-4 py-2.5 font-semibold text-gray-900 whitespace-nowrap">
                           {row.status === "paid" ? fmt(row.amount) : <span className="text-gray-400">—</span>}
                         </td>
 
-                        <td className="px-5 py-3.5 text-gray-500 capitalize whitespace-nowrap">
+                        <td className="px-4 py-2.5 text-gray-500 capitalize whitespace-nowrap">
                           {row.method || "—"}
                         </td>
 
-                        <td className="px-5 py-3.5 text-gray-400 text-xs whitespace-nowrap">
+                        <td className="px-4 py-2.5 text-gray-400 text-xs whitespace-nowrap">
                           {fmtTime(row.date)}
                         </td>
 
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 py-2.5">
                           {row.status === "paid" ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-semibold whitespace-nowrap">
+                            <span className="inline-flex items-center gap-1 h-5 px-2 bg-emerald-50 text-emerald-700 rounded-md text-xs font-medium whitespace-nowrap">
                               <CheckCircle2 className="w-3 h-3" />
                               Paid
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-700 rounded-full text-xs font-semibold whitespace-nowrap">
+                            <span className="inline-flex items-center gap-1 h-5 px-2 bg-amber-50 text-amber-800 rounded-md text-xs font-medium whitespace-nowrap">
                               <Clock className="w-3 h-3" />
                               Unpaid
                             </span>
                           )}
                         </td>
 
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 py-2.5">
                           {row.status === "unpaid" && (
                             <button
                               onClick={() => openPayModal(row)}
-                              className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-semibold hover:bg-indigo-700 transition whitespace-nowrap"
+                              className="press h-7 px-2.5 border border-gray-200 bg-white text-gray-700 rounded-md text-xs font-medium hover:border-gray-300 hover:bg-gray-50 transition-colors whitespace-nowrap"
                             >
-                              Mark Paid
+                              Mark paid
                             </button>
                           )}
                         </td>
@@ -662,14 +647,14 @@ export default function PRPGFCPage() {
       </main>
 
       {showExportModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 overlay-in bg-gray-950/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm">
             <div className="flex items-center justify-between p-6 border-b border-gray-100">
-              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 <Download className="w-5 h-5 text-emerald-500" />
                 Export PRP / GFC Records
               </h2>
-              <button onClick={() => setShowExportModal(false)} className="p-1.5 hover:bg-gray-100 rounded-lg transition">
+              <button type="button" onClick={() => setShowExportModal(false)} aria-label="Close" className="p-1.5 hover:bg-gray-100 rounded-lg transition">
                 <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>
@@ -681,7 +666,7 @@ export default function PRPGFCPage() {
                   type="date"
                   value={exportFrom}
                   onChange={(e) => setExportFrom(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                  className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                 />
               </div>
               <div>
@@ -691,7 +676,7 @@ export default function PRPGFCPage() {
                   value={exportTo}
                   min={exportFrom}
                   onChange={(e) => setExportTo(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                  className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                 />
               </div>
               <p className="text-xs text-gray-400">Exports all PRP & GFC sessions (paid + unpaid) for the selected date range to an Excel file.</p>
@@ -706,7 +691,7 @@ export default function PRPGFCPage() {
                 <button
                   onClick={handleExport}
                   disabled={exporting || !exportFrom || !exportTo}
-                  className="flex-1 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition disabled:opacity-60 flex items-center justify-center gap-2"
+                  className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 transition disabled:opacity-60 flex items-center justify-center gap-2"
                 >
                   {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                   {exporting ? "Exporting…" : "Download Excel"}
@@ -718,16 +703,16 @@ export default function PRPGFCPage() {
       )}
 
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 overlay-in bg-gray-950/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[92vh] overflow-y-auto">
 
             <div className="flex items-center justify-between p-6 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl z-10">
-              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 <Droplets className="w-5 h-5 text-indigo-500" />
                 <FlaskConical className="w-5 h-5 text-violet-500 -ml-1" />
                 Add Session
               </h2>
-              <button onClick={() => { setShowAddModal(false); resetAddForm(); }}
+              <button aria-label="Close" onClick={() => { setShowAddModal(false); resetAddForm(); }}
                 className="p-1.5 hover:bg-gray-100 rounded-lg transition">
                 <X className="w-5 h-5 text-gray-500" />
               </button>
@@ -757,7 +742,7 @@ export default function PRPGFCPage() {
                     placeholder="e.g. 3"
                     value={addForm.sessionNumber}
                     onChange={(e) => setAddForm((f) => ({ ...f, sessionNumber: e.target.value }))}
-                    className="w-28 px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300 text-center font-semibold"
+                    className="w-28 px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/30 text-center font-semibold"
                   />
                   <span className="text-xs text-gray-400">
                     {addForm.sessionNumber
@@ -774,14 +759,14 @@ export default function PRPGFCPage() {
                 <div className="relative">
                   {addForm.patientId ? (
                     <div className="flex items-center gap-3 p-3 bg-indigo-50 border border-indigo-200 rounded-xl">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold uppercase ${PROC_CONFIG[addForm.procedure].dotBg}`}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold uppercase ${PROC_CONFIG[addForm.procedure].dotBg}`}>
                         {addForm.patientName?.[0] || "P"}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-gray-900 text-sm truncate">{addForm.patientName}</p>
                         <p className="text-xs text-gray-500 font-mono">{maskPhone(addForm.patientPhone)}</p>
                       </div>
-                      <button onClick={clearPatient} className="p-1 hover:bg-indigo-100 rounded-lg">
+                      <button aria-label="Clear search" onClick={clearPatient} className="p-1 hover:bg-indigo-100 rounded-lg">
                         <X className="w-4 h-4 text-indigo-600" />
                       </button>
                     </div>
@@ -794,7 +779,7 @@ export default function PRPGFCPage() {
                           placeholder="Search by name or phone…"
                           value={addForm.patientSearch}
                           onChange={(e) => setAddForm((f) => ({ ...f, patientSearch: e.target.value }))}
-                          className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                          className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
                         />
                         {searching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 animate-spin" />}
                       </div>
@@ -807,7 +792,7 @@ export default function PRPGFCPage() {
                               onClick={() => selectPatient(p)}
                               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-indigo-50 transition text-left border-b border-gray-50 last:border-0"
                             >
-                              <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-xs font-bold uppercase shrink-0">
+                              <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-xs font-semibold uppercase shrink-0">
                                 {p.personal?.name?.[0] || "P"}
                               </div>
                               <div className="min-w-0">
@@ -828,14 +813,14 @@ export default function PRPGFCPage() {
                               placeholder="Full name"
                               value={addForm.patientName}
                               onChange={(e) => setAddForm((f) => ({ ...f, patientName: e.target.value }))}
-                              className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                              className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
                             />
                             <input
                               type="tel"
                               placeholder="Phone number"
                               value={addForm.patientPhone}
                               onChange={(e) => setAddForm((f) => ({ ...f, patientPhone: e.target.value }))}
-                              className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                              className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
                             />
                           </div>
                         </div>
@@ -880,7 +865,7 @@ export default function PRPGFCPage() {
                           type="number" min="0" placeholder="0"
                           value={addForm.amount}
                           onChange={(e) => setAddForm((f) => ({ ...f, amount: e.target.value }))}
-                          className="w-full pl-8 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                          className="w-full pl-8 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
                         />
                       </div>
                     </div>
@@ -892,7 +877,7 @@ export default function PRPGFCPage() {
                           type="number" min="0" placeholder="0"
                           value={addForm.discount}
                           onChange={(e) => setAddForm((f) => ({ ...f, discount: e.target.value }))}
-                          className="w-full pl-8 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                          className="w-full pl-8 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
                         />
                       </div>
                     </div>
@@ -907,7 +892,7 @@ export default function PRPGFCPage() {
                       <select
                         value={addForm.method}
                         onChange={(e) => setAddForm((f) => ({ ...f, method: e.target.value }))}
-                        className="w-full pl-9 pr-8 py-2.5 border border-gray-200 rounded-xl text-sm appearance-none bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                        className="w-full pl-9 pr-8 py-2.5 border border-gray-200 rounded-xl text-sm appearance-none bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
                       >
                         {METHODS.map((m) => (
                           <option key={m} value={m}>{m.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")}</option>
@@ -926,7 +911,7 @@ export default function PRPGFCPage() {
                         type="text" placeholder="Enter reference ID"
                         value={addForm.paymentId}
                         onChange={(e) => setAddForm((f) => ({ ...f, paymentId: e.target.value }))}
-                        className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                        className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                       />
                     </div>
                   )}
@@ -939,7 +924,7 @@ export default function PRPGFCPage() {
                   rows={2} placeholder="Notes about this session…"
                   value={addForm.remarks}
                   onChange={(e) => setAddForm((f) => ({ ...f, remarks: e.target.value }))}
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                  className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150 resize-none"
                 />
               </div>
 
@@ -968,15 +953,15 @@ export default function PRPGFCPage() {
       )}
 
       {showPayModal && payTarget && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 overlay-in bg-gray-950/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
 
             <div className="flex items-center justify-between p-6 border-b border-gray-100">
-              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 <CheckCircle2 className="w-5 h-5 text-emerald-500" />
                 Mark {payTarget.procedure || "PRP"} as Paid
               </h2>
-              <button onClick={() => setShowPayModal(false)}
+              <button aria-label="Close" onClick={() => setShowPayModal(false)}
                 className="p-1.5 hover:bg-gray-100 rounded-lg transition">
                 <X className="w-5 h-5 text-gray-500" />
               </button>
@@ -984,7 +969,7 @@ export default function PRPGFCPage() {
 
             <div className="p-6 space-y-4">
               <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                <div className={`w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm uppercase ${PROC_CONFIG[payTarget.procedure || "PRP"].dotBg}`}>
+                <div className={`w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold text-sm uppercase ${PROC_CONFIG[payTarget.procedure || "PRP"].dotBg}`}>
                   {payTarget.patientName?.[0] || "P"}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -1010,7 +995,7 @@ export default function PRPGFCPage() {
                       type="number" min="0" placeholder="0" autoFocus
                       value={payForm.amount}
                       onChange={(e) => setPayForm((f) => ({ ...f, amount: e.target.value }))}
-                      className="w-full pl-8 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                      className="w-full pl-8 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
                     />
                   </div>
                 </div>
@@ -1022,7 +1007,7 @@ export default function PRPGFCPage() {
                       type="number" min="0" placeholder="0"
                       value={payForm.discount}
                       onChange={(e) => setPayForm((f) => ({ ...f, discount: e.target.value }))}
-                      className="w-full pl-8 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                      className="w-full pl-8 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
                     />
                   </div>
                 </div>
@@ -1037,7 +1022,7 @@ export default function PRPGFCPage() {
                   <select
                     value={payForm.method}
                     onChange={(e) => setPayForm((f) => ({ ...f, method: e.target.value }))}
-                    className="w-full pl-9 pr-8 py-2.5 border border-gray-200 rounded-xl text-sm appearance-none bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                    className="w-full pl-9 pr-8 py-2.5 border border-gray-200 rounded-xl text-sm appearance-none bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
                   >
                     {METHODS.map((m) => (
                       <option key={m} value={m}>{m.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")}</option>
@@ -1054,7 +1039,7 @@ export default function PRPGFCPage() {
                     type="text" placeholder="Enter reference ID"
                     value={payForm.paymentId}
                     onChange={(e) => setPayForm((f) => ({ ...f, paymentId: e.target.value }))}
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                    className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                   />
                 </div>
               )}
@@ -1065,7 +1050,7 @@ export default function PRPGFCPage() {
                   type="text" placeholder="Notes…"
                   value={payForm.remarks}
                   onChange={(e) => setPayForm((f) => ({ ...f, remarks: e.target.value }))}
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                  className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                 />
               </div>
 
@@ -1079,7 +1064,7 @@ export default function PRPGFCPage() {
                 <button
                   onClick={handleMarkPaid}
                   disabled={paying}
-                  className="flex-1 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition disabled:opacity-60 flex items-center justify-center gap-2"
+                  className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 transition disabled:opacity-60 flex items-center justify-center gap-2"
                 >
                   {paying ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                   {paying ? "Processing…" : "Confirm Payment"}

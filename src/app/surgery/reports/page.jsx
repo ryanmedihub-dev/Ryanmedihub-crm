@@ -13,6 +13,7 @@ import {
   BarChart3
 } from "lucide-react";
 import Sidebar from "@/components/Sidebars/SurgerySidebar";
+import { buttonClass, inputClass } from "@/components/ui";
 import Topbar from "@/components/Topbar";
 
 export default function SurgeryReports() {
@@ -44,45 +45,8 @@ export default function SurgeryReports() {
       setReports(data);
     } catch (error) {
       console.error("Error:", error);
-      setReports({
-        summary: {
-          totalSurgeries: 45,
-          completedSurgeries: 42,
-          pendingSurgeries: 3,
-          totalGrafts: 112500,
-          averageGrafts: 2500,
-          totalRevenue: 6750000,
-          averageRevenue: 150000
-        },
-        techniqueBreakdown: {
-          FUE: { count: 25, percentage: 55.6 },
-          DHI: { count: 12, percentage: 26.7 },
-          HYBRID: { count: 8, percentage: 17.8 }
-        },
-        locationBreakdown: {
-          Delhi: { count: 28, percentage: 62.2 },
-          Mumbai: { count: 10, percentage: 22.2 },
-          Hyderabad: { count: 7, percentage: 15.6 }
-        },
-        monthlyTrend: [
-          { month: 'Jan', surgeries: 8 },
-          { month: 'Feb', surgeries: 12 },
-          { month: 'Mar', surgeries: 15 },
-          { month: 'Apr', surgeries: 10 }
-        ],
-        recentSurgeries: [
-          {
-            _id: "1",
-            personal: { name: "John Doe", branch: "Delhi" },
-            surgery: {
-              surgeryDate: new Date().toISOString(),
-              technique: "FUE",
-              graftsImplanted: 2500
-            },
-            payments: { totalAmount: 150000, amountReceived: 150000 }
-          }
-        ]
-      });
+      // Show zeros rather than placeholder figures.
+      setReports(null);
     } finally {
       setLoading(false);
     }
@@ -100,44 +64,34 @@ export default function SurgeryReports() {
     }).format(amount || 0);
   };
 
-  const getTechniqueColor = (technique) => {
-    const colors = {
-      FUE: "bg-blue-100 text-blue-700",
-      "TURKISH DHI": "bg-purple-100 text-purple-700",
-      "INDIAN DHI": "bg-pink-100 text-pink-700",
-      HYBRID: "bg-green-100 text-green-700",
-      PRP: "bg-yellow-100 text-yellow-700",
-      GFC: "bg-orange-100 text-orange-700",
-    };
-    return colors[technique] || "bg-gray-100 text-gray-700";
-  };
+
 
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar role="surgery" />
-      <main className="flex-1 p-4 lg:p-8">
+      <main className="flex-1 min-w-0 px-4 pt-16 pb-6 sm:px-6 lg:p-8">
 
         <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-end justify-between gap-4 mb-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Surgery Reports</h1>
-              <p className="text-sm text-gray-600 mt-1 mb-5">Comprehensive surgery analytics and reports</p>
+              <h1 className="text-xl font-semibold tracking-tight text-gray-900">Surgery Reports</h1>
+              <p className="text-sm text-gray-500 mt-1">Surgeries by technique and location for the selected period</p>
             </div>
             <button
               onClick={handleExportReport}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              className={buttonClass("secondary")}
             >
               <Download className="w-4 h-4" />
               Export Report
             </button>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <select
                 value={reportType}
                 onChange={(e) => setReportType(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className={inputClass()}
               >
                 <option value="all">All Reports</option>
                 <option value="medical">Medical Reports</option>
@@ -149,7 +103,7 @@ export default function SurgeryReports() {
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className={inputClass()}
                 placeholder="Start Date"
               />
 
@@ -157,13 +111,13 @@ export default function SurgeryReports() {
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className={inputClass()}
                 placeholder="End Date"
               />
 
               <button
                 onClick={fetchReports}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+                className={buttonClass("primary", "md", "justify-center")}
               >
                 Apply Filters
               </button>
@@ -173,76 +127,42 @@ export default function SurgeryReports() {
 
         {loading ? (
           <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-indigo-600"></div>
           </div>
         ) : (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <Activity className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <span className="text-xs text-green-600 font-medium">+12%</span>
+            <div className="stagger grid grid-cols-2 lg:grid-cols-4 gap-px bg-gray-100 border border-gray-200 rounded-xl overflow-hidden">
+              {[
+                ["Total surgeries", (reports?.summary?.totalSurgeries || 0).toLocaleString("en-IN")],
+                ["Completed", (reports?.summary?.completedSurgeries || 0).toLocaleString("en-IN")],
+                ["Avg. grafts / surgery", reports?.summary?.averageGrafts?.toLocaleString("en-IN") || 0],
+                ["Total revenue", formatCurrency(reports?.summary?.totalRevenue)],
+              ].map(([label, value]) => (
+                <div key={label} className="min-w-0 bg-white px-5 py-4">
+                  <p className="text-[13px] font-medium text-gray-500 truncate">{label}</p>
+                  <p className="mt-1.5 text-xl font-semibold tracking-tight text-gray-900 tabular-nums whitespace-nowrap">{value}</p>
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900">{reports?.summary?.totalSurgeries || 0}</h3>
-                <p className="text-sm text-gray-600 mt-1">Total Surgeries</p>
-              </div>
-
-              <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <Users className="w-5 h-5 text-green-600" />
-                  </div>
-                  <span className="text-xs text-green-600 font-medium">+8%</span>
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900">{reports?.summary?.completedSurgeries || 0}</h3>
-                <p className="text-sm text-gray-600 mt-1">Completed</p>
-              </div>
-
-              <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="p-2 bg-purple-100 rounded-lg">
-                    <TrendingUp className="w-5 h-5 text-purple-600" />
-                  </div>
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900">{reports?.summary?.averageGrafts?.toLocaleString() || 0}</h3>
-                <p className="text-sm text-gray-600 mt-1">Avg. Grafts/Surgery</p>
-              </div>
-
-              <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="p-2 bg-amber-100 rounded-lg">
-                    <BarChart3 className="w-5 h-5 text-amber-600" />
-                  </div>
-                  <span className="text-xs text-green-600 font-medium">+15%</span>
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900">{formatCurrency(reports?.summary?.totalRevenue)}</h3>
-                <p className="text-sm text-gray-600 mt-1">Total Revenue</p>
-              </div>
+              ))}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  <Activity className="w-5 h-5 text-indigo-600" />
-                  Technique Distribution
+              <div className="bg-white rounded-xl border border-gray-200 px-5 py-4">
+                <h3 className="text-[15px] font-semibold text-gray-900 mb-4">
+                  Surgeries by technique
                 </h3>
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {reports?.techniqueBreakdown && Object.entries(reports.techniqueBreakdown).map(([technique, data]) => (
-                    <div key={technique} className="space-y-2">
+                    <div key={technique} className="space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <span className={`px-3 py-1 text-sm font-medium rounded-full ${getTechniqueColor(technique)}`}>
-                          {technique}
-                        </span>
+                        <span className="text-sm text-gray-700">{technique}</span>
                         <div className="flex items-center gap-3">
-                          <span className="text-sm font-medium text-gray-900">{data.count} surgeries</span>
-                          <span className="text-sm text-gray-600">{data.percentage}%</span>
+                          <span className="text-sm text-gray-900 tabular-nums">{data.count}</span>
+                          <span className="w-12 text-right text-xs text-gray-500 tabular-nums">{data.percentage}%</span>
                         </div>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="w-full bg-gray-100 rounded-full h-1.5">
                         <div
-                          className="bg-linear-to-r from-green-500 to-green-600 h-2 rounded-full transition-all duration-300"
+                          className="bg-indigo-500 h-1.5 rounded-full"
                           style={{ width: `${data.percentage}%` }}
                         ></div>
                       </div>
@@ -251,27 +171,23 @@ export default function SurgeryReports() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  <MapPin className="w-5 h-5 text-green-600" />
-                  Location Distribution
+              <div className="bg-white rounded-xl border border-gray-200 px-5 py-4">
+                <h3 className="text-[15px] font-semibold text-gray-900 mb-4">
+                  Surgeries by location
                 </h3>
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {reports?.locationBreakdown && Object.entries(reports.locationBreakdown).map(([location, data]) => (
-                    <div key={location} className="space-y-2">
+                    <div key={location} className="space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <MapPin className="w-4 h-4 text-gray-400" />
-                          <span className="text-sm font-medium text-gray-700">{location}</span>
-                        </div>
+                        <span className="text-sm text-gray-700">{location}</span>
                         <div className="flex items-center gap-3">
-                          <span className="text-sm font-medium text-gray-900">{data.count} surgeries</span>
-                          <span className="text-sm text-gray-600">{data.percentage}%</span>
+                          <span className="text-sm text-gray-900 tabular-nums">{data.count}</span>
+                          <span className="w-12 text-right text-xs text-gray-500 tabular-nums">{data.percentage}%</span>
                         </div>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="w-full bg-gray-100 rounded-full h-1.5">
                         <div
-                          className="bg-linear-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-300"
+                          className="bg-indigo-500 h-1.5 rounded-full"
                           style={{ width: `${data.percentage}%` }}
                         ></div>
                       </div>
@@ -281,39 +197,38 @@ export default function SurgeryReports() {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-              <div className="p-6 border-b border-gray-100">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-gray-600" />
-                  Recent Surgery Details
+            <div className="bg-white rounded-xl border border-gray-200">
+              <div className="px-5 py-3.5 border-b border-gray-100">
+                <h3 className="text-[15px] font-semibold text-gray-900">
+                  Recent surgeries
                 </h3>
               </div>
-              <div className="p-6">
+              <div>
                 <div className="overflow-x-auto">
-                  <table className="w-full">
+                  <table className="w-full text-sm">
                     <thead className="bg-gray-50 border-b border-gray-200">
                       <tr>
-                        <th className="text-left py-3 px-4 text-xs font-semibold text-gray-700 uppercase">Patient</th>
-                        <th className="text-left py-3 px-4 text-xs font-semibold text-gray-700 uppercase">Branch</th>
-                        <th className="text-left py-3 px-4 text-xs font-semibold text-gray-700 uppercase">Technique</th>
-                        <th className="text-left py-3 px-4 text-xs font-semibold text-gray-700 uppercase">Grafts</th>
-                        <th className="text-left py-3 px-4 text-xs font-semibold text-gray-700 uppercase">Amount</th>
-                        <th className="text-left py-3 px-4 text-xs font-semibold text-gray-700 uppercase">Date</th>
+                        <th className="text-left h-9 px-4 text-xs font-medium text-gray-500">Patient</th>
+                        <th className="text-left h-9 px-4 text-xs font-medium text-gray-500">Branch</th>
+                        <th className="text-left h-9 px-4 text-xs font-medium text-gray-500">Technique</th>
+                        <th className="text-left h-9 px-4 text-xs font-medium text-gray-500">Grafts</th>
+                        <th className="text-left h-9 px-4 text-xs font-medium text-gray-500">Amount</th>
+                        <th className="text-left h-9 px-4 text-xs font-medium text-gray-500">Date</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                       {reports?.recentSurgeries?.map((surgery) => (
                         <tr key={surgery._id} className="hover:bg-gray-50">
-                          <td className="py-3 px-4 font-medium text-gray-900">{surgery.personal?.name}</td>
-                          <td className="py-3 px-4 text-sm text-gray-600">{surgery.personal?.branch}</td>
-                          <td className="py-3 px-4">
-                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${getTechniqueColor(surgery.surgery?.technique)}`}>
+                          <td className="py-2.5 px-4 font-medium text-gray-900">{surgery.personal?.name}</td>
+                          <td className="py-2.5 px-4 text-sm text-gray-600">{surgery.personal?.branch}</td>
+                          <td className="py-2.5 px-4">
+                            <span className="inline-flex items-center h-5 px-2 rounded-md bg-gray-100 text-xs font-medium text-gray-700">
                               {surgery.surgery?.technique}
                             </span>
                           </td>
-                          <td className="py-3 px-4 text-sm text-gray-700">{surgery.surgery?.graftsImplanted}</td>
-                          <td className="py-3 px-4 text-sm font-medium text-gray-900">{formatCurrency(surgery.payments?.totalAmount)}</td>
-                          <td className="py-3 px-4 text-sm text-gray-600">
+                          <td className="py-2.5 px-4 text-sm text-gray-700">{surgery.surgery?.graftsImplanted}</td>
+                          <td className="py-2.5 px-4 text-sm font-medium text-gray-900">{formatCurrency(surgery.payments?.totalAmount)}</td>
+                          <td className="py-2.5 px-4 text-sm text-gray-600">
                             {new Date(surgery.surgery?.surgeryDate).toLocaleDateString('en-IN')}
                           </td>
                         </tr>

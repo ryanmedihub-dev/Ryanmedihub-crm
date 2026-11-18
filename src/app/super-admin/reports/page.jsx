@@ -2,6 +2,8 @@
 
 import { useState, useMemo } from "react";
 import SuperAdminSidebar from "@/components/Sidebars/SuperAdminSidebar";
+import ReportCard from "@/app/admin/reports/ReportCard";
+import { buttonClass, inputClass } from "@/components/ui";
 import { ALL_BRANCHES } from "@/lib/branches";
 import {
   Download,
@@ -350,107 +352,6 @@ function buildDateRange(preset, custom) {
 
 function PieChart(props) { return <BarChart2 {...props} />; }
 
-function ReportCard({ report, filters, loadingId, favorites, onDownload, onToggleFavorite }) {
-  const c = COLOR_MAP[report.color] || COLOR_MAP.blue;
-  const Icon = report.icon;
-  const isLoading = loadingId === report.id;
-  const isFav = favorites.includes(report.id);
-
-  return (
-    <div
-      className={`bg-white rounded-2xl border ${c.border} shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col group`}
-    >
-      <div className={`h-1 ${c.accent}`} />
-
-      <div className="p-5 flex flex-col flex-1">
-        <div className="flex items-start justify-between mb-3">
-          <div className={`w-10 h-10 rounded-xl ${c.soft} flex items-center justify-center shrink-0`}>
-            <Icon className={`w-5 h-5 ${c.text}`} />
-          </div>
-          <button
-            onClick={() => onToggleFavorite(report.id)}
-            className={`p-1.5 rounded-lg transition-colors ${
-              isFav ? "text-amber-500 bg-amber-50" : "text-gray-300 hover:text-amber-400 hover:bg-amber-50"
-            }`}
-            title={isFav ? "Remove from favorites" : "Add to favorites"}
-          >
-            <Star className={`w-4 h-4 ${isFav ? "fill-amber-500" : ""}`} />
-          </button>
-        </div>
-
-        <div className="mb-2">
-          <span className={`text-[10px] font-bold uppercase tracking-widest ${c.text} opacity-80`}>
-            {report.category}
-          </span>
-          <h3 className="font-semibold text-gray-900 text-sm mt-0.5 leading-snug">
-            {report.name}
-          </h3>
-        </div>
-
-        <p className="text-xs text-gray-500 leading-relaxed flex-1 mb-4">
-          {report.description}
-        </p>
-
-        {report.filters.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-4">
-            {report.filters.includes("branch") && filters.branch && filters.branch !== "All" && (
-              <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${c.badge}`}>
-                {filters.branch}
-              </span>
-            )}
-            {report.filters.includes("status") && filters.status && (
-              <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${c.badge}`}>
-                {filters.status}
-              </span>
-            )}
-            {report.filters.includes("technique") && filters.technique && (
-              <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${c.badge}`}>
-                {filters.technique}
-              </span>
-            )}
-            {report.filters.includes("procedure") && filters.procedure && (
-              <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${c.badge}`}>
-                {filters.procedure}
-              </span>
-            )}
-            {report.filters.includes("paymentType") && filters.paymentType && (
-              <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${c.badge}`}>
-                {filters.paymentType}
-              </span>
-            )}
-            {report.filters.includes("hrStatus") && filters.hrStatus && (
-              <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${c.badge}`}>
-                {filters.hrStatus}
-              </span>
-            )}
-          </div>
-        )}
-
-        <button
-          onClick={() => onDownload(report)}
-          disabled={isLoading}
-          className={`w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all duration-200 ${
-            isLoading
-              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-              : `${c.accent} text-white hover:opacity-90 hover:shadow-md active:scale-95`
-          }`}
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Generating...
-            </>
-          ) : (
-            <>
-              <Download className="w-4 h-4" />
-              Download Excel
-            </>
-          )}
-        </button>
-      </div>
-    </div>
-  );
-}
 
 function Toast({ toast, onDismiss }) {
   if (!toast) return null;
@@ -474,7 +375,7 @@ function Toast({ toast, onDismiss }) {
           <p className="text-xs mt-0.5 opacity-80">{toast.message}</p>
         )}
       </div>
-      <button
+      <button aria-label="Close"
         onClick={onDismiss}
         className="p-1 rounded-lg hover:bg-black/10 transition-colors"
       >
@@ -666,68 +567,66 @@ export default function SuperAdminReportsPage() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <div className="flex items-center gap-3 mb-1">
-                  <div className="w-9 h-9 rounded-xl bg-linear-to-br from-amber-500 via-orange-500 to-red-500 flex items-center justify-center shadow-md">
-                    <FileBarChart className="w-5 h-5 text-white" />
-                  </div>
-                  <h1 className="text-2xl font-bold text-gray-900">Reports Center</h1>
+                  <h1 className="text-xl font-semibold tracking-tight text-gray-900">Reports</h1>
                 </div>
-                <p className="text-sm text-gray-500 ml-12">
-                  Generate and download {REPORTS.length} report & log types across all modules
+                <p className="text-sm text-gray-500">
+                  {REPORTS.length} Excel exports across patients, staff, finance, inventory and audit logs
                 </p>
               </div>
 
-              <div className="flex items-center gap-3 ml-12 sm:ml-0">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200">
-                  <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
-                  <span className="text-sm font-semibold text-amber-700">{favorites.length} Favorited</span>
-                </div>
+              <div className="flex items-center gap-3">
+                <span className="inline-flex items-center gap-1.5 text-sm text-gray-500">
+                  <Star className="w-4 h-4 text-amber-400 fill-amber-400" aria-hidden />
+                  {favorites.length} favorited
+                </span>
                 {activeFilterCount > 0 && (
                   <button
                     onClick={clearFilters}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-xl border border-red-200 transition-colors"
+                    className={buttonClass("ghost", "sm")}
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
-                    Clear Filters
+                    Clear filters
                   </button>
                 )}
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-              <div className="px-5 py-4 flex items-center justify-between border-b border-gray-100">
-                <div className="flex items-center gap-2.5">
-                  <Filter className="w-4.5 h-4.5 text-amber-600" />
+            <div className="bg-white rounded-xl border border-gray-200">
+              <div className="px-5 py-3 flex items-center justify-between border-b border-gray-100">
+                <div className="flex items-center gap-2">
                   <span className="font-semibold text-gray-900 text-sm">Filters</span>
                   {activeFilterCount > 0 && (
-                    <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-bold">
+                    <span className="inline-flex items-center h-5 px-1.5 rounded bg-gray-100 text-gray-600 text-xs font-medium">
                       {activeFilterCount} active
                     </span>
                   )}
                 </div>
                 <button
                   onClick={() => setShowFilters(!showFilters)}
-                  className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                  aria-expanded={showFilters}
+                  className="flex items-center gap-1 text-[13px] text-gray-500 hover:text-gray-900 transition-colors"
                 >
-                  <span>{showFilters ? "Hide" : "Show"} Advanced</span>
-                  <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? "rotate-180" : ""}`} />
+                  <span>{showFilters ? "Fewer" : "More"} filters</span>
+                  <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showFilters ? "rotate-180" : ""}`} />
                 </button>
               </div>
 
-              <div className="p-5 space-y-5">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="p-5 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-[auto_minmax(0,14rem)_minmax(0,1fr)] gap-4 items-end">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
+                    <label className="block text-xs font-medium text-gray-600 mb-1.5">
                       Date Range
                     </label>
-                    <div className="flex flex-wrap gap-1.5">
+                    <div role="group" aria-label="Date range" className="inline-flex flex-wrap p-0.5 rounded-lg border border-gray-200 bg-gray-50">
                       {DATE_PRESETS.filter((p) => p.value !== "custom").map((p) => (
                         <button
                           key={p.value}
                           onClick={() => setDatePreset(p.value)}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                          aria-pressed={datePreset === p.value}
+                          className={`h-8 px-2.5 rounded-md text-[13px] whitespace-nowrap transition-colors duration-150 ${
                             datePreset === p.value
-                              ? "bg-amber-500 text-white shadow-sm"
-                              : "bg-gray-100 text-gray-600 hover:bg-amber-50 hover:text-amber-700"
+                              ? "bg-white text-gray-900 font-medium shadow-xs ring-1 ring-gray-200"
+                              : "text-gray-500 hover:text-gray-900"
                           }`}
                         >
                           {p.label}
@@ -735,10 +634,11 @@ export default function SuperAdminReportsPage() {
                       ))}
                       <button
                         onClick={() => setDatePreset("custom")}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                        aria-pressed={datePreset === "custom"}
+                        className={`h-8 px-2.5 rounded-md text-[13px] whitespace-nowrap transition-colors duration-150 ${
                           datePreset === "custom"
-                            ? "bg-amber-500 text-white shadow-sm"
-                            : "bg-gray-100 text-gray-600 hover:bg-amber-50 hover:text-amber-700"
+                            ? "bg-white text-gray-900 font-medium shadow-xs ring-1 ring-gray-200"
+                            : "text-gray-500 hover:text-gray-900"
                         }`}
                       >
                         Custom
@@ -747,41 +647,37 @@ export default function SuperAdminReportsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
+                    <label htmlFor="rp-branch" className="block text-xs font-medium text-gray-600 mb-1.5">
                       Branch
                     </label>
-                    <div className="flex flex-wrap gap-1.5">
+                    <select
+                      id="rp-branch"
+                      value={filters.branch}
+                      onChange={(e) => setFilters((f) => ({ ...f, branch: e.target.value }))}
+                      className={inputClass(false, "pr-8")}
+                    >
                       {BRANCHES.map((b) => (
-                        <button
-                          key={b}
-                          onClick={() => setFilters((f) => ({ ...f, branch: b }))}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                            filters.branch === b
-                              ? "bg-amber-500 text-white shadow-sm"
-                              : "bg-gray-100 text-gray-600 hover:bg-amber-50 hover:text-amber-700"
-                          }`}
-                        >
-                          {b}
-                        </button>
+                        <option key={b} value={b}>{b === "All" ? "All branches" : b}</option>
                       ))}
-                    </div>
+                    </select>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
-                      Search Reports
+                    <label htmlFor="rp-search" className="block text-xs font-medium text-gray-600 mb-1.5">
+                      Search
                     </label>
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                       <input
+                        id="rp-search"
                         type="text"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder="Search by name or category..."
-                        className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-300 focus:border-amber-400 transition-all"
+                        placeholder="Report name or category…"
+                        className={inputClass(false, "pl-9 pr-8")}
                       />
                       {searchTerm && (
-                        <button
+                        <button aria-label="Clear search"
                           onClick={() => setSearchTerm("")}
                           className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                         >
@@ -793,36 +689,35 @@ export default function SuperAdminReportsPage() {
                 </div>
 
                 {datePreset === "custom" && (
-                  <div className="flex flex-wrap items-end gap-3 p-4 bg-amber-50 rounded-xl border border-amber-200">
-                    <Calendar className="w-4 h-4 text-amber-600 self-center" />
+                  <div className="flex flex-wrap items-end gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
                     <div>
-                      <label className="block text-xs font-semibold text-amber-700 mb-1">From</label>
+                      <label className="block text-xs font-medium text-gray-600 mb-1.5">From</label>
                       <input
                         type="date"
                         value={pendingCustom.from}
                         onChange={(e) => setPendingCustom((p) => ({ ...p, from: e.target.value }))}
-                        className="px-3 py-2 text-sm border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-300"
+                        className={inputClass(false, "w-auto")}
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-amber-700 mb-1">To</label>
+                      <label className="block text-xs font-medium text-gray-600 mb-1.5">To</label>
                       <input
                         type="date"
                         value={pendingCustom.to}
                         onChange={(e) => setPendingCustom((p) => ({ ...p, to: e.target.value }))}
                         min={pendingCustom.from}
-                        className="px-3 py-2 text-sm border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-300"
+                        className={inputClass(false, "w-auto")}
                       />
                     </div>
                     <button
                       onClick={applyCustomDates}
                       disabled={!pendingCustom.from}
-                      className="px-4 py-2 bg-amber-500 text-white text-sm font-semibold rounded-lg hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className={buttonClass("primary")}
                     >
                       Apply
                     </button>
                     {customDates.from && (
-                      <span className="text-xs text-amber-700 font-medium">
+                      <span className="text-xs text-gray-600 font-medium tabular-nums">
                         Active: {customDates.from} → {customDates.to || customDates.from}
                       </span>
                     )}
@@ -832,13 +727,13 @@ export default function SuperAdminReportsPage() {
                 {showFilters && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 pt-1 border-t border-gray-100">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
+                      <label className="block text-xs font-medium text-gray-600 mb-1.5">
                         Patient Status
                       </label>
                       <select
                         value={filters.status}
                         onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
-                        className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white"
+                        className={inputClass(false, "pr-8")}
                       >
                         <option value="">All Statuses</option>
                         {PATIENT_STATUSES.map((s) => (
@@ -848,13 +743,13 @@ export default function SuperAdminReportsPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
+                      <label className="block text-xs font-medium text-gray-600 mb-1.5">
                         Technique
                       </label>
                       <select
                         value={filters.technique}
                         onChange={(e) => setFilters((f) => ({ ...f, technique: e.target.value }))}
-                        className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white"
+                        className={inputClass(false, "pr-8")}
                       >
                         <option value="">All Techniques</option>
                         {TECHNIQUES.map((t) => (
@@ -864,13 +759,13 @@ export default function SuperAdminReportsPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
+                      <label className="block text-xs font-medium text-gray-600 mb-1.5">
                         Procedure
                       </label>
                       <select
                         value={filters.procedure}
                         onChange={(e) => setFilters((f) => ({ ...f, procedure: e.target.value }))}
-                        className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white"
+                        className={inputClass(false, "pr-8")}
                       >
                         <option value="">All Procedures</option>
                         {PROCEDURES.map((p) => (
@@ -880,13 +775,13 @@ export default function SuperAdminReportsPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
+                      <label className="block text-xs font-medium text-gray-600 mb-1.5">
                         Payment Type
                       </label>
                       <select
                         value={filters.paymentType}
                         onChange={(e) => setFilters((f) => ({ ...f, paymentType: e.target.value }))}
-                        className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white"
+                        className={inputClass(false, "pr-8")}
                       >
                         <option value="">All Payment Types</option>
                         {PAYMENT_TYPES.map((p) => (
@@ -896,13 +791,13 @@ export default function SuperAdminReportsPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
+                      <label className="block text-xs font-medium text-gray-600 mb-1.5">
                         HR Candidate Status
                       </label>
                       <select
                         value={filters.hrStatus}
                         onChange={(e) => setFilters((f) => ({ ...f, hrStatus: e.target.value }))}
-                        className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white"
+                        className={inputClass(false, "pr-8")}
                       >
                         <option value="">All Statuses</option>
                         {HR_STATUSES.map((s) => (
@@ -915,23 +810,23 @@ export default function SuperAdminReportsPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
+            <div role="tablist" aria-label="Report category" className="flex gap-1 overflow-x-auto scrollbar-hide border-b border-gray-200">
               {CATEGORIES.map((cat) => (
                 <button
                   key={cat}
+                  role="tab"
+                  aria-selected={activeCategory === cat}
                   onClick={() => setActiveCategory(cat)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all ${
+                  className={`-mb-px flex items-center gap-2 h-10 px-3 border-b-2 text-sm whitespace-nowrap transition-colors duration-150 ${
                     activeCategory === cat
-                      ? "bg-amber-500 text-white shadow-sm"
-                      : "bg-white text-gray-600 border border-gray-200 hover:border-amber-300 hover:text-amber-700 shadow-sm"
+                      ? "border-indigo-600 text-gray-900 font-medium"
+                      : "border-transparent text-gray-500 hover:text-gray-900 hover:border-gray-300"
                   }`}
                 >
                   {cat}
                   <span
-                    className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${
-                      activeCategory === cat
-                        ? "bg-white/25 text-white"
-                        : "bg-gray-100 text-gray-500"
+                    className={`text-xs tabular-nums ${
+                      activeCategory === cat ? "text-gray-500" : "text-gray-400"
                     }`}
                   >
                     {categoryCounts[cat]}
@@ -941,12 +836,12 @@ export default function SuperAdminReportsPage() {
             </div>
 
             {visibleReports.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-gray-200 p-16 text-center">
-                <Search className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 font-medium">No reports match your search.</p>
+              <div className="bg-white rounded-xl border border-gray-200 py-14 px-6 text-center">
+                <Search className="w-5 h-5 text-gray-400 mx-auto mb-3" />
+                <p className="text-sm font-medium text-gray-900">No reports match your search</p>
                 <button
                   onClick={() => { setSearchTerm(""); setActiveCategory("All"); }}
-                  className="mt-3 text-sm text-amber-600 hover:underline"
+                  className="mt-3 text-sm text-indigo-600 hover:text-indigo-800"
                 >
                   Clear search
                 </button>
@@ -954,19 +849,19 @@ export default function SuperAdminReportsPage() {
             ) : (
               <>
                 <div className="flex items-center justify-between">
-                  <p className="text-sm text-gray-500 font-medium">
-                    Showing <span className="font-bold text-gray-900">{visibleReports.length}</span> reports
+                  <p className="text-[13px] text-gray-500">
+                    <span className="font-medium text-gray-900 tabular-nums">{visibleReports.length}</span> reports
                     {searchTerm && ` for "${searchTerm}"`}
                   </p>
                   {loadingId && (
-                    <div className="flex items-center gap-2 text-sm text-amber-600 font-medium">
+                    <div className="flex items-center gap-2 text-[13px] text-gray-600" role="status">
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Generating report...
+                      Generating report…
                     </div>
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <ul className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100 overflow-hidden">
                   {visibleReports.map((report) => (
                     <ReportCard
                       key={report.id}
@@ -978,41 +873,10 @@ export default function SuperAdminReportsPage() {
                       onToggleFavorite={toggleFavorite}
                     />
                   ))}
-                </div>
+                </ul>
               </>
             )}
 
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-              <h3 className="text-sm font-bold text-gray-900 mb-3">
-                Quick Reference — Report Coverage
-              </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {[
-                  { label: "Patient Reports", count: 7, color: "bg-blue-50 text-blue-700 border-blue-200", icon: HeartPulse },
-                  { label: "Staff Reports", count: 6, color: "bg-purple-50 text-purple-700 border-purple-200", icon: Users },
-                  { label: "Financial Reports", count: 6, color: "bg-emerald-50 text-emerald-700 border-emerald-200", icon: IndianRupee },
-                  { label: "HR Reports", count: 6, color: "bg-amber-50 text-amber-700 border-amber-200", icon: Briefcase },
-                  { label: "Leads & Inventory", count: 3, color: "bg-pink-50 text-pink-700 border-pink-200", icon: Package },
-                  { label: "Audit Logs", count: 4, color: "bg-red-50 text-red-700 border-red-200", icon: ShieldAlert },
-                ].map((item) => (
-                  <button
-                    key={item.label}
-                    onClick={() => {
-                      if (item.label === "Leads & Inventory") setActiveCategory("All");
-                      else if (item.label === "HR Reports") setActiveCategory("HR Reports");
-                      else setActiveCategory(item.label);
-                    }}
-                    className={`flex items-center gap-3 p-3 rounded-xl border ${item.color} transition-all hover:shadow-sm`}
-                  >
-                    <item.icon className="w-5 h-5 shrink-0" />
-                    <div className="text-left">
-                      <p className="text-xs font-bold leading-none">{item.count} reports</p>
-                      <p className="text-[10px] mt-0.5 opacity-80">{item.label}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
 
           </div>
         </div>

@@ -125,7 +125,7 @@ export default function ContraEntryForm({ onSaved }) {
               <select
                 value={data.fromAccount}
                 onChange={(e) => set({ fromAccount: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
               >
                 <option value="">Select account…</option>
                 {ACCOUNTS.map((a) => (
@@ -142,7 +142,7 @@ export default function ContraEntryForm({ onSaved }) {
               <select
                 value={data.toAccount}
                 onChange={(e) => set({ toAccount: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
               >
                 <option value="">Select account…</option>
                 {ACCOUNTS.map((a) => (
@@ -163,7 +163,7 @@ export default function ContraEntryForm({ onSaved }) {
                 min="0"
                 value={data.amount}
                 onChange={(e) => set({ amount: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                 placeholder="0"
               />
             </div>
@@ -174,7 +174,7 @@ export default function ContraEntryForm({ onSaved }) {
                 type="date"
                 value={data.date}
                 onChange={(e) => set({ date: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
               />
             </div>
 
@@ -185,7 +185,7 @@ export default function ContraEntryForm({ onSaved }) {
               <select
                 value={data.branch}
                 onChange={(e) => set({ branch: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
               >
                 <option value="">Company-level (no branch)</option>
                 {ALL_BRANCHES.map((b) => (
@@ -205,7 +205,7 @@ export default function ContraEntryForm({ onSaved }) {
                 type="text"
                 value={data.reference}
                 onChange={(e) => set({ reference: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                 placeholder="UTR / cheque no. (optional)"
               />
             </div>
@@ -216,7 +216,7 @@ export default function ContraEntryForm({ onSaved }) {
                 type="text"
                 value={data.remarks}
                 onChange={(e) => set({ remarks: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                 placeholder="Optional"
               />
             </div>
@@ -283,7 +283,7 @@ export default function ContraEntryForm({ onSaved }) {
           <button
             onClick={handleSave}
             disabled={saving || sameAccount}
-            className="w-full px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 font-medium flex items-center justify-center gap-2"
+            className="w-full h-10 px-4 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 active:bg-indigo-800 transition-colors press disabled:opacity-50 font-medium flex items-center justify-center gap-2"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             {saving ? "Saving…" : "Record Contra Entry"}

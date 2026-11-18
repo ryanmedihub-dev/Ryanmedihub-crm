@@ -8,7 +8,7 @@ import { ACCOUNTS } from "@/constants/bankRouting";
 import { ALL_BRANCHES } from "@/lib/branches";
 
 const inputClass =
-  "w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 disabled:bg-slate-50 disabled:text-slate-400";
+  "w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 disabled:bg-slate-50 disabled:text-slate-400";
 const labelClass = "mb-1.5 block text-sm font-semibold text-slate-700";
 
 export default function EditBorrowingModal({ borrowing, onClose, onSuccess, toast }) {
@@ -100,7 +100,7 @@ export default function EditBorrowingModal({ borrowing, onClose, onSuccess, toas
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-3 backdrop-blur-sm sm:p-5">
+    <div className="fixed inset-0 overlay-in z-50 flex items-center justify-center bg-gray-950/40 p-3 sm:p-5">
       <div className="flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
 
         {}
@@ -110,7 +110,7 @@ export default function EditBorrowingModal({ borrowing, onClose, onSuccess, toas
               <HandCoins className="h-5 w-5" />
             </div>
             <div className="min-w-0">
-              <h3 className="truncate text-base font-bold text-slate-900 sm:text-lg">
+              <h3 className="truncate text-base font-semibold text-slate-900 sm:text-lg">
                 Edit {isRepayment ? "Repayment" : "Borrowing"}
               </h3>
               <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">Update amount, account, or lifecycle</p>
@@ -132,7 +132,7 @@ export default function EditBorrowingModal({ borrowing, onClose, onSuccess, toas
 
             <div className="rounded-xl border border-slate-200 bg-white p-4">
               <div className="flex items-center justify-between gap-3">
-                <p className="truncate text-sm font-bold text-slate-900">{borrowing.party?.label}</p>
+                <p className="truncate text-sm font-semibold text-slate-900">{borrowing.party?.label}</p>
                 {borrowing.isCancelled ? (
                   <span className="shrink-0 rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700">
                     Cancelled
@@ -183,7 +183,7 @@ export default function EditBorrowingModal({ borrowing, onClose, onSuccess, toas
                 type="checkbox"
                 checked={allowOverpayment}
                 onChange={(e) => setAllowOverpayment(e.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded border-amber-300 text-amber-600 focus:ring-amber-500"
+                className="mt-0.5 h-4 w-4 rounded border-amber-300 text-amber-600 focus:ring-indigo-500/30"
               />
               <p className="text-xs leading-5 text-amber-700">
                 Allow overpayment (only matters if this is a repayment amount increase)
@@ -230,7 +230,7 @@ export default function EditBorrowingModal({ borrowing, onClose, onSuccess, toas
             {error && (
               <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-3.5">
                 <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100">
-                  <span className="text-xs font-bold text-red-700">!</span>
+                  <span className="text-xs font-semibold text-red-700">!</span>
                 </div>
                 <p className="text-xs leading-5 text-red-700">{error}</p>
               </div>
@@ -253,7 +253,7 @@ export default function EditBorrowingModal({ borrowing, onClose, onSuccess, toas
                 type="button"
                 onClick={save}
                 disabled={submitting}
-                className="flex w-full flex-1 items-center justify-center gap-2 rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                className="flex w-full flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
               >
                 {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Changes"}
               </button>

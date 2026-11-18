@@ -4,25 +4,37 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
 import { formatCurrency } from "@/lib/financeUI";
+import { useChartColors } from "@/lib/theme";
+
+// Inflow = accent, outflow = amber (validated pair per accent; see globals.css --chart-in/out).
+const ANIM = { animationDuration: 450, animationEasing: "ease-out" };
 
 const fmtK = (n) =>
-  Math.abs(n) >= 100000
-    ? `₹${(n / 100000).toFixed(1)}L`
-    : Math.abs(n) >= 1000
-      ? `₹${(n / 1000).toFixed(0)}K`
-      : `₹${n || 0}`;
+  Math.abs(n) >= 10000000
+    ? `₹${(n / 10000000).toFixed(1)}Cr`
+    : Math.abs(n) >= 100000
+      ? `₹${(n / 100000).toFixed(0)}L`
+      : Math.abs(n) >= 1000
+        ? `₹${(n / 1000).toFixed(0)}K`
+        : `₹${n || 0}`;
 
-function ChartCard({ title, subtitle, children, extra }) {
+const tooltipProps = {
+  formatter: (v) => formatCurrency(v),
+  cursor: { fill: "var(--color-gray-100)" },
+};
+
+function ChartCard({ title, subtitle, children, extra, className = "" }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-      <div className="flex items-center gap-2 mb-1">
-        <h3 className="text-sm font-semibold text-gray-800">{title}</h3>
-        {extra}
-      </div>
-      {subtitle && <p className="text-xs text-gray-400 mb-3">{subtitle}</p>}
-      {!subtitle && <div className="mb-2" />}
+    <section className={`bg-white rounded-xl border border-gray-200 px-5 pt-4 pb-3 min-w-0 ${className}`}>
+      <header className="mb-3">
+        <div className="flex items-center gap-2">
+          <h3 className="text-[15px] font-semibold text-gray-900">{title}</h3>
+          {extra}
+        </div>
+        {subtitle && <p className="mt-0.5 text-xs text-gray-500">{subtitle}</p>}
+      </header>
       {children}
-    </div>
+    </section>
   );
 }
 
@@ -35,89 +47,100 @@ export default function DashboardCharts({
   onDrillExpenseHead,
   onDrillAgeing,
   basisTag,
+  attention,
 }) {
+  const { in: INFLOW, out: OUTFLOW } = useChartColors();
   const shown = expenseHeadMeta?.shownTotal;
   const grand = expenseHeadMeta?.grandTotal;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-      <ChartCard
-        title="Expense by Head — Top 10"
-        extra={basisTag}
-        subtitle={
-          grand != null
-            ? `Direct expenses + payables raised — the same definition as the P&L Expense card. ${formatCurrency(shown ?? 0)} of ${formatCurrency(grand)} shown.`
-            : "Direct expenses + payables raised — the same definition as the P&L Expense card."
-        }
-      >
-        {expenseByHead.length === 0 && batchStatus === "ready" ? (
-          <p className="text-sm text-gray-400 py-16 text-center">No data for this period</p>
-        ) : (
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={expenseByHead} layout="vertical" margin={{ left: 8, right: 30 }}>
-              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f3f4f6" />
-              <XAxis type="number" tickFormatter={fmtK} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-              <YAxis type="category" dataKey="label" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} width={100} />
-              <Tooltip formatter={(v) => formatCurrency(v)} />
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <ChartCard
+          className="xl:col-span-2"
+          title="Income vs expense"
+          extra={basisTag}
+          subtitle="Last 6 months, same accrual basis as the P&L above."
+        >
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart data={monthlyTrend} barGap={2} barCategoryGap="28%" margin={{ top: 4, right: 4, left: -8, bottom: 0 }}>
+              <CartesianGrid vertical={false} />
+              <XAxis dataKey="month" axisLine={false} tickLine={false} />
+              <YAxis tickFormatter={fmtK} axisLine={false} tickLine={false} width={56} />
+              <Tooltip {...tooltipProps} />
+              <Legend iconType="circle" iconSize={8} align="right" verticalAlign="top" height={28} />
+              <Bar dataKey="Income" fill={INFLOW} radius={[4, 4, 0, 0]} maxBarSize={28} {...ANIM} />
+              <Bar dataKey="Expense" fill={OUTFLOW} radius={[4, 4, 0, 0]} maxBarSize={28} {...ANIM} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+        {attention && <div className="min-w-0">{attention}</div>}
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <ChartCard
+          title="Expense by head"
+          extra={basisTag}
+          subtitle={
+            grand != null
+              ? `Top 10 heads · ${formatCurrency(shown ?? 0)} of ${formatCurrency(grand)}`
+              : "Top 10 heads, direct expenses + payables raised"
+          }
+        >
+          {expenseByHead.length === 0 && batchStatus === "ready" ? (
+            <p className="text-sm text-gray-500 py-20 text-center">No expenses in this period</p>
+          ) : (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={expenseByHead} layout="vertical" barCategoryGap="22%" margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
+                <CartesianGrid horizontal={false} />
+                <XAxis type="number" tickFormatter={fmtK} axisLine={false} tickLine={false} />
+                <YAxis type="category" dataKey="label" axisLine={false} tickLine={false} width={160} interval={0} />
+                <Tooltip {...tooltipProps} />
+                <Bar
+                  dataKey="movement"
+                  name="Expense"
+                  radius={[0, 4, 4, 0]}
+                  fill={OUTFLOW}
+                  maxBarSize={18}
+                  cursor="pointer"
+                  onClick={(data) => onDrillExpenseHead?.(data.label, data.movement)}
+                  {...ANIM}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </ChartCard>
+
+        <ChartCard title="Ageing" subtitle="Payables and receivables by days overdue. Opposing balances, shown side by side.">
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={ageingChartData} barGap={2} barCategoryGap="30%" margin={{ top: 4, right: 4, left: -8, bottom: 0 }}>
+              <CartesianGrid vertical={false} />
+              <XAxis dataKey="bucket" axisLine={false} tickLine={false} />
+              <YAxis tickFormatter={fmtK} axisLine={false} tickLine={false} width={56} />
+              <Tooltip {...tooltipProps} />
+              <Legend iconType="circle" iconSize={8} align="right" verticalAlign="top" height={28} />
               <Bar
-                dataKey="movement"
-                name="Expense"
-                radius={[0, 6, 6, 0]}
-                fill="#f43f5e"
+                dataKey="Receivables"
+                fill={INFLOW}
+                radius={[4, 4, 0, 0]}
+                maxBarSize={28}
                 cursor="pointer"
-                onClick={(data) => onDrillExpenseHead?.(data.label, data.movement)}
+                onClick={(data) => onDrillAgeing?.("receivables", data.bucket, data.Receivables)}
+                {...ANIM}
+              />
+              <Bar
+                dataKey="Payables"
+                fill={OUTFLOW}
+                radius={[4, 4, 0, 0]}
+                maxBarSize={28}
+                cursor="pointer"
+                onClick={(data) => onDrillAgeing?.("payables", data.bucket, data.Payables)}
+                {...ANIM}
               />
             </BarChart>
           </ResponsiveContainer>
-        )}
-      </ChartCard>
-
-      <ChartCard
-        title="Income vs Expense — Last 6 Months"
-        extra={basisTag}
-        subtitle="Same accrual P&L as the card above, month by month."
-      >
-        <ResponsiveContainer width="100%" height={260}>
-          <BarChart data={monthlyTrend}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-            <XAxis dataKey="month" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-            <YAxis tickFormatter={fmtK} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-            <Tooltip formatter={(v) => formatCurrency(v)} />
-            <Legend wrapperStyle={{ fontSize: 11 }} />
-            <Bar dataKey="Income" fill="#10b981" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="Expense" fill="#f43f5e" radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      </ChartCard>
-
-      <ChartCard
-        title="Ageing — Payables vs Receivables"
-        subtitle="Side by side, not stacked — the two are opposing balances and don't sum."
-      >
-        <ResponsiveContainer width="100%" height={260}>
-          <BarChart data={ageingChartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-            <XAxis dataKey="bucket" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-            <YAxis tickFormatter={fmtK} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-            <Tooltip formatter={(v) => formatCurrency(v)} />
-            <Legend wrapperStyle={{ fontSize: 11 }} />
-            <Bar
-              dataKey="Payables"
-              fill="#f97316"
-              radius={[4, 4, 0, 0]}
-              cursor="pointer"
-              onClick={(data) => onDrillAgeing?.("payables", data.bucket, data.Payables)}
-            />
-            <Bar
-              dataKey="Receivables"
-              fill="#0ea5e9"
-              radius={[4, 4, 0, 0]}
-              cursor="pointer"
-              onClick={(data) => onDrillAgeing?.("receivables", data.bucket, data.Receivables)}
-            />
-          </BarChart>
-        </ResponsiveContainer>
-      </ChartCard>
+        </ChartCard>
+      </div>
     </div>
   );
 }

@@ -5,7 +5,7 @@ import Link from "next/link";
 import HRSidebar from "@/components/Sidebars/HRSidebar";
 import {
   Users, UserCheck, UserX, CalendarClock, PauseCircle,
-  ClipboardList, TrendingUp, Briefcase, QrCode, Globe,
+  ClipboardList, QrCode, Globe,
   RefreshCw, ArrowRight,
 } from "lucide-react";
 import {
@@ -52,27 +52,28 @@ const STATUS_BG = {
 
 function StatCard({ label, value, sub, accent, icon: Icon, href, pct, pctLabel }) {
   const styles = {
-    violet: { card: "border-violet-100", bar: "bg-violet-500", icon: "bg-violet-100 text-violet-600", val: "text-violet-700" },
-    amber:  { card: "border-amber-100",  bar: "bg-amber-500",  icon: "bg-amber-100 text-amber-600",  val: "text-amber-700"  },
-    indigo: { card: "border-indigo-100", bar: "bg-indigo-500", icon: "bg-indigo-100 text-indigo-600",val: "text-indigo-700" },
+    violet: { bar: "bg-indigo-500", icon: "bg-indigo-50 text-indigo-600" },
+    amber:  { bar: "bg-amber-500",  icon: "bg-amber-50 text-amber-600"  },
+    indigo: { bar: "bg-indigo-500", icon: "bg-indigo-50 text-indigo-600" },
   };
   const s = styles[accent] || styles.violet;
   const inner = (
-    <div className={`bg-white rounded-2xl border ${s.card} shadow-sm overflow-hidden h-full`}>
-      <div className={`h-1 ${s.bar}`} />
+    <div className={`bg-white rounded-xl border border-gray-200 h-full transition-colors ${href ? "group-hover:border-gray-300 group-hover:bg-gray-50/60" : ""}`}>
       <div className="p-5">
-        <div className="flex items-start justify-between mb-4">
-          <div className={`w-10 h-10 rounded-xl ${s.icon} flex items-center justify-center`}>
-            <Icon className="w-5 h-5" />
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-sm font-medium text-gray-600">{label}</p>
+          <div className={`w-8 h-8 rounded-lg ${s.icon} flex items-center justify-center`}>
+            <Icon className="w-4 h-4" aria-hidden />
           </div>
-          {href && <ArrowRight className="w-4 h-4 text-gray-300" />}
         </div>
-        <p className={`text-3xl font-bold ${s.val}`}>{value}</p>
-        <p className="text-sm font-semibold text-gray-700 mt-1">{label}</p>
-        {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
+        <p className="mt-3 text-3xl font-semibold tracking-tight text-gray-900 tabular-nums leading-none">{value}</p>
+        <div className="mt-2 flex items-center gap-2 text-xs">
+          {sub && <span className="text-gray-500">{sub}</span>}
+          {href && <ArrowRight className="ml-auto w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors" aria-hidden />}
+        </div>
         {pct !== undefined && (
           <div className="mt-3">
-            <div className="flex justify-between text-[10px] text-gray-400 mb-1">
+            <div className="flex justify-between text-xs text-gray-500 mb-1 tabular-nums">
               <span>{pctLabel}</span><span>{pct}%</span>
             </div>
             <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -83,14 +84,17 @@ function StatCard({ label, value, sub, accent, icon: Icon, href, pct, pctLabel }
       </div>
     </div>
   );
-  return href ? <Link href={href} className="block h-full hover:scale-[1.01] transition-transform">{inner}</Link> : inner;
+  return href ? <Link href={href} className="group block h-full rounded-xl">{inner}</Link> : inner;
 }
 
 function MiniKpi({ label, value, color }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 text-center">
-      <p className={`text-xl font-bold ${color}`}>{value}</p>
-      <p className="text-[10px] text-gray-500 font-medium mt-0.5 leading-tight">{label}</p>
+    <div className="px-4 py-3">
+      <p className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+        <span className={`w-1.5 h-1.5 rounded-full ${color}`} aria-hidden />
+        {label}
+      </p>
+      <p className="text-xl font-semibold text-gray-900 tabular-nums mt-1">{value}</p>
     </div>
   );
 }
@@ -138,24 +142,21 @@ export default function HRDashboard() {
       <HRSidebar />
       <main className="flex-1 flex flex-col min-w-0 overflow-auto">
 
-        <header className="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-10 shadow-sm shrink-0">
+        <header className="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-10 shrink-0">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-linear-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-md">
-                <TrendingUp className="w-4 h-4 text-white" />
-              </div>
               <div>
-                <h1 className="text-base font-bold text-gray-900 leading-none">HR Dashboard</h1>
+                <h1 className="text-lg font-semibold tracking-tight text-gray-900 leading-none">HR Dashboard</h1>
                 <p className="text-xs text-gray-500 mt-0.5">Recruitment overview & analytics</p>
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-1.5">
               {PRESETS.map(({ key, label }) => (
-                <button key={key} onClick={() => setPreset(key)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                <button key={key} type="button" aria-pressed={preset === key} onClick={() => setPreset(key)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                     preset === key
-                      ? "bg-violet-600 text-white shadow-sm"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      ? "bg-indigo-600 text-white"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-300"
                   }`}>
                   {label}
                 </button>
@@ -164,14 +165,14 @@ export default function HRDashboard() {
                 <div className="flex gap-1.5">
                   <input type="date" value={custom.from}
                     onChange={(e) => setCustom((c) => ({ ...c, from: e.target.value }))}
-                    className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-violet-300" />
+                    className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/30" />
                   <input type="date" value={custom.to}
                     onChange={(e) => setCustom((c) => ({ ...c, to: e.target.value }))}
-                    className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-violet-300" />
+                    className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/30" />
                 </div>
               )}
-              <button onClick={fetchData} disabled={loading}
-                className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors">
+              <button type="button" onClick={fetchData} disabled={loading} aria-label="Refresh" title="Refresh"
+                className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 active:bg-gray-300 transition-colors disabled:opacity-50">
                 <RefreshCw className={`w-3.5 h-3.5 text-gray-600 ${loading ? "animate-spin" : ""}`} />
               </button>
             </div>
@@ -182,7 +183,7 @@ export default function HRDashboard() {
 
           {loading && !data ? (
             <div className="flex items-center justify-center h-64">
-              <div className="w-8 h-8 border-4 border-violet-500 border-t-transparent rounded-full animate-spin" />
+              <div className="w-8 h-8 border-4 border-gray-200 border-t-indigo-600 rounded-full animate-spin" />
             </div>
           ) : (
             <>
@@ -204,19 +205,18 @@ export default function HRDashboard() {
                 />
               </div>
 
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
-                <MiniKpi label="Applied"   value={data?.applied   ?? 0} color="text-blue-600" />
-                <MiniKpi label="Scheduled" value={data?.scheduled ?? 0} color="text-indigo-600" />
-                <MiniKpi label="Selected"  value={data?.selected  ?? 0} color="text-emerald-600" />
-                <MiniKpi label="Rejected"  value={data?.rejected  ?? 0} color="text-red-600" />
-                <MiniKpi label="On Hold"   value={data?.onHold    ?? 0} color="text-amber-600" />
+              <div className="grid grid-cols-3 sm:grid-cols-5 bg-white rounded-xl border border-gray-200 divide-x divide-gray-100">
+                <MiniKpi label="Applied"   value={data?.applied   ?? 0} color="bg-blue-500" />
+                <MiniKpi label="Scheduled" value={data?.scheduled ?? 0} color="bg-indigo-500" />
+                <MiniKpi label="Selected"  value={data?.selected  ?? 0} color="bg-emerald-500" />
+                <MiniKpi label="Rejected"  value={data?.rejected  ?? 0} color="bg-red-500" />
+                <MiniKpi label="On Hold"   value={data?.onHold    ?? 0} color="bg-amber-500" />
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-                <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-5">
                   <div className="flex items-center gap-2 mb-4">
-                    <TrendingUp className="w-4 h-4 text-violet-500" />
-                    <h2 className="text-sm font-bold text-gray-800">Visited vs Applied — Daily Trend</h2>
+                    <h2 className="text-base font-semibold text-gray-900">Visited vs Applied — Daily Trend</h2>
                   </div>
                   {(data?.perDay?.filter(d => d.visited > 0 || d.applied > 0).length ?? 0) > 0 ? (
                     <ResponsiveContainer width="100%" height={200}>
@@ -245,8 +245,8 @@ export default function HRDashboard() {
                   )}
                 </div>
 
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                  <h2 className="text-sm font-bold text-gray-800 mb-4">Status Breakdown</h2>
+                <div className="bg-white rounded-xl border border-gray-200 p-5">
+                  <h2 className="text-base font-semibold text-gray-900 mb-4">Status Breakdown</h2>
                   <div className="space-y-3">
                     {(data?.byStatus || []).map(({ _id, count }) => {
                       const pct = total > 0 ? Math.round((count / total) * 100) : 0;
@@ -257,7 +257,7 @@ export default function HRDashboard() {
                               <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: STATUS_COLORS[_id] || "#6b7280" }} />
                               {_id || "Unknown"}
                             </span>
-                            <span className="font-bold text-gray-700">{count}</span>
+                            <span className="font-semibold text-gray-700">{count}</span>
                           </div>
                           <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
                             <div className="h-full rounded-full transition-all duration-500"
@@ -272,10 +272,9 @@ export default function HRDashboard() {
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                <div className="bg-white rounded-xl border border-gray-200 p-5">
                   <div className="flex items-center gap-2 mb-4">
-                    <Briefcase className="w-4 h-4 text-violet-500" />
-                    <h2 className="text-sm font-bold text-gray-800">Positions Applied For</h2>
+                    <h2 className="text-base font-semibold text-gray-900">Positions Applied For</h2>
                   </div>
                   {(data?.positions?.length ?? 0) > 0 ? (
                     <ResponsiveContainer width="100%" height={200}>
@@ -284,11 +283,7 @@ export default function HRDashboard() {
                         <XAxis type="number" tick={{ fontSize: 10, fill: "#9ca3af" }} allowDecimals={false} />
                         <YAxis dataKey="_id" type="category" tick={{ fontSize: 10, fill: "#374151" }} width={90} />
                         <Tooltip formatter={(v) => [v, "Applicants"]} contentStyle={{ borderRadius: "10px", border: "1px solid #e5e7eb", fontSize: 11 }} />
-                        <Bar dataKey="count" radius={[0, 5, 5, 0]} maxBarSize={18}>
-                          {(data?.positions || []).slice(0, 8).map((_, i) => (
-                            <Cell key={i} fill={["#7c3aed","#6366f1","#f59e0b","#10b981","#ef4444","#3b82f6","#8b5cf6","#14b8a6"][i % 8]} />
-                          ))}
-                        </Bar>
+                        <Bar dataKey="count" fill="#3d50e0" radius={[0, 4, 4, 0]} maxBarSize={16} />
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
@@ -296,10 +291,10 @@ export default function HRDashboard() {
                   )}
                 </div>
 
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                <div className="bg-white rounded-xl border border-gray-200 p-5">
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-sm font-bold text-gray-800">Recent Candidates</h2>
-                    <Link href="/hr/candidates" className="text-xs text-violet-600 font-semibold hover:underline flex items-center gap-1">
+                    <h2 className="text-base font-semibold text-gray-900">Recent Candidates</h2>
+                    <Link href="/hr/candidates" className="text-xs text-indigo-600 font-semibold hover:underline flex items-center gap-1">
                       View all <ArrowRight className="w-3 h-3" />
                     </Link>
                   </div>
@@ -307,14 +302,14 @@ export default function HRDashboard() {
                     <div className="space-y-2.5">
                       {data.recentCandidates.map((c) => (
                         <div key={c._id} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 transition-colors">
-                          <div className="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center shrink-0">
-                            <span className="text-violet-700 font-bold text-[10px]">{c.name?.slice(0,2).toUpperCase()}</span>
+                          <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
+                            <span className="text-indigo-700 font-semibold text-[11px]">{c.name?.slice(0,2).toUpperCase()}</span>
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold text-gray-800 truncate leading-none">{c.name}</p>
                             <p className="text-xs text-gray-400 mt-0.5 truncate">{c.position || "—"}</p>
                           </div>
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${STATUS_BG[c.status] || "bg-gray-100 text-gray-600"}`}>
+                          <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${STATUS_BG[c.status] || "bg-gray-100 text-gray-600"}`}>
                             {c.status}
                           </span>
                         </div>
@@ -327,17 +322,16 @@ export default function HRDashboard() {
               </div>
 
               {(data?.byHr?.length ?? 0) > 0 && (
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
                   <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
-                    <Briefcase className="w-4 h-4 text-violet-500" />
-                    <h2 className="text-sm font-bold text-gray-800">HR Performance</h2>
+                    <h2 className="text-base font-semibold text-gray-900">HR Performance</h2>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="bg-gray-50 border-b border-gray-100">
                           {["HR Name","Total","Scheduled","Selected","Rejected","On Hold","Conversion Rate"].map((h) => (
-                            <th key={h} className={`px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide ${h === "HR Name" ? "text-left" : "text-center"}`}>{h}</th>
+                            <th key={h} className={`px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide ${h === "HR Name" ? "text-left" : "text-center"}`}>{h}</th>
                           ))}
                         </tr>
                       </thead>
@@ -348,21 +342,15 @@ export default function HRDashboard() {
                             <tr key={hr._id} className="hover:bg-gray-50 transition-colors">
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-2.5">
-                                  <div className="w-7 h-7 rounded-full bg-violet-100 flex items-center justify-center shrink-0">
-                                    <span className="text-violet-700 font-bold text-[10px]">{(hr._id || "?").slice(0,2).toUpperCase()}</span>
+                                  <div className="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
+                                    <span className="text-indigo-700 font-semibold text-[11px]">{(hr._id || "?").slice(0,2).toUpperCase()}</span>
                                   </div>
                                   <span className="font-semibold text-gray-800 text-sm">{hr._id || "Unassigned"}</span>
                                 </div>
                               </td>
                               {[hr.total, hr.scheduled, hr.selected, hr.rejected, hr.onHold].map((v, i) => (
                                 <td key={i} className="px-4 py-3 text-center">
-                                  <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold ${
-                                    i === 0 ? "bg-violet-50 text-violet-700"
-                                    : i === 1 ? "bg-indigo-50 text-indigo-700"
-                                    : i === 2 ? "bg-emerald-50 text-emerald-700"
-                                    : i === 3 ? "bg-red-50 text-red-600"
-                                    : "bg-amber-50 text-amber-700"
-                                  }`}>{v}</span>
+                                  <span className={`text-sm tabular-nums ${i === 0 ? "font-semibold text-gray-900" : "text-gray-700"}`}>{v}</span>
                                 </td>
                               ))}
                               <td className="px-4 py-3">
@@ -371,7 +359,7 @@ export default function HRDashboard() {
                                     <div className={`h-full rounded-full ${conv >= 50 ? "bg-emerald-500" : conv >= 25 ? "bg-amber-400" : "bg-red-400"}`}
                                       style={{ width: `${conv}%` }} />
                                   </div>
-                                  <span className="text-xs font-bold text-gray-700 tabular-nums w-8">{conv}%</span>
+                                  <span className="text-xs font-semibold text-gray-700 tabular-nums w-8">{conv}%</span>
                                 </div>
                               </td>
                             </tr>

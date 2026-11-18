@@ -254,7 +254,7 @@ export default function RecordAdvanceModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-3 backdrop-blur-sm sm:p-5">
+    <div className="fixed inset-0 overlay-in z-50 flex items-center justify-center bg-gray-950/40 p-3 sm:p-5">
 
       {}
       <div className="flex max-h-[95vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
@@ -306,7 +306,7 @@ export default function RecordAdvanceModal({
             </div>
 
             <div className="min-w-0">
-              <h3 className="truncate text-base font-bold text-slate-900 sm:text-lg">
+              <h3 className="truncate text-base font-semibold text-slate-900 sm:text-lg">
                 {title}
               </h3>
 
@@ -346,11 +346,11 @@ export default function RecordAdvanceModal({
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 
                   <div className="min-w-0">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-rose-500">
+                    <p className="text-xs font-medium text-gray-500">
                       Outstanding Advance
                     </p>
 
-                    <p className="mt-1 truncate text-sm font-bold text-slate-900 sm:text-base">
+                    <p className="mt-1 truncate text-sm font-semibold text-slate-900 sm:text-base">
                       {receivable.payer?.label}
                     </p>
 
@@ -360,11 +360,11 @@ export default function RecordAdvanceModal({
                   </div>
 
                   <div className="sm:text-right">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-rose-500">
+                    <p className="text-xs font-medium text-gray-500">
                       Remaining
                     </p>
 
-                    <p className="mt-1 text-lg font-bold text-rose-600 sm:text-xl">
+                    <p className="mt-1 text-lg font-semibold text-rose-600 sm:text-xl">
                       {formatCurrency(pending)}
                     </p>
                   </div>
@@ -379,7 +379,7 @@ export default function RecordAdvanceModal({
             {!partyLocked && (
               <section>
                 <div className="mb-3">
-                  <h4 className="text-sm font-bold text-slate-900">
+                  <h4 className="text-sm font-semibold text-slate-900">
                     Party Details
                   </h4>
 
@@ -452,7 +452,7 @@ export default function RecordAdvanceModal({
                         setPartyLabel(e.target.value)
                       }
                       placeholder="Enter the person or organization name"
-                      className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                      className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
                     />
                   </div>
                 ) : (
@@ -499,7 +499,7 @@ export default function RecordAdvanceModal({
             {isNewAdvance && (
               <section>
                 <div className="mb-3">
-                  <h4 className="text-sm font-bold text-slate-900">
+                  <h4 className="text-sm font-semibold text-slate-900">
                     Advance Information
                   </h4>
 
@@ -518,7 +518,7 @@ export default function RecordAdvanceModal({
                   onChange={(e) =>
                     setSubType(e.target.value)
                   }
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
                 >
                   <option value="">
                     Select advance type...
@@ -538,7 +538,7 @@ export default function RecordAdvanceModal({
 }
             <section>
               <div className="mb-3">
-                <h4 className="text-sm font-bold text-slate-900">
+                <h4 className="text-sm font-semibold text-slate-900">
                   {isRecovery
                     ? "Recovery Details"
                     : "Advance Details"}
@@ -567,7 +567,7 @@ export default function RecordAdvanceModal({
                     onChange={(e) =>
                       setAccount(e.target.value)
                     }
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
                   >
                     <option value="">
                       Select account...
@@ -603,7 +603,7 @@ export default function RecordAdvanceModal({
                         setAmount(e.target.value)
                       }
                       placeholder="0"
-                      className="w-full rounded-xl border border-slate-300 py-2.5 pl-8 pr-3 text-sm outline-none transition placeholder:text-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                      className="w-full rounded-xl border border-slate-300 py-2.5 pl-8 pr-3 text-sm outline-none transition placeholder:text-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
                     />
                   </div>
 
@@ -630,7 +630,7 @@ export default function RecordAdvanceModal({
                         e.target.checked
                       )
                     }
-                    className="mt-0.5 h-4 w-4 rounded border-amber-300 text-amber-600 focus:ring-amber-500"
+                    className="mt-0.5 h-4 w-4 rounded border-amber-300 text-amber-600 focus:ring-indigo-500/30"
                   />
 
                   <div>
@@ -654,7 +654,7 @@ export default function RecordAdvanceModal({
 }
             <section>
               <div className="mb-3">
-                <h4 className="text-sm font-bold text-slate-900">
+                <h4 className="text-sm font-semibold text-slate-900">
                   Transaction Details
                 </h4>
               </div>
@@ -670,7 +670,7 @@ export default function RecordAdvanceModal({
                   <DebouncedDateInput
                     value={date}
                     onCommit={setDate}
-                    className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                    className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
                   />
                 </div>
 
@@ -686,7 +686,7 @@ export default function RecordAdvanceModal({
                       onChange={(e) =>
                         setBranch(e.target.value)
                       }
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
                     >
                       <option value="">
                         Company-level
@@ -714,7 +714,7 @@ export default function RecordAdvanceModal({
 }
             <section>
               <div className="mb-3">
-                <h4 className="text-sm font-bold text-slate-900">
+                <h4 className="text-sm font-semibold text-slate-900">
                   Additional Information
                 </h4>
 
@@ -741,7 +741,7 @@ export default function RecordAdvanceModal({
                       setReference(e.target.value)
                     }
                     placeholder="UTR / cheque number / transaction ID"
-                    className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                    className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
                   />
                 </div>
 
@@ -758,7 +758,7 @@ export default function RecordAdvanceModal({
                     }
                     rows={3}
                     placeholder="Add any additional information..."
-                    className="w-full resize-none rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                    className="w-full resize-none rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
                   />
                 </div>
 
@@ -784,7 +784,7 @@ export default function RecordAdvanceModal({
                   }`}
                 >
                   <span
-                    className={`text-xs font-bold ${
+                    className={`text-xs font-semibold ${
                       periodLocked
                         ? "text-amber-700"
                         : "text-red-700"
@@ -843,8 +843,8 @@ export default function RecordAdvanceModal({
             disabled={submitting}
             className={`flex w-full items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto ${
               isRecovery
-                ? "bg-emerald-600 hover:bg-emerald-700 focus:ring-emerald-500"
-                : "bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500"
+                ? "bg-emerald-600 hover:bg-emerald-700 focus:ring-indigo-500/30"
+                : "bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500/30"
             }`}
           >
             {submitting ? (

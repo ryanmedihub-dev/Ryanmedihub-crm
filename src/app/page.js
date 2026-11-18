@@ -365,7 +365,7 @@ export default function LandingPage() {
             </div>
 
             <div className="relative bg-white rounded-2xl p-6 shadow-[0_8px_40px_rgba(0,0,0,0.08)] border border-black/7">
-              <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl bg-linear-to-r from-transparent via-[#9a6f2a] to-transparent" />
+              <div className="keep-gradient absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl bg-linear-to-r from-transparent via-[#9a6f2a] to-transparent" />
 
               <div className="flex items-center justify-between mb-5">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-[#6b5f4e]">Dashboard Overview</span>
@@ -457,7 +457,7 @@ export default function LandingPage() {
                 delay={((i % 3) + 1) * 80}
                 className={`group relative bg-white border border-black/7 rounded-2xl p-8 cursor-default shadow-[0_2px_12px_rgba(0,0,0,0.04)] hover:border-[#9a6f2a]/25 hover:-translate-y-1 hover:shadow-[0_20px_60px_rgba(0,0,0,0.1)] transition-all duration-400 overflow-hidden ${f.featured ? "lg:row-span-2 bg-linear-to-br from-[#fffdf7] to-[#faf7ef] border-[#9a6f2a]/20 shadow-[0_4px_20px_rgba(154,111,42,0.08)]" : ""}`}
               >
-                <div className="absolute inset-0 bg-linear-to-br from-[#9a6f2a]/4 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-400 pointer-events-none rounded-2xl" />
+                <div className="keep-gradient absolute inset-0 bg-linear-to-br from-[#9a6f2a]/4 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-400 pointer-events-none rounded-2xl" />
                 <div className={`w-13 h-13 rounded-[14px] flex items-center justify-center text-2xl mb-5 ${iconBg[f.color]}`} style={{ width: 52, height: 52 }}>{f.icon}</div>
                 <h3 className={`font-cormorant font-semibold text-[#1a1510] mb-3 ${f.featured ? "text-2xl" : "text-xl"}`}>{f.title}</h3>
                 <p className="text-sm text-[#6b5f4e] leading-[1.75]">{f.desc}</p>
@@ -476,7 +476,7 @@ export default function LandingPage() {
           </RevealDiv>
 
           <RevealDiv className="relative mt-14">
-            <div className="absolute top-7 left-[10%] right-[10%] h-px bg-linear-to-r from-transparent via-[#9a6f2a] to-transparent hidden md:block" />
+            <div className="keep-gradient absolute top-7 left-[10%] right-[10%] h-px bg-linear-to-r from-transparent via-[#9a6f2a] to-transparent hidden md:block" />
             <div className="grid grid-cols-3 md:grid-cols-6 gap-y-8 gap-x-2">
               {workflowSteps.map((step) => (
                 <div key={step.num} className="group text-center relative">
@@ -545,7 +545,7 @@ export default function LandingPage() {
           </RevealDiv>
 
           <RevealDiv delay={200} className="relative bg-white rounded-2xl p-6 border border-black/7 shadow-[0_4px_24px_rgba(0,0,0,0.06)] overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-[#9a6f2a] to-transparent" />
+            <div className="keep-gradient absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-[#9a6f2a] to-transparent" />
             <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#6b5f4e] mb-4">Recent Audit Log</div>
             <div className="flex flex-col divide-y divide-black/5">
               {auditLog.map((row, i) => (

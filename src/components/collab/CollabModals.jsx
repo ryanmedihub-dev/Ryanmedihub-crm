@@ -7,12 +7,12 @@ import { REVENUE_METHODS } from "@/constants/paymentMethods";
 import { formatCurrency } from "@/lib/financeUI";
 
 export const inputCls =
-  "w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100";
+  "w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30";
 export const labelCls = "mb-1.5 block text-sm font-semibold text-gray-700";
 
 export function ModalShell({ icon: Icon, iconBg, iconFg, title, subtitle, onClose, children, maxWidth = "max-w-2xl", notice }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-3 backdrop-blur-sm sm:p-5">
+    <div className="fixed inset-0 overlay-in z-50 flex items-center justify-center bg-gray-950/40 p-3 sm:p-5">
       <div className={`flex max-h-[95vh] w-full ${maxWidth} flex-col overflow-hidden rounded-2xl bg-white shadow-2xl`}>
         <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 py-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
@@ -20,7 +20,7 @@ export function ModalShell({ icon: Icon, iconBg, iconFg, title, subtitle, onClos
               <Icon className={`h-5 w-5 ${iconFg}`} />
             </div>
             <div className="min-w-0">
-              <h3 className="truncate text-base font-bold text-slate-900 sm:text-lg">{title}</h3>
+              <h3 className="truncate text-base font-semibold text-slate-900 sm:text-lg">{title}</h3>
               <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">{subtitle}</p>
             </div>
           </div>
@@ -162,7 +162,7 @@ export function RecordCollectionModal({ collabCase, onClose, onSuccess, toast })
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Patient</p>
-              <p className="mt-0.5 text-sm font-bold text-slate-900 sm:text-base">
+              <p className="mt-0.5 text-sm font-semibold text-slate-900 sm:text-base">
                 {collabCase.patientName || "Patient"}
               </p>
             </div>
@@ -170,7 +170,7 @@ export function RecordCollectionModal({ collabCase, onClose, onSuccess, toast })
               <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
                 Outstanding on this case
               </p>
-              <p className="mt-0.5 text-base font-bold text-amber-600 sm:text-lg">
+              <p className="mt-0.5 text-base font-semibold text-amber-600 sm:text-lg">
                 {formatCurrency(collabCase.caseOutstanding)}
               </p>
             </div>
@@ -180,7 +180,7 @@ export function RecordCollectionModal({ collabCase, onClose, onSuccess, toast })
         {}
         <section className="mb-5">
           <div className="mb-2.5">
-            <h4 className="text-sm font-bold text-slate-900">Collection Source</h4>
+            <h4 className="text-sm font-semibold text-slate-900">Collection Source</h4>
             <p className="mt-0.5 text-xs text-slate-500">Who received the payment?</p>
           </div>
 
@@ -278,7 +278,7 @@ export function RecordCollectionModal({ collabCase, onClose, onSuccess, toast })
 
         <section className="mb-5">
           <div className="mb-3">
-            <h4 className="text-sm font-bold text-slate-900">Payment Details</h4>
+            <h4 className="text-sm font-semibold text-slate-900">Payment Details</h4>
             <p className="mt-0.5 text-xs text-slate-500">Enter the amount and payment information</p>
           </div>
 
@@ -305,7 +305,7 @@ export function RecordCollectionModal({ collabCase, onClose, onSuccess, toast })
                   type="checkbox"
                   checked={fullPackage}
                   onChange={(e) => setFullPackage(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                  className="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500/30"
                 />
                 <span className="text-xs text-slate-600 sm:text-sm">
                   <strong className="font-semibold text-slate-700">Complete the case</strong> — pay the full remaining outstanding balance.
@@ -318,7 +318,7 @@ export function RecordCollectionModal({ collabCase, onClose, onSuccess, toast })
                     type="checkbox"
                     checked={allowOverpayment}
                     onChange={(e) => setAllowOverpayment(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 rounded border-amber-300 text-amber-600 focus:ring-amber-500"
+                    className="mt-0.5 h-4 w-4 rounded border-amber-300 text-amber-600 focus:ring-indigo-500/30"
                   />
                   <span className="text-xs text-amber-700 sm:text-sm">
                     Amount exceeds the patient's outstanding balance. Allow overpayment.
@@ -365,7 +365,7 @@ export function RecordCollectionModal({ collabCase, onClose, onSuccess, toast })
 
         <section className="mb-5">
           <div className="mb-3">
-            <h4 className="text-sm font-bold text-slate-900">Account / Routing Details</h4>
+            <h4 className="text-sm font-semibold text-slate-900">Account / Routing Details</h4>
             <p className="mt-0.5 text-xs text-slate-500">Select where the payment was received</p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
@@ -391,7 +391,7 @@ export function RecordCollectionModal({ collabCase, onClose, onSuccess, toast })
 
         <section className="mb-1">
           <div className="mb-3">
-            <h4 className="text-sm font-bold text-slate-900">Transaction Information</h4>
+            <h4 className="text-sm font-semibold text-slate-900">Transaction Information</h4>
           </div>
           <div className="space-y-4">
             <div>
@@ -433,7 +433,7 @@ export function RecordCollectionModal({ collabCase, onClose, onSuccess, toast })
           type="button"
           onClick={handleSubmit}
           disabled={submitting}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
         >
           {submitting ? (
             <>
@@ -545,12 +545,12 @@ export function SettleModal({ clinic, balance, openCases, onClose, onSuccess, to
           <p className="text-gray-600">
             Current position:{" "}
             {netPosition > 0 && (
-              <span className="font-bold text-emerald-700">Clinic owes us {formatCurrency(netPosition)}</span>
+              <span className="font-semibold text-emerald-700">Clinic owes us {formatCurrency(netPosition)}</span>
             )}
             {netPosition < 0 && (
-              <span className="font-bold text-rose-600">We owe clinic {formatCurrency(Math.abs(netPosition))}</span>
+              <span className="font-semibold text-rose-600">We owe clinic {formatCurrency(Math.abs(netPosition))}</span>
             )}
-            {netPosition === 0 && <span className="font-bold text-gray-500">Square</span>}
+            {netPosition === 0 && <span className="font-semibold text-gray-500">Square</span>}
           </p>
         </div>
 

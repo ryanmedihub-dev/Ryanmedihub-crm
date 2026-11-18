@@ -16,7 +16,7 @@ export default function BatchResultPanel({ result, reverting, onRevert, onStartO
         <div className="flex flex-wrap items-center gap-3">
           <CheckCircle2 className={`h-6 w-6 ${reverted ? "text-rose-500" : "text-emerald-600"}`} />
           <div className="min-w-0">
-            <p className="text-sm font-bold text-slate-900">
+            <p className="text-sm font-semibold text-slate-900">
               Batch #{result.batchNo} — {result.created} row(s) imported, {result.docsCreated} payable
               document(s) created
               {result.failed > 0 && `, ${result.failed} failed`}

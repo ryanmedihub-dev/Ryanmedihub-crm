@@ -40,7 +40,7 @@ export default function MethodField({
         <select
           value={value.method}
           onChange={(e) => onChange({ method: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+          className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
         >
           {options.map((o) => (
             <option key={o.value} value={o.value} disabled={o.disabled}>{o.label}</option>

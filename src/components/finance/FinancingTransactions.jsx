@@ -81,7 +81,7 @@ export default function FinancingTransactions({ kind, from, to, branch = "" }) {
       label: "Direction",
       render: (r) => (
         <span
-          className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border ${
+          className={`inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold border ${
             r.direction === "OUT"
               ? "bg-rose-50 text-rose-700 border-rose-200"
               : "bg-emerald-50 text-emerald-700 border-emerald-200"
@@ -102,7 +102,7 @@ export default function FinancingTransactions({ kind, from, to, branch = "" }) {
       render: (r) => {
         if (kind !== "advance") {
           return r[cfg.settlesField] ? (
-            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-teal-700">
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-teal-700">
               <Link2 className="w-3 h-3" /> {cfg.settlesLabel}
             </span>
           ) : (
@@ -113,7 +113,7 @@ export default function FinancingTransactions({ kind, from, to, branch = "" }) {
         if (lines.length === 0) return "—";
         const total = lines.reduce((sum, l) => sum + (l.amount || 0), 0);
         return (
-          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-teal-700">
+          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-teal-700">
             <Link2 className="w-3 h-3" />{" "}
             {lines.length > 1
               ? `Settling ${lines.length} payables · ${formatCurrency(total)}`

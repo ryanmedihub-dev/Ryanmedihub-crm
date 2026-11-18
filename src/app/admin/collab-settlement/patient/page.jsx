@@ -112,7 +112,7 @@ export default function PatientCollabSettlementPage() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <main className="flex-1 p-4 sm:p-6 lg:p-8">
+      <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8">
         <div className="max-w-5xl mx-auto">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
@@ -122,7 +122,7 @@ export default function PatientCollabSettlementPage() {
               >
                 <ArrowLeft className="w-3.5 h-3.5" /> Clinic view
               </Link>
-              <h1 className="text-2xl font-bold text-gray-900">Settle by Patient</h1>
+              <h1 className="text-xl font-semibold tracking-tight text-gray-900">Settle by Patient</h1>
               <p className="text-sm text-gray-500 mt-1">
                 Every open payable and receivable a patient's collab cases created, in one place
               </p>
@@ -154,7 +154,7 @@ export default function PatientCollabSettlementPage() {
           ) : (
             <>
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5 mb-6">
-                <p className="text-lg font-bold text-gray-900">{patientName || "Patient"}</p>
+                <p className="text-lg font-semibold text-gray-900">{patientName || "Patient"}</p>
                 {patientPhone && <p className="text-sm text-gray-500">{patientPhone}</p>}
               </div>
 
@@ -194,18 +194,18 @@ export default function PatientCollabSettlementPage() {
 
                       <div className="grid grid-cols-2 gap-4 sm:flex sm:items-center sm:gap-6">
                         <div className="sm:text-right sm:w-32">
-                          <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+                          <p className="text-[11px] font-medium text-gray-400">
                             Receivable
                           </p>
-                          <p className="text-sm font-bold text-emerald-600 tabular-nums">
+                          <p className="text-sm font-semibold text-emerald-600 tabular-nums">
                             {formatCurrency(group.receivablePending)}
                           </p>
                         </div>
                         <div className="sm:text-right sm:w-32">
-                          <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+                          <p className="text-[11px] font-medium text-gray-400">
                             Payable
                           </p>
-                          <p className="text-sm font-bold text-rose-600 tabular-nums">
+                          <p className="text-sm font-semibold text-rose-600 tabular-nums">
                             {formatCurrency(group.payablePending)}
                           </p>
                         </div>
@@ -213,7 +213,7 @@ export default function PatientCollabSettlementPage() {
 
                       <div className="flex items-center gap-3">
                         <p
-                          className={`text-sm font-bold shrink-0 ${
+                          className={`text-sm font-semibold shrink-0 ${
                             group.netPosition > 0
                               ? "text-emerald-600"
                               : group.netPosition < 0
@@ -236,11 +236,11 @@ export default function PatientCollabSettlementPage() {
                     {expandedClinic === group.clinic && (
                       <div className="border-t border-gray-100 p-4 sm:p-5">
                         <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-sm font-bold text-gray-900">Cases at {group.clinic}</h3>
+                          <h3 className="text-sm font-semibold text-gray-900">Cases at {group.clinic}</h3>
                           {group.netPosition !== 0 && (
                             <button
                               onClick={() => setSettleClinic(group.clinic)}
-                              className="inline-flex items-center gap-2 px-3.5 py-2 bg-emerald-600 text-white rounded-lg text-sm font-semibold hover:bg-emerald-700 transition-colors"
+                              className="inline-flex items-center gap-2 px-3.5 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors"
                             >
                               <Wallet className="w-4 h-4" />
                               Settle {group.clinic}
@@ -252,13 +252,13 @@ export default function PatientCollabSettlementPage() {
                           <table className="w-full text-sm">
                             <thead className="bg-gray-50 border-b border-gray-200">
                               <tr>
-                                <th className="text-left px-3 py-2 font-semibold text-gray-600">Procedure</th>
-                                <th className="text-right px-3 py-2 font-semibold text-gray-600">Package</th>
-                                <th className="text-right px-3 py-2 font-semibold text-gray-600">Clinic Share</th>
-                                <th className="text-right px-3 py-2 font-semibold text-emerald-700">Receivable</th>
-                                <th className="text-right px-3 py-2 font-semibold text-rose-700">Payable</th>
-                                <th className="text-right px-3 py-2 font-semibold text-gray-600">Created</th>
-                                <th className="text-right px-3 py-2 font-semibold text-gray-600">Actions</th>
+                                <th className="text-left px-3 py-2 font-medium text-gray-600">Procedure</th>
+                                <th className="text-right px-3 py-2 font-medium text-gray-600">Package</th>
+                                <th className="text-right px-3 py-2 font-medium text-gray-600">Clinic Share</th>
+                                <th className="text-right px-3 py-2 font-medium text-emerald-700">Receivable</th>
+                                <th className="text-right px-3 py-2 font-medium text-rose-700">Payable</th>
+                                <th className="text-right px-3 py-2 font-medium text-gray-600">Created</th>
+                                <th className="text-right px-3 py-2 font-medium text-gray-600">Actions</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
@@ -267,7 +267,7 @@ export default function PatientCollabSettlementPage() {
                                   <td className="px-3 py-2">
                                     <span className="font-medium text-gray-900">{c.procedure}</span>
                                     {c.status !== "OPEN" && (
-                                      <span className="ml-1.5 text-[10px] font-semibold text-gray-400 uppercase">
+                                      <span className="ml-1.5 text-[11px] font-medium text-gray-400">
                                         {c.status}
                                       </span>
                                     )}

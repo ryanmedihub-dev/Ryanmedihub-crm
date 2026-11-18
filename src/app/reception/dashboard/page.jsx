@@ -11,20 +11,16 @@ import {
   IndianRupee,
   Clock,
   Phone,
-  ArrowUpRight,
-  ArrowDownRight,
-  RefreshCw,
   UserCheck,
   AlertCircle,
   ClipboardList,
-  Activity,
   ChevronRight,
-  TrendingUp,
   BadgeCheck,
 } from "lucide-react";
 import ReceptionSidebar from "@/components/Sidebars/ReceptionSidebar";
 import Topbar from "@/components/Topbar";
 import { useToast } from "@/components/Toast";
+import StatCard from "@/components/dashboard/StatCard";
 
 const fmt = (n) =>
   new Intl.NumberFormat("en-IN", {
@@ -43,52 +39,17 @@ const STATUS_META = {
   CLOSED: { label: "Closed", color: "bg-gray-100 text-gray-600 border-gray-200" },
 };
 
-function StatCard({ title, value, icon: Icon, gradient, trend, onClick, subtitle }) {
-  const trendZero = trend === 0 || trend === undefined || trend === null;
-  const trendPositive = trend > 0;
-
-  return (
-    <div
-      onClick={onClick}
-      className={`bg-linear-to-br ${gradient} rounded-2xl shadow-lg text-white relative overflow-hidden p-5 sm:p-6 ${
-        onClick ? "cursor-pointer hover:scale-[1.02] transition-transform duration-200" : ""
-      }`}
-    >
-      <div className="absolute top-0 right-0 w-28 h-28 bg-white/10 rounded-full -mr-10 -mt-10" />
-      <div className="absolute bottom-0 left-0 w-16 h-16 bg-white/5 rounded-full -ml-6 -mb-6" />
-      <div className="relative">
-        <div className="flex items-start justify-between mb-4">
-          <div className="bg-white/20 p-2.5 rounded-xl">
-            <Icon className="w-5 h-5 text-white" />
-          </div>
-          {!trendZero && (
-            <div className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold bg-white/20 text-white">
-              {trendPositive
-                ? <ArrowUpRight className="w-3 h-3" />
-                : <ArrowDownRight className="w-3 h-3" />}
-              {trendPositive ? "+" : ""}{trend}%
-            </div>
-          )}
-        </div>
-        <p className="text-white/80 text-xs font-medium mb-1">{title}</p>
-        <p className="text-2xl sm:text-3xl font-bold leading-none">{value}</p>
-        {subtitle && <p className="text-white/70 text-xs mt-2">{subtitle}</p>}
-      </div>
-    </div>
-  );
-}
-
 function FunnelBar({ label, value, max, color }) {
   const pct = max > 0 ? Math.round((value / max) * 100) : 0;
   return (
     <div>
       <div className="flex justify-between items-center mb-1">
         <span className="text-xs text-gray-600 font-medium">{label}</span>
-        <span className="text-xs font-bold text-gray-900">{value}</span>
+        <span className="text-xs font-semibold text-gray-900">{value}</span>
       </div>
       <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
         <div
-          className={`h-full rounded-full ${color} transition-all duration-700`}
+          className={`h-full rounded-full ${color} transition-all duration-300`}
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -190,13 +151,8 @@ export default function ReceptionDashboard() {
         <ReceptionSidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <div className="relative inline-block">
-              <div className="w-16 h-16 rounded-full border-4 border-indigo-100 border-t-indigo-600 animate-spin" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Users className="w-6 h-6 text-indigo-600" />
-              </div>
-            </div>
-            <p className="text-gray-500 text-sm mt-4 font-medium">Loading dashboard…</p>
+            <div className="w-8 h-8 mx-auto rounded-full border-2 border-gray-200 border-t-indigo-600 animate-spin" />
+            <p className="text-gray-500 text-sm mt-3">Loading dashboard…</p>
           </div>
         </div>
       </div>
@@ -210,7 +166,7 @@ export default function ReceptionDashboard() {
     <div className="flex min-h-screen bg-gray-50">
       <ReceptionSidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
-      <main className="flex-1 flex flex-col lg:p-5 min-w-0">
+      <main className="flex-1 flex flex-col px-4 pt-16 pb-6 sm:px-6 lg:p-8 min-w-0">
         <Topbar
           title="Reception Dashboard"
           setSidebarOpen={setSidebarOpen}
@@ -227,7 +183,7 @@ export default function ReceptionDashboard() {
               title="Total Appointments"
               value={todayAppointments}
               icon={Calendar}
-              gradient="from-blue-500 to-indigo-600"
+              tone="blue"
               trend={trends?.appointments}
               subtitle="vs previous period"
               onClick={() => navTo("/reception/patients")}
@@ -236,7 +192,7 @@ export default function ReceptionDashboard() {
               title="Patients Visited"
               value={todayVisits}
               icon={UserCheck}
-              gradient="from-emerald-500 to-green-600"
+              tone="emerald"
               trend={trends?.visits}
               subtitle={`${conversionRate}% conversion rate`}
               onClick={() => navTo("/reception/patients")}
@@ -245,7 +201,7 @@ export default function ReceptionDashboard() {
               title="Pending / Not Visited"
               value={pendingAppointments}
               icon={Clock}
-              gradient="from-amber-500 to-orange-500"
+              tone="amber"
               subtitle="Awaiting consultation"
               onClick={() => navTo("/reception/not-visited")}
             />
@@ -253,7 +209,7 @@ export default function ReceptionDashboard() {
               title="Converted"
               value={convertedPatients ?? 0}
               icon={BadgeCheck}
-              gradient="from-teal-500 to-cyan-600"
+              tone="teal"
               trend={trends?.converted}
               subtitle="Paid at least once"
               onClick={() => router.push("/reception/transactions")}
@@ -262,7 +218,7 @@ export default function ReceptionDashboard() {
               title="Revenue Collected"
               value={fmt(todayRevenue)}
               icon={IndianRupee}
-              gradient="from-purple-500 to-violet-600"
+              tone="purple"
               trend={trends?.revenue}
               subtitle="vs previous period"
               onClick={() => router.push("/reception/transactions")}
@@ -271,15 +227,10 @@ export default function ReceptionDashboard() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
 
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-              <div className="flex items-center gap-2 mb-5">
-                <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center">
-                  <Activity className="w-4 h-4 text-indigo-600" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-gray-900">Patient Flow</h3>
-                  <p className="text-xs text-gray-500">{timeRange}</p>
-                </div>
+            <div className="bg-white rounded-xl border border-gray-200 p-5">
+              <div className="mb-5">
+                <h3 className="text-base font-semibold text-gray-900">Patient Flow</h3>
+                <p className="text-xs text-gray-500 mt-0.5">{timeRange}</p>
               </div>
               <div className="space-y-4">
                 <FunnelBar label="Appointments" value={todayAppointments} max={todayAppointments} color="bg-blue-500" />
@@ -289,92 +240,51 @@ export default function ReceptionDashboard() {
               </div>
               <div className="mt-5 pt-4 border-t border-gray-100 flex justify-between text-xs text-gray-500">
                 <span>Conversion rate</span>
-                <span className="font-bold text-indigo-600">{conversionRate}%</span>
+                <span className="font-semibold text-indigo-600">{conversionRate}%</span>
               </div>
             </div>
 
-            <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-              <div className="flex items-center gap-2 mb-5">
-                <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-                  <TrendingUp className="w-4 h-4 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-gray-900">Quick Actions</h3>
-                  <p className="text-xs text-gray-500">Frequently used tasks</p>
-                </div>
+            <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-5">
+              <div className="mb-5">
+                <h3 className="text-base font-semibold text-gray-900">Quick Actions</h3>
+                <p className="text-xs text-gray-500 mt-0.5">Frequently used tasks</p>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {[
-                  {
-                    label: "Add Patient",
-                    icon: UserPlus,
-                    cls: "border-indigo-100 bg-indigo-50 hover:bg-indigo-100 hover:border-indigo-200",
-                    iconCls: "bg-indigo-100 text-indigo-600",
-                    textCls: "text-indigo-700",
-                    path: "/reception/add-patient",
-                  },
-                  {
-                    label: "All Patients",
-                    icon: Users,
-                    cls: "border-blue-100 bg-blue-50 hover:bg-blue-100 hover:border-blue-200",
-                    iconCls: "bg-blue-100 text-blue-600",
-                    textCls: "text-blue-700",
-                    path: "/reception/patients",
-                  },
-                  {
-                    label: "Not Visited",
-                    icon: AlertCircle,
-                    cls: "border-amber-100 bg-amber-50 hover:bg-amber-100 hover:border-amber-200",
-                    iconCls: "bg-amber-100 text-amber-600",
-                    textCls: "text-amber-700",
-                    path: "/reception/not-visited",
-                  },
-                  {
-                    label: "Transactions",
-                    icon: IndianRupee,
-                    cls: "border-emerald-100 bg-emerald-50 hover:bg-emerald-100 hover:border-emerald-200",
-                    iconCls: "bg-emerald-100 text-emerald-600",
-                    textCls: "text-emerald-700",
-                    path: "/reception/transactions",
-                  },
-                  {
-                    label: "Reports",
-                    icon: ClipboardList,
-                    cls: "border-purple-100 bg-purple-50 hover:bg-purple-100 hover:border-purple-200",
-                    iconCls: "bg-purple-100 text-purple-600",
-                    textCls: "text-purple-700",
-                    path: "/reception/reports",
-                  },
-                ].map(({ label, icon: Icon, cls, iconCls, textCls, path }) => (
+                  { label: "Add Patient", icon: UserPlus, path: "/reception/add-patient", primary: true },
+                  { label: "All Patients", icon: Users, path: "/reception/patients" },
+                  { label: "Not Visited", icon: AlertCircle, path: "/reception/not-visited" },
+                  { label: "Transactions", icon: IndianRupee, path: "/reception/transactions" },
+                  { label: "Reports", icon: ClipboardList, path: "/reception/reports" },
+                ].map(({ label, icon: Icon, path, primary }) => (
                   <button
                     key={label}
+                    type="button"
                     onClick={() => router.push(path)}
-                    className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${cls}`}
+                    className={`flex items-center gap-2.5 px-3.5 py-3 rounded-lg border text-sm font-medium transition-colors ${
+                      primary
+                        ? "bg-indigo-600 border-indigo-600 text-white hover:bg-indigo-700 active:bg-indigo-800"
+                        : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 active:bg-gray-100"
+                    }`}
                   >
-                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${iconCls}`}>
-                      <Icon className="w-4.5 h-4.5" />
-                    </div>
-                    <span className={`text-xs font-semibold ${textCls}`}>{label}</span>
+                    <Icon className={`w-4 h-4 shrink-0 ${primary ? "text-indigo-100" : "text-gray-400"}`} aria-hidden />
+                    {label}
                   </button>
                 ))}
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             <div className="flex items-center justify-between p-5 border-b border-gray-100">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-                  <Users className="w-4 h-4 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-gray-900">Recent Patients</h3>
-                  <p className="text-xs text-gray-500">Last visited this period</p>
-                </div>
+              <div>
+                <h3 className="text-base font-semibold text-gray-900">Recent Patients</h3>
+                <p className="text-xs text-gray-500 mt-0.5">Last visited this period</p>
               </div>
               <button
                 onClick={() => navTo("/reception/patients")}
-                className="text-xs text-indigo-600 font-semibold hover:text-indigo-800 flex items-center gap-1"
+                type="button"
+                className="text-sm text-indigo-600 font-medium hover:text-indigo-800 flex items-center gap-1 rounded"
               >
                 View all <ChevronRight className="w-3 h-3" />
               </button>
@@ -385,14 +295,15 @@ export default function ReceptionDashboard() {
                 {recentPatients.map((patient, i) => {
                   const meta = STATUS_META[patient.ops?.status] || STATUS_META.NEW;
                   const initials = (patient.personal?.name || "?").slice(0, 2).toUpperCase();
-                  const borderClass = i > 0 ? "border-t sm:border-t-0 sm:border-l border-gray-50" : "";
+                  const borderClass = i > 0 ? "border-t sm:border-t-0 sm:border-l border-gray-100" : "";
                   return (
-                    <div
+                    <button
+                      type="button"
                       key={patient._id}
                       onClick={() => router.push(`/reception/patients/${patient._id}`)}
-                      className={`flex items-center gap-3 px-5 py-4 hover:bg-gray-50 cursor-pointer transition-colors ${borderClass}`}
+                      className={`flex items-center gap-3 px-5 py-4 text-left hover:bg-gray-50 active:bg-gray-100 transition-colors ${borderClass}`}
                     >
-                      <div className="w-10 h-10 rounded-full bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
+                      <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 font-semibold text-xs shrink-0">
                         {initials}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -402,17 +313,17 @@ export default function ReceptionDashboard() {
                           {maskPhone(patient.personal?.phone, userRole) || "—"}
                         </span>
                       </div>
-                      <span className={`shrink-0 px-2 py-1 rounded-full text-[10px] font-semibold border ${meta.color}`}>
+                      <span className={`shrink-0 px-2 py-1 rounded-full text-[11px] font-semibold border ${meta.color}`}>
                         {meta.label}
                       </span>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-14 text-gray-400">
                 <Users className="w-10 h-10 mb-2 opacity-30" />
-                <p className="text-sm font-medium">No recent patients</p>
+                <p className="text-sm font-medium text-gray-600">No recent patients</p>
                 <p className="text-xs mt-1">Patients visited will appear here</p>
               </div>
             )}

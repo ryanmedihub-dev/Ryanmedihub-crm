@@ -233,11 +233,11 @@ export default function AdminVendorsPage() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 min-w-0 overflow-auto">
         <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Vendors</h1>
+              <h1 className="text-xl font-semibold tracking-tight text-gray-900">Vendors</h1>
               <p className="text-gray-500 mt-1 text-sm">
                 Suppliers you buy from, and what's owed to each one — balance as of {asOfLabel}.
               </p>
@@ -288,7 +288,7 @@ export default function AdminVendorsPage() {
             />
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
             <div className="flex flex-wrap items-center gap-2.5">
               <div className="relative flex-1 min-w-55">
                 <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -296,7 +296,7 @@ export default function AdminVendorsPage() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search by name, category, email, GST or phone…"
-                  className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300"
+                  className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-300"
                 />
               </div>
               <div className="h-8 w-px bg-gray-100 hidden sm:block" />
@@ -335,11 +335,11 @@ export default function AdminVendorsPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-gray-50/80 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500 border-b border-gray-200">
+                  <tr className="bg-gray-50/80 text-left text-[11px] font-medium text-gray-500 border-b border-gray-200">
                     <th className="px-5 py-3.5" rowSpan={2}>Vendor</th>
                     <th className="px-4 py-3.5" rowSpan={2}>Deals In</th>
                     <th className="px-4 py-3.5" rowSpan={2}>Contact</th>
@@ -351,7 +351,7 @@ export default function AdminVendorsPage() {
                     </th>
                     <th className="px-4 py-3.5" rowSpan={2} />
                   </tr>
-                  <tr className="bg-gray-50/80 text-left text-[10px] font-semibold uppercase tracking-wide text-gray-400 border-b border-gray-200">
+                  <tr className="bg-gray-50/80 text-left text-[11px] font-medium text-gray-400 border-b border-gray-200">
                     <th className="px-4 py-2 text-right border-l border-gray-200">Billed</th>
                     <th className="px-4 py-2 text-right">Paid</th>
                     <th className="px-4 py-2 text-right">Pending</th>
@@ -400,7 +400,7 @@ export default function AdminVendorsPage() {
                           <td className="px-5 py-4">
                             <div className="flex items-center gap-3">
                               <div
-                                className={`w-10 h-10 rounded-2xl bg-linear-to-br ${avatarGradient(v.name)} text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-sm`}
+                                className="w-8 h-8 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center font-semibold text-[11px] shrink-0"
                               >
                                 {initials(v.name)}
                               </div>
@@ -460,9 +460,9 @@ export default function AdminVendorsPage() {
                               </span>
                             ) : (
                               <div>
-                                <p className="tabular-nums font-bold text-rose-600">{formatCurrency(pending)}</p>
+                                <p className="tabular-nums font-semibold text-rose-600">{formatCurrency(pending)}</p>
                                 {bal.opening > 0.5 && (
-                                  <p className="text-[10px] text-gray-400">incl. {formatCurrency(bal.opening)} opening</p>
+                                  <p className="text-[11px] text-gray-400">incl. {formatCurrency(bal.opening)} opening</p>
                                 )}
                               </div>
                             )}
@@ -484,9 +484,9 @@ export default function AdminVendorsPage() {
                               </span>
                             ) : (
                               <div>
-                                <p className="tabular-nums font-bold text-amber-600">{formatCurrency(rPending)}</p>
+                                <p className="tabular-nums font-semibold text-amber-600">{formatCurrency(rPending)}</p>
                                 {rbal.opening > 0.5 && (
-                                  <p className="text-[10px] text-gray-400">incl. {formatCurrency(rbal.opening)} opening</p>
+                                  <p className="text-[11px] text-gray-400">incl. {formatCurrency(rbal.opening)} opening</p>
                                 )}
                               </div>
                             )}

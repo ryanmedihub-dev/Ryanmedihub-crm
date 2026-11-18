@@ -92,22 +92,22 @@ const RoleDescriptionCard = ({ role }) => {
   const roleInfo = roleDescriptions[role];
 
   return (
-    <div className={`bg-${roleInfo.color}-50 border-l-4 border-${roleInfo.color}-500 rounded-lg p-6`}>
+    <div className="bg-gray-50 border border-gray-200 rounded-lg p-5">
       <div className="flex items-start">
-        <AlertCircle className={`text-${roleInfo.color}-600 mr-3 shrink-0 mt-1`} size={20} />
+        <AlertCircle className="text-gray-400 mr-3 shrink-0 mt-0.5" size={18} aria-hidden />
         <div>
-          <h4 className={`text-sm font-bold text-${roleInfo.color}-900 mb-2`}>
+          <h4 className="text-sm font-semibold text-gray-900 mb-1.5">
             Role: {role}
           </h4>
-          <p className={`text-sm text-${roleInfo.color}-700 mb-3`}>
+          <p className="text-sm text-gray-600 mb-3">
             {roleInfo.description}
           </p>
           <div className="space-y-1">
-            <p className={`text-xs font-semibold text-${roleInfo.color}-800 mb-1`}>
+            <p className="text-xs font-medium text-gray-700 mb-1">
               Key Responsibilities:
             </p>
             {roleInfo.responsibilities.map((resp, index) => (
-              <p key={index} className={`text-xs text-${roleInfo.color}-600 ml-4`}>
+              <p key={index} className="text-xs text-gray-600 ml-4">
                 • {resp}
               </p>
             ))}
@@ -300,7 +300,7 @@ export default function EmployeeUpdate() {
   if (isLoading) {
     return (
       <section className="flex min-h-screen">
-        <main className="flex-1 flex items-center justify-center">
+        <main className="flex-1 min-w-0 flex items-center justify-center">
           <div className="text-center">
             <Loader2 className="animate-spin h-12 w-12 text-blue-600 mx-auto mb-4" />
             <p className="text-gray-600">Loading employee data...</p>
@@ -313,16 +313,16 @@ export default function EmployeeUpdate() {
   if (notFound) {
     return (
       <section className="flex min-h-screen">
-        <main className="flex-1 flex items-center justify-center px-4">
+        <main className="flex-1 min-w-0 flex items-center justify-center px-4">
           <div className="text-center max-w-md">
             <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Employee Not Found</h2>
+            <h2 className="text-xl font-semibold tracking-tight text-gray-900 mb-2">Employee Not Found</h2>
             <p className="text-gray-600 mb-6">
               The employee you're trying to edit doesn't exist or has been deleted.
             </p>
             <button
               onClick={() => router.push("/employees")}
-              className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200"
+              className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 transition-colors duration-200"
             >
               <ArrowLeft className="mr-2" size={20} />
               Back to Employee List
@@ -336,23 +336,20 @@ export default function EmployeeUpdate() {
   return (
     <section className="flex min-h-screen">
 
-      <main className="flex-1 px-4 md:px-12 py-4">
+      <main className="flex-1 min-w-0 px-4 md:px-12 py-4">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-            <div className="px-8 py-6 bg-linear-to-r from-blue-600 to-indigo-600 text-white">
-              <div className="flex items-center justify-between">
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="px-6 py-5 border-b border-gray-200">
+              <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
                 <div>
-                  <h1 className="text-2xl font-bold flex items-center space-x-2">
-                    <User size={28} />
-                    <span>Update Employee</span>
-                  </h1>
-                  <p className="text-blue-100 mt-1">
+                  <h1 className="text-xl font-semibold tracking-tight text-gray-900">Update Employee</h1>
+                  <p className="text-sm text-gray-500 mt-1">
                     Edit employee information for RyanCRM
                   </p>
                 </div>
                 <div className="text-right hidden md:block">
-                  <p className="text-sm text-blue-100">Current Status</p>
-                  <p className="font-medium">Editing Employee</p>
+                  <p className="text-xs text-gray-500">Current Status</p>
+                  <p className="text-sm font-medium text-gray-900">Editing Employee</p>
                 </div>
               </div>
             </div>
@@ -372,7 +369,7 @@ export default function EmployeeUpdate() {
               <div className="space-y-8">
                 <div className="text-center mb-8">
                   <User className="mx-auto h-16 w-16 text-blue-500 mb-4" />
-                  <h3 className="text-2xl font-bold text-gray-900">Employee Information</h3>
+                  <h3 className="text-xl font-semibold tracking-tight text-gray-900">Employee Information</h3>
                   <p className="text-gray-600">Update the employee details below</p>
                 </div>
 
@@ -442,7 +439,7 @@ export default function EmployeeUpdate() {
                   />
 
                   <div className="md:col-span-2 pt-4 border-t border-gray-200">
-                    <h4 className="text-sm font-bold text-gray-900 mb-4">Salary Structure</h4>
+                    <h4 className="text-sm font-semibold text-gray-900 mb-4">Salary Structure</h4>
                   </div>
 
                   <InputField
@@ -508,7 +505,7 @@ export default function EmployeeUpdate() {
 
                   <button
                     type="submit"
-                    className="inline-flex items-center px-8 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200"
+                    className="inline-flex items-center px-8 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200"
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? (

@@ -121,9 +121,9 @@ const PRESETS = [
 ];
 
 const filterInput =
-  "h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/15 disabled:bg-slate-50 disabled:text-slate-400";
+  "h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30/15 disabled:bg-slate-50 disabled:text-slate-400";
 const filterSelect =
-  "h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 transition-colors focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/15 cursor-pointer disabled:bg-slate-50 disabled:text-slate-400";
+  "h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 transition-colors focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30/15 cursor-pointer disabled:bg-slate-50 disabled:text-slate-400";
 const filterLabel = "mb-1.5 block text-xs font-medium text-slate-600";
 
 export default function StockAuditPage() {
@@ -521,7 +521,7 @@ export default function StockAuditPage() {
               type="button"
               onClick={handleApply}
               disabled={loading}
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#00845A] px-4 text-xs font-medium text-white shadow-xs transition-colors hover:bg-[#00704c] disabled:opacity-60 cursor-pointer"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-indigo-600 px-4 text-xs font-medium text-white shadow-xs transition-colors hover:bg-indigo-700 disabled:opacity-60 cursor-pointer"
             >
               <Check className="h-3.5 w-3.5" />
               Apply filters

@@ -46,17 +46,17 @@ const STAT_TONES = {
 function StatCard({ icon: Icon, tone = "indigo", label, value, sub, loading }) {
   const toneCls = STAT_TONES[tone] || STAT_TONES.indigo;
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
+    <div className="bg-white rounded-xl border border-gray-200 p-4">
       <div className="flex items-center gap-2">
-        <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${toneCls}`}>
+        <span className={`grid h-4 w-4 shrink-0 place-items-center text-gray-400`}>
           <Icon className="h-4 w-4" />
         </span>
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide truncate">{label}</p>
+        <p className="text-xs font-medium text-gray-500 truncate">{label}</p>
       </div>
       {loading ? (
         <div className="h-7 w-28 bg-gray-100 rounded animate-pulse mt-2.5" />
       ) : (
-        <p className="text-xl font-bold text-gray-900 mt-2">{value}</p>
+        <p className="text-xl font-semibold text-gray-900 mt-2">{value}</p>
       )}
       {sub ? <p className="text-[11px] text-gray-400 mt-1">{sub}</p> : null}
     </div>
@@ -91,11 +91,11 @@ function ToggleSwitch({ checked, onChange, label }) {
 
 function SectionCard({ icon: Icon, title, count, right, children }) {
   return (
-    <section className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-4">
+    <section className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
           {Icon && <Icon className="w-4 h-4 text-gray-400" />}
-          <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide">{title}</h2>
+          <h2 className="text-sm font-medium text-gray-700">{title}</h2>
           {count != null && (
             <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 text-[11px] font-semibold">
               {count}
@@ -130,15 +130,12 @@ function FinancingPageInner() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <main className="flex-1 p-4 sm:p-6 lg:p-8">
+      <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto space-y-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="max-w-xl">
               <div className="flex items-center gap-2.5">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
-                  <Wallet className="h-5 w-5" />
-                </span>
-                <h1 className="text-2xl font-bold text-gray-900">Financing</h1>
+                <h1 className="text-xl font-semibold tracking-tight text-gray-900">Financing</h1>
               </div>
               <p className="text-sm text-gray-500 mt-2">
                 Money borrowed that must be repaid, and money advanced that must come back — never a
@@ -158,7 +155,7 @@ function FinancingPageInner() {
               <button
                 onClick={() => setTabAndUrl("borrowings")}
                 className={`flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
-                  tab === "borrowings" ? "bg-violet-600 text-white" : "text-gray-600 hover:bg-gray-50"
+                  tab === "borrowings" ? "bg-gray-900 text-white" : "text-gray-600 hover:bg-gray-50"
                 }`}
               >
                 <HandCoins className="w-4 h-4" /> Borrowings
@@ -437,7 +434,7 @@ function BorrowingsTab({ branch, includeCancelled, toast }) {
       label: "Direction",
       render: (r) => (
         <span
-          className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border ${
+          className={`inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold border ${
             r.direction === "OUT" ? "bg-rose-50 text-rose-700 border-rose-200" : "bg-emerald-50 text-emerald-700 border-emerald-200"
           }`}
         >
@@ -455,7 +452,7 @@ function BorrowingsTab({ branch, includeCancelled, toast }) {
       label: "Settlement",
       render: (r) =>
         r.settlesReceivableId ? (
-          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-teal-700">
+          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-teal-700">
             <Link2 className="w-3 h-3" /> Settling a receivable
           </span>
         ) : (
@@ -510,7 +507,7 @@ function BorrowingsTab({ branch, includeCancelled, toast }) {
           <button
             onClick={() => setView("ledger")}
             className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-              view === "ledger" ? "bg-violet-600 text-white" : "text-gray-600 hover:bg-gray-50"
+              view === "ledger" ? "bg-gray-900 text-white" : "text-gray-600 hover:bg-gray-50"
             }`}
           >
             Loans
@@ -518,7 +515,7 @@ function BorrowingsTab({ branch, includeCancelled, toast }) {
           <button
             onClick={() => setView("transactions")}
             className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-              view === "transactions" ? "bg-violet-600 text-white" : "text-gray-600 hover:bg-gray-50"
+              view === "transactions" ? "bg-gray-900 text-white" : "text-gray-600 hover:bg-gray-50"
             }`}
           >
             Transactions
@@ -540,7 +537,7 @@ function BorrowingsTab({ branch, includeCancelled, toast }) {
           </button>
           <button
             onClick={() => setBorrowModal({ mode: "IN", payable: null })}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-violet-600 text-white rounded-xl text-sm font-semibold shadow-sm hover:bg-violet-700"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 text-white rounded-xl text-sm font-semibold shadow-sm hover:bg-indigo-700"
           >
             <HandCoins className="w-3.5 h-3.5" /> Record Borrowing
           </button>
@@ -669,11 +666,11 @@ function BorrowingsTab({ branch, includeCancelled, toast }) {
         <SettleAgainstModal kind="borrowing" row={settleRow} toast={toast} onClose={() => setSettleRow(null)} onSuccess={() => { setSettleRow(null); refreshAll(); }} />
       )}
       {historyDoc && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 overlay-in bg-gray-950/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between p-5 border-b border-gray-100 sticky top-0 bg-white">
-              <h3 className="text-lg font-bold text-gray-900">History — {historyDoc.payee?.label || "Loan"}</h3>
-              <button onClick={() => setHistoryDoc(null)} className="p-1.5 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5 text-gray-500" /></button>
+              <h3 className="text-lg font-semibold text-gray-900">History — {historyDoc.payee?.label || "Loan"}</h3>
+              <button type="button" onClick={() => setHistoryDoc(null)} aria-label="Close" className="p-1.5 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5 text-gray-500" /></button>
             </div>
             <div className="p-5">
               <DocumentHistory doc={historyDoc} kind="payable" transactions={historyRows} loading={historyLoading} />
@@ -896,7 +893,7 @@ function AdvancesTab({ branch, includeCancelled, toast }) {
       label: "Direction",
       render: (r) => (
         <span
-          className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border ${
+          className={`inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold border ${
             r.direction === "OUT" ? "bg-rose-50 text-rose-700 border-rose-200" : "bg-emerald-50 text-emerald-700 border-emerald-200"
           }`}
         >
@@ -917,7 +914,7 @@ function AdvancesTab({ branch, includeCancelled, toast }) {
         if (lines.length === 0) return "—";
         const total = lines.reduce((sum, l) => sum + (l.amount || 0), 0);
         return (
-          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-teal-700">
+          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-teal-700">
             <Link2 className="w-3 h-3" />{" "}
             {lines.length > 1
               ? `Settling ${lines.length} payables · ${formatCurrency(total)}`
@@ -1004,7 +1001,7 @@ function AdvancesTab({ branch, includeCancelled, toast }) {
           </button>
           <button
             onClick={() => setAdvanceModal({ mode: "OUT", receivable: null })}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-teal-600 text-white rounded-xl text-sm font-semibold shadow-sm hover:bg-teal-700"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 text-white rounded-xl text-sm font-semibold shadow-sm hover:bg-indigo-700"
           >
             <Landmark className="w-3.5 h-3.5" /> Record Advance
           </button>
@@ -1133,11 +1130,11 @@ function AdvancesTab({ branch, includeCancelled, toast }) {
         <SettleAgainstModal kind="advance" row={settleRow} toast={toast} onClose={() => setSettleRow(null)} onSuccess={() => { setSettleRow(null); refreshAll(); }} />
       )}
       {historyDoc && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 overlay-in bg-gray-950/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between p-5 border-b border-gray-100 sticky top-0 bg-white">
-              <h3 className="text-lg font-bold text-gray-900">History — {historyDoc.payer?.label || "Advance"}</h3>
-              <button onClick={() => setHistoryDoc(null)} className="p-1.5 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5 text-gray-500" /></button>
+              <h3 className="text-lg font-semibold text-gray-900">History — {historyDoc.payer?.label || "Advance"}</h3>
+              <button type="button" onClick={() => setHistoryDoc(null)} aria-label="Close" className="p-1.5 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5 text-gray-500" /></button>
             </div>
             <div className="p-5">
               <DocumentHistory doc={historyDoc} kind="receivable" transactions={historyRows} loading={historyLoading} />

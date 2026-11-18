@@ -30,7 +30,7 @@ const COLUMNS = {
         <div>
           <p className="text-xs text-gray-600">{formatDate(r.dueDate)}</p>
           {r.daysOverdue > 0 && (
-            <p className="text-[10px] text-red-600 font-semibold">{r.daysOverdue}d overdue</p>
+            <p className="text-[11px] text-red-600 font-semibold">{r.daysOverdue}d overdue</p>
           )}
         </div>
       ),
@@ -336,7 +336,7 @@ export default function MetricDrillPanel({ metric, label, cardValue, head, bucke
 
   return (
     <>
-      <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px]" onClick={onClose} />
+      <div className="fixed inset-0 overlay-in z-40 bg-gray-950/40-[2px]" onClick={onClose} />
       <aside
         ref={panelRef}
         tabIndex={-1}
@@ -347,7 +347,7 @@ export default function MetricDrillPanel({ metric, label, cardValue, head, bucke
       >
         <header className="flex items-start justify-between gap-4 px-5 py-4 border-b border-gray-100">
           <div className="min-w-0">
-            <h2 className="text-base font-bold text-gray-900 truncate">
+            <h2 className="text-base font-semibold text-gray-900 truncate">
               {label || data?.label || metric}
             </h2>
             <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
@@ -365,7 +365,7 @@ export default function MetricDrillPanel({ metric, label, cardValue, head, bucke
             <button
               onClick={exportExcel}
               disabled={exporting || loading || !data}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed"
               title="Download every row behind this figure, not just this page"
             >
               {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
@@ -440,7 +440,7 @@ export default function MetricDrillPanel({ metric, label, cardValue, head, bucke
                       <span className="ml-1.5 text-[11px] font-medium text-rose-600">(subtracted)</span>
                     )}
                   </h3>
-                  <p className="text-sm font-bold text-gray-900 tabular-nums">
+                  <p className="text-sm font-semibold text-gray-900 tabular-nums">
                     {formatCurrency(filterActive ? section.filteredTotal : section.total)}
                     <span className="ml-2 text-xs font-normal text-gray-400">
                       {filterActive
@@ -480,15 +480,15 @@ export default function MetricDrillPanel({ metric, label, cardValue, head, bucke
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-6">
               <div>
-                <p className="text-[11px] uppercase tracking-wide text-gray-400 font-semibold">Rows total</p>
-                <p className="text-lg font-bold text-gray-900 tabular-nums">
+                <p className="text-[11px] text-gray-400 font-medium">Rows total</p>
+                <p className="text-lg font-semibold text-gray-900 tabular-nums">
                   {grandTotal == null ? "—" : formatCurrency(grandTotal)}
                 </p>
               </div>
               {hasCardValue && (
                 <div>
-                  <p className="text-[11px] uppercase tracking-wide text-gray-400 font-semibold">Card shows</p>
-                  <p className="text-lg font-bold text-gray-900 tabular-nums">{formatCurrency(cardValue)}</p>
+                  <p className="text-[11px] text-gray-400 font-medium">Card shows</p>
+                  <p className="text-lg font-semibold text-gray-900 tabular-nums">{formatCurrency(cardValue)}</p>
                 </div>
               )}
             </div>

@@ -246,7 +246,7 @@ function VouchersPageInner() {
   if (session && !authorized) {
     return (
       <div className="flex min-h-screen bg-gray-50">
-        <main className="flex-1 flex items-center justify-center p-8">
+        <main className="flex-1 min-w-0 flex items-center justify-center p-8">
           <div className="text-center space-y-2">
             <ShieldAlert className="w-10 h-10 text-red-400 mx-auto" />
             <p className="text-gray-600 font-medium">Admin access required</p>
@@ -258,14 +258,14 @@ function VouchersPageInner() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <main className="flex-1 p-4 sm:p-6 lg:p-8">
+      <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8">
         <div className="max-w-2xl mx-auto space-y-6">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">New Voucher</h1>
+            <h1 className="text-xl font-semibold text-gray-900">New Voucher</h1>
             <p className="text-sm text-gray-500 mt-1">Raise a payable or receivable obligation.</p>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-5">
+          <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-5">
             <div className="inline-flex rounded-lg border border-gray-200 p-1 bg-gray-50">
               {["Payable", "Receivable"].map((t) => (
                 <button
@@ -310,7 +310,7 @@ function VouchersPageInner() {
                       value={vendorManualLabel}
                       onChange={(e) => setVendorManualLabel(e.target.value)}
                       placeholder="Vendor name"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                     />
                   ) : (
                     <SearchableSelect
@@ -367,7 +367,7 @@ function VouchersPageInner() {
                   value={manualLabel}
                   onChange={(e) => setManualLabel(e.target.value)}
                   placeholder="Party name"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                 />
               )}
 
@@ -387,7 +387,7 @@ function VouchersPageInner() {
                   <select
                     value={category}
                     onChange={(e) => { setCategory(e.target.value); setSubType(""); }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                   >
                     <option value="">Select category</option>
                     {PAYABLE_EXPENSE_DROPDOWN_CATEGORIES.map((c) => (
@@ -401,7 +401,7 @@ function VouchersPageInner() {
                     value={subType}
                     onChange={(e) => setSubType(e.target.value)}
                     disabled={!category}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50"
+                    className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150 disabled:bg-gray-50"
                   >
                     <option value="">Select sub-type</option>
                     {subTypeOptions.map((s) => (
@@ -417,7 +417,7 @@ function VouchersPageInner() {
                   <select
                     value={purpose}
                     onChange={(e) => setPurpose(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                   >
                     <option value="">Select purpose</option>
                     {RECEIVABLE_PURPOSE_VALUES.map((p) => (
@@ -432,7 +432,7 @@ function VouchersPageInner() {
                   <select
                     value={revenueCategory}
                     onChange={(e) => setRevenueCategory(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                   >
                     <option value="">Not specific to one category</option>
                     {["Transplant", "Services", "Medicine"].map((c) => (
@@ -500,7 +500,7 @@ function VouchersPageInner() {
                   type="date"
                   value={dueDate}
                   onChange={(e) => setDueDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                 />
                 {dueDateInPast && (
                   <p className="mt-1.5 text-xs text-amber-600">This due date is in the past.</p>
@@ -514,7 +514,7 @@ function VouchersPageInner() {
                 value={remarks}
                 onChange={(e) => setRemarks(e.target.value)}
                 rows={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm resize-none"
+                className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150 resize-none"
                 placeholder="Optional"
               />
             </div>

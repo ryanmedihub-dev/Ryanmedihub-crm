@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import ReceptionSidebar from "@/components/Sidebars/ReceptionSidebar";
 import {
+  Loader2,
   Download,
   Filter,
   Search,
@@ -384,7 +385,7 @@ export default function ReportsPage() {
       <div className="flex-1 p-8 overflow-auto">
         <div className="max-w-7xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            <h1 className="text-2xl font-semibold tracking-tight text-gray-900 mb-2">
               Reports Dashboard
             </h1>
             <p className="text-gray-600">
@@ -421,7 +422,7 @@ export default function ReportsPage() {
                   placeholder="Search reports..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-transparent"
                 />
               </div>
 
@@ -433,7 +434,7 @@ export default function ReportsPage() {
                     category: e.target.value,
                   }))
                 }
-                className="px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-transparent"
               >
                 {categories.map((category) => (
                   <option key={category} value={category}>
@@ -447,7 +448,7 @@ export default function ReportsPage() {
                 onChange={(e) =>
                   setFilters((prev) => ({ ...prev, period: e.target.value }))
                 }
-                className="px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-transparent"
               >
                 <option value="all">All Time</option>
                 <option value="daily">Today</option>
@@ -479,7 +480,7 @@ export default function ReportsPage() {
                         startDate: e.target.value,
                       }))
                     }
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                   />
                 </div>
                 <div>
@@ -495,7 +496,7 @@ export default function ReportsPage() {
                         endDate: e.target.value,
                       }))
                     }
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                   />
                 </div>
               </div>
@@ -519,7 +520,7 @@ export default function ReportsPage() {
                           branch: e.target.value,
                         }))
                       }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                     >
                       <option value="">All Branches</option>
                       {filterOptions.branches.map((branch) => (
@@ -542,7 +543,7 @@ export default function ReportsPage() {
                           staffFilter: e.target.value,
                         }))
                       }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                     >
                       <option value="">All Staff</option>
                       {filterOptions.staff.map((staff) => (
@@ -565,7 +566,7 @@ export default function ReportsPage() {
                           techniqueFilter: e.target.value,
                         }))
                       }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                     >
                       <option value="">All Techniques</option>
                       {filterOptions.techniques.map((technique) => (
@@ -588,7 +589,7 @@ export default function ReportsPage() {
                           statusFilter: e.target.value,
                         }))
                       }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                     >
                       <option value="">All Status</option>
                       {filterOptions.status.map((status) => (
@@ -611,7 +612,7 @@ export default function ReportsPage() {
                           procedureFilter: e.target.value,
                         }))
                       }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                     >
                       <option value="">All Procedures</option>
                       {filterOptions.procedures.map((procedure) => (
@@ -634,7 +635,7 @@ export default function ReportsPage() {
                           paymentTypeFilter: e.target.value,
                         }))
                       }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                     >
                       <option value="">All Payment Types</option>
                       {filterOptions.paymentTypes.map((type) => (
@@ -649,94 +650,51 @@ export default function ReportsPage() {
             )}
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             {filteredReports.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <ul className="divide-y divide-gray-100">
                 {filteredReports.map((report) => {
                   const Icon = report.icon;
                   const isFavorite = favorites.includes(report.id);
-
+                  const busy = loadingId === report.id;
                   return (
-                    <div
-                      key={report.id}
-                      className="relative bg-white border-2 border-gray-200 rounded-xl p-6 hover:border-blue-400 hover:shadow-lg transition-all duration-200"
-                    >
-                      <button
-                        onClick={() => toggleFavorite(report.id)}
-                        className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 transition-colors"
-                      >
-                        <Star
-                          className={`w-5 h-5 ${isFavorite ? 'fill-yellow-500 text-yellow-500' : 'text-gray-400'}`}
-                        />
-                      </button>
-
-                      <div className={`inline-flex p-3 rounded-xl bg-${report.color}-100 mb-4`}>
-                        <Icon className={`w-6 h-6 text-${report.color}-600`} />
+                    <li key={report.id} className="flex flex-col gap-3 px-4 py-3.5 sm:flex-row sm:items-center sm:gap-4 sm:px-5 transition-colors duration-150 hover:bg-gray-50/70">
+                      <div className="flex items-start gap-3 min-w-0 flex-1">
+                        <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-gray-200 text-gray-500">
+                          <Icon className="w-4 h-4" aria-hidden />
+                        </span>
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-x-2">
+                            <h3 className="text-sm font-medium text-gray-900">{report.name}</h3>
+                            <span className="text-xs text-gray-400">{report.category}</span>
+                          </div>
+                          <p className="mt-0.5 text-[13px] leading-5 text-gray-500 line-clamp-2">{report.description}</p>
+                        </div>
                       </div>
-
-                      <h3 className="text-lg font-bold text-gray-900 mb-2 pr-8">
-                        {report.name}
-                      </h3>
-                      <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                        {report.description}
-                      </p>
-
-                      <span
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium mb-4 ${
-                          report.category === "Patient Reports"
-                            ? "bg-blue-100 text-blue-800"
-                            : report.category === "Staff Reports"
-                            ? "bg-purple-100 text-purple-800"
-                            : report.category === "Medical Reports"
-                            ? "bg-green-100 text-green-800"
-                            : report.category === "Financial Reports"
-                            ? "bg-orange-100 text-orange-800"
-                            : "bg-indigo-100 text-indigo-800"
-                        }`}
-                      >
-                        {report.category}
-                      </span>
-
-                      <button
-                        onClick={() => downloadExcel(report.type, report.id, report.name)}
-                        disabled={loadingId === report.id}
-                        className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-3 rounded-lg font-medium transition-colors"
-                      >
-                        {loadingId === report.id ? (
-                          <>
-                            <svg
-                              className="animate-spin h-5 w-5 text-white"
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                            >
-                              <circle
-                                className="opacity-25"
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="currentColor"
-                                strokeWidth="4"
-                              ></circle>
-                              <path
-                                className="opacity-75"
-                                fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                              ></path>
-                            </svg>
-                            Downloading...
-                          </>
-                        ) : (
-                          <>
-                            <Download className="w-5 h-5" />
-                            Download Excel
-                          </>
-                        )}
-                      </button>
-                    </div>
+                      <div className="flex items-center gap-1 pl-11 sm:pl-0 shrink-0">
+                        <button
+                          type="button"
+                          aria-label={isFavorite ? `Remove ${report.name} from favorites` : `Add ${report.name} to favorites`}
+                          aria-pressed={isFavorite}
+                          onClick={() => toggleFavorite(report.id)}
+                          className={`grid h-8 w-8 place-items-center rounded-md transition-colors ${isFavorite ? "text-amber-500 hover:bg-amber-50" : "text-gray-300 hover:text-gray-500 hover:bg-gray-100"}`}
+                        >
+                          <Star className={`w-4 h-4 ${isFavorite ? "fill-amber-400" : ""}`} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => downloadExcel(report.type, report.id, report.name)}
+                          disabled={busy}
+                          className="press inline-flex items-center justify-center gap-1.5 h-8 min-w-[7.5rem] px-3 rounded-lg border border-gray-200 bg-white text-[13px] font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 disabled:opacity-50 transition-colors"
+                        >
+                          {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4 text-gray-500" />}
+                          {busy ? "Generating…" : "Download"}
+                        </button>
+                      </div>
+                    </li>
                   );
                 })}
-              </div>
+              </ul>
             ) : (
               <div className="text-center py-16">
                 <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -748,7 +706,7 @@ export default function ReportsPage() {
                 </p>
                 <button
                   onClick={clearFilters}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
                 >
                   Clear All Filters
                 </button>

@@ -163,18 +163,11 @@ export default function BookAppointment() {
     <section className="flex min-h-screen bg-gray-50">
       <SalesSidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
-      <main className="flex-1 px-4 py-6 lg:px-8 lg:py-8">
+      <main className="flex-1 min-w-0 px-4 py-6 lg:px-8 lg:py-8">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
-              <Calendar className="h-8 w-8 text-blue-600" />
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Book an Appointment
-            </h1>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Fill in your details below to schedule your consultation. Our team will contact you to confirm your appointment.
-            </p>
+          <div className="mb-6">
+            <h1 className="text-xl font-semibold tracking-tight text-gray-900">Book an Appointment</h1>
+            <p className="mt-1 text-sm text-gray-500">Fill in your details below to schedule your consultation. Our team will contact you to confirm your appointment.</p>
           </div>
 
 
@@ -328,7 +321,7 @@ export default function BookAppointment() {
                   </div>
                   <button
                     type="submit"
-                    className="inline-flex items-center px-8 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200 min-w-50 justify-center"
+                    className="inline-flex items-center px-8 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200 min-w-50 justify-center"
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? (

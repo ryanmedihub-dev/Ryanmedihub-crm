@@ -1,256 +1,73 @@
 "use client";
 
-import { useState } from "react";
 import {
   LayoutDashboard,
+  Megaphone,
+  ShieldCheck,
+  Filter,
   HeartPulse,
   UsersRound,
   Receipt,
+  Boxes,
   FileBarChart,
   TrendingUp,
-  ShieldCheck,
-  X,
-  Menu,
-  Megaphone,
-  Boxes,
-  Archive,
-  Settings,
-  Crown,
-  Briefcase,
   ClipboardList,
-  FileText,
+  Settings,
 } from "lucide-react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useSession } from "next-auth/react";
-import LogoutButton from "../LogoutButton";
+import AppSidebar from "./AppSidebar";
 
-function NavItem({ label, href, icon: Icon, active, onClick }) {
+const SECTIONS = [
+  {
+    items: [
+      { label: "Dashboard", href: "/super-admin/dashboard", icon: LayoutDashboard, exact: true },
+    ],
+  },
+  {
+    title: "Leads Data",
+    items: [
+      { label: "Leads", href: "/super-admin/leads", icon: Megaphone },
+      { label: "Interview Leads", href: "/super-admin/interviews", icon: ShieldCheck },
+      { label: "Lead Funnel", href: "/super-admin/lead-funnel", icon: Filter },
+    ],
+  },
+  {
+    title: "Management",
+    items: [
+      { label: "Patients", href: "/super-admin/patients", icon: HeartPulse },
+      { label: "Employees", href: "/super-admin/employees", icon: UsersRound },
+    ],
+  },
+  {
+    title: "Financial",
+    items: [
+      { label: "Transactions", href: "/super-admin/transactions", icon: Receipt },
+      { label: "Stocks", href: "/super-admin/stocks", icon: Boxes },
+    ],
+  },
+  {
+    title: "Analytics",
+    items: [
+      { label: "Reports", href: "/super-admin/reports", icon: FileBarChart },
+      { label: "Performance", href: "/super-admin/performance", icon: TrendingUp },
+      { label: "Entries Report", href: "/super-admin/entries-report", icon: ClipboardList },
+    ],
+  },
+  {
+    title: "System",
+    items: [
+      { label: "Total Users", href: "/super-admin/manage-users", icon: Settings },
+    ],
+  },
+];
+
+export default function SuperAdminSidebar({ sidebarOpen, setSidebarOpen } = {}) {
   return (
-    <Link href={href} onClick={onClick} className="block">
-      <span
-        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group hover:scale-[1.01] ${
-          active
-            ? "bg-linear-to-r from-amber-50 to-orange-50 text-amber-700 shadow-sm border border-amber-100"
-            : "text-gray-600 hover:bg-gray-50 hover:text-amber-600 hover:shadow-sm"
-        }`}
-      >
-        <Icon
-          className={`w-4.5 h-4.5 shrink-0 transition-all duration-200 ${
-            active
-              ? "text-amber-600 scale-110"
-              : "text-gray-400 group-hover:text-amber-500 group-hover:scale-110"
-          }`}
-        />
-        <span className="grow leading-none">{label}</span>
-        {active && (
-          <div className="w-2 h-2 rounded-full bg-amber-500 nav-dot-pulse-amber" />
-        )}
-      </span>
-    </Link>
-  );
-}
-
-function NavSection({ title, children }) {
-  return (
-    <div className="mb-1">
-      {title && (
-        <p className="px-3 mb-1.5 mt-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-          {title}
-        </p>
-      )}
-      <div className="space-y-0.5">{children}</div>
-    </div>
-  );
-}
-
-export default function SuperAdminSidebar() {
-  const pathname = usePathname();
-  const { data: session } = useSession();
-  const [open, setOpen] = useState(false);
-
-  const close = () => setOpen(false);
-
-  const userName = session?.user?.name || session?.user?.email || "Super Admin";
-  const userEmail = session?.user?.email || "";
-  const initials = userName.slice(0, 2).toUpperCase();
-
-  const isActive = (href, exact = false) =>
-    exact
-      ? pathname === href
-      : pathname === href || pathname.startsWith(href + "/");
-
-  return (
-    <>
-      <button
-        onClick={() => setOpen(true)}
-        className="lg:hidden fixed top-4 left-4 z-40 p-2 bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow"
-      >
-        <Menu className="w-5 h-5 text-gray-700" />
-      </button>
-
-      {open && (
-        <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden"
-          onClick={close}
-        />
-      )}
-
-      <aside
-        className={`fixed left-0 top-0 lg:sticky w-64 h-screen bg-white border-r border-gray-200 shadow-sm flex flex-col z-50 transition-transform duration-300 ${
-          open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-        }`}
-      >
-        <div className="px-5 py-5 flex items-center justify-between shrink-0">
-          <Link
-            href="/super-admin/dashboard"
-            onClick={close}
-            className="flex items-center gap-3"
-          >
-            <div className="w-9 h-9 rounded-xl bg-linear-to-br from-amber-500 via-orange-500 to-red-500 flex items-center justify-center shadow-md brand-glow">
-              <Crown className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <p className="font-bold text-gray-900 text-sm leading-none">
-                RyanCRM
-              </p>
-              <p className="text-amber-600 text-[10px] mt-0.5 font-semibold">
-                Super Admin
-              </p>
-            </div>
-          </Link>
-          <button
-            className="lg:hidden p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
-            onClick={close}
-          >
-            <X className="w-4 h-4 text-gray-500" />
-          </button>
-        </div>
-
-        <div className="mx-4 border-t border-gray-100" />
-
-        <nav className="flex-1 overflow-y-auto px-3 pb-4 mt-4 scrollbar-hide">
-          <NavSection title="">
-            <NavItem
-              label="Dashboard"
-              href="/super-admin/dashboard"
-              icon={LayoutDashboard}
-              active={isActive("/super-admin/dashboard", true)}
-              onClick={close}
-            />
-          </NavSection>
-
-          <NavSection title="Leads Data">
-            <NavItem
-              label="Leads"
-              href="/super-admin/leads"
-              icon={Megaphone}
-              active={isActive("/super-admin/leads")}
-              onClick={close}
-            />
-            <NavItem
-              label="Inverview Leads"
-              href="/super-admin/interviews"
-              icon={ShieldCheck}
-              active={isActive("/super-admin/interviews")}
-              onClick={close}
-            />
-            <NavItem
-              label="Lead Funnel"
-              href="/super-admin/lead-funnel"
-              icon={TrendingUp}
-              active={isActive("/super-admin/lead-funnel")}
-              onClick={close}
-            />
-          </NavSection>
-
-          <NavSection title="Management">
-            <NavItem
-              label="Patients"
-              href="/super-admin/patients"
-              icon={HeartPulse}
-              active={isActive("/super-admin/patients")}
-              onClick={close}
-            />
-            <NavItem
-              label="Employees"
-              href="/super-admin/employees"
-              icon={UsersRound}
-              active={isActive("/super-admin/employees")}
-              onClick={close}
-            />
-          </NavSection>
-
-
-          <NavSection title="Financial">
-            <NavItem
-              label="Transactions"
-              href="/super-admin/transactions"
-              icon={Receipt}
-              active={isActive("/super-admin/transactions")}
-              onClick={close}
-            />
-            <NavItem
-              label="Stocks"
-              href="/super-admin/stocks"
-              icon={Boxes}
-              active={isActive("/super-admin/stocks")}
-              onClick={close}
-            />
-          </NavSection>
-
-          <NavSection title="Analytics">
-            <NavItem
-              label="Reports"
-              href="/super-admin/reports"
-              icon={FileBarChart}
-              active={isActive("/super-admin/reports")}
-              onClick={close}
-            />
-            <NavItem
-              label="Performance"
-              href="/super-admin/performance"
-              icon={TrendingUp}
-              active={isActive("/super-admin/performance")}
-              onClick={close}
-            />
-            <NavItem
-              label="Entries Report"
-              href="/super-admin/entries-report"
-              icon={ClipboardList}
-              active={isActive("/super-admin/entries-report")}
-              onClick={close}
-            />
-          </NavSection>
-
-          <NavSection title="System">
-            <NavItem
-              label="Total Users"
-              href="/super-admin/manage-users"
-              icon={Settings}
-              active={isActive("/super-admin/manage-users")}
-              onClick={close}
-            />
-          </NavSection>
-        </nav>
-
-        <div className="shrink-0 border-t border-gray-100 p-4 space-y-3">
-          <div className="flex items-center gap-3 px-1">
-            <div className="w-9 h-9 rounded-full bg-linear-to-br from-amber-500 via-orange-500 to-red-500 flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-md">
-              {initials}
-            </div>
-            <div className="min-w-0">
-              <p className="text-gray-900 text-sm font-semibold truncate leading-none">
-                {userName}
-              </p>
-              <p className="text-amber-600 text-[11px] truncate mt-0.5 font-medium">
-                Super Admin
-              </p>
-            </div>
-          </div>
-          <LogoutButton />
-        </div>
-      </aside>
-    </>
+    <AppSidebar
+      panel="Super Admin"
+      homeHref="/super-admin/dashboard"
+      sections={SECTIONS}
+      sidebarOpen={sidebarOpen}
+      setSidebarOpen={setSidebarOpen}
+    />
   );
 }

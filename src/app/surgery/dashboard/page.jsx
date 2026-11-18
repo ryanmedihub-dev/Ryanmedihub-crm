@@ -7,7 +7,6 @@ import {
   CheckCircle,
   Clock,
   MapPin,
-  Activity,
   Users,
   TrendingUp
 } from "lucide-react";
@@ -16,6 +15,7 @@ import Sidebar from "@/components/Sidebars/SurgerySidebar";
 import { maskPhone } from "@/utils/phoneUtils";
 import Topbar from "@/components/Topbar";
 import MetricCard from "@/components/MetricCard";
+import { ErrorState } from "@/components/ui";
 import Link from "next/link";
 
 export default function SurgeryDashboard() {
@@ -27,6 +27,7 @@ export default function SurgeryDashboard() {
   const [dateRange, setDateRange] = useState("Today");
   const [upcomingSurgeries, setUpcomingSurgeries] = useState([]);
   const [performedSurgeries, setPerformedSurgeries] = useState([]);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     fetchData();
@@ -38,82 +39,18 @@ export default function SurgeryDashboard() {
       const response = await fetch(`/api/surgery/dashboard?branch=${branch}&dateRange=${dateRange}`);
       const data = await response.json();
 
-      setDashboardData(data.metrics || {
-        scheduledSurgeries: 6,
-        completedSurgeries: 4,
-        pendingSurgeries: 2,
-        readyForSurgery: 8,
-        techniqueBreakdown: {
-          FUE: 3,
-          DHI: 2,
-          HYBRID: 1,
-        },
-        locationBreakdown: {
-          Delhi: 4,
-          Mumbai: 1,
-          Hyderabad: 1,
-        }
-      });
+      if (!response.ok) throw new Error(data?.error || "Request failed");
+      setError("");
+      setDashboardData(data.metrics || {});
 
       setUpcomingSurgeries(data.upcomingSurgeries || []);
       setPerformedSurgeries(data.performedSurgeries || []);
-    } catch (error) {
-      console.error("Error:", error);
-      setDashboardData({
-        scheduledSurgeries: 6,
-        completedSurgeries: 4,
-        pendingSurgeries: 2,
-        readyForSurgery: 8,
-        techniqueBreakdown: {
-          FUE: 3,
-          DHI: 2,
-          HYBRID: 1,
-        },
-        locationBreakdown: {
-          Delhi: 4,
-          Mumbai: 1,
-          Hyderabad: 1,
-        }
-      });
-
-      setUpcomingSurgeries([
-        {
-          _id: "1",
-          personal: { name: "John Doe", phone: "9876543210", branch: "Delhi" },
-          surgery: {
-            surgeryDate: new Date().toISOString(),
-            technique: "FUE",
-            location: "Delhi",
-            graftsneed: 2500
-          },
-          counselling: { techniqueSuggested: "FUE" }
-        },
-        {
-          _id: "2",
-          personal: { name: "Jane Smith", phone: "9876543211", branch: "Mumbai" },
-          surgery: {
-            surgeryDate: new Date().toISOString(),
-            technique: "DHI",
-            location: "Mumbai",
-            graftsneed: 3000
-          },
-          counselling: { techniqueSuggested: "DHI" }
-        }
-      ]);
-
-      setPerformedSurgeries([
-        {
-          _id: "3",
-          personal: { name: "Mike Johnson", phone: "9876543212", branch: "Delhi" },
-          surgery: {
-            surgeryDate: new Date().toISOString(),
-            technique: "HYBRID",
-            location: "Delhi",
-            graftsImplanted: 2800,
-            graftsneed: 3000
-          }
-        }
-      ]);
+    } catch (err) {
+      console.error("Surgery dashboard error:", err);
+      setError("Couldn't load the surgery dashboard.");
+      setDashboardData({});
+      setUpcomingSurgeries([]);
+      setPerformedSurgeries([]);
     } finally {
       setLoading(false);
     }
@@ -124,25 +61,25 @@ export default function SurgeryDashboard() {
       title: "Scheduled Today",
       value: dashboardData?.scheduledSurgeries || 0,
       icon: Calendar,
-      color: "from-blue-500 to-blue-600"
+      color: "blue"
     },
     {
       title: "Completed Today",
       value: dashboardData?.completedSurgeries || 0,
       icon: CheckCircle,
-      color: "from-green-500 to-green-600"
+      color: "green"
     },
     {
       title: "Pending",
       value: dashboardData?.pendingSurgeries || 0,
       icon: Clock,
-      color: "from-amber-500 to-amber-600"
+      color: "amber"
     },
     {
       title: "Ready for Surgery",
       value: dashboardData?.readyForSurgery || 0,
       icon: Stethoscope,
-      color: "from-indigo-500 to-indigo-600"
+      color: "indigo"
     },
   ];
 
@@ -161,7 +98,7 @@ export default function SurgeryDashboard() {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar role="surgery" />
-      <main className="flex-1 p-4 lg:p-8">
+      <main className="flex-1 min-w-0 px-4 pt-16 pb-6 sm:px-6 lg:p-8">
         <Topbar
           title="Surgery Dashboard"
           role="surgery"
@@ -173,8 +110,10 @@ export default function SurgeryDashboard() {
 
         {loading ? (
           <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+            <div className="w-8 h-8 rounded-full border-2 border-gray-200 border-t-indigo-600 animate-spin" />
           </div>
+        ) : error ? (
+          <ErrorState title={error} description="Check your connection and try again." onRetry={fetchData} className="bg-white border border-gray-200 rounded-xl" />
         ) : (
           <div className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -184,52 +123,55 @@ export default function SurgeryDashboard() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+              <div className="bg-white rounded-xl p-6 border border-gray-200">
                 <div className="flex items-center gap-2 mb-4">
-                  <Activity className="w-5 h-5 text-indigo-600" />
-                  <h3 className="text-lg font-semibold text-gray-900">Today's Techniques</h3>
+                  <h3 className="text-base font-semibold text-gray-900">Today's Techniques</h3>
                 </div>
-                <div className="space-y-3">
+                <div className="divide-y divide-gray-100">
                   {dashboardData?.techniqueBreakdown && Object.entries(dashboardData.techniqueBreakdown).map(([technique, count]) => (
-                    <div key={technique} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div key={technique} className="flex items-center justify-between py-2.5">
                       <span className={`px-3 py-1 text-sm font-medium rounded-full ${getTechniqueColor(technique)}`}>
                         {technique}
                       </span>
-                      <span className="text-lg font-bold text-gray-900">{count}</span>
+                      <span className="text-base font-semibold text-gray-900 tabular-nums">{count}</span>
                     </div>
                   ))}
+                  {!Object.keys(dashboardData?.techniqueBreakdown || {}).length && (
+                    <p className="py-6 text-sm text-gray-500 text-center">No surgeries in this period</p>
+                  )}
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+              <div className="bg-white rounded-xl p-6 border border-gray-200">
                 <div className="flex items-center gap-2 mb-4">
-                  <MapPin className="w-5 h-5 text-green-600" />
-                  <h3 className="text-lg font-semibold text-gray-900">Surgeries by Location</h3>
+                  <h3 className="text-base font-semibold text-gray-900">Surgeries by Location</h3>
                 </div>
-                <div className="space-y-3">
+                <div className="divide-y divide-gray-100">
                   {dashboardData?.locationBreakdown && Object.entries(dashboardData.locationBreakdown).map(([location, count]) => (
-                    <div key={location} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div key={location} className="flex items-center justify-between py-2.5">
                       <div className="flex items-center gap-2">
                         <MapPin className="w-4 h-4 text-gray-500" />
                         <span className="text-sm font-medium text-gray-700">{location}</span>
                       </div>
-                      <span className="text-lg font-bold text-gray-900">{count}</span>
+                      <span className="text-base font-semibold text-gray-900 tabular-nums">{count}</span>
                     </div>
                   ))}
+                  {!Object.keys(dashboardData?.locationBreakdown || {}).length && (
+                    <p className="py-6 text-sm text-gray-500 text-center">No surgeries in this period</p>
+                  )}
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+            <div className="bg-white rounded-xl border border-gray-200">
               <div className="p-6 border-b border-gray-100">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Calendar className="w-5 h-5 text-blue-600" />
-                    <h3 className="text-lg font-semibold text-gray-900">Today's Upcoming Surgeries</h3>
+                    <h3 className="text-base font-semibold text-gray-900">Today's Upcoming Surgeries</h3>
                   </div>
                   <Link
                     href="/surgery/patients?filter=upcoming"
-                    className="text-sm font-medium text-blue-600 hover:text-blue-700"
+                    className="text-sm font-medium text-indigo-600 hover:text-indigo-800"
                   >
                     View All
                   </Link>
@@ -238,7 +180,7 @@ export default function SurgeryDashboard() {
               <div className="p-6">
                 {upcomingSurgeries.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
-                    <Calendar className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                    <Calendar className="w-10 h-10 mx-auto mb-3 text-gray-300" aria-hidden />
                     <p>No upcoming surgeries scheduled for today</p>
                   </div>
                 ) : (
@@ -246,12 +188,12 @@ export default function SurgeryDashboard() {
                     <table className="w-full">
                       <thead>
                         <tr className="border-b border-gray-200">
-                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Patient</th>
-                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Contact</th>
-                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Technique</th>
-                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Location</th>
-                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Grafts Needed</th>
-                          <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">Actions</th>
+                          <th className="text-left py-3 px-4 text-xs font-medium text-gray-500">Patient</th>
+                          <th className="text-left py-3 px-4 text-xs font-medium text-gray-500">Contact</th>
+                          <th className="text-left py-3 px-4 text-xs font-medium text-gray-500">Technique</th>
+                          <th className="text-left py-3 px-4 text-xs font-medium text-gray-500">Location</th>
+                          <th className="text-left py-3 px-4 text-xs font-medium text-gray-500">Grafts Needed</th>
+                          <th className="text-right py-3 px-4 text-xs font-medium text-gray-500">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -278,7 +220,7 @@ export default function SurgeryDashboard() {
                             <td className="py-3 px-4 text-right">
                               <Link
                                 href={`/surgery/patients/${patient._id}`}
-                                className="text-sm font-medium text-blue-600 hover:text-blue-700"
+                                className="text-sm font-medium text-indigo-600 hover:text-indigo-800"
                               >
                                 View Details
                               </Link>
@@ -292,16 +234,15 @@ export default function SurgeryDashboard() {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+            <div className="bg-white rounded-xl border border-gray-200">
               <div className="p-6 border-b border-gray-100">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                    <h3 className="text-lg font-semibold text-gray-900">Completed Surgeries Today</h3>
+                    <h3 className="text-base font-semibold text-gray-900">Completed Surgeries Today</h3>
                   </div>
                   <Link
                     href="/surgery/patients?filter=performed"
-                    className="text-sm font-medium text-green-600 hover:text-green-700"
+                    className="text-sm font-medium text-indigo-600 hover:text-indigo-800"
                   >
                     View All
                   </Link>
@@ -310,7 +251,7 @@ export default function SurgeryDashboard() {
               <div className="p-6">
                 {performedSurgeries.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
-                    <CheckCircle className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                    <CheckCircle className="w-10 h-10 mx-auto mb-3 text-gray-300" aria-hidden />
                     <p>No surgeries completed today</p>
                   </div>
                 ) : (
@@ -318,12 +259,12 @@ export default function SurgeryDashboard() {
                     <table className="w-full">
                       <thead>
                         <tr className="border-b border-gray-200">
-                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Patient</th>
-                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Contact</th>
-                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Technique</th>
-                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Location</th>
-                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Grafts Implanted</th>
-                          <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">Actions</th>
+                          <th className="text-left py-3 px-4 text-xs font-medium text-gray-500">Patient</th>
+                          <th className="text-left py-3 px-4 text-xs font-medium text-gray-500">Contact</th>
+                          <th className="text-left py-3 px-4 text-xs font-medium text-gray-500">Technique</th>
+                          <th className="text-left py-3 px-4 text-xs font-medium text-gray-500">Location</th>
+                          <th className="text-left py-3 px-4 text-xs font-medium text-gray-500">Grafts Implanted</th>
+                          <th className="text-right py-3 px-4 text-xs font-medium text-gray-500">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -358,7 +299,7 @@ export default function SurgeryDashboard() {
                             <td className="py-3 px-4 text-right">
                               <Link
                                 href={`/surgery/patients/${patient._id}`}
-                                className="text-sm font-medium text-green-600 hover:text-green-700"
+                                className="text-sm font-medium text-indigo-600 hover:text-indigo-800"
                               >
                                 View Details
                               </Link>

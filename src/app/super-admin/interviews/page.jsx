@@ -1,5 +1,6 @@
 "use client";
 
+import StatCard from "@/components/dashboard/StatCard";
 import { useState, useEffect, useCallback, useRef } from "react";
 import SuperAdminSidebar from "@/components/Sidebars/SuperAdminSidebar";
 import {
@@ -64,23 +65,8 @@ const COLOR_MAP = {
   teal:   { accent: "bg-teal-500",    soft: "bg-teal-50",    text: "text-teal-600",    border: "border-teal-100"    },
 };
 
-function KpiCard({ title, value, subtitle, icon: Icon, color = "amber" }) {
-  const c = COLOR_MAP[color];
-  return (
-    <div className={`bg-white rounded-2xl border ${c.border} shadow-sm overflow-hidden`}>
-      <div className={`h-1 ${c.accent}`} />
-      <div className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className={`w-9 h-9 rounded-xl ${c.soft} flex items-center justify-center`}>
-            <Icon className={`w-4 h-4 ${c.text}`} />
-          </div>
-          <span className={`text-[10px] font-semibold uppercase tracking-widest ${c.text} opacity-70`}>{subtitle}</span>
-        </div>
-        <p className="text-2xl font-bold text-gray-900 leading-none">{value}</p>
-        <p className="text-xs font-medium text-gray-500 mt-1.5">{title}</p>
-      </div>
-    </div>
-  );
+function KpiCard({ title, value, subtitle, icon, color = "amber" }) {
+  return <StatCard title={title} value={value} subtitle={subtitle} icon={icon} tone={color} />;
 }
 
 function CandidateModal({ candidate, onClose }) {
@@ -101,15 +87,15 @@ function CandidateModal({ candidate, onClose }) {
     : null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 overlay-in bg-gray-950/40 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="p-6 border-b border-gray-100 flex items-start justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-xl shadow-md">
+            <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-semibold text-xl shadow-md">
               {candidate.name?.slice(0, 2).toUpperCase()}
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gray-900">{candidate.name}</h2>
+              <h2 className="text-lg font-semibold text-gray-900">{candidate.name}</h2>
               <p className="text-sm text-gray-500">{candidate.position}</p>
               <div className="flex items-center gap-2 mt-1.5">
                 <span className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full ${meta.color}`}>
@@ -126,7 +112,7 @@ function CandidateModal({ candidate, onClose }) {
               </div>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
+          <button type="button" onClick={onClose} aria-label="Close" className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
             <X className="w-5 h-5 text-gray-400" />
           </button>
         </div>
@@ -137,7 +123,7 @@ function CandidateModal({ candidate, onClose }) {
               <div className="flex items-center gap-2.5 p-3 bg-gray-50 rounded-xl">
                 <Phone className="w-4 h-4 text-gray-400 shrink-0" />
                 <div>
-                  <p className="text-[10px] text-gray-400 uppercase tracking-wide">Phone</p>
+                  <p className="text-[11px] text-gray-400 uppercase tracking-wide">Phone</p>
                   <p className="text-sm font-semibold text-gray-900">{candidate.phone}</p>
                 </div>
               </div>
@@ -146,7 +132,7 @@ function CandidateModal({ candidate, onClose }) {
               <div className="flex items-center gap-2.5 p-3 bg-gray-50 rounded-xl">
                 <Mail className="w-4 h-4 text-gray-400 shrink-0" />
                 <div>
-                  <p className="text-[10px] text-gray-400 uppercase tracking-wide">Email</p>
+                  <p className="text-[11px] text-gray-400 uppercase tracking-wide">Email</p>
                   <p className="text-sm font-semibold text-gray-900 truncate">{candidate.email}</p>
                 </div>
               </div>
@@ -155,7 +141,7 @@ function CandidateModal({ candidate, onClose }) {
               <div className="flex items-center gap-2.5 p-3 bg-gray-50 rounded-xl col-span-2">
                 <MapPin className="w-4 h-4 text-gray-400 shrink-0" />
                 <div>
-                  <p className="text-[10px] text-gray-400 uppercase tracking-wide">Address</p>
+                  <p className="text-[11px] text-gray-400 uppercase tracking-wide">Address</p>
                   <p className="text-sm font-semibold text-gray-900">{candidate.address}</p>
                 </div>
               </div>
@@ -163,7 +149,7 @@ function CandidateModal({ candidate, onClose }) {
           </div>
 
           <div>
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Experience & Salary</p>
+            <p className="text-xs font-medium text-gray-500 mb-3">Experience & Salary</p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
                 { label: "Type",        value: candidate.experienceType || "—"           },
@@ -173,15 +159,15 @@ function CandidateModal({ candidate, onClose }) {
                 { label: "Final Salary",value: fmtPay(candidate.finalSalary), highlight: !!candidate.finalSalary },
               ].map((item) => (
                 <div key={item.label} className={`p-3 rounded-xl text-center ${item.highlight ? "bg-emerald-50 border border-emerald-200" : "bg-gray-50"}`}>
-                  <p className={`text-sm font-bold ${item.highlight ? "text-emerald-700" : "text-gray-900"}`}>{item.value}</p>
-                  <p className="text-[10px] text-gray-500 mt-0.5">{item.label}</p>
+                  <p className={`text-sm font-semibold ${item.highlight ? "text-emerald-700" : "text-gray-900"}`}>{item.value}</p>
+                  <p className="text-[11px] text-gray-500 mt-0.5">{item.label}</p>
                 </div>
               ))}
               {candidate.previousCompany && (
                 <div className="p-3 bg-gray-50 rounded-xl col-span-2 flex items-center gap-2">
                   <Building2 className="w-4 h-4 text-gray-400" />
                   <div>
-                    <p className="text-[10px] text-gray-400">Previous Company</p>
+                    <p className="text-[11px] text-gray-400">Previous Company</p>
                     <p className="text-sm font-semibold text-gray-900">{candidate.previousCompany}</p>
                     {candidate.previousPosition && <p className="text-xs text-gray-500">{candidate.previousPosition}</p>}
                   </div>
@@ -193,11 +179,11 @@ function CandidateModal({ candidate, onClose }) {
           {scores.length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Evaluation Scores</p>
+                <p className="text-xs font-medium text-gray-500">Evaluation Scores</p>
                 {avgScore && (
                   <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-50 border border-amber-200 rounded-xl">
                     <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                    <span className="text-sm font-bold text-amber-700">{avgScore}/10 avg</span>
+                    <span className="text-sm font-semibold text-amber-700">{avgScore}/10 avg</span>
                   </div>
                 )}
               </div>
@@ -208,7 +194,7 @@ function CandidateModal({ candidate, onClose }) {
                     <div key={key}>
                       <div className="flex justify-between text-xs mb-1">
                         <span className="font-medium text-gray-700">{label}</span>
-                        <span className="font-bold text-gray-900">{val}/10</span>
+                        <span className="font-semibold text-gray-900">{val}/10</span>
                       </div>
                       <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                         <div className="h-full rounded-full transition-all"
@@ -226,23 +212,23 @@ function CandidateModal({ candidate, onClose }) {
 
           {(candidate.hrComments || candidate.finalRemarks || candidate.reasonForLeaving) && (
             <div>
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Notes</p>
+              <p className="text-xs font-medium text-gray-500 mb-3">Notes</p>
               <div className="space-y-2">
                 {candidate.hrComments && (
                   <div className="p-3 bg-blue-50 rounded-xl border border-blue-100">
-                    <p className="text-[10px] font-semibold text-blue-600 uppercase mb-1">HR Comments</p>
+                    <p className="text-[11px] font-semibold text-blue-600 uppercase mb-1">HR Comments</p>
                     <p className="text-sm text-gray-700">{candidate.hrComments}</p>
                   </div>
                 )}
                 {candidate.finalRemarks && (
                   <div className="p-3 bg-purple-50 rounded-xl border border-purple-100">
-                    <p className="text-[10px] font-semibold text-purple-600 uppercase mb-1">Final Remarks</p>
+                    <p className="text-[11px] font-semibold text-purple-600 uppercase mb-1">Final Remarks</p>
                     <p className="text-sm text-gray-700">{candidate.finalRemarks}</p>
                   </div>
                 )}
                 {candidate.reasonForLeaving && (
                   <div className="p-3 bg-amber-50 rounded-xl border border-amber-100">
-                    <p className="text-[10px] font-semibold text-amber-600 uppercase mb-1">Reason for Leaving</p>
+                    <p className="text-[11px] font-semibold text-amber-600 uppercase mb-1">Reason for Leaving</p>
                     <p className="text-sm text-gray-700">{candidate.reasonForLeaving}</p>
                   </div>
                 )}
@@ -289,7 +275,7 @@ function CandidateRow({ candidate, onView }) {
     <tr className="hover:bg-gray-50 transition-colors group">
       <td className="px-4 py-3.5">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-linear-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm">
+          <div className="w-8 h-8 rounded-xl bg-linear-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-xs font-semibold shrink-0 shadow-sm">
             {candidate.name?.slice(0, 2).toUpperCase()}
           </div>
           <div className="min-w-0">
@@ -323,7 +309,7 @@ function CandidateRow({ candidate, onView }) {
         {new Date(candidate.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}
       </td>
       <td className="px-4 py-3.5">
-        <button onClick={() => onView(candidate)}
+        <button aria-label="View" onClick={() => onView(candidate)}
           className="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100">
           <Eye className="w-4 h-4" />
         </button>
@@ -398,11 +384,11 @@ export default function InterviewsPage() {
         <div className="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-10 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-amber-400 via-orange-500 to-red-500 flex items-center justify-center shadow-md">
-                <Briefcase className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center">
+                <Briefcase className="w-5 h-5 text-gray-600" />
               </div>
               <div>
-                <h1 className="text-base font-bold text-gray-900 leading-tight">Interview Candidates</h1>
+                <h1 className="text-base font-semibold text-gray-900 leading-tight">Interview Candidates</h1>
                 <p className="text-[11px] text-gray-400 mt-0.5">Applied online (direct) & Visited via QR (qr)</p>
               </div>
             </div>
@@ -411,7 +397,7 @@ export default function InterviewsPage() {
               <div className="relative">
                 <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
                 <select value={dateRange} onChange={(e) => setDateRange(e.target.value)}
-                  className="pl-7 pr-7 py-2 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-amber-300 appearance-none cursor-pointer shadow-sm">
+                  className="pl-7 pr-7 py-2 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 appearance-none cursor-pointer shadow-sm">
                   {DATE_RANGES.map((r) => <option key={r}>{r}</option>)}
                 </select>
                 <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
@@ -421,22 +407,22 @@ export default function InterviewsPage() {
                 <>
                   <input type="date" value={custom.from}
                     onChange={(e) => setCustom((p) => ({ ...p, from: e.target.value }))}
-                    className="border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-amber-300 shadow-sm" />
+                    className="border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/30 shadow-sm" />
                   <input type="date" value={custom.to} min={custom.from}
                     onChange={(e) => setCustom((p) => ({ ...p, to: e.target.value }))}
-                    className="border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-amber-300 shadow-sm" />
+                    className="border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/30 shadow-sm" />
                 </>
               )}
 
               <div className="relative">
                 <select value={status} onChange={(e) => setStatus(e.target.value)}
-                  className="pl-3 pr-7 py-2 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-amber-300 appearance-none cursor-pointer shadow-sm">
+                  className="pl-3 pr-7 py-2 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 appearance-none cursor-pointer shadow-sm">
                   {HR_STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
                 </select>
                 <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
               </div>
 
-              <button onClick={() => fetchCandidates(1)} disabled={loading}
+              <button aria-label="Refresh" onClick={() => fetchCandidates(1)} disabled={loading}
                 className="w-9 h-9 flex items-center justify-center border border-gray-200 rounded-xl bg-white hover:bg-gray-50 shadow-sm transition-colors">
                 <RefreshCw className={`w-4 h-4 text-gray-500 ${loading ? "animate-spin" : ""}`} />
               </button>
@@ -471,15 +457,15 @@ export default function InterviewsPage() {
                   <QrCode className="w-5 h-5 text-amber-600" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-gray-900 text-sm">Visited via QR</h3>
+                  <h3 className="font-semibold text-gray-900 text-sm">Visited via QR</h3>
                   <p className="text-xs text-gray-500">Candidates who scanned QR and came in</p>
                 </div>
                 {activeTab === "visited" && (
-                  <span className="ml-auto px-2 py-1 bg-amber-500 text-white text-[10px] font-bold rounded-lg">Active</span>
+                  <span className="ml-auto px-2 py-1 bg-amber-500 text-white text-[11px] font-semibold rounded-lg">Active</span>
                 )}
               </div>
               <div className="flex items-end justify-between mt-1">
-                <p className="text-3xl font-bold text-amber-600">{fmt(stats.visitedCount || 0)}</p>
+                <p className="text-2xl font-semibold tracking-tight text-amber-600">{fmt(stats.visitedCount || 0)}</p>
                 {(stats.total > 0) && (
                   <span className="text-sm font-semibold text-amber-500 mb-1">
                     {Math.round(((stats.visitedCount || 0) / stats.total) * 100)}%
@@ -502,15 +488,15 @@ export default function InterviewsPage() {
                   <Globe className="w-5 h-5 text-indigo-600" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-gray-900 text-sm">Applied Online</h3>
+                  <h3 className="font-semibold text-gray-900 text-sm">Applied Online</h3>
                   <p className="text-xs text-gray-500">Candidates who applied via direct link</p>
                 </div>
                 {activeTab === "applied" && (
-                  <span className="ml-auto px-2 py-1 bg-indigo-500 text-white text-[10px] font-bold rounded-lg">Active</span>
+                  <span className="ml-auto px-2 py-1 bg-indigo-500 text-white text-[11px] font-semibold rounded-lg">Active</span>
                 )}
               </div>
               <div className="flex items-end justify-between mt-1">
-                <p className="text-3xl font-bold text-indigo-600">{fmt(stats.appliedCount || 0)}</p>
+                <p className="text-2xl font-semibold tracking-tight text-gray-900 tabular-nums">{fmt(stats.appliedCount || 0)}</p>
                 {(stats.total > 0) && (
                   <span className="text-sm font-semibold text-indigo-500 mb-1">
                     {Math.round(((stats.appliedCount || 0) / stats.total) * 100)}%
@@ -521,7 +507,7 @@ export default function InterviewsPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-4 border-b border-gray-100">
               <div className="flex gap-1">
                 {TABS.map((tab) => {
@@ -531,7 +517,7 @@ export default function InterviewsPage() {
                     <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                       className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
                         active
-                          ? "bg-amber-500 text-white shadow-sm"
+                          ? "bg-gray-900 text-white"
                           : "text-gray-600 hover:bg-gray-100"
                       }`}>
                       <Icon className="w-3.5 h-3.5" />
@@ -545,9 +531,9 @@ export default function InterviewsPage() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
                 <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search name, phone, position..."
-                  className="pl-9 pr-8 py-2 text-xs border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-300 w-64" />
+                  className="pl-9 pr-8 py-2 text-xs border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/30 w-64" />
                 {search && (
-                  <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  <button aria-label="Clear search" onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                     <X className="w-3 h-3" />
                   </button>
                 )}
@@ -570,7 +556,7 @@ export default function InterviewsPage() {
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-100">
                       {["Candidate", "Position", "Status", "Source", "Experience", "Expected", "Final Salary", "Date", ""].map((h) => (
-                        <th key={h} className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
+                        <th key={h} className="px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -591,7 +577,7 @@ export default function InterviewsPage() {
                   <span className="font-semibold text-gray-900">{fmt(pagination.total)}</span> candidates
                 </p>
                 <div className="flex items-center gap-1">
-                  <button onClick={() => fetchCandidates(pagination.page - 1)} disabled={pagination.page <= 1}
+                  <button aria-label="Previous page" onClick={() => fetchCandidates(pagination.page - 1)} disabled={pagination.page <= 1}
                     className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
                     <ChevronLeft className="w-4 h-4 text-gray-600" />
                   </button>
@@ -606,7 +592,7 @@ export default function InterviewsPage() {
                       </button>
                     );
                   })}
-                  <button onClick={() => fetchCandidates(pagination.page + 1)} disabled={pagination.page >= pagination.pages}
+                  <button aria-label="Next page" onClick={() => fetchCandidates(pagination.page + 1)} disabled={pagination.page >= pagination.pages}
                     className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
                     <ChevronRight className="w-4 h-4 text-gray-600" />
                   </button>

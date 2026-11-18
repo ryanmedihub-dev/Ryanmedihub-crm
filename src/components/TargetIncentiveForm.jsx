@@ -12,7 +12,7 @@ const getTodayIST = () =>
   new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
 
 const inputCls =
-  "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100";
+  "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30";
 const labelCls = "block text-sm font-medium text-gray-700 mb-1.5";
 
 export default function TargetIncentiveForm() {
@@ -108,7 +108,7 @@ export default function TargetIncentiveForm() {
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 sm:p-6">
       <div className="flex items-center gap-2 mb-1">
         <Target className="w-5 h-5 text-indigo-600" />
-        <h2 className="text-lg font-bold text-gray-900">Target Based Incentive</h2>
+        <h2 className="text-lg font-semibold text-gray-900">Target Based Incentive</h2>
       </div>
       <p className="text-sm text-gray-500 mb-5">
         Raise an incentive an employee earned for hitting a target. This creates a standalone
@@ -232,7 +232,7 @@ export default function TargetIncentiveForm() {
 
       {recent.length > 0 && (
         <div className="mt-6 border-t border-gray-100 pt-4">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+          <p className="text-xs font-medium text-gray-400 mb-2">
             Raised this session ({recent.length})
           </p>
           <ul className="divide-y divide-gray-100 border border-gray-200 rounded-lg">

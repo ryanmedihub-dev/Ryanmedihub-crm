@@ -72,7 +72,7 @@ export default function AdvanceSettlementPanel({ advances = [], selectedPayable,
                   checked={ticked}
                   disabled={disabled}
                   onChange={(e) => toggle(adv, e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-indigo-500/30"
                 />
                 <span className="min-w-0 flex-1">
                   <span className="block text-xs text-gray-500">
@@ -152,7 +152,7 @@ export default function AdvanceSettlementPanel({ advances = [], selectedPayable,
           <span className="tabular-nums">−{formatCurrency(applied)}</span>
         </div>
         <div className="my-1 border-t border-dashed border-gray-200" />
-        <div className={`flex justify-between font-bold ${net < 0 ? "text-rose-600" : "text-gray-900"}`}>
+        <div className={`flex justify-between font-semibold ${net < 0 ? "text-rose-600" : "text-gray-900"}`}>
           <span>Net to pay</span>
           <span className="tabular-nums">{formatCurrency(net)}</span>
         </div>

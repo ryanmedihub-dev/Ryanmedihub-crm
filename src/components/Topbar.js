@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, Calendar, Check, X } from "lucide-react";
+import { Calendar, Check, X } from "lucide-react";
 import { useState } from "react";
 
 export default function Topbar({
@@ -26,7 +26,6 @@ export default function Topbar({
 
   const applyCustomDate = () => {
     if (customDates?.from && customDates?.to) {
-      console.log("Applying custom dates:", customDates);
       setShowDatePicker(false);
     }
   };
@@ -39,25 +38,12 @@ export default function Topbar({
 
   return (
     <section>
-      <div className="pr-2 lg:pr-4 pb-8">
+      {/* Pages give their <main> pt-16 on mobile to clear the sidebar menu button. */}
+      <div className="pb-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
-            >
-              <Menu className="h-5 w-5 text-gray-600" />
-            </button>
-            <div className="flex items-center gap-3 pl-2">
-              <div>
-                <h2 className="text-2xl font-semibold text-gray-900">
-                  {title}
-                </h2>
-                <p className="text-sm text-gray-600">
-                  Real-time performance metrics
-                </p>
-              </div>
-            </div>
+          <div className="min-w-0">
+            <h1 className="text-xl font-semibold tracking-tight text-gray-900">{title}</h1>
+            <p className="text-sm text-gray-500 mt-0.5">Performance for the selected period</p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3">
@@ -66,7 +52,8 @@ export default function Topbar({
                 <select
                   value={branch}
                   onChange={(e) => setBranch(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                  aria-label="Branch"
+                className="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:border-gray-400 focus:ring-2 focus:ring-indigo-500/30 focus:border-transparent text-sm"
                 >
                   {branches.map((b) => (
                     <option key={b} value={b}>
@@ -85,7 +72,8 @@ export default function Topbar({
                     setShowDatePicker(false);
                   }
                 }}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                aria-label="Date range"
+              className="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:border-gray-400 focus:ring-2 focus:ring-indigo-500/30 focus:border-transparent text-sm"
               >
                 {timeRanges.map((range) => (
                   <option key={range} value={range}>
@@ -96,6 +84,9 @@ export default function Topbar({
 
               {timeRange === "Custom" && (
                 <button
+                  type="button"
+                  aria-label="Pick custom dates"
+                  aria-expanded={showDatePicker}
                   onClick={() => setShowDatePicker(!showDatePicker)}
                   className="p-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 transition-colors"
                 >
@@ -116,7 +107,7 @@ export default function Topbar({
                         onChange={(e) =>
                           handleCustomDateChange("from", e.target.value)
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                        className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                       />
                     </div>
 
@@ -131,12 +122,13 @@ export default function Topbar({
                           handleCustomDateChange("to", e.target.value)
                         }
                         min={customDates?.from}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                        className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                       />
                     </div>
 
                     <div className="flex gap-2 pt-2">
                       <button
+                        type="button"
                         onClick={applyCustomDate}
                         disabled={!customDates?.from || !customDates?.to}
                         className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
@@ -145,6 +137,7 @@ export default function Topbar({
                         Apply
                       </button>
                       <button
+                        type="button"
                         onClick={handleCancelCustomDates}
                         className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium"
                       >

@@ -5,7 +5,7 @@ import { ALL_BRANCHES } from "@/lib/branches";
 const CONFIG = {
   basePath:        "/admin/patients",
   title:           "Patient Management",
-  subtitle:        "Comprehensive patient data overview",
+  subtitle:        "Every patient record across branches",
   columns:         ["visitDate","name","phone","branch","technique","package","received","pending","status","reference"],
   actions:         ["view","edit"],
   showCsvExport:   true,

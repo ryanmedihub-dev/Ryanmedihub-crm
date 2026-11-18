@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Button, Field, Input, Select } from '@/components/ui';
 
 export default function Register() {
   const router = useRouter();
@@ -68,135 +69,70 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Create your account
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Or{' '}
-          <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
-            sign in to your existing account
-          </Link>
-        </p>
-      </div>
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      <main className="flex-1 min-w-0 flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-sm animate-fade-in">
+          <div className="flex items-center gap-2.5 mb-10">
+            <span className="w-8 h-8 rounded-lg bg-gray-900 text-white flex items-center justify-center text-sm font-semibold">
+              R
+            </span>
+            <span className="text-sm font-semibold text-gray-900">RyanCRM</span>
+          </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <h1 className="text-xl font-semibold tracking-tight text-gray-900">Create your account</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Already have one?{' '}
+            <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-700 underline-offset-2 hover:underline">
+              Sign in
+            </Link>
+          </p>
+
+          <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
+              <div role="alert" className="rounded-lg bg-rose-50 border border-rose-200 px-3 py-2.5 text-sm text-rose-700">
                 {error}
               </div>
             )}
 
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Full Name
-              </label>
-              <div className="mt-1">
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  placeholder="Enter your full name"
-                />
-              </div>
-            </div>
+            <Field label="Full name" htmlFor="name">
+              <Input id="name" name="name" type="text" autoComplete="name" required value={formData.name} onChange={handleChange} />
+            </Field>
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email Address
-              </label>
-              <div className="mt-1">
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  placeholder="Enter your email"
-                />
-              </div>
-            </div>
+            <Field label="Email" htmlFor="email">
+              <Input id="email" name="email" type="email" autoComplete="email" required value={formData.email} onChange={handleChange} placeholder="you@clinic.com" />
+            </Field>
 
-            <div>
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700">
-                Role
-              </label>
-              <div className="mt-1">
-                <select
-                  id="role"
-                  name="role"
-                  value={formData.role}
-                  onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                >
-                  <option value="reception">Reception</option>
-                  <option value="admin">Admin</option>
-                  <option value="sales">Sales</option>
-                  <option value="surgery">Surgery</option>
-                </select>
-              </div>
-            </div>
+            <Field label="Role" htmlFor="role">
+              <Select id="role" name="role" value={formData.role} onChange={handleChange}>
+                <option value="reception">Reception</option>
+                <option value="admin">Admin</option>
+                <option value="sales">Sales</option>
+                <option value="surgery">Surgery</option>
+              </Select>
+            </Field>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <div className="mt-1">
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  placeholder="Enter your password"
-                />
-              </div>
-            </div>
+            <Field label="Password" htmlFor="password">
+              <Input id="password" name="password" type="password" autoComplete="new-password" required value={formData.password} onChange={handleChange} />
+            </Field>
 
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                Confirm Password
-              </label>
-              <div className="mt-1">
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  placeholder="Confirm your password"
-                />
-              </div>
-            </div>
+            <Field label="Confirm password" htmlFor="confirmPassword">
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                autoComplete="new-password"
+                required
+                value={formData.confirmPassword}
+                onChange={handleChange}
+              />
+            </Field>
 
-            <div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Creating Account...' : 'Create Account'}
-              </button>
-            </div>
+            <Button type="submit" variant="primary" size="lg" loading={loading} className="w-full justify-center !mt-6">
+              {loading ? 'Creating account…' : 'Create account'}
+            </Button>
           </form>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

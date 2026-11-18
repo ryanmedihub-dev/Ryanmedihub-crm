@@ -117,7 +117,7 @@ export default function VendorLedgerModal({ vendor, scope, onClose }) {
         return (
           <div>
             <p className="text-xs text-gray-600">{formatDate(r.dueDate)}</p>
-            <p className={`text-[10px] ${AGEING_TONE_CLASSES[info.tone]}`}>{info.text}</p>
+            <p className={`text-[11px] ${AGEING_TONE_CLASSES[info.tone]}`}>{info.text}</p>
           </div>
         );
       },
@@ -180,7 +180,7 @@ export default function VendorLedgerModal({ vendor, scope, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+    <div className="fixed inset-0 overlay-in bg-gray-950/40 flex items-center justify-center z-50 p-4 overflow-y-auto">
       <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full my-8">
         <div className="flex items-center justify-between p-5 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl">
           <div className="flex items-center gap-2 min-w-0">
@@ -190,14 +190,14 @@ export default function VendorLedgerModal({ vendor, scope, onClose }) {
               </button>
             )}
             <div className="min-w-0">
-              <h3 className="text-lg font-bold text-gray-900 truncate">
+              <h3 className="text-lg font-semibold text-gray-900 truncate">
                 {vendor.name || "Vendor"}
                 {level === 2 && <span className="text-gray-400 font-normal"> / {(bill?.purpose || "").replace(/_/g, " ")}</span>}
               </h3>
               <p className="text-xs text-gray-500">{level === 1 ? "Bills" : "Settling transactions"}</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg shrink-0">
+          <button type="button" onClick={onClose} aria-label="Close" className="p-1.5 hover:bg-gray-100 rounded-lg shrink-0">
             <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
@@ -262,11 +262,11 @@ export default function VendorLedgerModal({ vendor, scope, onClose }) {
       {viewTxId && <TransactionDetailModal transactionId={viewTxId} onClose={() => setViewTxId(null)} />}
 
       {historyDoc && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+        <div className="fixed inset-0 overlay-in bg-gray-950/40 flex items-center justify-center z-[60] p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between p-5 border-b border-gray-100 sticky top-0 bg-white">
-              <h3 className="text-lg font-bold text-gray-900">History — {historyDoc.payee?.label || vendor.name}</h3>
-              <button onClick={() => setHistoryDoc(null)} className="p-1.5 hover:bg-gray-100 rounded-lg">
+              <h3 className="text-lg font-semibold text-gray-900">History — {historyDoc.payee?.label || vendor.name}</h3>
+              <button type="button" onClick={() => setHistoryDoc(null)} aria-label="Close" className="p-1.5 hover:bg-gray-100 rounded-lg">
                 <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>

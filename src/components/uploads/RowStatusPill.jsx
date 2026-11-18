@@ -12,7 +12,7 @@ export default function RowStatusPill({ status }) {
   const p = MAP[status] || MAP.error;
   const { Icon } = p;
   return (
-    <span className={`inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-bold ${p.cls}`}>
+    <span className={`inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-semibold ${p.cls}`}>
       <Icon className="h-3 w-3" /> {p.label}
     </span>
   );

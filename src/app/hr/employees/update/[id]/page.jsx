@@ -38,15 +38,15 @@ function RoleDescriptionCard({ role }) {
   const info   = roleDescriptions[role];
   const colors = colorClasses[info.color];
   return (
-    <div className={`${colors.bg} border-l-4 ${colors.border} rounded-lg p-6`}>
+    <div className="bg-gray-50 border border-gray-200 rounded-lg p-5">
       <div className="flex items-start">
-        <AlertCircle className={`${colors.text} mr-3 shrink-0 mt-1`} size={20} />
+        <AlertCircle className="text-gray-400 mr-3 shrink-0 mt-0.5" size={18} aria-hidden />
         <div>
-          <h4 className={`text-sm font-bold ${colors.textDark} mb-2`}>Role: {role}</h4>
-          <p className={`text-sm ${colors.textMedium} mb-3`}>{info.description}</p>
-          <p className={`text-xs font-semibold ${colors.textLight} mb-1`}>Key Responsibilities:</p>
+          <h4 className="text-sm font-semibold text-gray-900 mb-1.5">Role: {role}</h4>
+          <p className="text-sm text-gray-600 mb-3">{info.description}</p>
+          <p className="text-xs font-medium text-gray-700 mb-1">Key Responsibilities:</p>
           {info.responsibilities.map((r, i) => (
-            <p key={i} className={`text-xs ${colors.textMedium} ml-4`}>• {r}</p>
+            <p key={i} className="text-xs text-gray-600 ml-4">• {r}</p>
           ))}
         </div>
       </div>
@@ -129,9 +129,9 @@ export default function HRUpdateEmployee() {
     return (
       <section className="flex min-h-screen">
         <HRSidebar />
-        <main className="flex-1 flex items-center justify-center">
+        <main className="flex-1 min-w-0 flex items-center justify-center">
           <div className="text-center">
-            <Loader2 className="animate-spin h-12 w-12 text-violet-600 mx-auto mb-4" />
+            <Loader2 className="animate-spin h-12 w-12 text-indigo-600 mx-auto mb-4" />
             <p className="text-gray-600">Loading employee data...</p>
           </div>
         </main>
@@ -143,13 +143,13 @@ export default function HRUpdateEmployee() {
     return (
       <section className="flex min-h-screen">
         <HRSidebar />
-        <main className="flex-1 flex items-center justify-center px-4">
+        <main className="flex-1 min-w-0 flex items-center justify-center px-4">
           <div className="text-center max-w-md">
             <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Employee Not Found</h2>
+            <h2 className="text-xl font-semibold tracking-tight text-gray-900 mb-2">Employee Not Found</h2>
             <p className="text-gray-600 mb-6">The employee you're trying to edit doesn't exist or has been deleted.</p>
             <button onClick={() => router.push("/hr/employees")}
-              className="inline-flex items-center px-6 py-3 rounded-md text-white bg-violet-600 hover:bg-violet-700 transition-colors">
+              className="inline-flex items-center px-6 py-3 rounded-md text-white bg-indigo-600 hover:bg-indigo-700 transition-colors">
               <ArrowLeft className="mr-2" size={20} />Back to Employees
             </button>
           </div>
@@ -161,14 +161,12 @@ export default function HRUpdateEmployee() {
   return (
     <section className="flex min-h-screen">
       <HRSidebar />
-      <main className="flex-1 px-4 md:px-12 py-4">
+      <main className="flex-1 min-w-0 px-4 md:px-12 py-4">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-            <div className="px-8 py-6 bg-linear-to-r from-violet-600 to-indigo-600 text-white">
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-                <User size={28} />Update Employee
-              </h1>
-              <p className="text-violet-100 mt-1">Edit employee information</p>
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="px-6 py-5 border-b border-gray-200">
+              <h1 className="text-xl font-semibold tracking-tight text-gray-900">Update Employee</h1>
+              <p className="text-sm text-gray-500 mt-1">Edit employee information</p>
             </div>
 
             <div className="px-8 pt-6">
@@ -181,8 +179,8 @@ export default function HRUpdateEmployee() {
             <form onSubmit={handleSubmit} className="px-8 py-8">
               <div className="space-y-8">
                 <div className="text-center mb-8">
-                  <User className="mx-auto h-16 w-16 text-violet-500 mb-4" />
-                  <h3 className="text-2xl font-bold text-gray-900">Employee Information</h3>
+                  <User className="mx-auto h-16 w-16 text-indigo-500 mb-4" />
+                  <h3 className="text-xl font-semibold tracking-tight text-gray-900">Employee Information</h3>
                   <p className="text-gray-600">Update the employee details below</p>
                 </div>
 
@@ -213,7 +211,7 @@ export default function HRUpdateEmployee() {
                     Cancel
                   </button>
                   <button type="submit" disabled={isSubmitting}
-                    className="inline-flex items-center px-8 py-3 rounded-md text-white bg-violet-600 hover:bg-violet-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors">
+                    className="inline-flex items-center px-8 py-3 rounded-md text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors">
                     {isSubmitting ? (
                       <><div className="animate-spin mr-2 h-5 w-5 border-2 border-white border-t-transparent rounded-full" />Updating...</>
                     ) : (

@@ -13,12 +13,12 @@ export default function SalesIncentivesPage() {
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
 
-      <main className="flex-1 flex flex-col">
+      <main className="flex-1 min-w-0 flex flex-col">
         <div className="flex-1 overflow-auto">
           <div className="max-w-3xl mx-auto p-4 sm:p-6 lg:p-8">
             <div className="mb-6 flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Incentives</h1>
+                <h1 className="text-xl font-semibold tracking-tight text-gray-900">Incentives</h1>
                 <p className="text-gray-600 mt-1">
                   Record a per-patient incentive owed to an employee.
                 </p>

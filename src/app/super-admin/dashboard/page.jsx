@@ -9,11 +9,12 @@ import {
 import {
   Users, UserCheck, UserX, IndianRupee, Package,
   ClipboardList, Activity, TrendingUp, Stethoscope,
-  Crown, ChevronDown, Briefcase, Calendar, MapPin,
-  RefreshCw, HeartPulse, Scissors, BarChart2, CreditCard, Droplets,
-  Wallet, ArrowDownCircle, ArrowUpCircle, ExternalLink,
+  ChevronDown, Calendar, MapPin,
+  RefreshCw, Scissors, BarChart2, Droplets,
+  ArrowDownCircle, ArrowUpCircle, ExternalLink,
 } from "lucide-react";
 import SuperAdminSidebar from "@/components/Sidebars/SuperAdminSidebar";
+import StatCard from "@/components/dashboard/StatCard";
 import { ALL_BRANCHES } from "@/lib/branches";
 
 const BRANCHES    = ["All", ...ALL_BRANCHES];
@@ -24,11 +25,6 @@ const PALETTE = [
   "#10b981","#3b82f6","#f97316","#14b8a6","#ef4444","#a78bfa",
 ];
 
-const METHOD_ICONS = {
-  upi: "📲", cash: "💵", card: "💳", banking: "🏦", bajaj_loan: "📄", fibe_loan: "📄",
-  hdfc_skin_bank_transfer: "🏦", hdfc_ryan_medihub_bank_transfer: "🏦", icici_medihub_bank_transfer: "🏦",
-  other: "💰",
-};
 
 const rupee = (n) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n || 0);
@@ -61,44 +57,14 @@ function fmtDate(iso) {
   return new Date(iso).toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
 }
 
-const COLOR_MAP = {
-  indigo: { accent: "bg-indigo-500",  soft: "bg-indigo-50",  text: "text-indigo-600", border: "border-indigo-100" },
-  purple: { accent: "bg-purple-500",  soft: "bg-purple-50",  text: "text-purple-600", border: "border-purple-100" },
-  green:  { accent: "bg-emerald-500", soft: "bg-emerald-50", text: "text-emerald-600",border: "border-emerald-100"},
-  amber:  { accent: "bg-amber-500",   soft: "bg-amber-50",   text: "text-amber-600",  border: "border-amber-100"  },
-  red:    { accent: "bg-red-500",     soft: "bg-red-50",     text: "text-red-600",    border: "border-red-100"    },
-  blue:   { accent: "bg-blue-500",    soft: "bg-blue-50",    text: "text-blue-600",   border: "border-blue-100"   },
-  teal:   { accent: "bg-teal-500",    soft: "bg-teal-50",    text: "text-teal-600",   border: "border-teal-100"   },
-  pink:   { accent: "bg-pink-500",    soft: "bg-pink-50",    text: "text-pink-600",   border: "border-pink-100"   },
-  rose:   { accent: "bg-rose-500",    soft: "bg-rose-50",    text: "text-rose-600",   border: "border-rose-100"   },
-};
-
-function KpiCard({ title, value, subtitle, icon: Icon, color }) {
-  const c = COLOR_MAP[color] || COLOR_MAP.indigo;
-  return (
-    <div className={`bg-white rounded-2xl border ${c.border} shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden group`}>
-      <div className={`h-1 ${c.accent}`} />
-      <div className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className={`w-9 h-9 rounded-xl ${c.soft} flex items-center justify-center`}>
-            <Icon className={`w-4.5 h-4.5 ${c.text}`} />
-          </div>
-          <span className={`text-[10px] font-semibold uppercase tracking-widest ${c.text} opacity-70`}>{subtitle}</span>
-        </div>
-        <p className="text-2xl font-bold text-gray-900 leading-none">{value}</p>
-        <p className="text-xs font-medium text-gray-500 mt-1.5">{title}</p>
-      </div>
-    </div>
-  );
+function KpiCard({ title, value, subtitle, icon, color }) {
+  return <StatCard title={title} value={value} subtitle={subtitle} icon={icon} tone={color} />;
 }
 
-function SectionHeader({ icon: Icon, title, color = "text-gray-700", accent = "bg-gray-100" }) {
+function SectionHeader({ title }) {
   return (
-    <div className="flex items-center gap-2.5 mb-4">
-      <div className={`w-7 h-7 rounded-lg ${accent} flex items-center justify-center`}>
-        <Icon className={`w-3.5 h-3.5 ${color}`} />
-      </div>
-      <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wider">{title}</h2>
+    <div className="flex items-center gap-3 mb-3">
+      <h2 className="text-base font-semibold text-gray-900">{title}</h2>
       <div className="flex-1 h-px bg-gray-200" />
     </div>
   );
@@ -106,10 +72,10 @@ function SectionHeader({ icon: Icon, title, color = "text-gray-700", accent = "b
 
 function ChartCard({ title, subtitle, children, className = "" }) {
   return (
-    <div className={`bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden ${className}`}>
+    <div className={`bg-white rounded-xl border border-gray-200 overflow-hidden ${className}`}>
       <div className="px-6 py-4 border-b border-gray-100 flex items-start justify-between">
         <div>
-          <h3 className="text-sm font-semibold text-gray-800">{title}</h3>
+          <h3 className="text-base font-semibold text-gray-900">{title}</h3>
           {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
         </div>
       </div>
@@ -213,7 +179,7 @@ export default function SuperAdminDashboard() {
   const d = data || {};
 
   return (
-    <section className="flex min-h-screen bg-[#f8f9fc]">
+    <section className="flex min-h-screen bg-gray-50">
       <SuperAdminSidebar />
 
       <main className="flex-1 flex flex-col min-w-0 overflow-auto">
@@ -221,12 +187,9 @@ export default function SuperAdminDashboard() {
         <div className="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-10 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-amber-400 via-orange-500 to-red-500 flex items-center justify-center shadow-md">
-                <Crown className="w-5 h-5 text-white" />
-              </div>
               <div>
-                <h1 className="text-base font-bold text-gray-900 leading-tight">Super Admin Dashboard</h1>
-                <p className="text-[11px] text-gray-400 mt-0.5">System-wide overview · All tenants</p>
+                <h1 className="text-lg font-semibold tracking-tight text-gray-900 leading-tight">Super Admin Dashboard</h1>
+                <p className="text-xs text-gray-500 mt-0.5">System-wide overview · All tenants</p>
               </div>
             </div>
 
@@ -234,9 +197,10 @@ export default function SuperAdminDashboard() {
               <div className="relative">
                 <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
                 <select
+                  aria-label="Branch"
                   value={branch}
                   onChange={(e) => setBranch(e.target.value)}
-                  className="pl-7 pr-7 py-2 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-amber-300 appearance-none cursor-pointer shadow-sm"
+                  className="pl-7 pr-7 py-2 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 appearance-none cursor-pointer hover:border-gray-300"
                 >
                   {BRANCHES.map((b) => <option key={b}>{b}</option>)}
                 </select>
@@ -246,9 +210,10 @@ export default function SuperAdminDashboard() {
               <div className="relative">
                 <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
                 <select
+                  aria-label="Date range"
                   value={dateRange}
                   onChange={(e) => setDateRange(e.target.value)}
-                  className="pl-7 pr-7 py-2 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-amber-300 appearance-none cursor-pointer shadow-sm"
+                  className="pl-7 pr-7 py-2 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 appearance-none cursor-pointer hover:border-gray-300"
                 >
                   {DATE_RANGES.map((r) => <option key={r}>{r}</option>)}
                 </select>
@@ -261,13 +226,13 @@ export default function SuperAdminDashboard() {
                     type="date"
                     value={custom.from}
                     onChange={(e) => setCustom((p) => ({ ...p, from: e.target.value }))}
-                    className="border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-300 shadow-sm"
+                    className="border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
                   />
                   <input
                     type="date"
                     value={custom.to}
                     onChange={(e) => setCustom((p) => ({ ...p, to: e.target.value }))}
-                    className="border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-300 shadow-sm"
+                    className="border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
                   />
                 </>
               )}
@@ -275,8 +240,10 @@ export default function SuperAdminDashboard() {
               <button
                 onClick={fetchData}
                 disabled={loading}
-                className="w-9 h-9 flex items-center justify-center border border-gray-200 rounded-xl bg-white hover:bg-gray-50 shadow-sm transition-colors disabled:opacity-50"
+                type="button"
+                className="w-9 h-9 flex items-center justify-center border border-gray-200 rounded-xl bg-white hover:bg-gray-50 active:bg-gray-100 transition-colors disabled:opacity-50"
                 title="Refresh"
+                aria-label="Refresh"
               >
                 <RefreshCw className={`w-4 h-4 text-gray-500 ${loading ? "animate-spin" : ""}`} />
               </button>
@@ -284,7 +251,7 @@ export default function SuperAdminDashboard() {
           </div>
         </div>
 
-        <div className="flex-1 p-6 space-y-8">
+        <div className="flex-1 p-4 sm:p-6 space-y-8">
 
           {loading ? (
             <DashboardSkeleton />
@@ -304,7 +271,7 @@ export default function SuperAdminDashboard() {
             <>
 
               <div>
-                <SectionHeader icon={HeartPulse} title="Leads & Patients" color="text-blue-600" accent="bg-blue-50" />
+                <SectionHeader title="Leads & Patients" />
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                   <KpiCard title="Total Leads"     value={fmt(d.totalLeads)}      icon={ClipboardList} color="blue"   subtitle={dateRange} />
                   <KpiCard title="Appointments"    value={fmt(d.appointments)}    icon={Users}         color="indigo" subtitle="In period" />
@@ -316,7 +283,7 @@ export default function SuperAdminDashboard() {
               </div>
 
               <div>
-                <SectionHeader icon={Briefcase} title="HR Recruitment" color="text-rose-600" accent="bg-rose-50" />
+                <SectionHeader title="HR Recruitment" />
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <KpiCard title="Total Candidates"   value={fmt(d.totalInterviews)}     icon={ClipboardList} color="purple" subtitle={dateRange} />
                   <KpiCard title="Selected"           value={fmt(d.selectedInterviews)}  icon={UserCheck}     color="green"  subtitle="Hired" />
@@ -325,24 +292,24 @@ export default function SuperAdminDashboard() {
                 </div>
 
                 {(d.totalInterviews > 0) && (
-                  <div className="mt-3 bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
+                  <div className="mt-3 bg-white rounded-xl border border-gray-200 p-4">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-xs font-semibold text-gray-500">Selection Rate</span>
-                      <span className="text-xs font-bold text-emerald-600">
+                      <span className="text-xs font-semibold text-emerald-600">
                         {d.totalInterviews > 0 ? ((d.selectedInterviews / d.totalInterviews) * 100).toFixed(1) : 0}%
                       </span>
                     </div>
                     <div className="flex h-2.5 rounded-full overflow-hidden bg-gray-100 gap-0.5">
                       <div
-                        className="bg-emerald-500 transition-all duration-700 rounded-l-full"
+                        className="bg-emerald-500 transition-all duration-300 rounded-l-full"
                         style={{ width: `${d.totalInterviews > 0 ? (d.selectedInterviews / d.totalInterviews) * 100 : 0}%` }}
                       />
                       <div
-                        className="bg-red-400 transition-all duration-700"
+                        className="bg-red-400 transition-all duration-300"
                         style={{ width: `${d.totalInterviews > 0 ? (d.rejectedInterviews / d.totalInterviews) * 100 : 0}%` }}
                       />
                       <div
-                        className="bg-amber-400 transition-all duration-700"
+                        className="bg-amber-400 transition-all duration-300"
                         style={{ width: `${d.totalInterviews > 0 ? (d.scheduledInterviews / d.totalInterviews) * 100 : 0}%` }}
                       />
                       <div className="flex-1 bg-gray-200 rounded-r-full" />
@@ -354,7 +321,7 @@ export default function SuperAdminDashboard() {
                         { label: "Scheduled", color: "bg-amber-400" },
                         { label: "Others", color: "bg-gray-200" },
                       ].map(({ label, color }) => (
-                        <span key={label} className="flex items-center gap-1 text-[10px] text-gray-500">
+                        <span key={label} className="flex items-center gap-1.5 text-xs text-gray-500">
                           <span className={`w-2 h-2 rounded-full ${color}`} /> {label}
                         </span>
                       ))}
@@ -364,7 +331,7 @@ export default function SuperAdminDashboard() {
               </div>
 
               <div>
-                <SectionHeader icon={Droplets} title="PRP & GFC Sessions" color="text-teal-600" accent="bg-teal-50" />
+                <SectionHeader title="PRP & GFC Sessions" />
                 <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   <KpiCard title="PRP Sessions"  value={fmt(d.prp?.prpSessions  ?? 0)} subtitle={rupee(d.prp?.prpRevenue  ?? 0)} icon={Droplets}     color="teal"   />
                   <KpiCard title="GFC Sessions"  value={fmt(d.prp?.gfcSessions  ?? 0)} subtitle={rupee(d.prp?.gfcRevenue  ?? 0)} icon={Droplets}     color="purple" />
@@ -373,29 +340,29 @@ export default function SuperAdminDashboard() {
                 </div>
 
                 {((d.prp?.totalSessions ?? 0) > 0) && (
-                  <div className="mt-3 bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
+                  <div className="mt-3 bg-white rounded-xl border border-gray-200 p-4">
                     <p className="text-xs font-semibold text-gray-500 mb-3">PRP vs GFC — session split</p>
                     <div className="flex items-center gap-3">
-                      <span className="text-[11px] font-bold text-teal-600 w-8 text-right">{d.prp?.prpSessions ?? 0}</span>
+                      <span className="text-[11px] font-semibold text-teal-600 w-8 text-right">{d.prp?.prpSessions ?? 0}</span>
                       <div className="flex-1 flex h-2.5 rounded-full overflow-hidden bg-gray-100">
                         {(() => {
                           const total  = d.prp?.totalSessions || 1;
                           const prpPct = ((d.prp?.prpSessions ?? 0) / total) * 100;
                           return (
                             <>
-                              <div className="h-full bg-teal-500 transition-all duration-700" style={{ width: `${prpPct}%` }} />
-                              <div className="h-full bg-purple-500 transition-all duration-700" style={{ width: `${100 - prpPct}%` }} />
+                              <div className="h-full bg-teal-500 transition-all duration-300" style={{ width: `${prpPct}%` }} />
+                              <div className="h-full bg-purple-500 transition-all duration-300" style={{ width: `${100 - prpPct}%` }} />
                             </>
                           );
                         })()}
                       </div>
-                      <span className="text-[11px] font-bold text-purple-600 w-8">{d.prp?.gfcSessions ?? 0}</span>
+                      <span className="text-[11px] font-semibold text-purple-600 w-8">{d.prp?.gfcSessions ?? 0}</span>
                     </div>
                     <div className="flex items-center gap-6 mt-2">
-                      <span className="flex items-center gap-1.5 text-[11px] text-gray-500">
+                      <span className="flex items-center gap-1.5 text-xs text-gray-500">
                         <span className="w-2 h-2 rounded-full bg-teal-500" /> PRP · {rupee(d.prp?.prpRevenue ?? 0)}
                       </span>
-                      <span className="flex items-center gap-1.5 text-[11px] text-gray-500">
+                      <span className="flex items-center gap-1.5 text-xs text-gray-500">
                         <span className="w-2 h-2 rounded-full bg-purple-500" /> GFC · {rupee(d.prp?.gfcRevenue ?? 0)}
                       </span>
                     </div>
@@ -404,7 +371,7 @@ export default function SuperAdminDashboard() {
               </div>
 
               <div>
-                <SectionHeader icon={IndianRupee} title="Revenue & Inventory" color="text-emerald-600" accent="bg-emerald-50" />
+                <SectionHeader title="Revenue & Inventory" />
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <KpiCard title="Amount Received"  value={rupee(d.totalAmount)}    icon={IndianRupee} color="green"  subtitle="All revenue" />
                   <KpiCard title="Medicine Sales"   value={rupee(d.medicineAmount)} icon={Stethoscope} color="teal"   subtitle="Medicine" />
@@ -414,7 +381,7 @@ export default function SuperAdminDashboard() {
               </div>
 
               <div>
-                <SectionHeader icon={Wallet} title="Receivables & Payables" color="text-teal-600" accent="bg-teal-50" />
+                <SectionHeader title="Receivables & Payables" />
                 {financeLoading ? (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-28" />)}
@@ -429,14 +396,16 @@ export default function SuperAdminDashboard() {
                     </div>
                     <div className="flex flex-wrap gap-3 mt-3">
                       <button
+                        type="button"
                         onClick={() => router.push("/admin/assets?section=receivables")}
-                        className="flex-1 min-w-40 flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-700 shadow-sm transition-colors"
+                        className="flex-1 min-w-40 flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 active:bg-gray-100 transition-colors"
                       >
                         View Receivables <ExternalLink className="w-3.5 h-3.5" />
                       </button>
                       <button
+                        type="button"
                         onClick={() => router.push("/admin/liabilities?section=payables")}
-                        className="flex-1 min-w-40 flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 hover:bg-rose-50 hover:border-rose-200 hover:text-rose-700 shadow-sm transition-colors"
+                        className="flex-1 min-w-40 flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 active:bg-gray-100 transition-colors"
                       >
                         View Payables <ExternalLink className="w-3.5 h-3.5" />
                       </button>
@@ -513,14 +482,14 @@ export default function SuperAdminDashboard() {
                                 <span className="text-xs font-medium text-gray-700">{item.procedure}</span>
                               </div>
                               <div className="flex items-center gap-3">
-                                <span className="text-[10px] text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded-md">{item.count} txn</span>
-                                <span className="text-xs font-bold text-gray-800">{rupee(item.total)}</span>
-                                <span className="text-[10px] font-semibold w-8 text-right" style={{ color }}>{pct}%</span>
+                                <span className="text-[11px] text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded-md">{item.count} txn</span>
+                                <span className="text-xs font-semibold text-gray-800">{rupee(item.total)}</span>
+                                <span className="text-[11px] font-semibold w-8 text-right" style={{ color }}>{pct}%</span>
                               </div>
                             </div>
                             <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
                               <div
-                                className="h-1.5 rounded-full transition-all duration-700"
+                                className="h-1.5 rounded-full transition-all duration-300"
                                 style={{ width: `${pct}%`, background: color }}
                               />
                             </div>
@@ -539,14 +508,9 @@ export default function SuperAdminDashboard() {
                 <ChartCard title="Staff Breakdown" subtitle="Active employees by role">
                   {d.staffBreakdown && Object.keys(d.staffBreakdown).length > 0 ? (
                     <>
-                      <div className="flex items-center gap-3 mb-5 p-3 bg-gray-50 rounded-xl border border-gray-100">
-                        <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
-                          <Users className="w-5 h-5 text-amber-600" />
-                        </div>
-                        <div>
-                          <p className="text-2xl font-bold text-gray-900 leading-none">{fmt(d.totalStaff)}</p>
-                          <p className="text-xs text-gray-400 mt-0.5">Total active employees</p>
-                        </div>
+                      <div className="mb-5 pb-4 border-b border-gray-100">
+                        <p className="text-2xl font-semibold text-gray-900 leading-none tabular-nums">{fmt(d.totalStaff)}</p>
+                        <p className="text-xs text-gray-500 mt-1">Total active employees</p>
                       </div>
 
                       <div className="space-y-2.5">
@@ -557,16 +521,16 @@ export default function SuperAdminDashboard() {
                             const pct = d.totalStaff > 0 ? ((count / d.totalStaff) * 100).toFixed(0) : 0;
                             return (
                               <div key={role} className="flex items-center gap-3">
-                                <span className={`text-[10px] font-bold ${c.text} ${c.soft} px-2 py-0.5 rounded-lg w-20 text-center shrink-0`}>
+                                <span className={`text-xs font-medium ${c.text} ${c.soft} px-2 py-0.5 rounded-md w-24 text-center shrink-0`}>
                                   {role}
                                 </span>
                                 <div className="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
                                   <div
-                                    className="h-2 rounded-full transition-all duration-700"
+                                    className="h-2 rounded-full transition-all duration-300"
                                     style={{ width: `${pct}%`, background: c.bar }}
                                   />
                                 </div>
-                                <span className="text-xs font-bold text-gray-700 w-6 text-right shrink-0">{count}</span>
+                                <span className="text-xs font-semibold text-gray-700 w-6 text-right shrink-0">{count}</span>
                               </div>
                             );
                           })}
@@ -583,19 +547,15 @@ export default function SuperAdminDashboard() {
 
               {d.byMethod && d.byMethod.length > 0 && (
                 <div>
-                  <SectionHeader icon={CreditCard} title="Revenue by Payment Method" color="text-indigo-600" accent="bg-indigo-50" />
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                  <SectionHeader title="Revenue by Payment Method" />
+                  <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
                     {d.byMethod
                       .sort((a, b) => b.total - a.total)
                       .map((item) => (
-                        <div
-                          key={item.method}
-                          className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all p-4 text-center"
-                        >
-                          <p className="text-2xl mb-2">{METHOD_ICONS[item.method] || "💰"}</p>
-                          <p className="text-sm font-bold text-gray-900">{rupee(item.total)}</p>
-                          <p className="text-[11px] font-semibold text-gray-500 mt-0.5 capitalize">{item.method?.replace(/_/g, " ")}</p>
-                          <p className="text-[10px] text-gray-400 mt-0.5">{item.count} transactions</p>
+                        <div key={item.method} className="flex items-center gap-4 px-5 py-3">
+                          <span className="flex-1 text-sm font-medium text-gray-700 capitalize">{item.method?.replace(/_/g, " ")}</span>
+                          <span className="text-xs text-gray-500 tabular-nums">{item.count} transactions</span>
+                          <span className="w-32 text-right text-sm font-semibold text-gray-900 tabular-nums">{rupee(item.total)}</span>
                         </div>
                       ))}
                   </div>

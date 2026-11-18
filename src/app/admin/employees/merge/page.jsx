@@ -194,18 +194,15 @@ function Inner() {
   const fmtOpt = (e) => `${e.name}${e.employeeId ? ` (${e.employeeId})` : ""} — ${e.role}${e.branch ? ` · ${e.branch}` : ""}`;
 
   return (
-    <main className="flex-1 p-4 sm:p-6 lg:p-8">
+    <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8">
       <div className="max-w-4xl mx-auto space-y-5">
         <button onClick={() => router.push("/admin/employees")} className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900">
           <ArrowLeft className="w-4 h-4" /> Back to employees
         </button>
 
         <div className="flex items-center gap-3">
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-amber-100 text-amber-700">
-            <GitMerge className="w-5 h-5" />
-          </span>
           <div>
-            <h1 className="text-xl font-bold text-gray-900">Merge duplicate employees</h1>
+            <h1 className="text-xl font-semibold text-gray-900">Merge duplicate employees</h1>
             <p className="text-sm text-gray-500">Repoint every reference from the duplicate onto the survivor. Reversible.</p>
           </div>
         </div>
@@ -252,9 +249,9 @@ function Inner() {
             </div>
 
             {suggestions.length > 0 && (
-              <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+              <div className="rounded-xl border border-gray-200 bg-white p-4">
                 <div className="flex items-center justify-between gap-3 mb-2">
-                  <p className="text-xs font-bold uppercase tracking-wide text-gray-500">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                     Likely duplicates ({filteredSuggestions.length})
                   </p>
                   <input
@@ -370,7 +367,7 @@ function Inner() {
         {}
         {step === 4 && !result && preview?.success && (
           <div className="space-y-4">
-            <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div className="rounded-xl border border-gray-200 bg-white p-5">
               <p className="text-sm text-gray-700">
                 This repoints <strong>{preview.totalReferences}</strong> document(s) onto{" "}
                 <strong>{preview.survivor.name}</strong> and retires <strong>{preview.duplicate.name}</strong>.
@@ -403,7 +400,7 @@ function Inner() {
         {step === 4 && result && (
           <div className="space-y-4">
             <div className={`rounded-2xl border p-5 shadow-sm ${result.success ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50"}`}>
-              <p className="flex items-center gap-2 text-sm font-bold">
+              <p className="flex items-center gap-2 text-sm font-semibold">
                 {result.success ? <CheckCircle2 className="w-5 h-5 text-emerald-600" /> : <AlertTriangle className="w-5 h-5 text-amber-600" />}
                 {result.success ? "Merge complete" : "Merge committed with warnings"}
               </p>

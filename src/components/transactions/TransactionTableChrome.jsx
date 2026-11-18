@@ -7,7 +7,7 @@ export function EmptyState({ hasFilters }) {
         <Search className="w-6 h-6 text-slate-400" />
       </div>
 
-      <h3 className="font-bold text-slate-900">
+      <h3 className="font-semibold text-slate-900">
         No transactions found
       </h3>
 
@@ -59,7 +59,7 @@ export function Pagination({
           ))}
         </select>
 
-        <button
+        <button aria-label="Previous page"
           disabled={page <= 1}
           onClick={() =>
             setPage((p) => Math.max(1, p - 1))
@@ -73,7 +73,7 @@ export function Pagination({
           {page} / {pages}
         </span>
 
-        <button
+        <button aria-label="Next page"
           disabled={page >= pages}
           onClick={() =>
             setPage((p) =>

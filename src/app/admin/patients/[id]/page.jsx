@@ -608,7 +608,7 @@ const PatientProfile = () => {
   if (isLoading) {
     return (
       <section className="flex min-h-screen">
-        <main className="flex-1 flex items-center justify-center bg-gray-50">
+        <main className="flex-1 min-w-0 flex items-center justify-center bg-gray-50">
           <div className="text-center">
             <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-600 mx-auto mb-4"></div>
             <p className="text-gray-600 text-lg">Loading patient profile...</p>
@@ -625,11 +625,11 @@ const PatientProfile = () => {
   return (
     <section className="flex min-h-screen">
 
-      <main className="flex-1 px-12 py-4 bg-gray-50">
+      <main className="flex-1 min-w-0 px-12 py-4 bg-gray-50">
         <div className="max-w-7xl mx-auto">
           <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-xl font-semibold tracking-tight text-gray-900">
                 Patient Medical Record
               </h1>
               <p className="text-gray-600">
@@ -659,7 +659,7 @@ const PatientProfile = () => {
               </button>
               <button
                 onClick={downloadPDF}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
               >
                 <Download className="mr-2" size={16} />
                 Download PDF
@@ -670,7 +670,7 @@ const PatientProfile = () => {
           <div className="bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200">
             <div className="p-8">
               <div className="text-center border-b-2 border-gray-300 pb-6 mb-6">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                <h1 className="text-2xl font-semibold tracking-tight text-gray-900 mb-2">
                   MEDICAL RECORD
                 </h1>
                 <div className="flex justify-between items-center text-sm text-gray-600">
@@ -699,7 +699,7 @@ const PatientProfile = () => {
               </div>
 
               <div className="mb-8">
-                <h2 className="text-xl font-bold text-gray-900 mb-4 border-b pb-2">
+                <h2 className="text-[15px] font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200 lowercase first-letter:uppercase">
                   PATIENT INFORMATION
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -816,7 +816,7 @@ const PatientProfile = () => {
               </div>
 
               <div className="mb-8">
-                <h2 className="text-xl font-bold text-gray-900 mb-4 border-b pb-2">
+                <h2 className="text-[15px] font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200 lowercase first-letter:uppercase">
                   COUNSELLING DETAILS
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-4">
@@ -959,13 +959,13 @@ const PatientProfile = () => {
               </div>
 
               <div className="mb-8">
-                <h2 className="text-xl font-bold text-gray-900 mb-4 border-b pb-2">
+                <h2 className="text-[15px] font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200 lowercase first-letter:uppercase">
                   MEDICAL INFORMATION
                 </h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                    <h3 className="text-sm font-semibold text-gray-800 mb-3">
                       Vital Signs
                     </h3>
                     <div className="grid grid-cols-2 gap-4">
@@ -1005,7 +1005,7 @@ const PatientProfile = () => {
                   </div>
 
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                    <h3 className="text-sm font-semibold text-gray-800 mb-3">
                       Medical Background
                     </h3>
                     <div className="space-y-3">
@@ -1047,7 +1047,7 @@ const PatientProfile = () => {
               </div>
 
               <div className="mb-8">
-                <h2 className="text-xl font-bold text-gray-900 mb-4 border-b pb-2">
+                <h2 className="text-[15px] font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200 lowercase first-letter:uppercase">
                   SURGERY INFORMATION
                 </h2>
 
@@ -1136,7 +1136,7 @@ const PatientProfile = () => {
                         )}
 
                         <div className="mb-4">
-                          <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                          <h3 className="text-sm font-semibold text-gray-800 mb-3">
                             Surgical Team
                           </h3>
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1227,7 +1227,7 @@ const PatientProfile = () => {
               </div>
 
               <div className="mb-8">
-                <h2 className="text-xl font-bold text-gray-900 mb-4 border-b pb-2">
+                <h2 className="text-[15px] font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200 lowercase first-letter:uppercase">
                   AFTER SURGERY CARE
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
@@ -1304,48 +1304,48 @@ const PatientProfile = () => {
               </div>
 
               <div className="mb-8">
-                <h2 className="text-xl font-bold text-gray-900 mb-4 border-b pb-2">
+                <h2 className="text-[15px] font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200 lowercase first-letter:uppercase">
                   PAYMENT INFORMATION
                 </h2>
 
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-                  <div className="bg-gray-50 p-4 rounded border text-center">
+                  <div className="bg-white px-4 py-3 rounded-lg border border-gray-200">
                     <label className="block text-sm text-gray-600 mb-1">
                       Total Amount
                     </label>
-                    <p className="text-lg font-bold text-gray-900">
+                    <p className="text-lg font-semibold text-gray-900">
                       {formatCurrency(patientData.payments?.totalAmount)}
                     </p>
                   </div>
-                  <div className="bg-green-50 p-4 rounded border text-center">
+                  <div className="bg-white px-4 py-3 rounded-lg border border-gray-200">
                     <label className="block text-sm text-gray-600 mb-1">
                       Amount Received
                     </label>
-                    <p className="text-lg font-bold text-green-600">
+                    <p className="text-lg font-semibold text-gray-900 tabular-nums">
                       {formatCurrency(patientData.payments?.amountReceived)}
                     </p>
                   </div>
-                  <div className="bg-green-50 p-4 rounded border text-center">
+                  <div className="bg-white px-4 py-3 rounded-lg border border-gray-200">
                     <label className="block text-sm text-gray-600 mb-1">
                       Total Discount
                     </label>
-                    <p className="text-lg font-bold text-green-600">
+                    <p className="text-lg font-semibold text-gray-900 tabular-nums">
                       {formatCurrency(patientData.payments?.discount)}
                     </p>
                   </div>
-                  <div className="bg-red-50 p-4 rounded border text-center">
+                  <div className="bg-white px-4 py-3 rounded-lg border border-gray-200">
                     <label className="block text-sm text-gray-600 mb-1">
                       Pending Amount
                     </label>
-                    <p className="text-lg font-bold text-red-600">
+                    <p className="text-lg font-semibold text-rose-700 tabular-nums">
                       {formatCurrency(patientData.payments?.pendingAmount)}
                     </p>
                   </div>
-                  <div className="bg-blue-50 p-4 rounded border text-center">
+                  <div className="bg-white px-4 py-3 rounded-lg border border-gray-200">
                     <label className="block text-sm text-gray-600 mb-1">
                       Medicine Amount
                     </label>
-                    <p className="text-lg font-bold text-blue-600">
+                    <p className="text-lg font-semibold text-gray-900 tabular-nums">
                       {formatCurrency(patientData.payments?.medicineAmount)}
                     </p>
                   </div>
@@ -1354,7 +1354,7 @@ const PatientProfile = () => {
                 {patientData.payments?.transactions &&
                   patientData.payments.transactions.length > 0 && (
                     <div className="mb-4">
-                      <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                      <h3 className="text-sm font-semibold text-gray-800 mb-3">
                         Transaction History
                       </h3>
                       <div className="overflow-x-auto">
@@ -1409,8 +1409,8 @@ const PatientProfile = () => {
 
               <div className="mb-8">
                 <div className="flex items-center justify-between mb-4 border-b pb-2">
-                  <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                    <Gift className="w-5 h-5 text-indigo-600" /> INCENTIVES
+                  <h2 className="text-[15px] font-semibold text-gray-900 flex items-center gap-2">
+                    <Gift className="w-4 h-4 text-gray-400" /> Incentives
                   </h2>
                   <button
                     type="button"
@@ -1423,7 +1423,7 @@ const PatientProfile = () => {
 
                 <p className="text-sm text-gray-600 mb-3">
                   Total incentives on this patient:{" "}
-                  <span className="font-bold text-gray-900">
+                  <span className="font-semibold text-gray-900">
                     {formatCurrency(patientData.totalIncentives)}
                   </span>
                 </p>
@@ -1489,7 +1489,7 @@ const PatientProfile = () => {
               )}
 
               <div className="mb-8">
-                <h2 className="text-xl font-bold text-gray-900 mb-4 border-b pb-2">
+                <h2 className="text-[15px] font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200 lowercase first-letter:uppercase">
                   DOCUMENTS & ATTACHMENTS
                 </h2>
 
@@ -1687,7 +1687,7 @@ const PatientProfile = () => {
           <div className="mt-6 flex justify-center gap-4">
             <button
               onClick={downloadPDF}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+              className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2"
             >
               <Download size={20} />
               Download PDF Report
@@ -1705,13 +1705,13 @@ const PatientProfile = () => {
 
       {selectedImage && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 overlay-in bg-gray-950/40 flex items-center justify-center z-50 p-4"
           onClick={() => setSelectedImage(null)}
         >
           <div className="relative max-w-4xl max-h-screen">
             <button
               onClick={() => setSelectedImage(null)}
-              className="absolute -top-10 right-0 text-white text-xl font-bold hover:text-gray-300"
+              className="absolute -top-10 right-0 text-white text-xl font-semibold hover:text-gray-300"
             >
               ✕ Close
             </button>

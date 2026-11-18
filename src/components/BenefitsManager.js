@@ -45,7 +45,7 @@ const BenefitsManager = ({ benefits, onChange, onAdd, onRemove }) => {
               type="checkbox"
               checked={benefits.includes(benefit)}
               onChange={() => handleBenefitToggle(benefit)}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              className="h-4 w-4 text-blue-600 focus:ring-indigo-500/30 border-gray-300 rounded"
             />
             <span className="text-sm font-medium text-gray-700">{benefit}</span>
           </label>
@@ -59,7 +59,7 @@ const BenefitsManager = ({ benefits, onChange, onAdd, onRemove }) => {
         <div className="flex space-x-3">
           <input
             type="text"
-            className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 shadow-sm"
+            className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500/30 focus:border-transparent transition-all duration-200 shadow-sm"
             placeholder="Enter custom benefit"
             onKeyPress={(e) => {
               if (e.key === "Enter") {
@@ -94,7 +94,7 @@ const BenefitsManager = ({ benefits, onChange, onAdd, onRemove }) => {
                 className="flex items-center space-x-2 bg-blue-100 text-blue-800 px-3 py-2 rounded-lg"
               >
                 <span className="text-sm font-medium">{benefit}</span>
-                <button
+                <button aria-label="Close"
                   type="button"
                   className="text-blue-600 hover:text-blue-800 transition-colors duration-200"
                   onClick={() => onRemove(index)}

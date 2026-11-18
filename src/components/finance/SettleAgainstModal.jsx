@@ -345,7 +345,7 @@ function AdvanceSettle({ row, onClose, onSuccess, toast }) {
       {}
       {existingLines.length > 0 && (
         <section className="space-y-2">
-          <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">Currently settled against</p>
+          <p className="text-[11px] font-medium text-gray-500">Currently settled against</p>
           {existingLines.map((line, i) => {
             const meta = metaById[String(line.payableId)];
             const id = String(line.payableId);
@@ -377,7 +377,7 @@ function AdvanceSettle({ row, onClose, onSuccess, toast }) {
       {}
       {stagedList.length > 0 && (
         <section className="space-y-2">
-          <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">To settle now</p>
+          <p className="text-[11px] font-medium text-gray-500">To settle now</p>
           {stagedList.map((line) => {
             const err = lineError(line);
             return (
@@ -425,7 +425,7 @@ function AdvanceSettle({ row, onClose, onSuccess, toast }) {
       {}
       <section className="space-y-2">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">
+          <p className="text-[11px] font-medium text-gray-500">
             Add a payable {scopeToParty && canScopeToParty ? `for ${partyLabel}` : ""}
           </p>
           {canScopeToParty && (
@@ -648,13 +648,13 @@ function BorrowingSettle({ row, onClose, onSuccess, toast }) {
 
 function Shell({ title, wide = false, onClose, footer = null, children }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 overlay-in z-50 flex items-center justify-center bg-gray-950/40 p-4">
       <div className={`flex max-h-[90vh] w-full flex-col rounded-2xl bg-white shadow-2xl ${wide ? "max-w-lg" : "max-w-md"}`}>
         <div className="flex shrink-0 items-center justify-between border-b border-gray-100 p-5">
-          <h3 className="flex items-center gap-2 text-lg font-bold text-gray-900">
+          <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900">
             <Link2 className="w-5 h-5 text-indigo-600" /> {title}
           </h3>
-          <button onClick={onClose} className="rounded-lg p-1.5 hover:bg-gray-100">
+          <button aria-label="Close" onClick={onClose} className="rounded-lg p-1.5 hover:bg-gray-100">
             <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>

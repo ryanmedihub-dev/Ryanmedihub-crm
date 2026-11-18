@@ -146,12 +146,12 @@ export default function LedgerOverview({ side }) {
       <LedgerScopeBar />
 
       {}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{heroLabel}</p>
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <p className="text-xs font-medium text-gray-400">{heroLabel}</p>
         {loading || !data ? (
           <div className="h-9 w-48 bg-gray-100 rounded animate-pulse mt-1" />
         ) : (
-          <p className="text-3xl font-bold text-gray-900 mt-1">{formatCurrency(data.total)}</p>
+          <p className="text-2xl font-semibold tracking-tight text-gray-900 mt-1">{formatCurrency(data.total)}</p>
         )}
         <p className="text-xs text-gray-400 mt-1">{asOfLabel}</p>
         {data && (
@@ -195,7 +195,7 @@ export default function LedgerOverview({ side }) {
               loading={loading}
             />
           ) : (
-            <div key={i} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+            <div key={i} className="bg-white rounded-xl border border-gray-200 p-5">
               <div className="h-8 w-32 bg-gray-100 rounded animate-pulse" />
             </div>
           ),
@@ -222,9 +222,9 @@ export default function LedgerOverview({ side }) {
 
       {}
       {data?.topDocuments?.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide">
+            <h2 className="text-sm font-medium text-gray-700">
               Top outstanding {side === "liabilities" ? "payables" : "receivables"}
             </h2>
             <Link

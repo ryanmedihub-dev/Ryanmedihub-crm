@@ -173,11 +173,6 @@ export default function AgentDashboard() {
     setSortOrder("desc");
   };
 
-  const getPerformanceColor = (conversionRate) => {
-    if (conversionRate >= 70) return "text-green-600 bg-green-50";
-    if (conversionRate >= 50) return "text-yellow-600 bg-yellow-50";
-    return "text-red-600 bg-red-50";
-  };
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -188,11 +183,11 @@ export default function AgentDashboard() {
         setActivePage={setActivePage}
       />
 
-      <main className="flex-1 p-4 my-5 lg:p-6">
+      <main className="flex-1 min-w-0 p-4 my-5 lg:p-6">
         <div className="mb-6">
           <div className="flex justify-between items-center mb-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-xl font-semibold tracking-tight text-gray-900">
                 Agent Performance Dashboard
               </h1>
               <p className="text-gray-600 mt-1 mb-4">
@@ -203,59 +198,55 @@ export default function AgentDashboard() {
 
           {!loading && !error && (
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-              <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-indigo-500">
+              <div className="bg-white rounded-xl border border-gray-200 p-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-600">Total Agents</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-xl font-semibold tracking-tight text-gray-900">
                       {filteredAgents.length}
                     </p>
                   </div>
-                  <Users className="h-8 w-8 text-indigo-500" />
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-green-500">
+              <div className="bg-white rounded-xl border border-gray-200 p-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-600">Total Revenue</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-xl font-semibold tracking-tight text-gray-900">
                       {formatCurrency(totalRevenue)}
                     </p>
                   </div>
-                  <IndianRupee className="h-8 w-8 text-green-500" />
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-blue-500">
+              <div className="bg-white rounded-xl border border-gray-200 p-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-600">Total Patients</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-xl font-semibold tracking-tight text-gray-900">
                       {totalPatients}
                     </p>
                   </div>
-                  <UserPlus className="h-8 w-8 text-blue-500" />
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-purple-500">
+              <div className="bg-white rounded-xl border border-gray-200 p-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-600">Visited</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-xl font-semibold tracking-tight text-gray-900">
                       {totalVisited}
                     </p>
                   </div>
-                  <UserCheck className="h-8 w-8 text-purple-500" />
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-orange-500">
+              <div className="bg-white rounded-xl border border-gray-200 p-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-600">Ready for Surgery</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-xl font-semibold tracking-tight text-gray-900">
                       {totalReadyForSurgery}
                     </p>
                   </div>
@@ -265,21 +256,21 @@ export default function AgentDashboard() {
           )}
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-4 mb-4">
+        <div className="mb-4">
           <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
               <input
                 type="text"
                 placeholder="Search agents by name..."
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500/30 focus:border-transparent"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
 
             <select
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500/30"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
             >
@@ -322,7 +313,7 @@ export default function AgentDashboard() {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
                 className="mt-4 pt-4 border-t grid grid-cols-1 md:grid-cols-4 gap-4"
               >
                 <div>
@@ -332,7 +323,7 @@ export default function AgentDashboard() {
                   <input
                     type="number"
                     placeholder="0"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                     value={minRevenue}
                     onChange={(e) => setMinRevenue(e.target.value)}
                   />
@@ -345,7 +336,7 @@ export default function AgentDashboard() {
                   <input
                     type="number"
                     placeholder="0"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                     value={minPatients}
                     onChange={(e) => setMinPatients(e.target.value)}
                   />
@@ -359,7 +350,7 @@ export default function AgentDashboard() {
                     type="number"
                     placeholder="0"
                     step="0.1"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                     value={minConversion}
                     onChange={(e) => setMinConversion(e.target.value)}
                   />
@@ -370,7 +361,7 @@ export default function AgentDashboard() {
                     Technique
                   </label>
                   <select
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 transition-[border-color,box-shadow] duration-150"
                     value={selectedTechnique}
                     onChange={(e) => setSelectedTechnique(e.target.value)}
                   >
@@ -426,24 +417,24 @@ export default function AgentDashboard() {
               Showing {filteredAgents.length} of {agentsData.length} agents
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <div className="grid grid-cols-12 gap-4 p-4 bg-gray-50 border-b font-semibold text-gray-700 text-sm">
+            <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
+              <div className="min-w-[860px] grid grid-cols-12 gap-4 px-4 h-10 items-center bg-gray-50/80 border-b border-gray-200 font-medium text-gray-500 text-xs">
                 <div className="col-span-3">Agent</div>
-                <div className="col-span-1 text-center">Patients</div>
-                <div className="col-span-1 text-center">Visited</div>
-                <div className="col-span-1 text-center">Surgery</div>
-                <div className="col-span-2 text-center">Conversion Rate</div>
-                <div className="col-span-2 text-center">Revenue</div>
-                <div className="col-span-2 text-center">Actions</div>
+                <div className="col-span-1 text-right">Patients</div>
+                <div className="col-span-1 text-right">Visited</div>
+                <div className="col-span-1 text-right">Surgery</div>
+                <div className="col-span-2 text-right">Conversion</div>
+                <div className="col-span-2 text-right">Revenue</div>
+                <div className="col-span-2"><span className="sr-only">Actions</span></div>
               </div>
 
               <div className="divide-y">
                 {filteredAgents.map((agent, idx) => (
                   <div key={agent._id || idx} className="bg-white">
-                    <div className="grid grid-cols-12 gap-4 p-4 items-center hover:bg-gray-50 transition-colors">
+                    <div className="min-w-[860px] grid grid-cols-12 gap-4 px-4 py-2.5 items-center hover:bg-gray-50/70 transition-colors">
                       <div className="col-span-3">
                         <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 bg-indigo-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                          <div className="h-8 w-8 shrink-0 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 font-semibold text-[11px]">
                             {agent.name
                               ?.split(" ")
                               .map((n) => n[0])
@@ -451,10 +442,10 @@ export default function AgentDashboard() {
                               .toUpperCase()}
                           </div>
                           <div>
-                            <h3 className="font-semibold text-gray-900">
+                            <h3 className="text-sm font-medium text-gray-900">
                               {agent.name}
                             </h3>
-                            <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+                            <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
 
                               {agent.phone && (
                                 <div className="flex items-center gap-1">
@@ -467,57 +458,40 @@ export default function AgentDashboard() {
                         </div>
                       </div>
 
-                      <div className="col-span-1 text-center">
-                        <div className="flex flex-col items-center">
-                          <span className="text-lg font-bold text-gray-900">
-                            {agent.totalPatients}
-                          </span>
-                          <span className="text-xs text-gray-500">Total</span>
+                      <div className="col-span-1 text-right">
+                        <span className="text-sm text-gray-900 tabular-nums">{agent.totalPatients}</span>
+                      </div>
+
+                      <div className="col-span-1 text-right">
+                        <span className="text-sm text-gray-900 tabular-nums">{agent.visitedPatients}</span>
+                      </div>
+
+                      <div className="col-span-1 text-right">
+                        <span className="text-sm text-gray-900 tabular-nums">{agent.readyForSurgery}</span>
+                      </div>
+
+                      <div className="col-span-2 text-right">
+                        <div className="flex flex-col items-end">
+                          <span className="text-sm text-gray-900 tabular-nums">{formatPercentage(agent.conversionRate)}</span>
                         </div>
                       </div>
 
-                      <div className="col-span-1 text-center">
-                        <div className="flex flex-col items-center">
-                          <span className="text-lg font-bold text-green-600">
-                            {agent.visitedPatients}
-                          </span>
-                          <span className="text-xs text-gray-500">Visited</span>
-                        </div>
-                      </div>
-
-                      <div className="col-span-1 text-center">
-                        <div className="flex flex-col items-center">
-                          <span className="text-lg font-bold text-blue-600">
-                            {agent.readyForSurgery}
-                          </span>
-                          <span className="text-xs text-gray-500">Surgery</span>
-                        </div>
-                      </div>
-
-                      <div className="col-span-2 text-center">
-                        <div className="flex flex-col items-center">
-                          <span className={`text-lg font-bold px-2 py-1 rounded-full ${getPerformanceColor(agent.conversionRate)}`}>
-                            {formatPercentage(agent.conversionRate)}
-                          </span>
-                          <span className="text-xs text-gray-500">Rate</span>
-                        </div>
-                      </div>
-
-                      <div className="col-span-2 text-center">
-                        <div className="flex flex-col items-center">
-                          <span className="text-lg font-bold text-gray-900">
+                      <div className="col-span-2 text-right">
+                        <div className="flex flex-col items-end">
+                          <span className="text-sm font-medium text-gray-900 tabular-nums">
                             {formatCurrency(agent.totalRevenue)}
                           </span>
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-gray-500 tabular-nums">
                             Avg: {formatCurrency(agent.avgRevenue)}
                           </span>
                         </div>
                       </div>
 
-                      <div className="col-span-2 text-center">
+                      <div className="col-span-2 flex justify-end">
                         <button
                           onClick={() => toggleAgentDetails(agent._id || idx)}
-                          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2 text-sm"
+                          aria-expanded={expandedAgent === (agent._id || idx)}
+                          className="press ml-auto inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md text-[13px] font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
                         >
                           {expandedAgent === (agent._id || idx) ? (
                             <>
@@ -540,52 +514,49 @@ export default function AgentDashboard() {
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: "auto" }}
                           exit={{ opacity: 0, height: 0 }}
-                          transition={{ duration: 0.3 }}
+                          transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
                           className="bg-gray-50 border-t"
                         >
                           <div className="p-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                              <div className="bg-white p-4 rounded-lg shadow-sm">
+                              <div className="bg-white p-4 rounded-lg border border-gray-200">
                                 <div className="flex items-center gap-3">
-                                  <BarChart3 className="h-8 w-8 text-indigo-500" />
                                   <div>
                                     <p className="text-sm text-gray-600">Performance Score</p>
-                                    <p className={`text-xl font-bold ${getPerformanceColor(agent.conversionRate)}`}>
+                                    <p className="text-xl font-semibold text-gray-900 tabular-nums">
                                       {formatPercentage(agent.conversionRate)}
                                     </p>
                                   </div>
                                 </div>
                               </div>
 
-                              <div className="bg-white p-4 rounded-lg shadow-sm">
+                              <div className="bg-white p-4 rounded-lg border border-gray-200">
                                 <div className="flex items-center gap-3">
-                                  <Target className="h-8 w-8 text-green-500" />
                                   <div>
                                     <p className="text-sm text-gray-600">Conversion Ratio</p>
-                                    <p className="text-xl font-bold text-gray-900">
+                                    <p className="text-xl font-semibold text-gray-900">
                                       {agent.visitedPatients}/{agent.totalPatients}
                                     </p>
                                   </div>
                                 </div>
                               </div>
 
-                              <div className="bg-white p-4 rounded-lg shadow-sm">
+                              <div className="bg-white p-4 rounded-lg border border-gray-200">
                                 <div className="flex items-center gap-3">
                                   <div>
                                     <p className="text-sm text-gray-600">Surgery Ready</p>
-                                    <p className="text-xl font-bold text-gray-900">
+                                    <p className="text-xl font-semibold text-gray-900">
                                       {agent.readyForSurgery}
                                     </p>
                                   </div>
                                 </div>
                               </div>
 
-                              <div className="bg-white p-4 rounded-lg shadow-sm">
+                              <div className="bg-white p-4 rounded-lg border border-gray-200">
                                 <div className="flex items-center gap-3">
-                                  <IndianRupee className="h-8 w-8 text-purple-500" />
                                   <div>
                                     <p className="text-sm text-gray-600">Avg Revenue</p>
-                                    <p className="text-xl font-bold text-gray-900">
+                                    <p className="text-xl font-semibold text-gray-900">
                                       {formatCurrency(agent.avgRevenue)}
                                     </p>
                                   </div>
@@ -594,7 +565,7 @@ export default function AgentDashboard() {
                             </div>
 
                             {agent.techniques && Object.keys(agent.techniques).length > 0 && (
-                              <div className="bg-white p-4 rounded-lg shadow-sm">
+                              <div className="bg-white p-4 rounded-lg border border-gray-200">
                                 <h4 className="font-semibold text-gray-900 mb-3">Techniques Sold</h4>
                                 <div className="flex flex-wrap gap-3">
                                   {Object.entries(agent.techniques)

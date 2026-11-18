@@ -41,17 +41,17 @@ export default function TransactionDetailModal({ transactionId, onClose }) {
 
   const Section = ({ title, children }) => (
     <div className="bg-white rounded-lg border border-gray-200 p-4">
-      <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{title}</h4>
+      <h4 className="text-xs font-medium text-gray-500 mb-2">{title}</h4>
       <dl>{children}</dl>
     </div>
   );
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+    <div className="fixed inset-0 overlay-in bg-gray-950/40 flex items-center justify-center z-50 p-4 overflow-y-auto">
       <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full my-8">
         <div className="flex items-center justify-between p-5 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl">
-          <h3 className="text-lg font-bold text-gray-900">Transaction Details</h3>
-          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg">
+          <h3 className="text-lg font-semibold text-gray-900">Transaction Details</h3>
+          <button type="button" onClick={onClose} aria-label="Close" className="p-1.5 hover:bg-gray-100 rounded-lg">
             <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
@@ -67,14 +67,14 @@ export default function TransactionDetailModal({ transactionId, onClose }) {
             <div className="space-y-4">
               <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 flex items-center justify-between">
                 <div>
-                  <p className={`text-2xl font-bold ${tx.amount < 0 ? "text-red-600" : "text-gray-900"}`}>
+                  <p className={`text-xl font-semibold tracking-tight ${tx.amount < 0 ? "text-red-600" : "text-gray-900"}`}>
                     {formatCurrency(tx.amount)}
                   </p>
                   <p className="text-xs text-gray-500 mt-0.5">{formatDate(tx.date)}</p>
                 </div>
                 <div className="flex flex-col items-end gap-1">
                   <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border ${
+                    className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border ${
                       tx.costType === "Revenue"
                         ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                         : "bg-rose-50 text-rose-700 border-rose-200"
@@ -83,12 +83,12 @@ export default function TransactionDetailModal({ transactionId, onClose }) {
                     {tx.costType || "—"}
                   </span>
                   {tx.reversalOf && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border bg-orange-50 text-orange-700 border-orange-200">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border bg-orange-50 text-orange-700 border-orange-200">
                       Reversal
                     </span>
                   )}
                   {tx.isReversed && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border bg-amber-50 text-amber-700 border-amber-200">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border bg-amber-50 text-amber-700 border-amber-200">
                       Reversed
                     </span>
                   )}
@@ -186,14 +186,14 @@ export default function TransactionDetailModal({ transactionId, onClose }) {
 
               {tx.remarks && (
                 <div className="rounded-lg border border-gray-200 p-4">
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Remarks</p>
+                  <p className="text-xs font-medium text-gray-500 mb-1">Remarks</p>
                   <p className="text-sm text-gray-700 whitespace-pre-wrap">{tx.remarks}</p>
                 </div>
               )}
 
               {tx.editors?.length > 0 && (
                 <div className="rounded-lg border border-gray-200 p-4">
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                  <p className="text-xs font-medium text-gray-500 mb-2">
                     Edit History ({tx.editors.length})
                   </p>
                   <ul className="space-y-2">
