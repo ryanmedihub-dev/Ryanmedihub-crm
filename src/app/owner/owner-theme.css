@@ -1067,27 +1067,6 @@
   text-decoration: none;
   min-height: 104px;
 }
-.owner-app .kpi::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: var(--accent);
-}
-.owner-app .kpi:has(.sub.good)::before {
-  background: var(--pos);
-}
-.owner-app .kpi:has(.sub.warn)::before {
-  background: var(--warn);
-}
-.owner-app .kpi:has(.sub.bad)::before {
-  background: var(--crit);
-}
-.owner-app .kpi:has(.sub.info)::before {
-  background: var(--info);
-}
 
 .owner-app .kpi-top {
   display: flex;
@@ -1150,8 +1129,7 @@
   gap: var(--sp-2);
   justify-content: center;
   background: var(--surface);
-  border: 1px solid var(--accent-border);
-  border-left: 4px solid var(--accent);
+  border: 1px solid var(--line);
   box-shadow: var(--shadow-1);
 }
 .owner-app .kpi-lead::before {
@@ -1203,7 +1181,6 @@
    ========================================================================== */
 .owner-app .seam {
   border: 1px solid var(--line);
-  border-left: 3px solid var(--accent);
   border-radius: var(--r-md);
   background: var(--surface);
   box-shadow: var(--shadow-2);
@@ -1613,7 +1590,6 @@
 
 .owner-app .decision-card {
   border: 1px solid var(--line);
-  border-left: 3px solid var(--info);
   border-radius: var(--r-md);
   padding: var(--sp-3) var(--sp-4);
   background: var(--surface);
@@ -3173,17 +3149,9 @@
   background: var(--surface);
 }
 .owner-app.owner-app .ai-brief-panel,
-.owner-app.owner-app .ai-brief-compact,
-.owner-app.owner-app .kpi-lead,
-.owner-app.owner-app .seam,
-.owner-app.owner-app .decision-card {
+.owner-app.owner-app .ai-brief-compact {
   border-left: 1px solid var(--line);
 }
-.owner-app.owner-app .kpi-lead { border-color: var(--line); }
-
-/* KPI tiles: no coloured top stripe; the sub-line already carries good/warn/bad in text */
-.owner-app.owner-app .kpi::before,
-.owner-app.owner-app .kpi-lead::before { display: none; }
 
 /* Labels and headers in sentence case, like the rest of the CRM; figures in ink */
 .owner-app.owner-app th {
