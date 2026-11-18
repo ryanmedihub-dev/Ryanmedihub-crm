@@ -161,6 +161,18 @@ The user disliked the indigo theme and chose **graphite + emerald**, plus a user
   - Patient record for collab, reception, sales and surgery got the admin record pass.
 - **Not changed, on purpose:** consultation forms and invoices are self-styled paper documents and render identically in either mode. `/owner/**` is still its own design.
 
+## Session 5e (2026-11-18): Owner panel brought into the CRM theme
+
+- `app/owner/owner-theme.css` ends with a "CRM theme integration" block that maps every owner token (bg, surfaces, ink, lines, pos/warn/crit/info, accent) to the CRM tokens. The owner panel therefore follows mode and accent with no page edits. All 33 tokens were verified resolving in the browser.
+- **Removed:**
+  - IBM Plex (now Geist) and the animated neural backdrop.
+  - Decorative gradients (now solid) and gradient-text figures and titles.
+  - Rainbow sidebar icon tiles, side stripes on cards and callouts, KPI top stripes.
+  - All-caps th and KPI labels.
+  - Topbar glass; the topbar title was also being clipped.
+- `components/owner/ThemeContext.js`: the topbar light/dark toggle now writes the shared preference (lib/theme). `data-theme` on .owner-app mirrors html[data-mode]. `themedPath` / boot script now theme `/owner` too; only "/" (landing) is excluded.
+- **Verified:** dashboard, finance and employees in light, dark and the blue accent; a dark sweep of all 59 static owner routes. "Something went wrong" panels there are external Callby API failures in local dev.
+
 ## Next session — suggested order
 
 1. Visual QA of the shell and tokens (log in as each role).

@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 /*
  * Per-browser appearance: mode (light | dark | system) and accent (emerald | blue | violet).
  * Applied as html[data-mode] / html[data-accent]; globals.css maps those to tokens.
- * The landing page ("/") and the owner panel have their own visual worlds and stay untouched.
+ * The public landing page ("/") has its own visual world and stays untouched.
  */
 export const THEME_KEY = "crm-theme";
 export const DEFAULT_THEME = { mode: "light", accent: "emerald" };
@@ -15,7 +15,7 @@ export const ACCENTS = [
   { id: "violet", label: "Violet", swatch: "#7c3aed" },
 ];
 
-export const themedPath = (p = "") => p !== "/" && !p.startsWith("/owner");
+export const themedPath = (p = "") => p !== "/";
 
 export function readTheme() {
   try {

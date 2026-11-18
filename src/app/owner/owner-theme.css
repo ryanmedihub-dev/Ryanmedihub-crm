@@ -3043,3 +3043,159 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* =============================================================================
+   CRM theme integration (2026-11-18)
+   The owner panel now speaks the CRM design system: every owner token points at
+   the CRM tokens (globals.css), which already follow the user's mode
+   (html[data-mode]) and accent (html[data-accent]). `.owner-app[data-theme]`
+   matches the specificity of the old dark block, so this later rule wins in
+   both modes and the old light/dark palettes no longer apply.
+   ========================================================================== */
+.owner-app,
+.owner-app[data-theme] {
+  --font-ui: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-readout: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+
+  --bg: var(--color-gray-50);
+  --bg-grad-a: transparent;
+  --bg-grad-b: transparent;
+  --bg-grad-c: transparent;
+  --surface: var(--color-white);
+  --surface-2: var(--color-gray-50);
+  --surface-3: var(--color-gray-100);
+  --ink: var(--color-gray-900);
+  --ink-muted: var(--color-gray-500);
+  --line: var(--color-gray-200);
+  --line-strong: var(--color-gray-300);
+
+  --pos: var(--color-emerald-600);
+  --pos-fg: var(--color-emerald-700);
+  --pos-bg: var(--color-emerald-50);
+  --pos-border: var(--color-emerald-200);
+  --warn: var(--color-amber-600);
+  --warn-fg: var(--color-amber-700);
+  --warn-bg: var(--color-amber-50);
+  --warn-border: var(--color-amber-200);
+  --crit: var(--color-rose-600);
+  --crit-fg: var(--color-rose-700);
+  --crit-bg: var(--color-rose-50);
+  --crit-border: var(--color-rose-200);
+  --info: var(--color-blue-600);
+  --info-fg: var(--color-blue-700);
+  --info-bg: var(--color-blue-50);
+  --info-border: var(--color-blue-200);
+  --neutral-fg: var(--color-gray-600);
+  --neutral-bg: var(--color-gray-100);
+  --neutral-border: var(--color-gray-300);
+
+  /* Accent = the user's accent; primary fills are graphite like the rest of the CRM */
+  --accent: var(--color-indigo-600);
+  --accent-ink: var(--color-white);
+  --accent-bg: var(--color-indigo-50);
+  --accent-border: var(--color-indigo-200);
+  --accent-2: var(--color-indigo-500);
+  --accent-2-bg: var(--color-indigo-50);
+  --accent-3: var(--color-indigo-700);
+  --accent-3-bg: var(--color-indigo-50);
+  --focus: var(--color-indigo-500);
+
+  /* No decorative gradients: solid fills that still work with background-clip */
+  --grad-brand: linear-gradient(var(--color-gray-900), var(--color-gray-900));
+  --grad-accent: linear-gradient(var(--color-indigo-600), var(--color-indigo-600));
+  --grad-lead: linear-gradient(var(--color-gray-900), var(--color-gray-900));
+  --ai-cyan: var(--color-indigo-500);
+  --ai-pink: var(--color-indigo-700);
+  --ai-grad: linear-gradient(var(--color-indigo-600), var(--color-indigo-600));
+  --ai-grad-linear: linear-gradient(var(--color-gray-900), var(--color-gray-900));
+
+  --r-sm: 6px;
+  --r-md: 8px;
+  --r-lg: 10px;
+  --shadow-1: none;
+  --shadow-2: var(--shadow-lg);
+  --shadow-accent: none;
+
+  color-scheme: normal;
+}
+
+/* Figures read as ink, not gradient text */
+.owner-app .status-card strong,
+.owner-app .forecast-card strong,
+.owner-app.owner-app[data-theme] .topbar h1 {
+  background: none;
+  -webkit-background-clip: border-box;
+  background-clip: border-box;
+  color: var(--ink);
+}
+.owner-app .ai-neural-backdrop { display: none; }
+
+/* Sidebar: one quiet icon colour (accent when active), sentence-case links, no hover zoom */
+.owner-app.owner-app nav > * .nav-ico,
+.owner-app.owner-app nav > *:nth-child(n) .nav-ico {
+  width: 20px;
+  height: 20px;
+  background: transparent;
+  color: var(--color-gray-400);
+}
+.owner-app.owner-app .nav-btn.active .nav-ico,
+.owner-app.owner-app .nav-group-head.active .nav-ico { color: var(--accent); }
+.owner-app .nav-btn:hover .nav-ico,
+.owner-app .nav-group-link:hover .nav-ico { transform: none; }
+.owner-app .nav-btn .nav-label {
+  font-size: var(--fs-14);
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: inherit;
+  padding: 0;
+}
+.owner-app .nav-btn.active,
+.owner-app .nav-group-head.active { background: var(--accent-bg); color: var(--color-gray-900); }
+
+/* Callouts and AI cards: hairline border instead of a coloured side stripe; meaning stays in the text/icon */
+.owner-app .ai-insight-card,
+.owner-app .ai-action-high,
+.owner-app .ai-action-medium,
+.owner-app .ai-action-low {
+  border: 1px solid var(--line);
+  border-left-width: 1px;
+  border-left-color: var(--line);
+}
+
+/* Topbar: room for the title block (it was clipped at the top), no glass blur */
+.owner-app .topbar {
+  height: auto;
+  min-height: 64px;
+  padding-top: var(--sp-3);
+  padding-bottom: var(--sp-3);
+  backdrop-filter: none;
+  background: var(--surface);
+}
+.owner-app.owner-app .ai-brief-panel,
+.owner-app.owner-app .ai-brief-compact,
+.owner-app.owner-app .kpi-lead,
+.owner-app.owner-app .seam,
+.owner-app.owner-app .decision-card {
+  border-left: 1px solid var(--line);
+}
+.owner-app.owner-app .kpi-lead { border-color: var(--line); }
+
+/* KPI tiles: no coloured top stripe; the sub-line already carries good/warn/bad in text */
+.owner-app.owner-app .kpi::before,
+.owner-app.owner-app .kpi-lead::before { display: none; }
+
+/* Labels and headers in sentence case, like the rest of the CRM; figures in ink */
+.owner-app.owner-app th {
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+}
+.owner-app.owner-app .kpi .label {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+}
+.owner-app.owner-app .kpi-lead .value { color: var(--ink); font-weight: 600; }

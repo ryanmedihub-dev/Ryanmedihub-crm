@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { getServerSession } from "next-auth/next";
-import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./owner-theme.css";
 import "./owner-ai.css";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
@@ -10,22 +9,8 @@ import { ThemeProvider, OWNER_THEME_COOKIE } from "@/components/owner/ThemeConte
 import { ShellProvider } from "@/components/owner/ShellContext";
 import OwnerShell from "@/components/owner/OwnerShell";
 import MotionRoot from "@/components/owner/ai/MotionRoot";
-import NeuralBackdrop from "@/components/owner/ai/NeuralBackdrop";
 import AiCommandBar from "@/components/owner/ai/AiCommandBar";
 
-const plexSans = IBM_Plex_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-plex-sans",
-  display: "swap",
-});
-
-const plexMono = IBM_Plex_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-plex-mono",
-  display: "swap",
-});
 
 const OWNER_ROLES = ["owner", "super-admin"];
 
@@ -36,16 +21,12 @@ export default async function OwnerLayout({ children }) {
   if (!OWNER_ROLES.includes(session.user.role)) redirect(roleHome(session.user.role));
 
   const storedTheme = (await cookies()).get(OWNER_THEME_COOKIE)?.value;
-  const initialTheme = storedTheme === "light" ? "light" : "dark";
+  const initialTheme = storedTheme === "dark" ? "dark" : "light";
 
   return (
-    <ThemeProvider
-      className={`${plexSans.variable} ${plexMono.variable}`}
-      initialTheme={initialTheme}
-    >
+    <ThemeProvider initialTheme={initialTheme}>
       <ShellProvider>
         <MotionRoot>
-          <NeuralBackdrop />
           <OwnerShell>{children}</OwnerShell>
           <AiCommandBar />
         </MotionRoot>
