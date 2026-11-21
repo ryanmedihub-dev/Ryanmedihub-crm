@@ -6,7 +6,7 @@ import Transactions from "@/models/Transactions";
 import Patient from "@/models/Patient";
 import DeleteLog from "@/models/DeleteLog";
 import { unsettledMethodsSync } from "@/lib/masterData";
-const PROCEDURES = ["PRP", "GFC", "Canacot", "Biotin"];
+const PROCEDURES = ["PRP", "GFC", "Canacot", "Biotin", "Mesotherapy"];
 
 export async function GET(req) {
   try {

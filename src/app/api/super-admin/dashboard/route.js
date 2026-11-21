@@ -126,7 +126,7 @@ export async function POST(req) {
           ],
           prpStats: [
             {
-              $match: { procedure: { $in: ["PRP", "GFC"] }, method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION },
+              $match: { procedure: { $in: ["PRP", "GFC", "Mesotherapy"] }, method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION },
             },
             {
               $group: {
@@ -246,13 +246,16 @@ export async function POST(req) {
         const prpStats = rv.prpStats || [];
         const prpRow   = prpStats.find((r) => r._id === "PRP");
         const gfcRow   = prpStats.find((r) => r._id === "GFC");
+        const mesoRow  = prpStats.find((r) => r._id === "Mesotherapy");
         return {
           prpSessions:   prpRow?.count || 0,
           prpRevenue:    prpRow?.total || 0,
           gfcSessions:   gfcRow?.count || 0,
           gfcRevenue:    gfcRow?.total || 0,
-          totalSessions: (prpRow?.count || 0) + (gfcRow?.count || 0),
-          totalRevenue:  (prpRow?.total || 0) + (gfcRow?.total || 0),
+          mesoSessions:  mesoRow?.count || 0,
+          mesoRevenue:   mesoRow?.total || 0,
+          totalSessions: (prpRow?.count || 0) + (gfcRow?.count || 0) + (mesoRow?.count || 0),
+          totalRevenue:  (prpRow?.total || 0) + (gfcRow?.total || 0) + (mesoRow?.total || 0),
         };
       })(),
     });

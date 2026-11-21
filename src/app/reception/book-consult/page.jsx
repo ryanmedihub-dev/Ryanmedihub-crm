@@ -481,6 +481,7 @@ export default function BookAppointment() {
                         { value: "HYBRID", label: "HYBRID" },
                         { value: "PRP", label: "PRP" },
                         { value: "GFC", label: "GFC" },
+                        { value: "Mesotherapy", label: "Mesotherapy" },
                         { value: "Other", label: "Other" },
                       ]}
                     />

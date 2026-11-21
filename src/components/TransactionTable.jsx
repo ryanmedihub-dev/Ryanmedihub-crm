@@ -34,6 +34,7 @@ const PROCEDURE_COLORS = {
   "GFC":              "bg-indigo-100 text-indigo-800",
   "Medicine":         "bg-green-100 text-green-800",
   "Canacot":          "bg-lime-100 text-lime-800",
+  "Mesotherapy":      "bg-fuchsia-100 text-fuchsia-800",
   "Other":            "bg-gray-100 text-gray-700",
 };
 

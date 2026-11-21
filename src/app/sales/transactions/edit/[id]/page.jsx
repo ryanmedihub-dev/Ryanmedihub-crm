@@ -195,6 +195,8 @@ export default function EditTransactionPage() {
             "ALOPECIA",
             "Canacot",
             "CANACOT",
+            "Mesotherapy",
+            "MESOTHERAPY",
             "Headwash",
             "HEADWASH",
             "Other",

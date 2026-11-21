@@ -30,6 +30,7 @@ const auditSchema = new mongoose.Schema({
       "Beard Transplant",
       "PRP",
       "GFC",
+      "Mesotherapy",
       "Medicine",
       "Other",
     ],

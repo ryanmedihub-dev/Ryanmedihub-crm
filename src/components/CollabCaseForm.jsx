@@ -18,6 +18,7 @@ const PROCEDURE_OPTIONS = [
   "Alopecia",
   "Headwash",
   "Canacot",
+  "Mesotherapy",
   "GFC",
   "Medicine",
   "Other",

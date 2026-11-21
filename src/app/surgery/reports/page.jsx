@@ -108,6 +108,7 @@ export default function SurgeryReports() {
       HYBRID: "bg-green-100 text-green-700",
       PRP: "bg-yellow-100 text-yellow-700",
       GFC: "bg-orange-100 text-orange-700",
+      Mesotherapy: "bg-fuchsia-100 text-fuchsia-700",
     };
     return colors[technique] || "bg-gray-100 text-gray-700";
   };

@@ -23,9 +23,9 @@ const BRANCHES = ["Delhi", "Mumbai", "Hyderabad", "Noida", "Gurgaon"];
 const GENDERS  = ["MALE", "FEMALE", "OTHER"];
 const TECHNIQUES = [
   "Sapphire FUE", "DHI", "Turkish DHI", "Beard Transplant",
-  "PRP", "GFC", "Alopecia", "Headwash", "Other",
+  "PRP", "GFC", "Alopecia", "Headwash", "Canacot", "Mesotherapy", "Other",
 ];
-const SESSION_TYPES = ["PRP", "GFC", "Canacot", "Biotin"];
+const SESSION_TYPES = ["PRP", "GFC", "Canacot", "Biotin", "Mesotherapy"];
 
 const EMPTY_SESSION = { prpNumber: "", date: "", type: "PRP" };
 

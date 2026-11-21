@@ -66,7 +66,7 @@ const formatCurrency = (amount) => {
 
 const PAYMENT_METHODS = ["upi", "cash", "card", "banking", "bajaj_loan", "fibe_loan", "hdfc_skin_bank_transfer", "hdfc_ryan_medihub_bank_transfer", "icici_medihub_bank_transfer", "other"];
 const TRANSPLANT_PROCEDURES = ["Sapphire FUE", "DHI", "Turkish DHI", "Beard Transplant"];
-const SERVICE_PROCEDURES = ["PRP", "GFC", "Alopecia", "Headwash", "Canacot"];
+const SERVICE_PROCEDURES = ["PRP", "GFC", "Alopecia", "Headwash", "Canacot", "Mesotherapy"];
 const TRANSACTION_CATEGORIES = [
   { value: "TRANSPLANT", label: "Transplant", icon: User, color: "indigo" },
   { value: "SERVICE", label: "Services", icon: User, color: "pink" },
@@ -286,6 +286,7 @@ function DataTable({ category, rows, onDelete, onSort, sortConfig, pagination, o
       alopecia: "bg-rose-100 text-rose-700 border-rose-200",
       headwash: "bg-sky-100 text-sky-700 border-sky-200",
       canacot: "bg-lime-100 text-lime-700 border-lime-200",
+      mesotherapy: "bg-fuchsia-100 text-fuchsia-700 border-fuchsia-200",
     };
     return colors[proc?.toLowerCase()] || "bg-gray-100 text-gray-700 border-gray-200";
   };

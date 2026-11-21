@@ -214,6 +214,7 @@ const transactionSchema = new mongoose.Schema(
         "Alopecia",
         "Headwash",
         "Canacot",
+        "Mesotherapy",
         "GFC",
         "Medicine",
         "Other",
@@ -341,7 +342,7 @@ transactionSchema.pre("save", async function () {
         )
       ) {
         this.transactionCategory = "TRANSPLANT";
-      } else if (["PRP", "GFC" , "Alopecia", "Headwash", "Canacot",].includes(this.procedure)) {
+      } else if (["PRP", "GFC", "Alopecia", "Headwash", "Canacot", "Mesotherapy"].includes(this.procedure)) {
         this.transactionCategory = "SERVICE";
       } else if (this.procedure === "Medicine") {
         this.transactionCategory = "MEDICINE";

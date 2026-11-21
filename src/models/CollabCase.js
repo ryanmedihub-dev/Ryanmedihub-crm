@@ -33,6 +33,7 @@ const collabCaseSchema = new mongoose.Schema(
         "Alopecia",
         "Headwash",
         "Canacot",
+        "Mesotherapy",
         "GFC",
         "Medicine",
         "Other",

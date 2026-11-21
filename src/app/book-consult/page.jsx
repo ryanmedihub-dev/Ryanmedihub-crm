@@ -228,6 +228,7 @@ export default function BookAppointment() {
                 { value: "Surgery", label: "Surgery" },
                 { value: "PRP Treatment", label: "PRP Treatment" },
                 { value: "GFC Treatment", label: "GFC Treatment" },
+                { value: "Mesotherapy", label: "Mesotherapy" },
                 { value: "Other", label: "Other" },
               ]}
             />
@@ -252,6 +253,7 @@ export default function BookAppointment() {
                 { value: "HYBRID", label: "Hybrid" },
                 { value: "PRP", label: "PRP" },
                 { value: "GFC", label: "GFC" },
+                { value: "Mesotherapy", label: "Mesotherapy" },
               ]}
             />
 

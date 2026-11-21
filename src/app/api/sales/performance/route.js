@@ -43,7 +43,7 @@ export async function GET(request) {
     const branches = ["Delhi", "Mumbai", "Hyderabad", "Noida", "Gurgaon"];
     const targetBranches = branch ? branches.filter((b) => b === branch) : branches;
 
-    const procedures = ["hair transplant", "prp", "beard transplant", "medicine", "gfc"];
+    const procedures = ["hair transplant", "prp", "beard transplant", "medicine", "gfc", "mesotherapy"];
     const procedureFilter = {
       costType: "Revenue",
       method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION,

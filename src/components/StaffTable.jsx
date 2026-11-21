@@ -15,7 +15,7 @@ const CATEGORY_OPTIONS = ["Doctor", "Agent", "Counsellor", "Technician", "Implan
 
 const TECHNIQUES = [
   "Sapphire FUE", "DHI", "Turkish DHI", "Beard Transplant", "PRP",
-  "Alopecia", "Headwash", "GFC", "Other",
+  "Alopecia", "Headwash", "GFC", "Mesotherapy", "Other",
 ];
 
 const CAT_STYLE = {

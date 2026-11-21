@@ -608,6 +608,7 @@ export default function PatientEditDetails() {
                       { value: "HYBRID", label: "HYBRID" },
                       { value: "PRP", label: "PRP" },
                       { value: "GFC", label: "GFC" },
+                      { value: "Mesotherapy", label: "Mesotherapy" },
                       { value: "Other", label: "Other" },
                     ]}
                   />
@@ -669,6 +670,7 @@ export default function PatientEditDetails() {
                       { value: "HYBRID", label: "HYBRID" },
                       { value: "PRP", label: "PRP" },
                       { value: "GFC", label: "GFC" },
+                      { value: "Mesotherapy", label: "Mesotherapy" },
                       { value: "Other", label: "Other" },
                     ]}
                   />

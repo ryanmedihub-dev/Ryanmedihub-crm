@@ -2301,6 +2301,7 @@ async function generateBranchRevenueReport(filters) {
         "Beard Transplant Revenue": 0,
         "Medicine Revenue": 0,
         "GFC Revenue": 0,
+        "Mesotherapy Revenue": 0,
         "Other Revenue": 0,
       };
     }
@@ -2319,6 +2320,8 @@ async function generateBranchRevenueReport(filters) {
       branchData[branch]["Medicine Revenue"] += t.amount || 0;
     } else if (procedure === "gfc") {
       branchData[branch]["GFC Revenue"] += t.amount || 0;
+    } else if (procedure === "mesotherapy") {
+      branchData[branch]["Mesotherapy Revenue"] += t.amount || 0;
     } else {
       branchData[branch]["Other Revenue"] += t.amount || 0;
     }

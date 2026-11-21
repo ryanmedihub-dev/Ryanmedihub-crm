@@ -327,7 +327,7 @@ const handler = async (req) => {
               {
                 $match: {
                   date: { $gte: fromDate, $lte: toDate },
-                  procedure: { $in: ["PRP", "GFC"] },
+                  procedure: { $in: ["PRP", "GFC", "Mesotherapy"] },
                   method: { $nin: unsettledMethodsSync() }, ...SETTLEMENT_EXCLUSION,
                 },
               },
@@ -458,13 +458,16 @@ async function computeDashboardPayload({ getPatientStats, getRevenueStats, fromD
       prp: (() => {
         const prpRow = revenueStats.prpStats?.find((r) => r._id === "PRP");
         const gfcRow = revenueStats.prpStats?.find((r) => r._id === "GFC");
+        const mesoRow = revenueStats.prpStats?.find((r) => r._id === "Mesotherapy");
         return {
           prpSessions:  prpRow?.count   || 0,
           prpRevenue:   prpRow?.total   || 0,
           gfcSessions:  gfcRow?.count   || 0,
           gfcRevenue:   gfcRow?.total   || 0,
-          totalSessions: (prpRow?.count || 0) + (gfcRow?.count || 0),
-          totalRevenue:  (prpRow?.total || 0) + (gfcRow?.total || 0),
+          mesoSessions: mesoRow?.count  || 0,
+          mesoRevenue:  mesoRow?.total  || 0,
+          totalSessions: (prpRow?.count || 0) + (gfcRow?.count || 0) + (mesoRow?.count || 0),
+          totalRevenue:  (prpRow?.total || 0) + (gfcRow?.total || 0) + (mesoRow?.total || 0),
         };
       })(),
     };

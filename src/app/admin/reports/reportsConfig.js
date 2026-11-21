@@ -32,12 +32,12 @@ export const DATE_PRESETS = [
 
 export const TECHNIQUES = [
   "Sapphire FUE", "DHI", "Turkish DHI", "Beard Transplant", "PRP",
-  "Alopecia", "Headwash", "GFC", "Other",
+  "Alopecia", "Headwash", "GFC", "Mesotherapy", "Other",
 ];
 
 export const PROCEDURES = [
   "Sapphire FUE", "DHI", "Turkish DHI", "Beard Transplant",
-  "PRP", "GFC", "Medicine", "Other",
+  "PRP", "GFC", "Mesotherapy", "Medicine", "Other",
 ];
 
 export const PAYMENT_TYPES = ["Booking", "Pending", "Full-payment", "Other"];

@@ -49,12 +49,12 @@ const DATE_PRESETS = [
 
 const TECHNIQUES = [
   "Sapphire FUE", "DHI", "Turkish DHI", "Beard Transplant", "PRP",
-  "Alopecia", "Headwash", "GFC", "Other",
+  "Alopecia", "Headwash", "GFC", "Mesotherapy", "Other",
 ];
 
 const PROCEDURES = [
   "Sapphire FUE", "DHI", "Turkish DHI", "Beard Transplant",
-  "PRP", "GFC", "Medicine", "Other",
+  "PRP", "GFC", "Mesotherapy", "Medicine", "Other",
 ];
 
 const PAYMENT_TYPES = ["Booking", "Pending", "Full-payment", "Other"];

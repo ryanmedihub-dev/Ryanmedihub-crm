@@ -912,6 +912,7 @@ export default function PatientEditDetails() {
                       { value: "HYBRID", label: "HYBRID" },
                       { value: "PRP", label: "PRP" },
                       { value: "GFC", label: "GFC" },
+                      { value: "Mesotherapy", label: "Mesotherapy" },
                       { value: "Alopecia", label: "Alopecia" },
                       { value: "Other", label: "Other" },
                     ]}

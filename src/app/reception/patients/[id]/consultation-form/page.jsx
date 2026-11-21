@@ -353,6 +353,7 @@ export default function ConsultationFormPage() {
               <Chk checked={false} label="Finasteride"     />
               <Chk checked={false} label="PRP"             />
               <Chk checked={false} label="GFC"             />
+              <Chk checked={false} label="Mesotherapy"     />
               <Chk checked={false} label="Hair Transplant" />
               <span style={{ display: "inline-flex", alignItems: "center", gap: 7 }}>
                 <Chk checked={false} label="Others:" />
@@ -421,6 +422,7 @@ export default function ConsultationFormPage() {
               <div style={{ display: "flex" }}>
                 <Chk checked={false} label="PRP"         />
                 <Chk checked={false} label="GFC"         />
+                <Chk checked={false} label="Mesotherapy" />
                 <Chk checked={false} label="Medications" />
               </div>
             </div>

@@ -186,7 +186,7 @@ const testimonials = [
 
 const faqs = [
   { q: "Can I restrict a staff member to only see their branch data?", a: "Yes. Every non-admin user is branch-locked at the API level — not just the UI. Receptionists in Mumbai can only view and manage Mumbai data, regardless of how they access the system." },
-  { q: "What transaction types does RyanCRM support?", a: "Four types: Transplant (Sapphire FUE, DHI, Turkish DHI, Beard Transplant), Service (PRP, GFC, Alopecia, Headwash, Canacot), Medicine sales, and Expenses (Vendor or manual). All support multiple payment methods." },
+  { q: "What transaction types does RyanCRM support?", a: "Four types: Transplant (Sapphire FUE, DHI, Turkish DHI, Beard Transplant), Service (PRP, GFC, Alopecia, Headwash, Canacot, Mesotherapy), Medicine sales, and Expenses (Vendor or manual). All support multiple payment methods." },
   { q: "Is there a mobile-friendly version?", a: "RyanCRM is fully responsive and works on all modern browsers and devices. Receptionists and sales agents frequently use it on tablets for patient check-ins and appointment booking." },
   { q: "Can I export reports to Excel?", a: "Yes, the Professional and Enterprise plans include Excel export for all financial and patient reports, with full date-range and branch filters applied." },
   { q: "How does the audit trail work for edited transactions?", a: "Every edit is captured in an editors array on the document — storing the editor's name, email, branch, date, and an array of changed fields each with their previous and new values. Separately, an immutable Audit collection records financial transactions." },

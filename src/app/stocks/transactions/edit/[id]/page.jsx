@@ -188,7 +188,7 @@ export default function EditTransactionPage() {
         ) {
           category = "TRANSPLANT";
         } else if (
-          ["PRP", "GFC", "Alopecia", "Canacot", "Headwash", "Other"].includes(
+          ["PRP", "GFC", "Alopecia", "Canacot", "Mesotherapy", "Headwash", "Other"].includes(
             trans.procedure,
           )
         ) {

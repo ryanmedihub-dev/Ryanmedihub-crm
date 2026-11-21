@@ -230,6 +230,7 @@ export const SERVICE_PROCEDURES = [
   "Alopecia",
   "Headwash",
   "Canacot",
+  "Mesotherapy",
 ];
 
 export const UNTRACKED_FURTHER_MODE = "__UNTRACKED__";

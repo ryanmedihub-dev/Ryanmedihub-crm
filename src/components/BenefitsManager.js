@@ -7,6 +7,7 @@ const BenefitsManager = ({ benefits, onChange, onAdd, onRemove }) => {
     "5 Days Medicines Included",
     "Bandage Removal",
     "GFC",
+    "Mesotherapy",
     "3 Month Medicine",
     "20 Year Guarantee",
     "",

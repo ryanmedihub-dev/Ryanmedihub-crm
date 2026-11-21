@@ -4,8 +4,8 @@ import SearchableSelect from "@/components/SearchableSelect";
 import { Plus, Trash2 } from "lucide-react";
 import { formatCurrency } from "@/lib/financeUI";
 
-const SERVICE_PROCEDURES = ["PRP", "GFC", "Alopecia", "Canacot", "Headwash", "Other"];
-const SERVICE_LABELS = { PRP: "PRP", GFC: "GFC", Alopecia: "ALOPECIA", Canacot: "CANACOT", Headwash: "HEADWASH", Other: "OTHER" };
+const SERVICE_PROCEDURES = ["PRP", "GFC", "Alopecia", "Canacot", "Headwash", "Mesotherapy", "Other"];
+const SERVICE_LABELS = { PRP: "PRP", GFC: "GFC", Alopecia: "ALOPECIA", Canacot: "CANACOT", Headwash: "HEADWASH", Mesotherapy: "MESOTHERAPY", Other: "OTHER" };
 
 const blankItem = (kind) =>
   kind === "service"

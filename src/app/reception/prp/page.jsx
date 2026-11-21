@@ -25,13 +25,14 @@ import {
   Download,
   Pill,
   Leaf,
+  Sparkles,
   Trash2,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 
 const METHODS = ["cash", "upi", "card", "banking", "bajaj_loan", "fibe_loan", "other"];
 
-const PROCEDURES = ["PRP", "GFC", "Canacot", "Biotin"];
+const PROCEDURES = ["PRP", "GFC", "Canacot", "Biotin", "Mesotherapy"];
 
 const PROC_CONFIG = {
   PRP: {
@@ -69,6 +70,15 @@ const PROC_CONFIG = {
     activeBorder: "border-amber-500 bg-amber-50 text-amber-700",
     saveBtnBg: "bg-amber-600 hover:bg-amber-700",
     icon: Leaf,
+  },
+  Mesotherapy: {
+    label: "Mesotherapy",
+    gradient: "from-fuchsia-500 to-fuchsia-600",
+    badgeBg: "bg-fuchsia-100 text-fuchsia-700",
+    dotBg: "bg-fuchsia-500",
+    activeBorder: "border-fuchsia-500 bg-fuchsia-50 text-fuchsia-700",
+    saveBtnBg: "bg-fuchsia-600 hover:bg-fuchsia-700",
+    icon: Sparkles,
   },
 };
 

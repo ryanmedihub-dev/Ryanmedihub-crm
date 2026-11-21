@@ -111,8 +111,8 @@ export const validateServiceTransaction = (data) => {
     errors.patient = 'Either select a patient or enter name and phone';
   }
 
-  if (!data.procedure || !['PRP', 'GFC'].includes(data.procedure)) {
-    errors.procedure = 'Valid procedure (PRP or GFC) is required';
+  if (!data.procedure || !['PRP', 'GFC', 'Alopecia', 'Headwash', 'Canacot', 'Mesotherapy'].includes(data.procedure)) {
+    errors.procedure = 'Valid service procedure is required';
   }
 
   if (!data.quantity || data.quantity < 1) {

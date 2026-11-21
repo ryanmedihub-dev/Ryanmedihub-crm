@@ -72,7 +72,7 @@ const TRANSPLANT_PROCEDURES = [
   "Turkish DHI",
   "Beard Transplant",
 ];
-const SERVICE_PROCEDURES = ["PRP", "GFC", "Alopecia", "Headwash", "Canacot"];
+const SERVICE_PROCEDURES = ["PRP", "GFC", "Alopecia", "Headwash", "Canacot", "Mesotherapy"];
 const TRANSACTION_CATEGORIES = [
   { value: "TRANSPLANT", label: "Transplant", icon: User, color: "indigo" },
   { value: "SERVICE", label: "Services", icon: User, color: "pink" },
@@ -466,6 +466,7 @@ function DataTable({
       alopecia: "bg-rose-100 text-rose-700 border-rose-200",
       headwash: "bg-sky-100 text-sky-700 border-sky-200",
       canacot: "bg-lime-100 text-lime-700 border-lime-200",
+      mesotherapy: "bg-fuchsia-100 text-fuchsia-700 border-fuchsia-200",
     };
 
     return (

@@ -139,12 +139,12 @@ const BenefitsManager = ({ benefits, onChange, onAdd, onRemove }) => {
   );
 };
 
-const SESSION_TYPES = ["PRP", "GFC", "Canacot", "Biotin"];
+const SESSION_TYPES = ["PRP", "GFC", "Canacot", "Biotin", "Mesotherapy"];
 
 const PRPManager = ({ prpSessions, onChange, onAdd, onRemove }) => {
   return (
     <div className="md:col-span-2">
-      <h4 className="text-lg font-semibold text-gray-700 mb-4">Sessions (PRP / GFC / Canacot / Biotin)</h4>
+      <h4 className="text-lg font-semibold text-gray-700 mb-4">Sessions (PRP / GFC / Canacot / Biotin / Mesotherapy)</h4>
       {prpSessions && prpSessions.length > 0 ? (
         <div className="space-y-4">
           {prpSessions.map((session, index) => (
@@ -259,6 +259,7 @@ const TransactionManager = ({ transactions, onChange, onAdd, onRemove }) => (
               { value: "Surgery", label: "Surgery" },
               { value: "PRP Treatment", label: "PRP Treatment" },
               { value: "GFC Treatment", label: "GFC Treatment" },
+              { value: "Mesotherapy", label: "Mesotherapy" },
               { value: "Other", label: "Other" },
             ]}
           />
@@ -1296,6 +1297,7 @@ export default function PatientEditDetails() {
                       { value: "Surgery", label: "Surgery" },
                       { value: "PRP Treatment", label: "PRP Treatment" },
                       { value: "GFC Treatment", label: "GFC Treatment" },
+                      { value: "Mesotherapy", label: "Mesotherapy" },
                       { value: "Other", label: "Other" },
                     ]}
                   />
@@ -1349,6 +1351,7 @@ export default function PatientEditDetails() {
                       { value: "HYBRID", label: "HYBRID" },
                       { value: "PRP", label: "PRP" },
                       { value: "GFC", label: "GFC" },
+                      { value: "Mesotherapy", label: "Mesotherapy" },
                       { value: "Alopecia", label: "Alopecia" },
                       { value: "Other", label: "Other" },
                     ]}
@@ -1411,6 +1414,7 @@ export default function PatientEditDetails() {
                       { value: "HYBRID", label: "HYBRID" },
                       { value: "PRP", label: "PRP" },
                       { value: "GFC", label: "GFC" },
+                      { value: "Mesotherapy", label: "Mesotherapy" },
                       { value: "Other", label: "Other" },
                     ]}
                   />

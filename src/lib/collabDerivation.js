@@ -12,7 +12,7 @@ import { reverseTransaction, ReversalError } from "@/lib/reverseTransaction";
 export { deriveClinicSettlement };
 
 const TRANSPLANT_PROCEDURES = ["Sapphire FUE", "DHI", "Turkish DHI", "Beard Transplant"];
-const SERVICE_PROCEDURES = ["PRP", "GFC", "Alopecia", "Headwash", "Canacot"];
+const SERVICE_PROCEDURES = ["PRP", "GFC", "Alopecia", "Headwash", "Canacot", "Mesotherapy"];
 
 function categoryForProcedure(procedure) {
   if (TRANSPLANT_PROCEDURES.includes(procedure)) return "TRANSPLANT";

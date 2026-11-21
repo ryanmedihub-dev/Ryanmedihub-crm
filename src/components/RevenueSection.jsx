@@ -13,7 +13,7 @@ import { ALL_BRANCHES } from "@/lib/branches";
 import { Scissors, Heart, Pill, Wallet, Save, Loader2 } from "lucide-react";
 import { formatCurrency } from "@/lib/financeUI";
 
-const SERVICE_PROCEDURES = ["PRP", "GFC", "Alopecia", "Canacot", "Headwash", "Other"];
+const SERVICE_PROCEDURES = ["PRP", "GFC", "Alopecia", "Canacot", "Headwash", "Mesotherapy", "Other"];
 
 const CATEGORY_META = {
   TRANSPLANT: { icon: Scissors, label: "Transplant" },
