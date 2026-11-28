@@ -4,12 +4,14 @@ export const EXCLUDED_HR_IDS = Object.freeze([
   "6a8c1c9f4b81eed5d782715a", // Anamta
   "69bd264a9777c5b4424121d9", // Muskan
   "6a8842144f9e384454479956", // Shubham Chitransh
+  "6a8842144f9e384454479954", // Farhin Gul
 ]);
 
 export const EXCLUDED_HR_NAMES = Object.freeze([
   "shubham chitransh",
   "anamta",
   "muskan",
+  "farhin gul",
 ]);
 
 /**
